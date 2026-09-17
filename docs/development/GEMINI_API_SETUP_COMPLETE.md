@@ -12,7 +12,7 @@ Your FREE Gemini API is now configured and tested successfully!
 
 ### API Key Configured
 ```
-GEMINI_API_KEY=AIzaSyD8ATUIwoIc2k4FheWOT5T1tScwe7Eqd6E
+GEMINI_API_KEY=your_gemini_api_key_here
 ```
 
 ### Model Used
@@ -27,7 +27,7 @@ gemini-2.5-flash (Latest version)
 ```
 🧪 Testing Google Gemini API (FREE!)...
 
-✅ API Key found: AIzaSyD8ATUIwoIc2k4F...
+✅ API Key found: [REDACTED]
 
 📡 Test 1: Sending test message to Gemini...
 ✅ Test 1 PASSED!
@@ -77,7 +77,7 @@ gemini-2.5-flash (Latest version)
 ### 1. `.env` File
 Added Gemini API key:
 ```env
-GEMINI_API_KEY=AIzaSyD8ATUIwoIc2k4FheWOT5T1tScwe7Eqd6E
+GEMINI_API_KEY=your_gemini_api_key_here
 ```
 
 ### 2. `test_gemini_api.dart`

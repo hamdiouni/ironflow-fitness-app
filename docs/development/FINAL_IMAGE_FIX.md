@@ -57,7 +57,7 @@
 I've added your NVIDIA API key to `.env`:
 
 ```env
-NVIDIA_API_KEY=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
+NVIDIA_API_KEY=your_nvidia_api_key_here
 ```
 
 ### What is this API for?

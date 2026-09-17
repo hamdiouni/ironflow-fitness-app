@@ -272,7 +272,7 @@ weekly."
 
 **Fix**: 
 1. Check `.env` file exists
-2. Verify `GEMINI_API_KEY=AIzaSyD8ATUIwoIc2k4FheWOT5T1tScwe7Eqd6E`
+2. Verify `GEMINI_API_KEY=your_gemini_api_key_here`
 3. Restart app
 
 ### Issue 2: Still getting generic responses

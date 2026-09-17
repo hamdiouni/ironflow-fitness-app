@@ -72,7 +72,7 @@ Look for these logs in console:
 ## 📊 Current Configuration
 
 ### Gemini API:
-- **Key**: `AIzaSyD8ATUIwoIc2k4FheWOT5T1tScwe7Eqd6E`
+- **Key**: `[REDACTED - See .env file]`
 - **Model**: `gemini-2.5-flash`
 - **Free Tier**: 60 requests/min, 1500/day
 - **Cost**: $0.00 (FREE!)
