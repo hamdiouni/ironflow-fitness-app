@@ -1,0 +1,140 @@
+{
+  "@@locale": "en",
+  "appTitle": "IronFlow",
+  "@appTitle": {
+    "description": "The application title"
+  },
+  
+  "home": "Home",
+  "workouts": "Workouts",
+  "nutrition": "Nutrition",
+  "progress": "Progress",
+  "profile": "Profile",
+  "settings": "Settings",
+  
+  "startWorkout": "Start Workout",
+  "logMeal": "Log Meal",
+  "viewProgress": "View Progress",
+  
+  "workout": "Workout",
+  "exercise": "Exercise",
+  "sets": "Sets",
+  "reps": "Reps",
+  "weight": "Weight",
+  "rest": "Rest",
+  
+  "calories": "Calories",
+  "protein": "Protein",
+  "carbs": "Carbs",
+  "fats": "Fats",
+  "fiber": "Fiber",
+  "sugar": "Sugar",
+  
+  "save": "Save",
+  "cancel": "Cancel",
+  "delete": "Delete",
+  "edit": "Edit",
+  "done": "Done",
+  "next": "Next",
+  "back": "Back",
+  
+  "loading": "Loading...",
+  "error": "Error",
+  "success": "Success",
+  "retry": "Retry",
+  
+  "darkMode": "Dark Mode",
+  "lightMode": "Light Mode",
+  "language": "Language",
+  "units": "Units",
+  
+  "metric": "Metric (kg, cm)",
+  "imperial": "Imperial (lbs, in)",
+  
+  "exportData": "Export Data",
+  "importData": "Import Data",
+  "backup": "Backup",
+  "restore": "Restore",
+  
+  "privacySettings": "Privacy Settings",
+  "deleteAccount": "Delete Account",
+  "deleteAllData": "Delete All Data",
+  
+  "workoutHistory": "Workout History",
+  "nutritionHistory": "Nutrition History",
+  "bodyMeasurements": "Body Measurements",
+  
+  "strengthProgression": "Strength Progression",
+  "weightTracking": "Weight Tracking",
+  "consistency": "Consistency",
+  
+  "aiCoach": "AI Coach",
+  "askAI": "Ask AI",
+  "generateWorkout": "Generate Workout",
+  "analyzeDiet": "Analyze Diet",
+  
+  "achievements": "Achievements",
+  "weeklyReport": "Weekly Report",
+  "reminders": "Reminders",
+  
+  "signIn": "Sign In",
+  "signUp": "Sign Up",
+  "signOut": "Sign Out",
+  "email": "Email",
+  "password": "Password",
+  
+  "welcome": "Welcome to IronFlow",
+  "getStarted": "Get Started",
+  
+  "noDataYet": "No data yet",
+  "startLogging": "Start logging your workouts and meals!",
+  
+  "syncStatus": "Sync Status",
+  "syncing": "Syncing...",
+  "synced": "Synced",
+  "offline": "Offline",
+  
+  "searchExercises": "Search Exercises",
+  "searchFoods": "Search Foods",
+  "filterBy": "Filter By",
+  
+  "muscleGroup": "Muscle Group",
+  "equipment": "Equipment",
+  "difficulty": "Difficulty",
+  
+  "beginner": "Beginner",
+  "intermediate": "Intermediate",
+  "advanced": "Advanced",
+  
+  "chest": "Chest",
+  "back": "Back",
+  "legs": "Legs",
+  "shoulders": "Shoulders",
+  "arms": "Arms",
+  "abs": "Abs",
+  
+  "breakfast": "Breakfast",
+  "lunch": "Lunch",
+  "dinner": "Dinner",
+  "snack": "Snack",
+  
+  "today": "Today",
+  "yesterday": "Yesterday",
+  "thisWeek": "This Week",
+  "thisMonth": "This Month",
+  
+  "goal": "Goal",
+  "target": "Target",
+  "actual": "Actual",
+  "remaining": "Remaining",
+  
+  "personalRecords": "Personal Records",
+  "newPR": "New PR!",
+  "congratulations": "Congratulations!",
+  
+  "confirmDelete": "Are you sure you want to delete this?",
+  "confirmDeleteAccount": "Are you sure you want to delete your account? This action cannot be undone.",
+  
+  "yes": "Yes",
+  "no": "No"
+}

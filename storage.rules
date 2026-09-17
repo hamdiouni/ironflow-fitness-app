@@ -1,0 +1,39 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Helper function to check if user owns the file
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // User profile images
+    match /users/{userId}/profile/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isOwner(userId) 
+                   && request.resource.size < 5 * 1024 * 1024  // Max 5MB
+                   && request.resource.contentType.matches('image/.*');
+    }
+    
+    // Workout images/videos
+    match /users/{userId}/workouts/{fileName} {
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId) 
+                   && request.resource.size < 50 * 1024 * 1024  // Max 50MB
+                   && (request.resource.contentType.matches('image/.*') 
+                       || request.resource.contentType.matches('video/.*'));
+    }
+    
+    // Body progress photos
+    match /users/{userId}/progress/{fileName} {
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId) 
+                   && request.resource.size < 10 * 1024 * 1024  // Max 10MB
+                   && request.resource.contentType.matches('image/.*');
+    }
+  }
+}

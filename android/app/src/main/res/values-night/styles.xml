@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- IronFlow brand color (night mode) -->
+    <color name="ironflow_bg">#0A0A0A</color>
+
+    <!-- Launch theme: dark splash with IronFlow icon -->
+    <style name="LaunchTheme" parent="@android:style/Theme.Black.NoTitleBar">
+        <item name="android:windowBackground">@drawable/launch_background</item>
+    </style>
+
+    <!-- Normal theme after Flutter engine starts -->
+    <style name="NormalTheme" parent="@android:style/Theme.Black.NoTitleBar">
+        <item name="android:windowBackground">@color/ironflow_bg</item>
+    </style>
+</resources>

@@ -1,0 +1,373 @@
+import 'dart:async';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:timezone/timezone.dart' as tz;
+import 'package:timezone/data/latest_all.dart' as tz;
+import '../entities/reminder_settings.dart';
+
+/// Core notification service for scheduling and managing notifications
+class NotificationService {
+  static final NotificationService _instance = NotificationService._internal();
+  factory NotificationService() => _instance;
+  NotificationService._internal();
+
+  final FlutterLocalNotificationsPlugin _notifications = FlutterLocalNotificationsPlugin();
+  bool _initialized = false;
+
+  // Notification IDs
+  static const int workoutReminderId = 1;
+  static const int breakfastReminderId = 2;
+  static const int lunchReminderId = 3;
+  static const int dinnerReminderId = 4;
+  static const int streakReminderId = 5;
+
+  // Notification channels
+  static const String workoutChannelId = 'workout_reminders';
+  static const String mealChannelId = 'meal_reminders';
+  static const String streakChannelId = 'streak_reminders';
+
+  /// Initialize notification service
+  Future<void> initialize({
+    required Function(String?) onNotificationTap,
+  }) async {
+    if (_initialized) return;
+
+    // Initialize timezone
+    tz.initializeTimeZones();
+
+    // Android initialization settings
+    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+
+    // iOS initialization settings
+    const iosSettings = DarwinInitializationSettings(
+      requestAlertPermission: true,
+      requestBadgePermission: true,
+      requestSoundPermission: true,
+    );
+
+    const initSettings = InitializationSettings(
+      android: androidSettings,
+      iOS: iosSettings,
+    );
+
+    // Initialize with callback for notification taps
+    await _notifications.initialize(
+      initSettings,
+      onDidReceiveNotificationResponse: (details) {
+        onNotificationTap(details.payload);
+      },
+    );
+
+    // Create notification channels (Android)
+    await _createNotificationChannels();
+
+    _initialized = true;
+    print('✅ Notification service initialized');
+  }
+
+  /// Create notification channels for Android
+  Future<void> _createNotificationChannels() async {
+    // Workout reminders channel
+    const workoutChannel = AndroidNotificationChannel(
+      workoutChannelId,
+      'Workout Reminders',
+      description: 'Reminders for your daily workouts',
+      importance: Importance.high,
+      enableVibration: true,
+      playSound: true,
+    );
+
+    // Meal reminders channel
+    const mealChannel = AndroidNotificationChannel(
+      mealChannelId,
+      'Meal Reminders',
+      description: 'Reminders to log your meals',
+      importance: Importance.defaultImportance,
+      enableVibration: true,
+      playSound: true,
+    );
+
+    // Streak reminders channel
+    const streakChannel = AndroidNotificationChannel(
+      streakChannelId,
+      'Streak Reminders',
+      description: 'Reminders to maintain your workout streak',
+      importance: Importance.high,
+      enableVibration: true,
+      playSound: true,
+    );
+
+    await _notifications
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(workoutChannel);
+
+    await _notifications
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(mealChannel);
+
+    await _notifications
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(streakChannel);
+  }
+
+  /// Request notification permissions (iOS)
+  Future<bool> requestPermissions() async {
+    final iosImplementation = _notifications
+        .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>();
+
+    if (iosImplementation != null) {
+      final granted = await iosImplementation.requestPermissions(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+      return granted ?? false;
+    }
+
+    // Android doesn't need runtime permission for notifications (handled in manifest)
+    return true;
+  }
+
+  /// Schedule daily workout reminder
+  Future<void> scheduleWorkoutReminder(TimeOfDayModel time, {bool enabled = true}) async {
+    if (!enabled) {
+      await cancelWorkoutReminder();
+      return;
+    }
+
+    final scheduledTime = _getNextScheduledTime(time);
+
+    await _notifications.zonedSchedule(
+      workoutReminderId,
+      '💪 Time to Work Out!',
+      'Your body is ready. Let\'s crush today\'s workout!',
+      scheduledTime,
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          workoutChannelId,
+          'Workout Reminders',
+          channelDescription: 'Reminders for your daily workouts',
+          importance: Importance.high,
+          priority: Priority.high,
+          icon: '@mipmap/ic_launcher',
+        ),
+        iOS: DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        ),
+      ),
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+      matchDateTimeComponents: DateTimeComponents.time,
+      payload: 'workout',
+    );
+
+    print('✅ Workout reminder scheduled for ${time.toDisplayString()}');
+  }
+
+  /// Schedule meal reminders
+  Future<void> scheduleMealReminders({
+    required TimeOfDayModel breakfast,
+    required TimeOfDayModel lunch,
+    required TimeOfDayModel dinner,
+    required bool enabled,
+  }) async {
+    if (!enabled) {
+      await cancelMealReminders();
+      return;
+    }
+
+    // Breakfast
+    await _scheduleMealReminder(
+      id: breakfastReminderId,
+      time: breakfast,
+      title: '🍳 Breakfast Time!',
+      body: 'Don\'t forget to log your breakfast and hit your macros!',
+    );
+
+    // Lunch
+    await _scheduleMealReminder(
+      id: lunchReminderId,
+      time: lunch,
+      title: '🍱 Lunch Time!',
+      body: 'Time to refuel! Log your lunch to track your nutrition.',
+    );
+
+    // Dinner
+    await _scheduleMealReminder(
+      id: dinnerReminderId,
+      time: dinner,
+      title: '🍽️ Dinner Time!',
+      body: 'End your day right! Log your dinner to complete your nutrition goals.',
+    );
+
+    print('✅ Meal reminders scheduled');
+  }
+
+  /// Schedule individual meal reminder
+  Future<void> _scheduleMealReminder({
+    required int id,
+    required TimeOfDayModel time,
+    required String title,
+    required String body,
+  }) async {
+    final scheduledTime = _getNextScheduledTime(time);
+
+    await _notifications.zonedSchedule(
+      id,
+      title,
+      body,
+      scheduledTime,
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          mealChannelId,
+          'Meal Reminders',
+          channelDescription: 'Reminders to log your meals',
+          importance: Importance.defaultImportance,
+          priority: Priority.defaultPriority,
+          icon: '@mipmap/ic_launcher',
+        ),
+        iOS: DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        ),
+      ),
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+      matchDateTimeComponents: DateTimeComponents.time,
+      payload: 'nutrition',
+    );
+  }
+
+  /// Schedule streak reminder
+  Future<void> scheduleStreakReminder(TimeOfDayModel time, {bool enabled = true}) async {
+    if (!enabled) {
+      await cancelStreakReminder();
+      return;
+    }
+
+    final scheduledTime = _getNextScheduledTime(time);
+
+    await _notifications.zonedSchedule(
+      streakReminderId,
+      '🔥 Keep Your Streak Alive!',
+      'You haven\'t worked out today. Don\'t break your streak!',
+      scheduledTime,
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          streakChannelId,
+          'Streak Reminders',
+          channelDescription: 'Reminders to maintain your workout streak',
+          importance: Importance.high,
+          priority: Priority.high,
+          icon: '@mipmap/ic_launcher',
+        ),
+        iOS: DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        ),
+      ),
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+      matchDateTimeComponents: DateTimeComponents.time,
+      payload: 'streak',
+    );
+
+    print('✅ Streak reminder scheduled for ${time.toDisplayString()}');
+  }
+
+  /// Show immediate notification (for testing or one-off notifications)
+  Future<void> showNotification({
+    required int id,
+    required String title,
+    required String body,
+    String? payload,
+  }) async {
+    await _notifications.show(
+      id,
+      title,
+      body,
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          workoutChannelId,
+          'Workout Reminders',
+          importance: Importance.high,
+          priority: Priority.high,
+          icon: '@mipmap/ic_launcher',
+        ),
+        iOS: DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        ),
+      ),
+      payload: payload,
+    );
+  }
+
+  /// Cancel workout reminder
+  Future<void> cancelWorkoutReminder() async {
+    await _notifications.cancel(workoutReminderId);
+    print('❌ Workout reminder cancelled');
+  }
+
+  /// Cancel meal reminders
+  Future<void> cancelMealReminders() async {
+    await _notifications.cancel(breakfastReminderId);
+    await _notifications.cancel(lunchReminderId);
+    await _notifications.cancel(dinnerReminderId);
+    print('❌ Meal reminders cancelled');
+  }
+
+  /// Cancel streak reminder
+  Future<void> cancelStreakReminder() async {
+    await _notifications.cancel(streakReminderId);
+    print('❌ Streak reminder cancelled');
+  }
+
+  /// Cancel all notifications
+  Future<void> cancelAllNotifications() async {
+    await _notifications.cancelAll();
+    print('❌ All notifications cancelled');
+  }
+
+  /// Get list of pending notifications
+  Future<List<PendingNotificationRequest>> getPendingNotifications() async {
+    return await _notifications.pendingNotificationRequests();
+  }
+
+  /// Get next scheduled time for a given time of day
+  tz.TZDateTime _getNextScheduledTime(TimeOfDayModel time) {
+    final now = tz.TZDateTime.now(tz.local);
+    var scheduledDate = tz.TZDateTime(
+      tz.local,
+      now.year,
+      now.month,
+      now.day,
+      time.hour,
+      time.minute,
+    );
+
+    // If the scheduled time has already passed today, schedule for tomorrow
+    if (scheduledDate.isBefore(now)) {
+      scheduledDate = scheduledDate.add(const Duration(days: 1));
+    }
+
+    return scheduledDate;
+  }
+
+  /// Check if notifications are enabled
+  Future<bool> areNotificationsEnabled() async {
+    final androidImplementation = _notifications
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+
+    if (androidImplementation != null) {
+      return await androidImplementation.areNotificationsEnabled() ?? false;
+    }
+
+    // For iOS, assume enabled if we got here
+    return true;
+  }
+}
