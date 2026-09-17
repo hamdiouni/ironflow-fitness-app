@@ -2,82 +2,52 @@
 
 All notable changes to IronFlow will be documented in this file.
 
-## [1.0.0] - 2024-04-13
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [1.0.0] - 2024-09-17
 
 ### Added
-- **Core Features**
-  - User onboarding with profile setup
-  - Workout program generation based on fitness goals
-  - Active workout tracking with exercise logging
-  - Workout history with detailed statistics
-  - Program editor with drag-and-drop reordering
+- Complete workout tracking with progressive overload engine
+- AI-powered coaching with OpenAI GPT-4, Google Gemini, and NVIDIA
+- Nutrition monitoring with 1000+ food database
+- Body tracking and progress photos
+- Firebase authentication (Email, Google Sign-In, Apple Sign-In)
+- Offline-first architecture with real-time cloud sync
+- Multi-language support (7 languages)
+- Smart notifications and reminders
+- Analytics and performance tracking
+- Clean Architecture implementation
+- Comprehensive testing suite
+- Property-based testing for correctness validation
 
-- **Progression & Analytics**
-  - Smart progression suggestions (weight increase, deload, add reps)
-  - Comprehensive analytics dashboard with charts
-  - Strength progression tracking
-  - Volume progression tracking
-  - Muscle group distribution analysis
+### Features
+- **Workout Module**: Exercise library, rest timer, PR detection, volume tracking
+- **Nutrition Module**: Meal logging, macro tracking, AI meal plans
+- **AI Coach**: Context-aware conversations, personalized insights, voice feedback
+- **Analytics**: Strength progression, consistency metrics, performance predictions
+- **Sync**: Real-time data synchronization across devices
 
-- **Retention Features**
-  - Workout streak tracking with visual indicators
-  - Achievement system with 10+ badges
-  - Daily workout reminders with notifications
-  - Notification settings screen
+### Technical
+- Flutter 3.10.7+ with Dart
+- Riverpod 2.6+ state management
+- Firebase backend (Firestore, Realtime DB, Storage)
+- Hive for local storage
+- Freezed for immutable data classes
+- 192,000+ lines of production code
 
-- **Nutrition Management**
-  - Diet plan generation based on fitness goals
-  - Macro tracking with visual indicators
-  - Meal suggestions matching macro targets
-  - Food search and filtering
-  - Daily macro logging
+---
 
-- **User Experience**
-  - Dark mode with persistent settings
-  - Smooth screen transitions and animations
-  - Loading states with skeleton loaders
-  - Offline support with sync when online
-  - Responsive design for phones and tablets
+## [Unreleased]
 
-- **Performance & Stability**
-  - Offline sync system with conflict resolution
-  - Performance profiling utilities
-  - In-memory caching for frequently accessed data
-  - Stability testing with large datasets
-  - Device compatibility testing
+### Planned
+- Wearable device integration (Apple Watch, Fitbit)
+- Social features (share workouts, challenges)
+- Advanced analytics with AI-powered trend prediction
+- Meal photo recognition
+- Voice commands for workout logging
+- Custom workout templates marketplace
 
-- **Quality & Testing**
-  - Integration tests for all major flows
-  - Unit tests for use cases
-  - Widget tests for new screens
-  - Comprehensive input validation
-  - User-friendly error messages
+---
 
-### Technical Details
-- **Architecture**: Clean Architecture with domain/data/presentation layers
-- **State Management**: Riverpod with FutureProvider and StateNotifier
-- **Local Storage**: Hive for persistent data
-- **Data Serialization**: Freezed for immutable models
-- **Navigation**: GoRouter for type-safe routing
-- **Charts**: fl_chart for analytics visualization
-
-### Performance Metrics
-- Screen transitions: < 300ms
-- Macro updates: < 200ms
-- List scroll: 60fps
-- Storage queries: < 100ms
-
-### Tested Scenarios
-- 1000+ workouts in history
-- 5000+ foods in database
-- 100+ programs
-- Multiple device sizes and orientations
-- Offline functionality with sync
-
-## [0.1.0] - 2024-04-01
-
-### Initial Development
-- Project setup and architecture
-- Core domain models and repositories
-- Basic UI screens
-- Hive integration for local storage
+For full development history, see [docs/development/](docs/development/)
