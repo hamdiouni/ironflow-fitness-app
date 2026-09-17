@@ -307,9 +307,11 @@ You can run the app in offline mode without Firebase:
 5. **Analytics**: Enable for usage tracking
 6. **Crashlytics**: Enable for crash reporting
 
+**📖 Detailed Guide**: [docs/setup/FIREBASE_SETUP_GUIDE.md](docs/setup/FIREBASE_SETUP_GUIDE.md)
+
 ### Google Sign-In Setup
 
-For detailed Google Sign-In configuration, see [GOOGLE_SIGNIN_SETUP_GUIDE.md](GOOGLE_SIGNIN_SETUP_GUIDE.md).
+**📖 Complete Guide**: [docs/setup/GOOGLE_SIGNIN_SETUP_GUIDE.md](docs/setup/GOOGLE_SIGNIN_SETUP_GUIDE.md)
 
 ### AI Configuration
 
@@ -319,12 +321,25 @@ For detailed Google Sign-In configuration, see [GOOGLE_SIGNIN_SETUP_GUIDE.md](GO
 
 Edit `.env` with your keys, and the app will automatically use available AI providers.
 
+**📖 Setup Guide**: [docs/setup/SETUP_FREE_AI.md](docs/setup/SETUP_FREE_AI.md)
+
 ### Notifications
 
-Local notifications are configured by default. To customize:
+Local notifications are configured by default. See [docs/guides/](docs/guides/) for customization.
 
-1. Edit notification settings in the app
-2. Modify `lib/features/notifications/domain/services/notification_service.dart`
+---
+
+## 📚 Documentation
+
+All documentation is organized in the [`docs/`](docs/) directory:
+
+- **[Quick Start](docs/guides/QUICK_START_GUIDE.md)** - Get running in 5 minutes
+- **[Setup Guides](docs/setup/)** - Firebase, Google Sign-In, AI configuration  
+- **[User Guides](docs/guides/)** - Testing, deployment, and usage
+- **[Architecture](docs/architecture/)** - System design and technical details
+- **[Development Logs](docs/development/)** - Project evolution and implementation notes
+
+**Full documentation index**: [docs/README.md](docs/README.md)
 
 ---
 
@@ -332,12 +347,18 @@ Local notifications are configured by default. To customize:
 
 ### Key Directories
 
-- **`lib/features/`**: Feature modules organized by domain
+- **`lib/features/`**: Feature modules organized by domain (Clean Architecture)
 - **`lib/core/`**: Shared code and utilities
 - **`lib/l10n/`**: Localization and translations
-- **`assets/`**: Images, animations, and other static files
+- **`docs/`**: Complete documentation ([see docs/README.md](docs/README.md))
+  - `docs/setup/`: Installation and configuration guides
+  - `docs/guides/`: User and developer guides
+  - `docs/architecture/`: System design documentation
+  - `docs/testing/`: Testing documentation
+  - `docs/development/`: Development logs and progress notes
 - **`test/`**: Unit, widget, and integration tests
-- **`.kiro/specs/`**: Feature specifications and documentation
+- **`scripts/`**: Utility scripts for development
+- **`.kiro/specs/`**: Feature specifications and design documents
 
 ### Data Flow
 
