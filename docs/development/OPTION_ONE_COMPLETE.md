@@ -171,7 +171,7 @@ Error while trying to load an asset: Flutter Web engine failed to fetch "assets/
 GeminiAIServiceException: Gemini API key not configured
 ```
 
-**Fix**: Check `.env` file has `GEMINI_API_KEY=REDACTED_GEMINI_API_KEY`
+**Fix**: Check `.env` file has `GEMINI_API_KEY=your_gemini_api_key_here`
 
 ### Issue 3: Still getting generic responses
 
