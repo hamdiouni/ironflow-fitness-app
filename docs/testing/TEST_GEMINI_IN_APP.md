@@ -114,7 +114,7 @@ Retrieved 0 body measurements
 cat .env | grep GEMINI_API_KEY
 ```
 
-**Expected**: `GEMINI_API_KEY=AIzaSyD8ATUIwoIc2k4FheWOT5T1tScwe7Eqd6E`
+**Expected**: `GEMINI_API_KEY=AIzaSy...` (your actual API key from Google AI Studio)
 
 ### Check 2: Service Implementation
 The app needs to use `GeminiAIService` instead of `AIService`.
