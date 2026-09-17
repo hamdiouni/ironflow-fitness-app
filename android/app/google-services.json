@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "215465833827",
+    "project_id": "ironflow-5b79d",
+    "storage_bucket": "ironflow-5b79d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:215465833827:android:c314e6797303209caf0f56",
+        "android_client_info": {
+          "package_name": "com.progressiontracker.progression_tracker"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "215465833827-66l6ek4jmdi0lopvtii12isgl5ecv03e.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD8Brzp6gIKiogXOPXm0Xm3MCEPmamd_Z8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "215465833827-66l6ek4jmdi0lopvtii12isgl5ecv03e.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

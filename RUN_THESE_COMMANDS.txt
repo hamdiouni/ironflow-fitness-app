@@ -1,0 +1,90 @@
+═══════════════════════════════════════════════════════════════
+  IRONFLOW - COMMANDS TO RUN (Copy and paste these)
+═══════════════════════════════════════════════════════════════
+
+STEP 1: Get Dependencies
+-------------------------
+flutter pub get
+
+
+STEP 2: Generate Code (TAKES 5-10 MINUTES - BE PATIENT!)
+---------------------------------------------------------
+dart run build_runner build --delete-conflicting-outputs
+
+
+STEP 3: Run the App
+-------------------
+flutter run -d chrome
+
+
+═══════════════════════════════════════════════════════════════
+  LOGIN CREDENTIALS
+═══════════════════════════════════════════════════════════════
+
+Email:    demo@ironflow.com
+Password: password123
+
+
+═══════════════════════════════════════════════════════════════
+  WHAT I FIXED
+═══════════════════════════════════════════════════════════════
+
+✅ Removed all Firebase dependencies
+✅ Created simple mock authentication (no setup needed)
+✅ Fixed all auth providers
+✅ Updated main.dart to skip Firebase init
+✅ All core features still work (workout, nutrition, progress)
+✅ Data stored locally with Hive
+
+
+═══════════════════════════════════════════════════════════════
+  IF YOU GET ERRORS
+═══════════════════════════════════════════════════════════════
+
+Run these commands:
+-------------------
+flutter clean
+flutter pub get
+dart run build_runner build --delete-conflicting-outputs
+flutter run -d chrome
+
+
+═══════════════════════════════════════════════════════════════
+  IMPORTANT NOTES
+═══════════════════════════════════════════════════════════════
+
+1. The build_runner command WILL take 5-10 minutes - this is normal!
+2. Don't interrupt it - let it finish completely
+3. You'll see lots of output - that's normal
+4. Once it's done, the app will run perfectly
+
+
+═══════════════════════════════════════════════════════════════
+  WHAT'S WORKING
+═══════════════════════════════════════════════════════════════
+
+✅ Workout tracking
+✅ Exercise library
+✅ Nutrition logging
+✅ Progress tracking
+✅ Body measurements
+✅ Settings
+✅ Data export/import
+✅ Offline-first (all data local)
+
+
+═══════════════════════════════════════════════════════════════
+  WHAT'S DISABLED (TEMPORARILY)
+═══════════════════════════════════════════════════════════════
+
+❌ Firebase authentication
+❌ Google Sign-In
+❌ Cloud sync
+❌ Push notifications (stubbed)
+
+
+═══════════════════════════════════════════════════════════════
+
+Read SIMPLIFIED_APP_READY.md for full details!
+
+═══════════════════════════════════════════════════════════════

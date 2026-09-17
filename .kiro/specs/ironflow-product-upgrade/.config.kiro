@@ -1,0 +1,13 @@
+{
+  "specType": "feature",
+  "workflowType": "requirements-first",
+  "featureName": "ironflow-product-upgrade",
+  "displayName": "IronFlow Product Upgrade - Complete System Integration",
+  "description": "Transform IronFlow from a scaffolded app into a competitive fitness product by fixing critical bugs, connecting all systems, completing partial implementations, and adding missing features.",
+  "createdAt": "2026-04-12",
+  "status": "ready_for_implementation",
+  "phases": 12,
+  "estimatedHours": 34,
+  "priority": "critical",
+  "notes": "This is a comprehensive product upgrade addressing 40% of incomplete work. All 12 phases must be completed in order. Phase 1 (Critical Bugs) is non-negotiable and must be done first."
+}
