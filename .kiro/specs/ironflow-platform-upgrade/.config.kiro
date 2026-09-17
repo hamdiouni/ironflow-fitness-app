@@ -1,0 +1,19 @@
+{
+  "specName": "ironflow-platform-upgrade",
+  "specType": "feature",
+  "workflowType": "design-first",
+  "status": "ready-for-implementation",
+  "createdAt": "2026-04-13",
+  "phases": 12,
+  "totalTasks": 120,
+  "estimatedDuration": "6-7 weeks",
+  "priority": "high",
+  "dependencies": [
+    "ironflow-product-upgrade (12 phases complete)"
+  ],
+  "artifacts": {
+    "requirements": ".kiro/specs/ironflow-platform-upgrade/requirements.md",
+    "design": ".kiro/specs/ironflow-platform-upgrade/design.md",
+    "tasks": ".kiro/specs/ironflow-platform-upgrade/tasks.md"
+  }
+}
