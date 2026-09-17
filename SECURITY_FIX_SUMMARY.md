@@ -15,8 +15,8 @@ I've cleaned all exposed API keys from your repository:
 8. ✅ `docs/testing/TEST_GEMINI_IN_APP.md` (cleaned earlier)
 
 ### Keys Redacted:
-- **Gemini API**: `AIzaSyD8ATUIwoIc2k4FheWOT5T1tScwe7Eqd6E` → `your_gemini_api_key_here`
-- **NVIDIA API**: `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` → `your_nvidia_api_key_here`
+- **Gemini API**: Exposed key replaced with `your_gemini_api_key_here`
+- **NVIDIA API**: Exposed key replaced with `your_nvidia_api_key_here`
 
 ---
 
@@ -27,7 +27,7 @@ I've cleaned all exposed API keys from your repository:
 #### Gemini API:
 ```
 1. Visit: https://makersuite.google.com/app/apikey
-2. Delete key: AIzaSyD8ATUIwoIc2k4FheWOT5T1tScwe7Eqd6E
+2. Delete the exposed key (check GitHub alerts for the exact value)
 3. Create NEW key
 4. Copy new key
 ```
@@ -36,7 +36,7 @@ I've cleaned all exposed API keys from your repository:
 ```
 1. Visit: https://build.nvidia.com/
 2. Go to API Keys
-3. Revoke key: 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
+3. Revoke the exposed key (check GitHub alerts for the exact value)
 4. Create NEW key
 5. Copy new key
 ```

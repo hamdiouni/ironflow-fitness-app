@@ -2,12 +2,9 @@
 
 ## ⚠️ What Happened
 
-On September 17, 2026, the following API keys were accidentally exposed in the GitHub repository:
+On September 17, 2026, Google Gemini and NVIDIA API keys were accidentally exposed in the GitHub repository in documentation files within the `docs/development/` directory.
 
-1. **Google Gemini API Key**: `AIzaSyD8ATUIwoIc2k4FheWOT5T1tScwe7Eqd6E`
-2. **NVIDIA API Key**: `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`
-
-These keys were exposed in documentation files within the `docs/development/` directory.
+**Note**: The actual key values have been redacted from this guide for security.
 
 ---
 
@@ -46,7 +43,7 @@ The Firebase API keys in `lib/firebase_options.dart` and `android/app/google-ser
 
 #### Revoke Gemini API Key:
 1. Go to: https://makersuite.google.com/app/apikey
-2. Find the key: `AIzaSyD8ATUIwoIc2k4FheWOT5T1tScwe7Eqd6E`
+2. Find the exposed key (check GitHub security alerts for the value)
 3. Click **Delete** or **Revoke**
 4. Create a **NEW** API key
 5. Add the new key to your local `.env` file
@@ -54,7 +51,7 @@ The Firebase API keys in `lib/firebase_options.dart` and `android/app/google-ser
 #### Revoke NVIDIA API Key:
 1. Go to: https://build.nvidia.com/
 2. Navigate to API Keys section
-3. Find the key: `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`
+3. Find the exposed key (check GitHub security alerts for the value)
 4. Click **Revoke** or **Delete**
 5. Create a **NEW** API key
 6. Add the new key to your local `.env` file
