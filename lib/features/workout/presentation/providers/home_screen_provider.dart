@@ -1,7 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../nutrition/domain/entities/daily_nutrition_summary.dart';
 import '../../../nutrition/presentation/providers/nutrition_providers.dart';
+import '../../../onboarding/domain/entities/user_profile.dart';
 import '../../../onboarding/presentation/providers/onboarding_provider.dart';
+import '../../domain/entities/active_program.dart';
 import '../../domain/entities/workout.dart';
 import 'active_program_providers.dart';
 import 'home_workout_provider.dart';
@@ -108,18 +111,11 @@ class HomeScreenNotifier extends StateNotifier<AsyncValue<HomeScreenState>> {
     state = const AsyncValue.loading();
     
     try {
-      // Load all data in parallel
-      final results = await Future.wait([
-        _ref.read(homeWorkoutDataProvider.future),
-        _ref.read(userProfileProvider.future),
-        _ref.read(activeProgramProvider.future),
-        _ref.read(dailyNutritionSummaryProvider(DateTime.now()).future),
-      ]);
-
-      final workouts = results[0] as List<Workout>;
-      final profile = results[1];
-      final activeProgram = results[2];
-      final nutritionSummary = results[3];
+      // Load data
+      final workouts = await _ref.read(homeWorkoutDataProvider.future);
+      final UserProfile? profile = await _ref.read(userProfileProvider.future);
+      final ActiveProgram? activeProgram = await _ref.read(activeProgramRepositoryProvider).loadActiveProgram();
+      final DailyNutritionSummary nutritionSummary = await _ref.read(nutritionRepositoryProvider).getDailyNutrition(DateTime.now());
 
       // Calculate weekly workout count
       final now = DateTime.now();
@@ -136,17 +132,16 @@ class HomeScreenNotifier extends StateNotifier<AsyncValue<HomeScreenState>> {
       }
 
       // Get nutrition data
-      final nutritionData = nutritionSummary;
-      final caloriesConsumed = nutritionData.totalCalories;
-      final proteinConsumed = nutritionData.totalProtein;
-      final carbsConsumed = nutritionData.totalCarbs;
-      final fatsConsumed = nutritionData.totalFats;
+      final caloriesConsumed = nutritionSummary.totalCalories;
+      final proteinConsumed = nutritionSummary.totalProtein;
+      final carbsConsumed = nutritionSummary.totalCarbs;
+      final fatsConsumed = nutritionSummary.totalFats;
 
-      // Get targets from profile
-      final caloriesTarget = profile?.dailyCalorieTarget;
-      final proteinTarget = profile?.dailyProteinTarget;
-      final carbsTarget = profile?.dailyCarbsTarget;
-      final fatsTarget = profile?.dailyFatsTarget;
+      // Get targets from nutrition summary target or profile
+      final caloriesTarget = profile?.dailyCalorieTarget ?? nutritionSummary.target?.macros.calories;
+      final proteinTarget = nutritionSummary.target?.macros.protein;
+      final carbsTarget = nutritionSummary.target?.macros.carbs;
+      final fatsTarget = nutritionSummary.target?.macros.fats;
 
       // Get last workout date
       String? lastWorkoutDate;
