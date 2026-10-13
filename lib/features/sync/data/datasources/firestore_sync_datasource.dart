@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../../core/models/sync_operation.dart';
 import '../../../workout/data/models/workout_model.dart';
-import '../../../workout/data/models/program_model.dart';
+import '../../../workout/data/models/workout_program_model.dart';
 
 /// Data source for syncing data to/from Firestore
 abstract class FirestoreSyncDataSource {
@@ -10,8 +11,8 @@ abstract class FirestoreSyncDataSource {
   Future<void> deleteWorkout(String userId, String workoutId);
 
   // Programs
-  Future<void> syncProgram(String userId, ProgramModel program);
-  Future<ProgramModel?> getActiveProgram(String userId);
+  Future<void> syncProgram(String userId, WorkoutProgramModel program);
+  Future<WorkoutProgramModel?> getActiveProgram(String userId);
   Future<void> deleteProgram(String userId, String programId);
 
   // Nutrition (simplified for now)
@@ -25,6 +26,9 @@ abstract class FirestoreSyncDataSource {
   // Sync metadata
   Future<DateTime?> getLastSyncTime(String userId, String dataType);
   Future<void> updateLastSyncTime(String userId, String dataType, DateTime time);
+
+  // Batch sync
+  Future<void> syncBatch(List<SyncOperation> operations);
 }
 
 class FirestoreSyncDataSourceImpl implements FirestoreSyncDataSource {
@@ -87,7 +91,7 @@ class FirestoreSyncDataSourceImpl implements FirestoreSyncDataSource {
   }
 
   @override
-  Future<void> syncProgram(String userId, ProgramModel program) async {
+  Future<void> syncProgram(String userId, WorkoutProgramModel program) async {
     try {
       await _firestore
           .collection(_programsCollection)
@@ -103,7 +107,7 @@ class FirestoreSyncDataSourceImpl implements FirestoreSyncDataSource {
   }
 
   @override
-  Future<ProgramModel?> getActiveProgram(String userId) async {
+  Future<WorkoutProgramModel?> getActiveProgram(String userId) async {
     try {
       final snapshot = await _firestore
           .collection(_programsCollection)
@@ -116,7 +120,7 @@ class FirestoreSyncDataSourceImpl implements FirestoreSyncDataSource {
         return null;
       }
 
-      return ProgramModel.fromJson(snapshot.docs.first.data());
+      return WorkoutProgramModel.fromJson(snapshot.docs.first.data());
     } catch (e) {
       throw Exception('Failed to get active program: $e');
     }
@@ -240,7 +244,7 @@ class FirestoreSyncDataSourceImpl implements FirestoreSyncDataSource {
     try {
       await _firestore
           .collection(_syncMetadataCollection)
-          .doc('$userId\_$dataType')
+          .doc('${userId}_$dataType')
           .set({
         'userId': userId,
         'dataType': dataType,
@@ -248,6 +252,31 @@ class FirestoreSyncDataSourceImpl implements FirestoreSyncDataSource {
       }, SetOptions(merge: true));
     } catch (e) {
       throw Exception('Failed to update last sync time: $e');
+    }
+  }
+
+  @override
+  Future<void> syncBatch(List<SyncOperation> operations) async {
+    try {
+      final batch = _firestore.batch();
+      for (final op in operations) {
+        final docRef = _firestore.collection(op.collection).doc(op.documentId);
+        switch (op.type) {
+          case SyncOperationType.create:
+          case SyncOperationType.update:
+            batch.set(docRef, {
+              ...op.data,
+              'syncedAt': FieldValue.serverTimestamp(),
+            }, SetOptions(merge: true));
+            break;
+          case SyncOperationType.delete:
+            batch.delete(docRef);
+            break;
+        }
+      }
+      await batch.commit();
+    } catch (e) {
+      throw Exception('Failed to execute sync batch: $e');
     }
   }
 }
