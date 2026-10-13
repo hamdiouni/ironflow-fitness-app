@@ -21,8 +21,14 @@ class TimezoneManager {
   /// Get the saved timezone offset from storage.
   static Future<int> getSavedTimezoneOffset() async {
     try {
-      final box = await Hive.openBox<int>(_boxName);
-      return box.get(_timezoneKey, defaultValue: getCurrentTimezoneOffset()) ?? getCurrentTimezoneOffset();
+      final box = Hive.isBoxOpen(_boxName)
+          ? Hive.box<String>(_boxName)
+          : await Hive.openBox<String>(_boxName);
+      final val = box.get(_timezoneKey);
+      if (val != null) {
+        return int.tryParse(val) ?? getCurrentTimezoneOffset();
+      }
+      return getCurrentTimezoneOffset();
     } catch (e) {
       print('Error loading timezone: $e');
       return getCurrentTimezoneOffset();
@@ -32,8 +38,10 @@ class TimezoneManager {
   /// Save the timezone offset to storage.
   static Future<void> saveTimezoneOffset(int offsetHours) async {
     try {
-      final box = await Hive.openBox<int>(_boxName);
-      await box.put(_timezoneKey, offsetHours);
+      final box = Hive.isBoxOpen(_boxName)
+          ? Hive.box<String>(_boxName)
+          : await Hive.openBox<String>(_boxName);
+      await box.put(_timezoneKey, offsetHours.toString());
     } catch (e) {
       print('Error saving timezone: $e');
     }
