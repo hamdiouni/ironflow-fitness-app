@@ -38,8 +38,11 @@ class SyncQueueManager {
       final operations = <SyncOperation>[];
 
       for (int i = 0; i < box.length; i++) {
-        final data = box.getAt(i) as Map<String, dynamic>;
-        operations.add(SyncOperation.fromJson(data));
+        final raw = box.getAt(i);
+        if (raw != null) {
+          final data = Map<String, dynamic>.from(raw as Map);
+          operations.add(SyncOperation.fromJson(data));
+        }
       }
 
       return operations;
@@ -69,10 +72,13 @@ class SyncQueueManager {
       final index = _findOperationIndex(box, operationId);
 
       if (index != -1) {
-        final data = box.getAt(index) as Map<String, dynamic>;
-        final operation = SyncOperation.fromJson(data);
-        final updated = operation.copyWith(retryCount: retryCount);
-        await box.putAt(index, updated.toJson());
+        final raw = box.getAt(index);
+        if (raw != null) {
+          final data = Map<String, dynamic>.from(raw as Map);
+          final operation = SyncOperation.fromJson(data);
+          final updated = operation.copyWith(retryCount: retryCount);
+          await box.putAt(index, updated.toJson());
+        }
       }
     } catch (e) {
       throw Exception('Failed to update retry count: $e');
@@ -101,8 +107,8 @@ class SyncQueueManager {
 
   static int _findOperationIndex(dynamic box, String operationId) {
     for (int i = 0; i < box.length; i++) {
-      final data = box.getAt(i) as Map<String, dynamic>;
-      if (data['id'] == operationId) {
+      final raw = box.getAt(i);
+      if (raw is Map && raw['id'] == operationId) {
         return i;
       }
     }
