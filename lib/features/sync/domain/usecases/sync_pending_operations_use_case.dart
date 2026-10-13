@@ -1,7 +1,6 @@
 import 'package:progression_tracker/core/models/sync_operation.dart';
 import 'package:progression_tracker/core/utils/sync_queue_manager.dart';
 import 'package:progression_tracker/features/sync/data/datasources/firestore_sync_datasource.dart';
-import 'package:progression_tracker/features/sync/domain/repositories/sync_repository.dart';
 
 class SyncPendingOperationsUseCase {
   final FirestoreSyncDataSource _dataSource;
@@ -11,7 +10,7 @@ class SyncPendingOperationsUseCase {
   Future<void> call() async {
     try {
       // Get all pending operations
-      final operations = await SyncQueueManager.getPendingOperations();
+      final List<SyncOperation> operations = await SyncQueueManager.getPendingOperations();
 
       if (operations.isEmpty) {
         return;

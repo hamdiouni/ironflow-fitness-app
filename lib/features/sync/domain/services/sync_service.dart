@@ -8,7 +8,8 @@ import '../../data/datasources/firestore_sync_datasource.dart';
 import '../../../workout/data/datasources/hive_workout_data_source.dart';
 import '../../../workout/data/datasources/hive_active_program_datasource.dart';
 import '../../../workout/data/models/workout_model.dart';
-import '../../../workout/data/models/program_model.dart';
+import '../../../workout/data/models/workout_program_model.dart';
+import '../../../workout/data/models/active_program_model.dart';
 
 /// Core sync service that manages data synchronization between Hive and Firestore
 class SyncService {
@@ -40,8 +41,8 @@ class SyncService {
   /// Initialize sync service
   Future<void> initialize() async {
     // Listen to connectivity changes
-    _connectivity.onConnectivityChanged.listen((result) {
-      if (result != ConnectivityResult.none) {
+    _connectivity.onConnectivityChanged.listen((results) {
+      if (!results.contains(ConnectivityResult.none)) {
         // When online, trigger sync
         syncAll();
       }
@@ -85,7 +86,7 @@ class SyncService {
 
     // Try to sync immediately if online
     final connectivityResult = await _connectivity.checkConnectivity();
-    if (connectivityResult != ConnectivityResult.none) {
+    if (!connectivityResult.contains(ConnectivityResult.none)) {
       syncAll();
     }
   }
@@ -98,7 +99,7 @@ class SyncService {
     }
 
     final connectivityResult = await _connectivity.checkConnectivity();
-    if (connectivityResult == ConnectivityResult.none) {
+    if (connectivityResult.contains(ConnectivityResult.none)) {
       print('No internet connection, sync skipped');
       return;
     }
@@ -212,12 +213,19 @@ class SyncService {
 
         if (localProgram == null) {
           // New program from cloud
-          await _hivePrograms.saveActiveProgram(cloudProgram);
+          final activeProgram = ActiveProgramModel(
+            id: cloudProgram.id,
+            program: cloudProgram,
+            currentDayIndex: 0,
+            isActive: true,
+          );
+          await _hivePrograms.saveActiveProgram(activeProgram);
           print('📥 Pulled new program ${cloudProgram.id}');
         } else {
           // Compare timestamps (simplified)
           // In production, add updatedAt field to ProgramModel
-          await _hivePrograms.saveActiveProgram(cloudProgram);
+          final activeProgram = localProgram.copyWith(program: cloudProgram);
+          await _hivePrograms.saveActiveProgram(activeProgram);
           print('📥 Updated program ${cloudProgram.id} from cloud');
         }
       }
@@ -250,7 +258,7 @@ class SyncService {
     switch (action.type) {
       case SyncActionType.create:
       case SyncActionType.update:
-        final program = ProgramModel.fromJson(action.data);
+        final program = WorkoutProgramModel.fromJson(action.data);
         await _firestoreSync.syncProgram(userId, program);
         break;
       case SyncActionType.delete:

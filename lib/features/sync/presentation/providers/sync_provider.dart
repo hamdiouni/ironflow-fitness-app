@@ -22,8 +22,8 @@ final syncServiceProvider = Provider<SyncService>((ref) {
   final service = SyncService(
     syncQueue: ref.watch(hiveSyncQueueDataSourceProvider),
     firestoreSync: ref.watch(firestoreSyncDataSourceProvider),
-    hiveWorkouts: HiveWorkoutDataSourceImpl(),
-    hivePrograms: HiveActiveProgramDataSourceImpl(),
+    hiveWorkouts: HiveWorkoutDataSource(),
+    hivePrograms: HiveActiveProgramDataSource(),
     connectivity: Connectivity(),
   );
 
@@ -75,13 +75,13 @@ final retryFailedActionsProvider = Provider<Future<void> Function()>((ref) {
 });
 
 // Connectivity status
-final connectivityProvider = StreamProvider<ConnectivityResult>((ref) {
+final connectivityProvider = StreamProvider<List<ConnectivityResult>>((ref) {
   return Connectivity().onConnectivityChanged;
 });
 
 // Is online
 final isOnlineProvider = StreamProvider<bool>((ref) {
   return Connectivity().onConnectivityChanged.map(
-    (result) => result != ConnectivityResult.none,
+    (results) => !results.contains(ConnectivityResult.none),
   );
 });

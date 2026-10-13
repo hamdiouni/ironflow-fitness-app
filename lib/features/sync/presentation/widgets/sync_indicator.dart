@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:timeago/timeago.dart' as timeago;
 import '../../../../core/constants/app_theme.dart';
 import '../providers/sync_provider.dart';
 
@@ -104,7 +103,7 @@ class SyncIndicator extends ConsumerWidget {
     } else if (status.pendingActions > 0) {
       text = '${status.pendingActions} pending';
     } else if (status.lastSyncTime != null) {
-      text = 'Synced ${timeago.format(status.lastSyncTime!)}';
+      text = 'Synced ${_formatTimeAgo(status.lastSyncTime!)}';
     } else {
       text = 'Not synced';
     }
@@ -206,7 +205,7 @@ class CompactSyncIndicator extends ConsumerWidget {
             if (status.lastSyncTime != null)
               _buildStatusRow(
                 'Last Sync',
-                timeago.format(status.lastSyncTime!),
+                _formatTimeAgo(status.lastSyncTime!),
               ),
           ],
         ),
@@ -244,4 +243,13 @@ class CompactSyncIndicator extends ConsumerWidget {
       ],
     );
   }
+}
+
+String _formatTimeAgo(DateTime dt) {
+  final diff = DateTime.now().difference(dt);
+  if (diff.inSeconds < 60) return 'just now';
+  if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+  if (diff.inHours < 24) return '${diff.inHours}h ago';
+  if (diff.inDays < 7) return '${diff.inDays}d ago';
+  return '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
 }
