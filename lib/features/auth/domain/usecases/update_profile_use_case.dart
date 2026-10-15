@@ -7,6 +7,6 @@ class UpdateProfileUseCase {
   UpdateProfileUseCase(this.repository);
 
   Future<void> call(UserProfile profile) async {
-    return repository.updateProfile(profile);
+    return repository.updateUserProfile(profile);
   }
 }
