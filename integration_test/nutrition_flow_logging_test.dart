@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:progression_tracker/core/utils/hive_manager.dart';
@@ -5,7 +7,7 @@ import 'package:progression_tracker/features/nutrition/data/datasources/hive_nut
 import 'package:progression_tracker/features/nutrition/data/models/meal_model.dart';
 import 'package:progression_tracker/features/nutrition/data/models/nutrition_targets_model.dart';
 import 'package:firebase_core/firebase_core.dart';
-import '../lib/firebase_options.dart';
+import 'package:progression_tracker/firebase_options.dart';
 
 /// Integration test for nutrition flow with logging.
 ///
@@ -45,23 +47,31 @@ void main() {
       print('\n=== TEST: Saving nutrition targets ===');
       final targets = NutritionTargetsModel(
         userId: 'test-user',
-        calories: 2500.0,
-        protein: 150.0,
-        carbs: 250.0,
-        fat: 80.0,
-        fiber: 30.0,
-        sugar: 50.0,
-        sodium: 2300.0,
-        potassium: 3500.0,
-        vitaminA: 900.0,
-        vitaminB: 2.4,
-        vitaminC: 90.0,
-        vitaminD: 20.0,
-        vitaminE: 15.0,
-        calcium: 1000.0,
-        iron: 18.0,
-        magnesium: 400.0,
-        zinc: 11.0,
+        macros: const MacroTargetsModel(
+          calories: 2500.0,
+          protein: 150.0,
+          carbs: 250.0,
+          fats: 80.0,
+        ),
+        micros: const MicroTargetsModel(
+          fiber: 30.0,
+          sugar: 50.0,
+          sodium: 2300.0,
+          potassium: 3500.0,
+        ),
+        vitamins: const VitaminTargetsModel(
+          vitaminA: 900.0,
+          vitaminB: 2.4,
+          vitaminC: 90.0,
+          vitaminD: 20.0,
+          vitaminE: 15.0,
+        ),
+        minerals: const MineralTargetsModel(
+          calcium: 1000.0,
+          iron: 18.0,
+          magnesium: 400.0,
+          zinc: 11.0,
+        ),
         createdAt: DateTime.now().toIso8601String(),
         updatedAt: DateTime.now().toIso8601String(),
       );
@@ -76,10 +86,10 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(retrievedTargets, isNotNull, reason: 'Targets should be retrieved');
-      expect(retrievedTargets!.calories, 2500.0);
-      expect(retrievedTargets.protein, 150.0);
-      expect(retrievedTargets.carbs, 250.0);
-      expect(retrievedTargets.fat, 80.0);
+      expect(retrievedTargets!.macros.calories, 2500.0);
+      expect(retrievedTargets.macros.protein, 150.0);
+      expect(retrievedTargets.macros.carbs, 250.0);
+      expect(retrievedTargets.macros.fats, 80.0);
       print('✓ Nutrition targets retrieved successfully');
 
       // Act & Assert: Save first meal (breakfast)
@@ -383,23 +393,31 @@ void main() {
 
       final targets = NutritionTargetsModel(
         userId: 'test-user',
-        calories: 2000.0,
-        protein: 120.0,
-        carbs: 200.0,
-        fat: 70.0,
-        fiber: 25.0,
-        sugar: 40.0,
-        sodium: 2000.0,
-        potassium: 3000.0,
-        vitaminA: 800.0,
-        vitaminB: 2.0,
-        vitaminC: 80.0,
-        vitaminD: 15.0,
-        vitaminE: 12.0,
-        calcium: 900.0,
-        iron: 15.0,
-        magnesium: 350.0,
-        zinc: 10.0,
+        macros: const MacroTargetsModel(
+          calories: 2000.0,
+          protein: 120.0,
+          carbs: 200.0,
+          fats: 70.0,
+        ),
+        micros: const MicroTargetsModel(
+          fiber: 25.0,
+          sugar: 40.0,
+          sodium: 2000.0,
+          potassium: 3000.0,
+        ),
+        vitamins: const VitaminTargetsModel(
+          vitaminA: 800.0,
+          vitaminB: 2.0,
+          vitaminC: 80.0,
+          vitaminD: 15.0,
+          vitaminE: 12.0,
+        ),
+        minerals: const MineralTargetsModel(
+          calcium: 900.0,
+          iron: 15.0,
+          magnesium: 350.0,
+          zinc: 10.0,
+        ),
         createdAt: DateTime.now().toIso8601String(),
         updatedAt: DateTime.now().toIso8601String(),
       );
