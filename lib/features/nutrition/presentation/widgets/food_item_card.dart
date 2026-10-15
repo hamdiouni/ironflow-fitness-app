@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_theme.dart';
-import '../../domain/entities/food_item.dart';
+import '../../domain/entities/food_item_full.dart';
 
 /// Displays a food item with macro breakdown and comparison to target.
 class FoodItemCard extends StatelessWidget {
-  final FoodItem food;
+  final FoodItemFull food;
   final double targetCalories;
   final double targetProtein;
   final double targetCarbs;
@@ -24,10 +24,11 @@ class FoodItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final calorieMatch = _calculateMatch(food.calories, targetCalories);
-    final proteinMatch = _calculateMatch(food.protein, targetProtein);
-    final carbsMatch = _calculateMatch(food.carbs, targetCarbs);
-    final fatMatch = _calculateMatch(food.fat, targetFat);
+    final macros = food.macros;
+    final calorieMatch = _calculateMatch(macros.calories, targetCalories);
+    final proteinMatch = _calculateMatch(macros.protein, targetProtein);
+    final carbsMatch = _calculateMatch(macros.carbs, targetCarbs);
+    final fatMatch = _calculateMatch(macros.fats, targetFat);
 
     return AppTheme.glassmorphicCard(
       padding: const EdgeInsets.all(AppTheme.spacingMedium),
@@ -91,28 +92,28 @@ class FoodItemCard extends StatelessWidget {
             children: [
               _MacroComparison(
                 label: 'Calories',
-                actual: food.calories,
+                actual: macros.calories,
                 target: targetCalories,
                 unit: 'kcal',
                 match: calorieMatch,
               ),
               _MacroComparison(
                 label: 'Protein',
-                actual: food.protein,
+                actual: macros.protein,
                 target: targetProtein,
                 unit: 'g',
                 match: proteinMatch,
               ),
               _MacroComparison(
                 label: 'Carbs',
-                actual: food.carbs,
+                actual: macros.carbs,
                 target: targetCarbs,
                 unit: 'g',
                 match: carbsMatch,
               ),
               _MacroComparison(
                 label: 'Fat',
-                actual: food.fat,
+                actual: macros.fats,
                 target: targetFat,
                 unit: 'g',
                 match: fatMatch,
