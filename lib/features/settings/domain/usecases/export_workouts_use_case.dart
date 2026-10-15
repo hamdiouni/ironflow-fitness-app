@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:progression_tracker/features/workout/domain/repositories/workout_repository.dart';
-import 'package:progression_tracker/features/workout/domain/entities/completed_workout.dart';
+import 'package:progression_tracker/features/workout/domain/entities/workout.dart';
 
 /// Use case for exporting workout data to various formats.
 class ExportWorkoutsUseCase {
@@ -165,7 +165,7 @@ class ExportWorkoutsUseCase {
     }
   }
 
-  String _generateCSV(List<CompletedWorkout> workouts) {
+  String _generateCSV(List<Workout> workouts) {
     print('📊 [Export] Generating CSV data...');
     final buffer = StringBuffer();
     
@@ -176,10 +176,10 @@ class ExportWorkoutsUseCase {
     int totalRows = 0;
     for (final workout in workouts) {
       final date = workout.date.toIso8601String().split('T')[0];
-      final program = workout.programName ?? 'Unknown';
-      final day = workout.dayNumber?.toString() ?? '';
-      final duration = workout.duration?.toString() ?? '';
-      final totalVolume = workout.totalVolume?.toStringAsFixed(2) ?? '';
+      const program = 'Default';
+      const day = '';
+      final duration = '${workout.duration.inMinutes} min';
+      final totalVolume = workout.totalVolume.toStringAsFixed(2);
       
       for (final exercise in workout.exercises) {
         final exerciseName = exercise.name;
@@ -187,11 +187,11 @@ class ExportWorkoutsUseCase {
         for (int i = 0; i < exercise.sets.length; i++) {
           final set = exercise.sets[i];
           final setNumber = (i + 1).toString();
-          final reps = set.reps?.toString() ?? '';
-          final weight = set.weight?.toStringAsFixed(2) ?? '';
+          final reps = set.reps.toString();
+          final weight = set.weight.toStringAsFixed(2);
           final rpe = set.rpe?.toString() ?? '';
-          final rest = set.restTime?.toString() ?? '';
-          final notes = (set.notes ?? '').replaceAll(',', ';').replaceAll('\n', ' ');
+          const rest = '';
+          const notes = '';
           
           buffer.writeln('$date,$program,$day,$exerciseName,$setNumber,$reps,$weight,$rpe,$rest,$notes,$duration,$totalVolume');
           totalRows++;
@@ -203,7 +203,7 @@ class ExportWorkoutsUseCase {
     return buffer.toString();
   }
 
-  String _generateJSON(List<CompletedWorkout> workouts) {
+  String _generateJSON(List<Workout> workouts) {
     print('📊 [Export] Generating JSON data...');
     final exportData = {
       'export_date': DateTime.now().toIso8601String(),
@@ -212,21 +212,19 @@ class ExportWorkoutsUseCase {
       'workouts': workouts.map((workout) => {
         'id': workout.id,
         'date': workout.date.toIso8601String(),
-        'program_name': workout.programName,
-        'day_number': workout.dayNumber,
-        'duration': workout.duration,
+        'duration_minutes': workout.duration.inMinutes,
         'total_volume': workout.totalVolume,
-        'notes': workout.notes,
+        'calories_burned': workout.caloriesBurned,
         'exercises': workout.exercises.map((exercise) => {
+          'id': exercise.id,
           'name': exercise.name,
-          'muscle_group': exercise.muscleGroup?.toString(),
+          'type': exercise.type.name,
           'sets': exercise.sets.map((set) => {
+            'id': set.id,
             'reps': set.reps,
             'weight': set.weight,
             'rpe': set.rpe,
-            'rest_time': set.restTime,
-            'notes': set.notes,
-            'timestamp': set.timestamp?.toIso8601String(),
+            'timestamp': set.timestamp.toIso8601String(),
           }).toList(),
         }).toList(),
       }).toList(),
@@ -236,16 +234,16 @@ class ExportWorkoutsUseCase {
     return const JsonEncoder.withIndent('  ').convert(exportData);
   }
 
-  String _generateSummaryCSV(List<CompletedWorkout> workouts) {
+  String _generateSummaryCSV(List<Workout> workouts) {
     print('📊 [Export] Generating summary statistics...');
     final buffer = StringBuffer();
     
     // Calculate summary statistics
     final totalWorkouts = workouts.length;
-    final totalVolume = workouts.fold<double>(0, (sum, w) => sum + (w.totalVolume ?? 0));
-    final averageDuration = workouts.where((w) => w.duration != null)
-        .fold<double>(0, (sum, w) => sum + w.duration!) / 
-        workouts.where((w) => w.duration != null).length;
+    final totalVolume = workouts.fold<double>(0, (sum, w) => sum + w.totalVolume);
+    final averageDuration = totalWorkouts > 0
+        ? workouts.fold<int>(0, (sum, w) => sum + w.duration.inMinutes) / totalWorkouts
+        : 0.0;
     
     print('🔍 [Export] Total workouts: $totalWorkouts, Total volume: ${totalVolume.toStringAsFixed(2)} kg');
     

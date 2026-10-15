@@ -3,8 +3,11 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:archive/archive.dart';
 import 'package:progression_tracker/features/workout/domain/repositories/workout_repository.dart';
+import 'package:progression_tracker/features/workout/domain/entities/workout.dart';
 import 'package:progression_tracker/features/nutrition/domain/repositories/nutrition_repository.dart';
+import 'package:progression_tracker/features/nutrition/domain/entities/daily_nutrition_summary.dart';
 import 'package:progression_tracker/features/body/domain/repositories/body_repository.dart';
+import 'package:progression_tracker/features/body/domain/entities/body_entry.dart';
 import 'package:progression_tracker/features/auth/domain/repositories/auth_repository.dart';
 import 'package:progression_tracker/features/settings/domain/usecases/export_workouts_use_case.dart';
 import 'package:progression_tracker/features/settings/domain/usecases/export_nutrition_use_case.dart';
@@ -48,12 +51,12 @@ class ExportAllDataUseCase {
   Future<String> exportToZIP() async {
     final directory = await getApplicationDocumentsDirectory();
     final timestamp = DateTime.now().toIso8601String().split('T')[0];
-    final tempDir = Directory('${directory.path}/temp_export_$timestamp');
+    final zipPath = '${directory.path}/ironflow_backup_$timestamp.zip';
+    
+    // Create temporary directory for individual export files
+    final tempDir = await Directory('${directory.path}/temp_export_$timestamp').create();
     
     try {
-      // Create temporary directory
-      await tempDir.create(recursive: true);
-      
       // Export individual components
       await _exportWorkoutsToTemp(tempDir.path);
       await _exportNutritionToTemp(tempDir.path);
@@ -66,36 +69,34 @@ class ExportAllDataUseCase {
       await _addDirectoryToArchive(archive, tempDir, '');
       
       // Write ZIP file
-      final zipFile = File('${directory.path}/ironflow_complete_backup_$timestamp.zip');
-      await zipFile.writeAsBytes(ZipEncoder().encode(archive)!);
+      final zipData = ZipEncoder().encode(archive);
+      if (zipData != null) {
+        final zipFile = File(zipPath);
+        await zipFile.writeAsBytes(zipData);
+      }
       
-      // Clean up temporary directory
-      await tempDir.delete(recursive: true);
-      
-      return zipFile.path;
-    } catch (e) {
-      // Clean up on error
+      return zipPath;
+    } finally {
+      // Clean up temp directory
       if (await tempDir.exists()) {
         await tempDir.delete(recursive: true);
       }
-      rethrow;
     }
   }
 
-  /// Exports user data for a specific date range.
+  /// Exports data within a specific date range.
   ///
-  /// [startDate] - Start date for export range
-  /// [endDate] - End date for export range
+  /// [startDate] - Start date for export
+  /// [endDate] - End date for export
   ///
   /// Returns the file path of the exported JSON file.
-  Future<String> exportDateRange(DateTime startDate, DateTime endDate) async {
-    final rangeData = await _gatherDateRangeData(startDate, endDate);
-    final jsonContent = const JsonEncoder.withIndent('  ').convert(rangeData);
+  Future<String> exportDateRangeToJSON(DateTime startDate, DateTime endDate) async {
+    final dateRangeData = await _gatherDateRangeData(startDate, endDate);
+    final jsonContent = const JsonEncoder.withIndent('  ').convert(dateRangeData);
     
     final directory = await getApplicationDocumentsDirectory();
-    final startStr = _formatDateForFilename(startDate);
-    final endStr = _formatDateForFilename(endDate);
-    final file = File('${directory.path}/ironflow_backup_${startStr}_to_$endStr.json');
+    final fileName = 'ironflow_export_${_formatDateForFilename(startDate)}_to_${_formatDateForFilename(endDate)}.json';
+    final file = File('${directory.path}/$fileName');
     await file.writeAsString(jsonContent);
     
     return file.path;
@@ -106,15 +107,17 @@ class ExportAllDataUseCase {
   /// Returns a map with counts of each data type.
   Future<Map<String, int>> getExportStatistics() async {
     final workouts = await _workoutRepository.getAllWorkouts();
-    final nutritionLogs = await _nutritionRepository.getAllNutritionLogs();
-    final bodyMeasurements = await _bodyRepository.getAllMeasurements();
-    final programs = await _workoutRepository.getAllPrograms();
+    final nutritionLogs = await _nutritionRepository.getNutritionHistory(
+      DateTime(2000),
+      DateTime.now().add(const Duration(days: 1)),
+    );
+    final bodyMeasurements = await _bodyRepository.getAllBodyEntries();
     
     return {
       'workouts': workouts.length,
       'nutrition_days': nutritionLogs.length,
       'body_measurements': bodyMeasurements.length,
-      'programs': programs.length,
+      'programs': 0,
       'total_meals': nutritionLogs.fold<int>(0, (sum, log) => sum + log.meals.length),
     };
   }
@@ -122,15 +125,17 @@ class ExportAllDataUseCase {
   Future<Map<String, dynamic>> _gatherAllData() async {
     final userProfile = await _authRepository.getCurrentUser();
     final workouts = await _workoutRepository.getAllWorkouts();
-    final programs = await _workoutRepository.getAllPrograms();
-    final nutritionLogs = await _nutritionRepository.getAllNutritionLogs();
-    final bodyMeasurements = await _bodyRepository.getAllMeasurements();
+    final nutritionLogs = await _nutritionRepository.getNutritionHistory(
+      DateTime(2000),
+      DateTime.now().add(const Duration(days: 1)),
+    );
+    final bodyMeasurements = await _bodyRepository.getAllBodyEntries();
     
     return {
       'export_info': {
         'export_date': DateTime.now().toIso8601String(),
         'export_version': '1.0',
-        'app_version': '1.0.0', // TODO: Get from package info
+        'app_version': '1.0.0',
         'export_type': 'complete_backup',
       },
       'user_profile': userProfile?.toJson(),
@@ -138,7 +143,7 @@ class ExportAllDataUseCase {
         'total_workouts': workouts.length,
         'total_nutrition_days': nutritionLogs.length,
         'total_body_measurements': bodyMeasurements.length,
-        'total_programs': programs.length,
+        'total_programs': 0,
         'date_range': {
           'first_workout': workouts.isNotEmpty 
               ? workouts.map((w) => w.date).reduce((a, b) => a.isBefore(b) ? a : b).toIso8601String()
@@ -148,21 +153,18 @@ class ExportAllDataUseCase {
               : null,
         },
       },
-      'workouts': workouts.map((w) => w.toJson()).toList(),
-      'programs': programs.map((p) => p.toJson()).toList(),
-      'nutrition_logs': nutritionLogs.map((n) => n.toJson()).toList(),
-      'body_measurements': bodyMeasurements.map((b) => b.toJson()).toList(),
+      'workouts': workouts.map((w) => _workoutToMap(w)).toList(),
+      'programs': [],
+      'nutrition_logs': nutritionLogs.map((n) => _nutritionToMap(n)).toList(),
+      'body_measurements': bodyMeasurements.map((b) => _bodyEntryToMap(b)).toList(),
     };
   }
 
   Future<Map<String, dynamic>> _gatherDateRangeData(DateTime startDate, DateTime endDate) async {
     final userProfile = await _authRepository.getCurrentUser();
     final workouts = await _workoutRepository.getWorkoutsByDateRange(startDate, endDate);
-    final nutritionLogs = await _nutritionRepository.getNutritionHistory(
-      startDate: startDate,
-      endDate: endDate,
-    );
-    final bodyMeasurements = await _bodyRepository.getMeasurementsByDateRange(startDate, endDate);
+    final nutritionLogs = await _nutritionRepository.getNutritionHistory(startDate, endDate);
+    final bodyMeasurements = await _bodyRepository.getBodyEntriesByDateRange(startDate, endDate);
     
     return {
       'export_info': {
@@ -181,26 +183,72 @@ class ExportAllDataUseCase {
         'total_nutrition_days': nutritionLogs.length,
         'total_body_measurements': bodyMeasurements.length,
       },
-      'workouts': workouts.map((w) => w.toJson()).toList(),
-      'nutrition_logs': nutritionLogs.map((n) => n.toJson()).toList(),
-      'body_measurements': bodyMeasurements.map((b) => b.toJson()).toList(),
+      'workouts': workouts.map((w) => _workoutToMap(w)).toList(),
+      'nutrition_logs': nutritionLogs.map((n) => _nutritionToMap(n)).toList(),
+      'body_measurements': bodyMeasurements.map((b) => _bodyEntryToMap(b)).toList(),
     };
   }
+
+  Map<String, dynamic> _workoutToMap(Workout w) => {
+    'id': w.id,
+    'date': w.date.toIso8601String(),
+    'duration_minutes': w.duration.inMinutes,
+    'total_volume': w.totalVolume,
+    'calories_burned': w.caloriesBurned,
+    'exercises': w.exercises.map((e) => {
+      'id': e.id,
+      'name': e.name,
+      'type': e.type.name,
+      'sets': e.sets.map((s) => {
+        'id': s.id,
+        'reps': s.reps,
+        'weight': s.weight,
+        'rpe': s.rpe,
+        'timestamp': s.timestamp.toIso8601String(),
+      }).toList(),
+    }).toList(),
+  };
+
+  Map<String, dynamic> _nutritionToMap(DailyNutritionSummary n) => {
+    'date': n.date.toIso8601String(),
+    'total_calories': n.totalCalories,
+    'total_protein': n.totalProtein,
+    'total_carbs': n.totalCarbs,
+    'total_fats': n.totalFats,
+    'total_fiber': n.totalFiber,
+    'total_sugar': n.totalSugar,
+    'total_sodium': n.totalSodium,
+    'total_potassium': n.totalPotassium,
+    'meals': n.meals.map((m) => {
+      'id': m.id,
+      'name': m.name,
+      'timestamp': m.timestamp.toIso8601String(),
+      'macros': {
+        'calories': m.macros.calories,
+        'protein': m.macros.protein,
+        'carbs': m.macros.carbs,
+        'fats': m.macros.fats,
+      },
+    }).toList(),
+  };
+
+  Map<String, dynamic> _bodyEntryToMap(BodyEntry b) => {
+    'id': b.id,
+    'date': b.date.toIso8601String(),
+    'weight': b.weight,
+    'measurements': b.measurements.map((k, v) => MapEntry(k.name, v)),
+    'photo_path': b.photoPath,
+  };
 
   Future<void> _exportWorkoutsToTemp(String tempPath) async {
     final csvPath = await _exportWorkoutsUseCase.exportToCSV();
     final jsonPath = await _exportWorkoutsUseCase.exportToJSON();
-    final summaryPath = await _exportWorkoutsUseCase.exportSummaryToCSV();
     
-    // Copy files to temp directory
     await File(csvPath).copy('$tempPath/workouts.csv');
     await File(jsonPath).copy('$tempPath/workouts.json');
-    await File(summaryPath).copy('$tempPath/workout_summary.csv');
     
-    // Clean up original files
     await File(csvPath).delete();
     await File(jsonPath).delete();
-    await File(summaryPath).delete();
   }
 
   Future<void> _exportNutritionToTemp(String tempPath) async {
@@ -223,7 +271,7 @@ class ExportAllDataUseCase {
   }
 
   Future<void> _exportBodyDataToTemp(String tempPath) async {
-    final bodyMeasurements = await _bodyRepository.getAllMeasurements();
+    final bodyMeasurements = await _bodyRepository.getAllBodyEntries();
     final csvContent = _generateBodyCSV(bodyMeasurements);
     final jsonContent = _generateBodyJSON(bodyMeasurements);
     
@@ -262,34 +310,27 @@ class ExportAllDataUseCase {
     }
   }
 
-  String _generateBodyCSV(List<dynamic> measurements) {
+  String _generateBodyCSV(List<BodyEntry> measurements) {
     final buffer = StringBuffer();
-    buffer.writeln('Date,Weight,Body Fat,Muscle Mass,Chest,Waist,Hips,Arms,Legs,Notes');
+    buffer.writeln('Date,Weight,PhotoPath');
     
     for (final measurement in measurements) {
-      final date = measurement.date?.toIso8601String().split('T')[0] ?? '';
-      final weight = measurement.weight?.toStringAsFixed(2) ?? '';
-      final bodyFat = measurement.bodyFat?.toStringAsFixed(2) ?? '';
-      final muscleMass = measurement.muscleMass?.toStringAsFixed(2) ?? '';
-      final chest = measurement.chest?.toStringAsFixed(2) ?? '';
-      final waist = measurement.waist?.toStringAsFixed(2) ?? '';
-      final hips = measurement.hips?.toStringAsFixed(2) ?? '';
-      final arms = measurement.arms?.toStringAsFixed(2) ?? '';
-      final legs = measurement.legs?.toStringAsFixed(2) ?? '';
-      final notes = (measurement.notes ?? '').replaceAll(',', ';').replaceAll('\n', ' ');
+      final date = measurement.date.toIso8601String().split('T')[0];
+      final weight = measurement.weight.toStringAsFixed(2);
+      final photo = measurement.photoPath ?? '';
       
-      buffer.writeln('$date,$weight,$bodyFat,$muscleMass,$chest,$waist,$hips,$arms,$legs,$notes');
+      buffer.writeln('$date,$weight,$photo');
     }
     
     return buffer.toString();
   }
 
-  String _generateBodyJSON(List<dynamic> measurements) {
+  String _generateBodyJSON(List<BodyEntry> measurements) {
     final exportData = {
       'export_date': DateTime.now().toIso8601String(),
       'export_version': '1.0',
       'total_measurements': measurements.length,
-      'body_measurements': measurements.map((m) => m.toJson()).toList(),
+      'body_measurements': measurements.map((m) => _bodyEntryToMap(m)).toList(),
     };
     
     return const JsonEncoder.withIndent('  ').convert(exportData);

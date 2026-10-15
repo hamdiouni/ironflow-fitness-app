@@ -308,10 +308,15 @@ class RestoreDataUseCase {
   /// Clears all existing user data before restore.
   Future<void> _clearExistingData() async {
     try {
-      await _workoutRepository.deleteAllWorkouts();
-      await _workoutRepository.deleteAllPrograms();
-      await _nutritionRepository.deleteAllNutritionLogs();
-      await _bodyRepository.deleteAllMeasurements();
+      final workouts = await _workoutRepository.getAllWorkouts();
+      for (final w in workouts) {
+        await _workoutRepository.deleteWorkout(w.id);
+      }
+      await _nutritionRepository.clearAllData();
+      final bodyEntries = await _bodyRepository.getAllBodyEntries();
+      for (final b in bodyEntries) {
+        await _bodyRepository.deleteBodyEntry(b.id);
+      }
     } catch (e) {
       throw Exception('Failed to clear existing data: $e');
     }
