@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+// ignore_for_file: avoid_print
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,7 +8,18 @@ import 'package:progression_tracker/features/workout/domain/entities/entities.da
 import 'package:progression_tracker/features/workout/presentation/providers/workout_providers.dart';
 import 'package:progression_tracker/features/workout/presentation/managers/workout_state_manager.dart';
 import 'package:firebase_core/firebase_core.dart';
-import '../lib/firebase_options.dart';
+import 'package:progression_tracker/firebase_options.dart';
+
+extension on WorkoutState {
+  bool get isInProgress => maybeWhen(inProgress: (workout, isPaused) => true, orElse: () => false);
+  bool get isCompleted => maybeWhen(completed: (workout) => true, orElse: () => false);
+  bool get isInitial => maybeWhen(initial: () => true, orElse: () => false);
+  Workout get currentWorkout => maybeWhen(
+        inProgress: (w, _) => w,
+        completed: (w) => w,
+        orElse: () => throw StateError('Not in progress or completed'),
+      );
+}
 
 /// Integration test for workout flow with logging.
 ///
@@ -66,10 +78,10 @@ void main() {
       await tester.pumpAndSettle();
 
       var state = stateStream.read();
-      expect(state, isA<_InProgress>(), reason: 'Workout should be in progress');
+      expect(state.isInProgress, isTrue, reason: 'Workout should be in progress');
 
-      final inProgressState = state as _InProgress;
-      expect(inProgressState.workout.exercises, isEmpty,
+      final inProgressWorkout = state.currentWorkout;
+      expect(inProgressWorkout.exercises, isEmpty,
           reason: 'New workout should have no exercises');
       print('✓ Workout started successfully');
 
@@ -86,11 +98,11 @@ void main() {
       await tester.pumpAndSettle();
 
       state = stateStream.read();
-      expect(state, isA<_InProgress>());
-      final stateWithExercise = state as _InProgress;
-      expect(stateWithExercise.workout.exercises.length, 1,
+      expect(state.isInProgress, isTrue);
+      final workoutWithExercise = state.currentWorkout;
+      expect(workoutWithExercise.exercises.length, 1,
           reason: 'Workout should have 1 exercise');
-      expect(stateWithExercise.workout.exercises.first.name, 'Bench Press');
+      expect(workoutWithExercise.exercises.first.name, 'Bench Press');
       print('✓ Exercise added successfully');
 
       // Act & Assert: Log first set
@@ -100,12 +112,12 @@ void main() {
       await tester.pumpAndSettle();
 
       state = stateStream.read();
-      expect(state, isA<_InProgress>());
-      final stateWithSet1 = state as _InProgress;
-      expect(stateWithSet1.workout.exercises.first.sets.length, 1,
+      expect(state.isInProgress, isTrue);
+      final workoutWithSet1 = state.currentWorkout;
+      expect(workoutWithSet1.exercises.first.sets.length, 1,
           reason: 'Exercise should have 1 set');
-      expect(stateWithSet1.workout.exercises.first.sets.first.reps, 10);
-      expect(stateWithSet1.workout.exercises.first.sets.first.weight, 80.0);
+      expect(workoutWithSet1.exercises.first.sets.first.reps, 10);
+      expect(workoutWithSet1.exercises.first.sets.first.weight, 80.0);
       print('✓ First set logged successfully (PR: $isPR1)');
 
       // Act & Assert: Log second set
@@ -115,9 +127,9 @@ void main() {
       await tester.pumpAndSettle();
 
       state = stateStream.read();
-      expect(state, isA<_InProgress>());
-      final stateWithSet2 = state as _InProgress;
-      expect(stateWithSet2.workout.exercises.first.sets.length, 2,
+      expect(state.isInProgress, isTrue);
+      final workoutWithSet2 = state.currentWorkout;
+      expect(workoutWithSet2.exercises.first.sets.length, 2,
           reason: 'Exercise should have 2 sets');
       print('✓ Second set logged successfully (PR: $isPR2)');
 
@@ -128,9 +140,9 @@ void main() {
       await tester.pumpAndSettle();
 
       state = stateStream.read();
-      expect(state, isA<_InProgress>());
-      final stateWithSet3 = state as _InProgress;
-      expect(stateWithSet3.workout.exercises.first.sets.length, 3,
+      expect(state.isInProgress, isTrue);
+      final workoutWithSet3 = state.currentWorkout;
+      expect(workoutWithSet3.exercises.first.sets.length, 3,
           reason: 'Exercise should have 3 sets');
       print('✓ Third set logged successfully (PR: $isPR3)');
 
@@ -147,9 +159,9 @@ void main() {
       await tester.pumpAndSettle();
 
       state = stateStream.read();
-      expect(state, isA<_InProgress>());
-      final stateWith2Exercises = state as _InProgress;
-      expect(stateWith2Exercises.workout.exercises.length, 2,
+      expect(state.isInProgress, isTrue);
+      final workoutWith2Exercises = state.currentWorkout;
+      expect(workoutWith2Exercises.exercises.length, 2,
           reason: 'Workout should have 2 exercises');
       print('✓ Second exercise added successfully');
 
@@ -160,9 +172,9 @@ void main() {
       await tester.pumpAndSettle();
 
       state = stateStream.read();
-      expect(state, isA<_InProgress>());
-      final stateWithSet4 = state as _InProgress;
-      expect(stateWithSet4.workout.exercises[1].sets.length, 1,
+      expect(state.isInProgress, isTrue);
+      final workoutWithSet4 = state.currentWorkout;
+      expect(workoutWithSet4.exercises[1].sets.length, 1,
           reason: 'Second exercise should have 1 set');
       print('✓ Set logged for second exercise successfully');
 
@@ -172,12 +184,12 @@ void main() {
       await tester.pumpAndSettle();
 
       state = stateStream.read();
-      expect(state, isA<_Completed>(), reason: 'Workout should be completed');
+      expect(state.isCompleted, isTrue, reason: 'Workout should be completed');
 
-      final completedState = state as _Completed;
-      expect(completedState.workout.exercises.length, 2);
-      expect(completedState.workout.exercises.first.sets.length, 3);
-      expect(completedState.workout.exercises[1].sets.length, 1);
+      final completedWorkout = state.currentWorkout;
+      expect(completedWorkout.exercises.length, 2);
+      expect(completedWorkout.exercises.first.sets.length, 3);
+      expect(completedWorkout.exercises[1].sets.length, 1);
       print('✓ Workout finished successfully');
 
       // Verify workout was saved to Hive
@@ -212,7 +224,7 @@ void main() {
 
       // Should remain in initial state
       final state = stateStream.read();
-      expect(state, isA<_Initial>(),
+      expect(state.isInitial, isTrue,
           reason: 'State should remain initial when adding exercise without starting workout');
       print('✓ Error handled correctly: Cannot add exercise without starting workout');
 
@@ -240,9 +252,9 @@ void main() {
       expect(isPR, false, reason: 'Should return false for non-existent exercise');
 
       final state = stateStream.read();
-      expect(state, isA<_InProgress>());
-      final inProgressState = state as _InProgress;
-      expect(inProgressState.workout.exercises, isEmpty,
+      expect(state.isInProgress, isTrue);
+      final inProgressWorkout = state.currentWorkout;
+      expect(inProgressWorkout.exercises, isEmpty,
           reason: 'No exercises should be added');
       print('✓ Error handled correctly: Cannot log set for non-existent exercise');
 
@@ -297,12 +309,12 @@ void main() {
         (previous, next) {},
       );
       final state = stateStream.read();
-      expect(state, isA<_InProgress>());
+      expect(state.isInProgress, isTrue);
 
-      final restoredState = state as _InProgress;
-      expect(restoredState.workout.exercises.length, 1);
-      expect(restoredState.workout.exercises.first.name, 'Pull Up');
-      expect(restoredState.workout.exercises.first.sets.length, 1);
+      final restoredWorkout = state.currentWorkout;
+      expect(restoredWorkout.exercises.length, 1);
+      expect(restoredWorkout.exercises.first.name, 'Pull Up');
+      expect(restoredWorkout.exercises.first.sets.length, 1);
       print('✓ Workout state restored successfully');
 
       newContainer.dispose();
