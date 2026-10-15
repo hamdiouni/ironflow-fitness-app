@@ -7,7 +7,7 @@ import 'package:progression_tracker/features/nutrition/domain/entities/entities.
 import 'package:progression_tracker/features/body/domain/entities/body_entry.dart';
 import 'package:progression_tracker/features/body/domain/entities/measurement_type.dart';
 
-import 'change_detection_service_impl_test.mocks.dart';
+import '../../mocks/mock_repositories.mocks.dart';
 
 void main() {
   group('ChangeDetectionServiceImpl', () {
