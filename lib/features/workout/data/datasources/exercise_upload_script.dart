@@ -29,7 +29,7 @@ Future<void> uploadAllExercisesToFirestore(FirebaseFirestore firestore) async {
     // Print summary by muscle group
     final byMuscleGroup = <String, int>{};
     for (final exercise in allExercises) {
-      final group = exercise.muscleGroup.displayName;
+      final group = exercise.muscleGroup.name;
       byMuscleGroup[group] = (byMuscleGroup[group] ?? 0) + 1;
     }
     
