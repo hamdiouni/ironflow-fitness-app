@@ -192,7 +192,7 @@ class _SettingsTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(AppTheme.borderRadius),
+      borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
       child: Padding(
         padding: const EdgeInsets.all(AppTheme.spacingSmall),
         child: Row(
@@ -200,12 +200,12 @@ class _SettingsTile extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(AppTheme.spacingSmall),
               decoration: BoxDecoration(
-                color: AppTheme.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(AppTheme.borderRadius),
+                color: AppTheme.primaryColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
               ),
               child: Icon(
                 icon,
-                color: AppTheme.primary,
+                color: AppTheme.primaryColor,
                 size: 20,
               ),
             ),
