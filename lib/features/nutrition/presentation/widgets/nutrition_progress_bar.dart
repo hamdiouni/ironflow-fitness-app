@@ -26,7 +26,7 @@ class NutritionProgressBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final percentage = target > 0 ? (consumed / target) * 100 : 0;
+    final double percentage = target > 0 ? (consumed / target) * 100 : 0.0;
     final status = _getStatus(percentage);
     final statusColor = customColor ?? _getStatusColor(status);
 

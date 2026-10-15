@@ -8,6 +8,6 @@ class SaveMealUseCase {
   SaveMealUseCase(this.repository);
 
   Future<void> call(Meal meal) async {
-    await repository.saveMeal(meal);
+    await repository.saveMealEntry(meal);
   }
 }

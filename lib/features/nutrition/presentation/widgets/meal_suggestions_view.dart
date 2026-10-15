@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_theme.dart';
+import '../../domain/entities/food_item_full.dart';
 import '../../domain/entities/macro_target.dart';
 import '../../domain/entities/meal_category.dart';
 import '../../domain/entities/meal_suggestion.dart';
@@ -23,7 +24,16 @@ class MealSuggestionsView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final suggestionsAsync = ref.watch(mealSuggestionsProvider(remaining));
+    final suggestionsAsync = ref.watch(
+      mealSuggestionsProvider(
+        (
+          targetCalories: remaining.totalCalories,
+          targetProtein: remaining.protein,
+          targetCarbs: remaining.carbs,
+          targetFat: remaining.fats,
+        ),
+      ),
+    );
 
     return suggestionsAsync.when(
       loading: () => const SizedBox(
@@ -63,13 +73,40 @@ class MealSuggestionsView extends ConsumerWidget {
             itemCount: suggestions.length,
             itemBuilder: (context, index) {
               return _SuggestionCard(
-                suggestion: suggestions[index],
+                suggestion: _toSuggestion(suggestions[index]),
                 index: index,
               );
             },
           ),
         );
       },
+    );
+  }
+
+  /// Adapts a [FoodItemFull] into a [MealSuggestion] for display. Category is
+  /// high-protein if protein is >=40% of calories, high-carb if carbs are
+  /// >=50%, otherwise balanced.
+  static MealSuggestion _toSuggestion(FoodItemFull food) {
+    final m = food.macros;
+    final proteinKcal = m.protein * 4;
+    final carbKcal = m.carbs * 4;
+    final total = proteinKcal + carbKcal + (m.fats * 9);
+
+    MealCategory category = MealCategory.balanced;
+    if (total > 0) {
+      if (proteinKcal / total >= 0.4) {
+        category = MealCategory.highProtein;
+      } else if (carbKcal / total >= 0.5) {
+        category = MealCategory.highCarb;
+      }
+    }
+
+    return MealSuggestion(
+      name: food.name,
+      protein: m.protein,
+      carbs: m.carbs,
+      fats: m.fats,
+      category: category,
     );
   }
 }
