@@ -40,7 +40,7 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
       for (final exercise in workout.exercises) {
         if (exercise.id == exerciseId) {
           exerciseName ??= exercise.name;
-          muscleGroup ??= exercise.muscleGroup?.toString() ?? 'Unknown';
+          muscleGroup ??= exercise.type.name;
 
           // Calculate volume and 1RM for this session
           double totalVolume = 0;
@@ -148,9 +148,9 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
     required DateTime endDate,
   }) async {
     // Get weight measurements from body repository
-    final measurements = await _bodyRepository.getWeightHistory(
-      startDate: startDate,
-      endDate: endDate,
+    final measurements = await _bodyRepository.getBodyEntriesByDateRange(
+      startDate,
+      endDate,
     );
 
     // Convert to WeightMeasurement entities
@@ -158,9 +158,6 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
       return WeightMeasurement(
         date: m.date,
         weight: m.weight,
-        note: m.note,
-        bodyFatPercentage: m.bodyFatPercentage,
-        muscleMass: m.muscleMass,
       );
     }).toList();
 
@@ -174,7 +171,7 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
     final startingWeight = weightMeasurements.isNotEmpty
         ? weightMeasurements.first.weight
         : 0.0;
-    final goalWeight = await _bodyRepository.getGoalWeight() ?? currentWeight;
+    final goalWeight = currentWeight;
 
     final totalChange = currentWeight - startingWeight;
 
@@ -315,7 +312,7 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
     // Calculate average duration
     final totalDuration = workouts.fold<int>(
       0,
-      (sum, w) => sum + (w.duration ?? 0),
+      (sum, w) => sum + w.duration.inMinutes,
     );
     final averageDuration = totalWorkouts > 0
         ? totalDuration / totalWorkouts
