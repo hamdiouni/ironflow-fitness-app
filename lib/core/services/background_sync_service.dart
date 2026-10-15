@@ -46,7 +46,7 @@ class BackgroundSyncService {
           requiresBatteryNotLow: true,
         ),
         tag: _syncTaskTag,
-        existingWorkPolicy: ExistingWorkPolicy.keep,
+        existingWorkPolicy: ExistingPeriodicWorkPolicy.keep,
       );
       
       if (kDebugMode) {
