@@ -31,7 +31,6 @@ class MockWorkoutRepository implements WorkoutRepository {
     return _workouts;
   }
 
-  @override
   Future<Workout?> getWorkoutById(String id) async {
     try {
       return _workouts.firstWhere((w) => w.id == id);
@@ -45,7 +44,6 @@ class MockWorkoutRepository implements WorkoutRepository {
     _workouts.removeWhere((w) => w.id == id);
   }
 
-  @override
   Future<void> updateWorkout(Workout workout) async {
     final index = _workouts.indexWhere((w) => w.id == workout.id);
     if (index != -1) {

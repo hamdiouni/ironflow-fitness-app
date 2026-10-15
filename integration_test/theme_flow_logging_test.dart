@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
@@ -5,7 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:progression_tracker/core/utils/hive_manager.dart';
 import 'package:progression_tracker/core/providers/theme_provider.dart';
 import 'package:firebase_core/firebase_core.dart';
-import '../lib/firebase_options.dart';
+import 'package:progression_tracker/firebase_options.dart';
 
 /// Integration test for theme flow with logging.
 ///
