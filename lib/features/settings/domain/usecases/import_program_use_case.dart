@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:progression_tracker/features/workout/domain/repositories/workout_repository.dart';
+import 'package:progression_tracker/features/workout/domain/repositories/active_program_repository.dart';
 import 'package:progression_tracker/features/workout/domain/entities/active_program.dart';
 
 /// Result of a program import operation.
@@ -45,9 +45,9 @@ enum ImportFormat {
 
 /// Use case for importing workout programs from various formats.
 class ImportProgramUseCase {
-  final WorkoutRepository _workoutRepository;
+  final ActiveProgramRepository _activeProgramRepository;
 
-  ImportProgramUseCase(this._workoutRepository);
+  ImportProgramUseCase(this._activeProgramRepository);
 
   /// Imports a program from a JSON file.
   ///
@@ -95,17 +95,13 @@ class ImportProgramUseCase {
 
       // Convert to ActiveProgram
       final program = _convertToActiveProgram(programData, format);
+      final programToSave = setAsActive ? program.copyWith(isActive: true) : program;
       
       // Save program
-      final savedProgram = await _workoutRepository.saveProgram(program);
-      
-      // Set as active if requested
-      if (setAsActive) {
-        await _workoutRepository.setActiveProgram(savedProgram.id);
-      }
+      await _activeProgramRepository.saveActiveProgram(programToSave);
 
       return ImportResult.success(
-        savedProgram.id,
+        programToSave.id,
         validationResult.warnings,
       );
     } catch (e) {
@@ -152,16 +148,12 @@ class ImportProgramUseCase {
   }) async {
     try {
       final program = _convertCsvToProgram(csvData, programName);
+      final programToSave = setAsActive ? program.copyWith(isActive: true) : program;
       
       // Save program
-      final savedProgram = await _workoutRepository.saveProgram(program);
-      
-      // Set as active if requested
-      if (setAsActive) {
-        await _workoutRepository.setActiveProgram(savedProgram.id);
-      }
+      await _activeProgramRepository.saveActiveProgram(programToSave);
 
-      return ImportResult.success(savedProgram.id);
+      return ImportResult.success(programToSave.id);
     } catch (e) {
       return ImportResult.failure('Failed to import CSV program: $e');
     }
