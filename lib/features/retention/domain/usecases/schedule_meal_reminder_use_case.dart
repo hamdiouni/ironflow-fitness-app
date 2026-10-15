@@ -1,4 +1,6 @@
+import 'package:flutter/material.dart' show TimeOfDay;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:timezone/timezone.dart' as tz;
 
 /// Use case for scheduling meal reminders.
 class ScheduleMealReminderUseCase {
@@ -116,10 +118,10 @@ class ScheduleMealReminderUseCase {
     };
   }
 
-  TZDateTime _nextInstanceOfTime(TimeOfDay time) {
-    final now = TZDateTime.now(local);
-    var scheduledDate = TZDateTime(
-      local,
+  tz.TZDateTime _nextInstanceOfTime(TimeOfDay time) {
+    final now = tz.TZDateTime.now(tz.local);
+    var scheduledDate = tz.TZDateTime(
+      tz.local,
       now.year,
       now.month,
       now.day,
@@ -134,20 +136,3 @@ class ScheduleMealReminderUseCase {
     return scheduledDate;
   }
 }
-
-// Placeholder classes - should be imported from proper packages
-class TimeOfDay {
-  final int hour;
-  final int minute;
-
-  const TimeOfDay({required this.hour, required this.minute});
-}
-
-class TZDateTime extends DateTime {
-  TZDateTime(dynamic location, int year, [int month = 1, int day = 1, int hour = 0, int minute = 0])
-      : super(year, month, day, hour, minute);
-
-  static TZDateTime now(dynamic location) => TZDateTime(location, DateTime.now().year);
-}
-
-const local = null;
