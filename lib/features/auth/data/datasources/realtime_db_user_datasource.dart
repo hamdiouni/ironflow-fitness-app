@@ -1,7 +1,13 @@
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/foundation.dart';
-import '../models/user_model.dart';
-import '../../../../core/data/datasources/user_datasource.dart';
+import '../../domain/entities/user.dart';
+
+abstract class UserDataSource {
+  Future<void> saveUser(User user);
+  Future<User?> getUser(String userId);
+  Future<void> updateUser(User user);
+  Future<void> deleteUser(String userId);
+}
 
 /// Firebase Realtime Database implementation for user data
 /// NO BILLING REQUIRED - Uses Firebase Realtime Database free tier
@@ -9,7 +15,7 @@ class RealtimeDbUserDataSource implements UserDataSource {
   final DatabaseReference _database = FirebaseDatabase.instance.ref();
 
   @override
-  Future<void> saveUser(UserModel user) async {
+  Future<void> saveUser(User user) async {
     try {
       await _database.child('users').child(user.id).set(user.toJson());
       if (kDebugMode) {
@@ -24,7 +30,7 @@ class RealtimeDbUserDataSource implements UserDataSource {
   }
 
   @override
-  Future<UserModel?> getUser(String userId) async {
+  Future<User?> getUser(String userId) async {
     try {
       final snapshot = await _database.child('users').child(userId).get();
       
@@ -39,7 +45,7 @@ class RealtimeDbUserDataSource implements UserDataSource {
       if (kDebugMode) {
         print('✓ [RealtimeDB] User loaded: $userId');
       }
-      return UserModel.fromJson(data);
+      return User.fromJson(data);
     } catch (e) {
       if (kDebugMode) {
         print('❌ [RealtimeDB] Error loading user: $e');
@@ -49,7 +55,7 @@ class RealtimeDbUserDataSource implements UserDataSource {
   }
 
   @override
-  Future<void> updateUser(UserModel user) async {
+  Future<void> updateUser(User user) async {
     try {
       await _database.child('users').child(user.id).update(user.toJson());
       if (kDebugMode) {
@@ -79,13 +85,13 @@ class RealtimeDbUserDataSource implements UserDataSource {
   }
 
   /// Listen to real-time updates for a user
-  Stream<UserModel?> watchUser(String userId) {
+  Stream<User?> watchUser(String userId) {
     return _database.child('users').child(userId).onValue.map((event) {
       if (!event.snapshot.exists) {
         return null;
       }
       final data = Map<String, dynamic>.from(event.snapshot.value as Map);
-      return UserModel.fromJson(data);
+      return User.fromJson(data);
     });
   }
 
