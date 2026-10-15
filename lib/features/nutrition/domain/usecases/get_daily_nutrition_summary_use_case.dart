@@ -4,8 +4,8 @@ import '../repositories/nutrition_repository.dart';
 /// Retrieves all meals for a given date and assembles a [DailyNutritionSummary]
 /// with calculated totals and remaining macro budget.
 ///
-/// Falls back to sensible defaults (150g protein / 200g carbs / 60g fats) when
-/// the user has not yet configured a [MacroTarget].
+/// If the user has not yet configured [NutritionTargets], the summary's target
+/// is null and [DailyNutritionSummary.remainingMacros] reports zero.
 class GetDailyNutritionSummaryUseCase {
   final NutritionRepository repository;
 
@@ -13,8 +13,7 @@ class GetDailyNutritionSummaryUseCase {
 
   Future<DailyNutritionSummary> call(DateTime date) async {
     final meals = await repository.getMealsByDate(date);
-    final target = await repository.getMacroTarget() ??
-        const MacroTarget(protein: 150, carbs: 200, fats: 60);
+    final target = await repository.getNutritionTargets();
 
     return DailyNutritionSummary(
       date: date,

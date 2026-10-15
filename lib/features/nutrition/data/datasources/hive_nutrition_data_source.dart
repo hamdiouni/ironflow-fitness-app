@@ -73,6 +73,6 @@ class HiveNutritionDataSource {
 
   /// Get all available food items from the preloaded database.
   Future<List<FoodItem>> getAllFoods() async {
-    return FoodDatabase.all;
+    return FoodDatabase.foods;
   }
 }

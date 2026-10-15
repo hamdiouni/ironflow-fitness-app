@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_theme.dart';
-import '../../domain/entities/food_item.dart';
 import '../providers/nutrition_providers.dart';
 import '../widgets/food_item_card.dart';
 
@@ -200,10 +199,10 @@ class _MealSearchScreenState extends ConsumerState<MealSearchScreen> {
                           ),
                           child: FoodItemCard(
                             food: food,
-                            targetCalories: food.calories,
-                            targetProtein: food.protein,
-                            targetCarbs: food.carbs,
-                            targetFat: food.fat,
+                            targetCalories: food.macros.calories,
+                            targetProtein: food.macros.protein,
+                            targetCarbs: food.macros.carbs,
+                            targetFat: food.macros.fats,
                             onSelect: () {
                               Navigator.pop(context, food);
                             },

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_theme.dart';
-import '../../domain/entities/food_item.dart';
+import '../../domain/entities/food_item_full.dart';
 import '../providers/nutrition_providers.dart';
 import '../widgets/food_item_card.dart';
 
@@ -64,7 +64,7 @@ class _MealSuggestionScreenState extends ConsumerState<MealSuggestionScreen> {
 }
 
 class _SuggestionsContent extends StatelessWidget {
-  final List<FoodItem> suggestions;
+  final List<FoodItemFull> suggestions;
   final double targetCalories;
   final double targetProtein;
   final double targetCarbs;
