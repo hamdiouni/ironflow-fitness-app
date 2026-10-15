@@ -100,8 +100,8 @@ class GenerateWeeklyReportUseCase {
 
     // Get nutrition data
     final nutritionLogs = await _nutritionRepository.getNutritionHistory(
-      startDate: start,
-      endDate: end,
+      start,
+      end,
     );
 
     final totalMeals = nutritionLogs.length;

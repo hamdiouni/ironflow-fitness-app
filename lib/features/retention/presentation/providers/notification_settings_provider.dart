@@ -1,6 +1,6 @@
+import 'package:flutter/material.dart' show TimeOfDay;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hive/hive.dart';
 
 import '../../domain/entities/notification_settings.dart';
 import '../../domain/usecases/schedule_workout_reminder_use_case.dart';
@@ -57,8 +57,15 @@ class NotificationSettingsNotifier
   NotificationSettingsNotifier(
     this._dataSource,
     this._scheduleReminder,
-    NotificationSettings initialSettings,
-  ) : super(initialSettings);
+  ) : super(NotificationSettings.defaults()) {
+    _load();
+  }
+
+  /// Loads persisted settings, replacing the defaults once available.
+  Future<void> _load() async {
+    final settings = await _dataSource.getSettings();
+    if (mounted) state = settings;
+  }
 
   /// Updates notification settings and reschedules reminder if needed.
   Future<void> updateSettings(NotificationSettings settings) async {
@@ -67,9 +74,15 @@ class NotificationSettingsNotifier
 
     // Reschedule reminder if enabled
     if (settings.isEnabled) {
-      await _scheduleReminder(settings.reminderHour, settings.reminderMinute);
+      await _scheduleReminder(
+        time: TimeOfDay(
+          hour: settings.reminderHour,
+          minute: settings.reminderMinute,
+        ),
+        enabled: true,
+      );
     } else {
-      await _scheduleReminder.cancelReminder();
+      await _scheduleReminder.cancel();
     }
   }
 
@@ -106,10 +119,9 @@ class NotificationSettingsNotifier
 
 final notificationSettingsNotifierProvider =
     StateNotifierProvider<NotificationSettingsNotifier, NotificationSettings>(
-  (ref) async {
+  (ref) {
     final dataSource = ref.watch(notificationSettingsDataSourceProvider);
     final scheduleReminder = ref.watch(scheduleReminderUseCaseProvider);
-    final settings = await dataSource.getSettings();
-    return NotificationSettingsNotifier(dataSource, scheduleReminder, settings);
+    return NotificationSettingsNotifier(dataSource, scheduleReminder);
   },
 );
