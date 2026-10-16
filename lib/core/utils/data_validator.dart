@@ -1,5 +1,3 @@
-import '../error/exceptions.dart';
-
 /// Utility class for validating data before saving to storage.
 class DataValidator {
   /// Validates a workout before saving.

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_theme.dart';
 import '../../domain/entities/progression_suggestion.dart';
-import '../../domain/usecases/get_progression_suggestion_use_case.dart';
 
 class ProgressionSuggestionCard extends StatelessWidget {
   final ProgressionSuggestion suggestion;

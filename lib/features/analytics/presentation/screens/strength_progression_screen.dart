@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:progression_tracker/core/constants/app_theme.dart';
 import 'package:progression_tracker/features/analytics/presentation/widgets/strength_chart.dart';
-import 'package:progression_tracker/features/analytics/domain/usecases/get_strength_progression_use_case.dart';
 import 'package:progression_tracker/features/analytics/domain/entities/strength_progression.dart';
 
 /// Screen for displaying strength progression analytics.

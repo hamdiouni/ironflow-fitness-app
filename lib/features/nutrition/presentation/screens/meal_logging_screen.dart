@@ -3,8 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
-import '../../../../core/constants/app_theme.dart';
-import '../../../../core/utils/error_handler.dart';
 import '../../domain/entities/food_item_full.dart';
 import '../../domain/entities/meal.dart';
 import '../providers/nutrition_providers.dart';

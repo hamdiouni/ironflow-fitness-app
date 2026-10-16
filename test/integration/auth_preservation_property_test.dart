@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:hive/hive.dart';
 import 'package:progression_tracker/features/auth/presentation/providers/auth_notifier.dart';
-import 'package:progression_tracker/features/auth/presentation/providers/auth_provider.dart';
 import 'package:progression_tracker/features/auth/data/datasources/auth_session_storage.dart';
 import 'package:progression_tracker/core/router/app_router.dart';
 

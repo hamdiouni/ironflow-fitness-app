@@ -15,7 +15,6 @@ import 'core/utils/hive_manager.dart';
 import 'features/workout/presentation/managers/workout_state_manager.dart';
 import 'features/workout/presentation/providers/workout_providers.dart';
 import 'features/notifications/domain/services/notification_service.dart';
-import 'features/notifications/presentation/providers/notification_providers.dart';
 import 'features/ai/presentation/providers/global_ai_provider.dart';
 
 void main() async {

@@ -1,6 +1,5 @@
 import 'package:progression_tracker/features/workout/domain/repositories/workout_repository.dart';
 import 'package:progression_tracker/features/nutrition/domain/repositories/nutrition_repository.dart';
-import 'package:progression_tracker/features/retention/domain/entities/streak.dart';
 
 /// Entity representing a weekly report.
 class WeeklyReport {
