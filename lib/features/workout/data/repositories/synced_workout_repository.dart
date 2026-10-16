@@ -9,8 +9,6 @@ import '../../../sync/domain/entities/sync_action.dart';
 class SyncedWorkoutRepository implements WorkoutRepository {
   final HiveWorkoutDataSource _hiveDataSource;
   final SyncService _syncService;
-  // TODO: Unfinished cloud sync feature - reserved for user-scoped sync
-  // ignore: unused_field
   final String _userId;
 
   SyncedWorkoutRepository({
@@ -21,19 +19,27 @@ class SyncedWorkoutRepository implements WorkoutRepository {
         _syncService = syncService,
         _userId = userId;
 
+  /// The active user ID for this repository
+  String get userId => _userId;
+
   @override
   Future<void> saveWorkout(Workout workout) async {
     // Save to local Hive first (source of truth)
     final model = WorkoutModel.fromEntity(workout);
     await _hiveDataSource.saveWorkout(model);
 
-    // Queue sync action
+    // Queue sync action scoped to user
+    final data = model.toJson();
+    data['userId'] = _userId;
     await _syncService.queueAction(
       type: SyncActionType.create,
       dataType: SyncDataType.workout,
       dataId: workout.id,
-      data: model.toJson(),
+      data: data,
     );
+
+    // Trigger sync for this user
+    _syncService.syncAll(userId: _userId);
   }
 
   @override
@@ -99,7 +105,10 @@ class SyncedWorkoutRepository implements WorkoutRepository {
       type: SyncActionType.delete,
       dataType: SyncDataType.workout,
       dataId: id,
-      data: {'id': id},
+      data: {'id': id, 'userId': _userId},
     );
+
+    // Trigger sync for this user
+    _syncService.syncAll(userId: _userId);
   }
 }

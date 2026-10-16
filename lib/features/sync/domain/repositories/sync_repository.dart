@@ -4,6 +4,9 @@ abstract class SyncRepository {
   /// Sync all pending operations
   Future<void> syncPendingOperations();
 
+  /// Sync a batch of operations directly to remote
+  Future<void> syncBatch(List<SyncOperation> operations);
+
   /// Add operation to sync queue
   Future<void> queueOperation({
     required SyncOperationType type,

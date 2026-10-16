@@ -179,8 +179,6 @@ class SyncService {
     try {
       // Get last sync time for each data type
       final workoutLastSync = await _firestoreSync.getLastSyncTime(userId, 'workouts');
-      // TODO: Unfinished cloud sync feature - reserved for program timestamp filtering
-      // ignore: unused_local_variable
       final programLastSync = await _firestoreSync.getLastSyncTime(userId, 'programs');
 
       // Pull workouts
@@ -209,7 +207,7 @@ class SyncService {
       }
 
       // Pull active program
-      final cloudProgram = await _firestoreSync.getActiveProgram(userId);
+      final cloudProgram = await _firestoreSync.getActiveProgram(userId, since: programLastSync);
       if (cloudProgram != null) {
         final localProgram = await _hivePrograms.loadActiveProgram();
 
@@ -297,8 +295,10 @@ class SyncService {
 
   /// Emit current sync status
   Future<void> _emitStatus() async {
+    if (_syncStatusController.isClosed) return;
     final pendingCount = await _syncQueue.getPendingCount();
     final failedCount = await _syncQueue.getFailedCount();
+    if (_syncStatusController.isClosed) return;
 
     final status = SyncStatusEntity(
       isSyncing: _isSyncing,
@@ -307,7 +307,9 @@ class SyncService {
       failedActions: failedCount,
     );
 
-    _syncStatusController.add(status);
+    if (!_syncStatusController.isClosed) {
+      _syncStatusController.add(status);
+    }
   }
 
   /// Get current sync status
