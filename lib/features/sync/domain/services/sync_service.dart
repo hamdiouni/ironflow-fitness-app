@@ -179,6 +179,8 @@ class SyncService {
     try {
       // Get last sync time for each data type
       final workoutLastSync = await _firestoreSync.getLastSyncTime(userId, 'workouts');
+      // TODO: Unfinished cloud sync feature - reserved for program timestamp filtering
+      // ignore: unused_local_variable
       final programLastSync = await _firestoreSync.getLastSyncTime(userId, 'programs');
 
       // Pull workouts

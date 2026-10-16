@@ -9,6 +9,8 @@ import '../../../sync/domain/entities/sync_action.dart';
 class SyncedWorkoutRepository implements WorkoutRepository {
   final HiveWorkoutDataSource _hiveDataSource;
   final SyncService _syncService;
+  // TODO: Unfinished cloud sync feature - reserved for user-scoped sync
+  // ignore: unused_field
   final String _userId;
 
   SyncedWorkoutRepository({
