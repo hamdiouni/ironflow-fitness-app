@@ -689,7 +689,6 @@ class AIInsightsEngineImpl implements AIInsightsEngine {
     
     // Calculate linear regression to determine trend
     final weights = sortedEntries.map((e) => e.weight).toList();
-    final n = weights.length;
     
     // Use simple approach: compare first and last weights
     final firstWeight = weights.first;
@@ -861,7 +860,6 @@ class AIInsightsEngineImpl implements AIInsightsEngine {
       ..sort((a, b) => b.date.compareTo(a.date));
     
     int streak = 1; // Start with 1 for the current workout
-    final today = DateTime.now();
     
     // Check for consecutive days working backwards from today
     for (int i = 1; i < sortedWorkouts.length; i++) {

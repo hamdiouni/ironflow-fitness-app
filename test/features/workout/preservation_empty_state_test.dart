@@ -236,7 +236,6 @@ void main() {
     test('Property: Empty state zero values are displayed correctly', () {
       // ARRANGE: Empty workout history
       final List<Workout> workouts = [];
-      final profile = _createTestProfile(workoutDaysPerWeek: 5);
 
       // ACT: Calculate various metrics
       final count = workouts.length;

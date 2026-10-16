@@ -36,7 +36,7 @@ class _ConsistencyScreenState extends ConsumerState<ConsistencyScreen> {
         ],
       ),
       body: FutureBuilder<ConsistencyMetrics>(
-        future: _fetchConsistencyMetrics(),
+        future: _fetchConsistencyMetrics(_weeks),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -407,7 +407,7 @@ class _ConsistencyScreenState extends ConsumerState<ConsistencyScreen> {
     );
   }
 
-  Future<ConsistencyMetrics> _fetchConsistencyMetrics() async {
+  Future<ConsistencyMetrics> _fetchConsistencyMetrics([int weeks = 12]) async {
     // TODO: Replace with actual provider
     throw UnimplementedError('Provider not implemented');
   }

@@ -410,7 +410,6 @@ class _ExerciseBreakdownCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final onSurface = Theme.of(context).colorScheme.onSurface;
-    final secondary = Theme.of(context).colorScheme.onSurfaceVariant;
 
     return AppTheme.glassmorphicCard(
       padding: const EdgeInsets.all(AppTheme.spacingMedium),

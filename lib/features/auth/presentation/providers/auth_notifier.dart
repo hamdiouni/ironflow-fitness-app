@@ -240,45 +240,33 @@ class AuthNotifier extends StateNotifier<AuthState> {
       // Use repository directly for Google sign in
       final user = await _signInUseCase.repository.signInWithGoogle();
 
-      if (user != null) {
-        if (kDebugMode) {
-          print('✅ [Auth] Google sign in successful');
-          print('🔍 [Auth] User ID: ${_sanitizeUserId(user.id)}');
-        }
+      if (kDebugMode) {
+        print('✅ [Auth] Google sign in successful');
+        print('🔍 [Auth] User ID: ${_sanitizeUserId(user.id)}');
+      }
 
-        state = state.copyWith(
-          isLoading: false,
-          user: user,
-          isAuthenticated: true,
-          error: null,
-        );
-        
-        // Track login event
-        try {
-          final analytics = _ref.read(analyticsServiceProvider);
-          await analytics.logLogin('google');
-          if (kDebugMode) {
-            print('📊 [Analytics] Google login event logged');
-          }
-        } catch (e) {
-          if (kDebugMode) {
-            print('⚠️ [Analytics] Failed to log login event: $e');
-          }
-        }
-        
+      state = state.copyWith(
+        isLoading: false,
+        user: user,
+        isAuthenticated: true,
+        error: null,
+      );
+      
+      // Track login event
+      try {
+        final analytics = _ref.read(analyticsServiceProvider);
+        await analytics.logLogin('google');
         if (kDebugMode) {
-          print('✅ [Auth] State set to authenticated');
+          print('📊 [Analytics] Google login event logged');
         }
-      } else {
+      } catch (e) {
         if (kDebugMode) {
-          print('⚠️ [Auth] Google sign in returned null user (cancelled)');
+          print('⚠️ [Analytics] Failed to log login event: $e');
         }
-        
-        state = state.copyWith(
-          isLoading: false,
-          isAuthenticated: false,
-          error: null, // Don't show error if user cancelled
-        );
+      }
+      
+      if (kDebugMode) {
+        print('✅ [Auth] State set to authenticated');
       }
     } catch (e, stackTrace) {
       if (kDebugMode) {

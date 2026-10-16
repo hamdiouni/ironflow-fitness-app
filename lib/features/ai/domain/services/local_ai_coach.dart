@@ -350,25 +350,25 @@ class LocalAICoach {
     buffer.writeln("Here's a quick overview:\n");
     
     // Workout summary
-    if (hasWorkouts) {
+    if (workouts != null && workouts.isNotEmpty) {
       final lastWeek = DateTime.now().subtract(const Duration(days: 7));
-      final recentCount = workouts!.where((w) => w.date.isAfter(lastWeek)).length;
+      final recentCount = workouts.where((w) => w.date.isAfter(lastWeek)).length;
       buffer.writeln("💪 Workouts: $recentCount this week");
     } else {
       buffer.writeln("💪 Workouts: No recent data");
     }
     
     // Nutrition summary
-    if (hasNutrition) {
-      final avgCalories = nutrition!.fold<double>(0, (sum, day) => sum + day.totalCalories) / nutrition.length;
+    if (nutrition != null && nutrition.isNotEmpty) {
+      final avgCalories = nutrition.fold<double>(0, (sum, day) => sum + day.totalCalories) / nutrition.length;
       buffer.writeln("🍽️ Nutrition: ${avgCalories.toStringAsFixed(0)} kcal/day avg");
     } else {
       buffer.writeln("🍽️ Nutrition: No recent data");
     }
     
     // Body weight summary
-    if (hasBodyData) {
-      final latest = bodyEntries!.first.weight;
+    if (bodyEntries != null && bodyEntries.isNotEmpty) {
+      final latest = bodyEntries.first.weight;
       buffer.writeln("⚖️ Weight: ${latest.toStringAsFixed(1)} lbs");
     } else {
       buffer.writeln("⚖️ Weight: No recent data");

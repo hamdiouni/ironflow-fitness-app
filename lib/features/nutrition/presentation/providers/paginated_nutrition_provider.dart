@@ -24,14 +24,12 @@ class PaginatedNutritionState with _$PaginatedNutritionState {
 class PaginatedNutritionNotifier extends StateNotifier<PaginatedNutritionState> {
   final GetNutritionHistoryPaginatedUseCase _getNutritionHistoryPaginated;
   final GetNutritionHistoryCountUseCase _getNutritionHistoryCount;
-  final Ref _ref;
 
   static const int _pageSize = 20;
 
   PaginatedNutritionNotifier(
     this._getNutritionHistoryPaginated,
     this._getNutritionHistoryCount,
-    this._ref,
   ) : super(const PaginatedNutritionState());
 
   /// Load the first page of nutrition history.
@@ -114,6 +112,5 @@ final paginatedNutritionProvider =
   return PaginatedNutritionNotifier(
     ref.watch(getNutritionHistoryPaginatedUseCaseProvider),
     ref.watch(getNutritionHistoryCountUseCaseProvider),
-    ref,
   );
 });

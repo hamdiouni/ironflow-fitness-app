@@ -1893,8 +1893,8 @@ void main() {
       expect(insight.message, contains('workouts: 12'));
       expect(insight.message, contains('percentage: 85.5'));
       expect(insight.message, contains('Keep up the great work!'));
-      expect(insight.metadata?['analysis'], equals('Your performance is improving.'));
-      expect(insight.metadata?['actionPlan'], equals('Keep up the great work!'));
+      expect(insight.metadata['analysis'], equals('Your performance is improving.'));
+      expect(insight.metadata['actionPlan'], equals('Keep up the great work!'));
     });
 
     test('calculatePercentageChange should calculate positive change correctly', () {
@@ -1931,19 +1931,19 @@ void main() {
       // ASSERT
       expect(homeInsights.length, equals(1));
       expect(homeInsights.first.title, contains('Welcome'));
-      expect(homeInsights.first.metadata?['type'], equals('onboarding'));
+      expect(homeInsights.first.metadata['type'], equals('onboarding'));
 
       expect(workoutInsights.length, equals(1));
       expect(workoutInsights.first.title, contains('Ready to Train'));
-      expect(workoutInsights.first.metadata?['type'], equals('onboarding'));
+      expect(workoutInsights.first.metadata['type'], equals('onboarding'));
 
       expect(nutritionInsights.length, equals(1));
       expect(nutritionInsights.first.title, contains('Track Your Nutrition'));
-      expect(nutritionInsights.first.metadata?['type'], equals('onboarding'));
+      expect(nutritionInsights.first.metadata['type'], equals('onboarding'));
 
       expect(profileInsights.length, equals(1));
       expect(profileInsights.first.title, contains('Track Your Progress'));
-      expect(profileInsights.first.metadata?['type'], equals('onboarding'));
+      expect(profileInsights.first.metadata['type'], equals('onboarding'));
     });
 
     test('createHighPriorityInsight should create insight with high priority', () {
@@ -2055,7 +2055,7 @@ void main() {
       expect(feedback.message, contains('Bench Press'));
       expect(feedback.message, contains('120'));
       expect(feedback.priority, equals(InsightPriority.high));
-      expect(feedback.metadata?['type'], equals('pr_achievement'));
+      expect(feedback.metadata['type'], equals('pr_achievement'));
     });
 
     test('generateQuickFeedback should return volume record feedback when 10%+ increase', () async {
@@ -2113,7 +2113,7 @@ void main() {
       expect(feedback.title, contains('Volume Record'));
       expect(feedback.message, contains('10%'));
       expect(feedback.priority, equals(InsightPriority.high));
-      expect(feedback.metadata?['type'], equals('volume_record'));
+      expect(feedback.metadata['type'], equals('volume_record'));
     });
 
     test('generateQuickFeedback should return general encouragement for regular workouts', () async {
@@ -2171,7 +2171,7 @@ void main() {
       expect(feedback.title, contains('Great Workout'));
       expect(feedback.message, contains('1000'));
       expect(feedback.priority, equals(InsightPriority.medium));
-      expect(feedback.metadata?['type'], equals('general_encouragement'));
+      expect(feedback.metadata['type'], equals('general_encouragement'));
     });
   });
 }
