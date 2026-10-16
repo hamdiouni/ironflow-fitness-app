@@ -156,8 +156,8 @@ class _ProgramEditorScreenState extends ConsumerState<ProgramEditorScreen> {
           newIndex: newIndex,
         );
 
-        // Refresh the provider
-        ref.refresh(activeProgramProvider);
+        // Invalidate the provider
+        ref.invalidate(activeProgramProvider);
       },
       itemCount: day.exercises.length,
       itemBuilder: (context, index) {
@@ -202,7 +202,7 @@ class _ProgramEditorScreenState extends ConsumerState<ProgramEditorScreen> {
         newExerciseName: selectedExerciseName,
       );
 
-      ref.refresh(activeProgramProvider);
+      ref.invalidate(activeProgramProvider);
       if (mounted) {
         ErrorHandler.showSnackBar(context, 'Exercise replaced successfully');
       }
@@ -334,7 +334,7 @@ class _ProgramEditorScreenState extends ConsumerState<ProgramEditorScreen> {
                     restSeconds: rest,
                   );
 
-                  ref.refresh(activeProgramProvider);
+                  ref.invalidate(activeProgramProvider);
                   if (mounted) {
                     Navigator.of(context).pop();
                     ErrorHandler.showSnackBar(context, 'Parameters updated successfully');
@@ -405,7 +405,7 @@ class _ProgramEditorScreenState extends ConsumerState<ProgramEditorScreen> {
       final updateUseCase = ref.read(updateActiveProgramUseCaseProvider);
       await updateUseCase(updated);
 
-      ref.refresh(activeProgramProvider);
+      ref.invalidate(activeProgramProvider);
       if (mounted) {
         ErrorHandler.showSnackBar(context, 'Exercise deleted successfully');
       }
