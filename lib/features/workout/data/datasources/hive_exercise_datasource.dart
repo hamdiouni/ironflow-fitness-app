@@ -24,7 +24,7 @@ class HiveExerciseDatasource {
     if (box.isEmpty) return [];
     
     return box.values
-        .map((data) => _mapToExercise(data as Map<dynamic, dynamic>))
+        .map((data) => _mapToExercise(data))
         .toList();
   }
 
@@ -36,7 +36,7 @@ class HiveExerciseDatasource {
     if (box.isEmpty) return [];
     
     return box.values
-        .map((data) => _mapToExercise(data as Map<dynamic, dynamic>))
+        .map((data) => _mapToExercise(data))
         .where((exercise) => exercise.muscleGroup.name == muscleGroup)
         .toList();
   }
@@ -48,7 +48,7 @@ class HiveExerciseDatasource {
     
     final lowerQuery = query.toLowerCase();
     return box.values
-        .map((data) => _mapToExercise(data as Map<dynamic, dynamic>))
+        .map((data) => _mapToExercise(data))
         .where((exercise) => exercise.name.toLowerCase().contains(lowerQuery))
         .toList();
   }
@@ -58,7 +58,7 @@ class HiveExerciseDatasource {
     final box = await _box;
     final data = box.get(id);
     if (data == null) return null;
-    return _mapToExercise(data as Map<dynamic, dynamic>);
+    return _mapToExercise(data);
   }
 
   /// Check if exercises are cached.
