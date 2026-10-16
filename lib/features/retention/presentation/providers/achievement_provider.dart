@@ -18,22 +18,22 @@ final achievementsProvider = FutureProvider<List<Achievement>>((ref) async {
   final analyticsAsync = ref.watch(analyticsStatsProvider);
 
   // Wait for all data to load
-  final history = await historyAsync.when(
+  final history = historyAsync.when(
     data: (data) => data,
     loading: () => [],
-    error: (_, __) => [],
+    error: (_, _) => [],
   );
 
-  final streak = await streakAsync.when(
+  final streak = streakAsync.when(
     data: (data) => data,
     loading: () => null,
-    error: (_, __) => null,
+    error: (_, _) => null,
   );
 
-  final analytics = await analyticsAsync.when(
+  final analytics = analyticsAsync.when(
     data: (data) => data,
     loading: () => null,
-    error: (_, __) => null,
+    error: (_, _) => null,
   );
 
   // Calculate achievements

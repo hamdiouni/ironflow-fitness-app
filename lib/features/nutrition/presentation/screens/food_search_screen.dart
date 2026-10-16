@@ -219,12 +219,12 @@ class _FoodListTile extends StatelessWidget {
                 width: 52,
                 height: 52,
                 fit: BoxFit.cover,
-                placeholder: (_, __) => Container(
+                placeholder: (_, _) => Container(
                   width: 52, height: 52,
                   color: Colors.white.withOpacity(0.05),
                   child: const Icon(Icons.restaurant, color: Colors.white24),
                 ),
-                errorWidget: (_, __, ___) => Container(
+                errorWidget: (_, _, _) => Container(
                   width: 52, height: 52,
                   color: Colors.white.withOpacity(0.05),
                   child: const Icon(Icons.restaurant, color: Colors.white24),
@@ -334,7 +334,7 @@ class _QuantitySheetState extends State<_QuantitySheet> {
                 child: CachedNetworkImage(
                   imageUrl: widget.food.imageUrl,
                   width: 48, height: 48, fit: BoxFit.cover,
-                  errorWidget: (_, __, ___) => Container(
+                  errorWidget: (_, _, _) => Container(
                     width: 48, height: 48,
                     color: Colors.white.withOpacity(0.05),
                     child: const Icon(Icons.restaurant, color: Colors.white24),
@@ -624,7 +624,7 @@ class _CreateCustomFoodDialogState extends ConsumerState<_CreateCustomFoodDialog
 
               // Category dropdown
               DropdownButtonFormField<FoodCategory>(
-                value: _selectedCategory,
+                initialValue: _selectedCategory,
                 decoration: InputDecoration(
                   labelText: 'Category',
                   filled: true,

@@ -6,9 +6,9 @@ class SyncStatusWidget extends ConsumerWidget {
   final bool showLabel;
 
   const SyncStatusWidget({
-    Key? key,
+    super.key,
     this.showLabel = true,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

@@ -224,7 +224,7 @@ class FirestoreSyncDataSourceImpl implements FirestoreSyncDataSource {
     try {
       final doc = await _firestore
           .collection(_syncMetadataCollection)
-          .doc('$userId\_$dataType')
+          .doc('${userId}_$dataType')
           .get();
 
       if (!doc.exists) {

@@ -6,7 +6,6 @@ import '../../data/repositories/workout_repository_impl.dart';
 import '../../domain/entities/entities.dart';
 import '../../domain/repositories/workout_repository.dart';
 import '../../domain/usecases/usecases.dart';
-import '../../domain/usecases/get_progression_suggestion_use_case.dart';
 import '../managers/workout_state_manager.dart';
 import 'active_program_providers.dart';
 import '../../../ai/presentation/providers/global_ai_provider.dart';

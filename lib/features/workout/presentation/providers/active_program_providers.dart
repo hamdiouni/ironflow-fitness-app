@@ -280,7 +280,7 @@ final currentDayExercisesProvider = Provider<List<ProgramExercise>>((ref) {
   return activeProgramAsync.when(
     data: (program) => program?.currentDay.exercises ?? [],
     loading: () => [],
-    error: (_, __) => [],
+    error: (_, _) => [],
   );
 });
 
@@ -297,6 +297,6 @@ final hasActiveProgramProvider = Provider<bool>((ref) {
   return activeProgramAsync.when(
     data: (program) => program != null && program.isActive,
     loading: () => false,
-    error: (_, __) => false,
+    error: (_, _) => false,
   );
 });

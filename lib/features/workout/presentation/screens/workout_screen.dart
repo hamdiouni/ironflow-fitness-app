@@ -44,7 +44,7 @@ class WorkoutScreen extends ConsumerWidget {
                   )
                 : const SizedBox.shrink(),
             loading: () => const SizedBox.shrink(),
-            error: (_, __) => const SizedBox.shrink(),
+            error: (_, _) => const SizedBox.shrink(),
           ),
           IconButton(
             onPressed: () => context.go(AppRoutes.workoutHistory),
@@ -219,7 +219,7 @@ class _ActiveProgramContent extends ConsumerWidget {
                 ? _HistoryPreview(workouts: workouts.take(3).toList())
                 : const SizedBox.shrink(),
             loading: () => const SizedBox.shrink(),
-            error: (_, __) => const SizedBox.shrink(),
+            error: (_, _) => const SizedBox.shrink(),
           ),
         ),
 

@@ -149,7 +149,7 @@ class _WeightTab extends ConsumerWidget {
               );
             },
             loading: () => const SizedBox.shrink(),
-            error: (_, __) => const SizedBox.shrink(),
+            error: (_, _) => const SizedBox.shrink(),
           ),
 
           const SizedBox(height: AppTheme.spacingLarge),
@@ -613,7 +613,7 @@ class _PhotoCard extends StatelessWidget {
             child: Image.file(
               File(entry.photoPath!),
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(
+              errorBuilder: (_, _, _) => Container(
                 color: theme.colorScheme.surface,
                 child: Icon(Icons.broken_image,
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.3)),

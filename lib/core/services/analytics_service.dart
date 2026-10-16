@@ -77,8 +77,8 @@ class AnalyticsService {
   }) async {
     await _logEvent('workout_started', parameters: {
       'workout_id': workoutId,
-      if (workoutName != null) 'workout_name': workoutName,
-      if (programName != null) 'program_name': programName,
+      'workout_name': ?workoutName,
+      'program_name': ?programName,
     });
   }
 
@@ -95,7 +95,7 @@ class AnalyticsService {
       'duration_minutes': durationMinutes,
       'exercise_count': exerciseCount,
       'set_count': setCount,
-      if (workoutName != null) 'workout_name': workoutName,
+      'workout_name': ?workoutName,
     });
   }
 
@@ -119,7 +119,7 @@ class AnalyticsService {
     await _logEvent('exercise_added', parameters: {
       'exercise_id': exerciseId,
       'exercise_name': exerciseName,
-      if (muscleGroup != null) 'muscle_group': muscleGroup,
+      'muscle_group': ?muscleGroup,
     });
   }
 
@@ -225,7 +225,7 @@ class AnalyticsService {
     await _logEvent('ai_query', parameters: {
       'query_type': queryType,
       'query_length': query.length,
-      if (responseLength != null) 'response_length': responseLength,
+      'response_length': ?responseLength,
     });
   }
 

@@ -4,7 +4,7 @@ import 'package:progression_tracker/core/providers/connectivity_provider.dart';
 import 'package:progression_tracker/core/providers/sync_provider.dart';
 
 class OfflineIndicator extends ConsumerWidget {
-  const OfflineIndicator({Key? key}) : super(key: key);
+  const OfflineIndicator({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

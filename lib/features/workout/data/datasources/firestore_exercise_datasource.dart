@@ -62,7 +62,7 @@ class FirestoreExerciseDatasource {
     final snapshot = await _firestore
         .collection('exercises')
         .where('name', isGreaterThanOrEqualTo: query)
-        .where('name', isLessThan: query + 'z')
+        .where('name', isLessThan: '${query}z')
         .get();
     return snapshot.docs
         .map((doc) => mapToExercise(doc.data(), doc.id))

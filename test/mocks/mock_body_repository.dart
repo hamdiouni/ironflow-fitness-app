@@ -24,7 +24,7 @@ class WeightHistoryEntry {
 /// (getWeightHistory, getGoalWeight) that are called by the analytics
 /// repository but not yet in the official interface.
 class MockBodyRepository implements BodyRepository {
-  List<BodyEntry> _entries = [];
+  final List<BodyEntry> _entries = [];
   List<WeightHistoryEntry> _weightHistory = [];
   double? _goalWeight;
 

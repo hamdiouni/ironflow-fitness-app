@@ -136,7 +136,7 @@ class _PhotoPanel extends StatelessWidget {
             ? Image.file(
                 File(entry.photoPath!),
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _PhotoPlaceholder(label: label),
+                errorBuilder: (_, _, _) => _PhotoPlaceholder(label: label),
               )
             : _PhotoPlaceholder(label: label),
 
