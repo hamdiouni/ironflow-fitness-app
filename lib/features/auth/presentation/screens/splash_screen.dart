@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:progression_tracker/core/constants/app_theme.dart';
-import 'package:progression_tracker/features/auth/presentation/providers/auth_provider.dart';
 
 /// Splash screen that checks authentication status and redirects accordingly
 class SplashScreen extends ConsumerStatefulWidget {

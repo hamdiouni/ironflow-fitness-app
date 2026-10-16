@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/app_router.dart';
 import '../../../../core/utils/error_handler.dart';
-import '../../../onboarding/domain/entities/user_profile.dart';
 import '../../../onboarding/presentation/providers/onboarding_provider.dart';
 import '../providers/active_program_providers.dart';
 import '../providers/workout_providers.dart';

@@ -1,5 +1,3 @@
-import 'dart:async';
-
 /// Generic in-memory cache manager for optimizing app performance.
 ///
 /// Provides fast access to frequently used data by caching it in memory.

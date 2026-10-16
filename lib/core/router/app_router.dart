@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:progression_tracker/main.dart';
@@ -24,7 +23,6 @@ import '../../features/workout/presentation/screens/program_editor_screen.dart';
 import '../../features/workout/presentation/screens/exercise_picker_screen.dart';
 import '../../features/workout/presentation/screens/program_selection_screen.dart';
 import '../../features/onboarding/presentation/screens/onboarding_screen.dart';
-import '../../features/onboarding/presentation/providers/onboarding_provider.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/analytics/presentation/screens/analytics_screen.dart';
 import '../../features/auth/presentation/screens/splash_screen.dart';

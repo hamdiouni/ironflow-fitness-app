@@ -1,9 +1,7 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 import 'package:progression_tracker/features/auth/presentation/providers/auth_notifier.dart';
-import 'package:progression_tracker/features/auth/presentation/providers/auth_provider.dart';
 
 /// Bug Condition Exploration Test for Bug 1: Logout Stuck in Loading State
 /// 

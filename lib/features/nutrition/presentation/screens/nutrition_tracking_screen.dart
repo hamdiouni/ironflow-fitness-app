@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_theme.dart';
-import '../../../../core/utils/error_handler.dart';
 import '../../domain/entities/daily_nutrition_summary.dart';
 import '../../domain/entities/nutrition_targets.dart';
 import '../providers/nutrition_providers.dart';

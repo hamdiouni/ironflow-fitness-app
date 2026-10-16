@@ -6,7 +6,6 @@ import '../../domain/entities/food_item.dart';
 import '../../domain/entities/food_item_full.dart';
 import '../../domain/usecases/search_food_use_case.dart';
 import '../../../nutrition/presentation/providers/nutrition_providers.dart';
-import 'package:uuid/uuid.dart';
 // import '../../data/datasources/firestore_food_datasource.dart';
 
 class FoodSearchState {

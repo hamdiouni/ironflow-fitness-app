@@ -1,4 +1,3 @@
-import '../entities/active_program.dart';
 import '../entities/workout_program.dart';
 import '../repositories/active_program_repository.dart';
 

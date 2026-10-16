@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import '../models/meal_model.dart';
 import '../models/nutrition_targets_model.dart';
-import '../../domain/entities/entities.dart';
 
 /// Firestore datasource for nutrition data.
 ///

@@ -1,5 +1,4 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
-import '../entities/entities.dart';
 import '../repositories/workout_repository.dart';
 
 /// Represents a pending operation to be synced.

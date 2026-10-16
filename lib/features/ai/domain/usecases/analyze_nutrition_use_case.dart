@@ -1,5 +1,4 @@
 import 'package:progression_tracker/features/nutrition/domain/repositories/nutrition_repository.dart';
-import 'package:progression_tracker/features/nutrition/domain/entities/entities.dart';
 
 /// Nutrition issue detected by analysis
 class NutritionIssue {

@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:progression_tracker/core/constants/app_theme.dart';
-import 'package:progression_tracker/features/auth/domain/repositories/auth_repository.dart';
-import 'package:progression_tracker/features/workout/domain/repositories/workout_repository.dart';
-import 'package:progression_tracker/features/nutrition/domain/repositories/nutrition_repository.dart';
-import 'package:progression_tracker/features/body/domain/repositories/body_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Screen for managing privacy settings and data controls.

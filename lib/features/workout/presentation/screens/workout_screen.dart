@@ -5,12 +5,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_theme.dart';
 import '../../../../core/router/app_router.dart';
-import '../../../../core/utils/error_handler.dart';
-import '../../../onboarding/domain/entities/user_profile.dart';
-import '../../../onboarding/presentation/providers/onboarding_provider.dart';
 import '../../../retention/presentation/widgets/streak_display.dart';
 import '../../domain/entities/workout_program.dart';
-import '../../domain/usecases/generate_workout_program_use_case.dart';
 import '../providers/active_program_providers.dart';
 import '../providers/workout_providers.dart';
 import '../widgets/program_exercise_card.dart';
