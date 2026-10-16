@@ -708,7 +708,7 @@ void main() {
     });
 
     group('onWorkoutCompleted', () {
-      test('should generate quick feedback and schedule refresh for Home and Workout contexts', () async {
+      testWidgets('should generate quick feedback and schedule refresh for Home and Workout contexts', (tester) async {
         // Arrange
         final completedWorkout = Workout(
           id: 'workout-1',
@@ -779,6 +779,7 @@ void main() {
 
         // Act
         await notifier.onWorkoutCompleted(completedWorkout);
+        await tester.pump(const Duration(seconds: 6));
 
         // Assert
         // Quick feedback should be set
@@ -800,7 +801,7 @@ void main() {
         // Note: Cache invalidation calls are async and may not be verifiable immediately
       });
 
-      test('should handle quick feedback generation failure gracefully', () async {
+      testWidgets('should handle quick feedback generation failure gracefully', (tester) async {
         // Arrange
         final completedWorkout = Workout(
           id: 'workout-1',
@@ -833,6 +834,7 @@ void main() {
 
         // Act - should not throw
         await notifier.onWorkoutCompleted(completedWorkout);
+        await tester.pump(const Duration(seconds: 6));
 
         // Assert
         // Quick feedback should not be set due to failure
@@ -846,7 +848,7 @@ void main() {
         verify(mockWorkoutRepository.getWorkoutsByDateRange(any, any)).called(1);
       });
 
-      test('should handle cache invalidation failure gracefully', () async {
+      testWidgets('should handle cache invalidation failure gracefully', (tester) async {
         // Arrange
         final completedWorkout = Workout(
           id: 'workout-1',
@@ -876,6 +878,7 @@ void main() {
 
         // Act - should not throw
         await notifier.onWorkoutCompleted(completedWorkout);
+        await tester.pump(const Duration(seconds: 6));
 
         // Assert
         // Quick feedback should still be set despite cache invalidation failure
@@ -939,7 +942,7 @@ void main() {
         verify(mockInsightsEngine.generateQuickFeedback(completedWorkout, [completedWorkout])).called(1);
       });
 
-      test('should not affect other contexts when workout completed', () async {
+      testWidgets('should not affect other contexts when workout completed', (tester) async {
         // Arrange
         final completedWorkout = Workout(
           id: 'workout-1',
@@ -1019,6 +1022,7 @@ void main() {
 
         // Act
         await notifier.onWorkoutCompleted(completedWorkout);
+        await tester.pump(const Duration(seconds: 6));
 
         // Assert
         // Home and Workout contexts should be invalidated
@@ -1034,7 +1038,7 @@ void main() {
     });
 
     group('onMealLogged', () {
-      test('should schedule refresh for Home and Nutrition contexts', () async {
+      testWidgets('should schedule refresh for Home and Nutrition contexts', (tester) async {
         // Arrange
         // Set up initial state with insights for all contexts
         final homeInsight = Insight(
@@ -1093,6 +1097,7 @@ void main() {
 
         // Act
         await notifier.onMealLogged();
+        await tester.pump(const Duration(seconds: 6));
 
         // Assert
         // Home and Nutrition contexts should be invalidated (removed from memory cache)
@@ -1114,7 +1119,7 @@ void main() {
         verifyNever(mockCacheService.invalidateCache(InsightContext.profile));
       });
 
-      test('should handle cache invalidation failure gracefully', () async {
+      testWidgets('should handle cache invalidation failure gracefully', (tester) async {
         // Arrange
         final homeInsight = Insight(
           id: 'home-1',
@@ -1146,6 +1151,7 @@ void main() {
           () => notifier.onMealLogged(),
           returnsNormally,
         );
+        await tester.pump(const Duration(seconds: 6));
 
         // Memory cache should still be invalidated despite Hive cache failure
         expect(notifier.state.insights[InsightContext.home], isNull);
