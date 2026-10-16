@@ -274,7 +274,7 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
 
       final weekVolume = weekWorkouts.fold<double>(
         0,
-        (sum, w) => sum + (w.totalVolume ?? 0),
+        (sum, w) => sum + w.totalVolume,
       );
 
       weeklyData.add(WeeklyConsistency(
