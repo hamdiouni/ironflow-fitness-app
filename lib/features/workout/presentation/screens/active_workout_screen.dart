@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -274,26 +274,9 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
       
       print('🔍 [WorkoutUI] Calories burned: $caloriesBurned');
       
-      // Update the workout with calories burned using maybeWhen
+      // Update the workout with calories burned
       print('📊 [WorkoutUI] Updating workout with calories...');
-      final workoutState = ref.read(workoutNotifierProvider);
-      workoutState.maybeWhen(
-        inProgress: (workout, startTime) {
-          // Update the workout entity with calories
-          final updatedWorkout = workout.copyWith(
-            caloriesBurned: caloriesBurned,
-          );
-          // Update the state with the new workout
-          ref.read(workoutNotifierProvider.notifier).state = WorkoutState.inProgress(
-            updatedWorkout,
-            startTime,
-          );
-          print('✅ [WorkoutUI] Workout updated with calories');
-        },
-        orElse: () {
-          print('⚠️ [WorkoutUI] Workout not in progress state');
-        },
-      );
+      ref.read(workoutNotifierProvider.notifier).updateCalories(caloriesBurned);
       
       // Complete the current workout day in the active program
       print('📊 [WorkoutUI] Completing current day in active program...');

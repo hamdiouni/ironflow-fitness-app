@@ -382,6 +382,21 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
     }
   }
 
+  /// Updates the calories burned for the in-progress workout.
+  void updateCalories(double caloriesBurned) {
+    state.maybeWhen(
+      inProgress: (workout, startTime) {
+        final updatedWorkout = workout.copyWith(caloriesBurned: caloriesBurned);
+        state = WorkoutState.inProgress(updatedWorkout, startTime);
+        _stateManager.saveState(updatedWorkout, startTime);
+        print('✅ [Workout] Workout updated with calories: $caloriesBurned');
+      },
+      orElse: () {
+        print('⚠️ [Workout] Cannot update calories: workout not in progress');
+      },
+    );
+  }
+
   /// Resets the notifier back to [WorkoutState.initial] and clears any
   /// persisted active workout state.
   Future<void> reset() async {
