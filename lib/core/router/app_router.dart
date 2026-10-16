@@ -250,7 +250,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       // AI Chat route (outside shell - full screen)
       GoRoute(
         path: AppRoutes.aiChat,
-        builder: (context, state) => const AIChatScreen(),
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          return AIChatScreen(
+            initialMessage: extra?['initialMessage'] as String?,
+          );
+        },
       ),
       GoRoute(
         path: AppRoutes.exercisePicker,
