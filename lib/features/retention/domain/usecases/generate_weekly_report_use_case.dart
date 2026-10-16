@@ -87,7 +87,7 @@ class GenerateWeeklyReportUseCase {
     final totalWorkouts = workouts.length;
     final totalVolume = workouts.fold<double>(
       0,
-      (sum, w) => sum + (w.totalVolume ?? 0),
+      (sum, w) => sum + w.totalVolume,
     );
 
     // Calculate PRs (simplified - compare with previous week)
