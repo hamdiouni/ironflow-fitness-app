@@ -34,8 +34,8 @@ Future<void> uploadAllExercisesToFirestore(FirebaseFirestore firestore) async {
     }
     
     print('\nExercises by muscle group:');
-    byMuscleGroup.forEach((group, count) {
-      print('  $group: $count');
+    byMuscleGroup.forEach((group, total) {
+      print('  $group: $total');
     });
     
   } catch (e) {

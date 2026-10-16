@@ -173,7 +173,7 @@ class BackupDataUseCase {
     final totalBackups = backups.length;
     final automaticBackups = backups.where((b) => b.type == BackupType.automatic).length;
     final manualBackups = backups.where((b) => b.type == BackupType.manual).length;
-    final totalSize = backups.fold<int>(0, (sum, b) => sum + b.fileSize);
+    final totalSize = backups.fold<int>(0, (total, b) => total + b.fileSize);
     final lastBackup = backups.isNotEmpty ? backups.first.createdAt : null;
 
     return {
