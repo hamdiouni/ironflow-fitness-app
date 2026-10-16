@@ -355,7 +355,7 @@ class _VolumeProgressionChart extends StatelessWidget {
 
       final volume = history
           .where((w) => w.date.isAfter(weekStart) && w.date.isBefore(weekEnd))
-          .fold<int>(0, (sum, w) => sum + (w.totalVolume as int? ?? 0));
+          .fold<int>(0, (sum, w) => sum + ((w.totalVolume as num?)?.toInt() ?? 0));
 
       volumes.add(volume);
     }
