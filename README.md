@@ -249,18 +249,27 @@ lib/
    flutter pub get
    ```
 
-3. **Set up environment variables**
+3. **Set up environment variables & API keys**
    
-   Create a `.env` file in the root directory:
+   IronFlow uses a centralized `AppConfig` class that supports both compile-time `--dart-define` constants (recommended for production builds and CI/CD) and local `.env` files for development.
+
+   *For local development:*
+   Create a `.env` file in the root directory (never committed to git):
    ```bash
    cp .env.example .env
    ```
-   
    Add your API keys to `.env`:
    ```env
    OPENAI_API_KEY=your_openai_api_key_here
    GEMINI_API_KEY=your_gemini_api_key_here
    NVIDIA_API_KEY=your_nvidia_api_key_here
+   ```
+
+   *For production builds or CI/CD without bundling secrets into assets:*
+   Pass API keys via `--dart-define`:
+   ```bash
+   flutter run --dart-define=OPENAI_API_KEY=your_key --dart-define=GEMINI_API_KEY=your_key
+   flutter build apk --release --dart-define=OPENAI_API_KEY=your_key --dart-define=GEMINI_API_KEY=your_key
    ```
 
 4. **Configure Firebase**
