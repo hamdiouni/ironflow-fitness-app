@@ -541,7 +541,7 @@ class _ExerciseCardState extends ConsumerState<_ExerciseCard> {
                           width: 72,
                           height: 52,
                           fit: BoxFit.cover,
-                          errorWidget: (_, __, ___) => Container(
+                          errorWidget: (_, _, _) => Container(
                             width: 72, height: 52,
                             color: Theme.of(context).colorScheme.surfaceContainerHighest,
                             child: const Icon(Icons.fitness_center, color: AppTheme.primaryColor, size: 24),
@@ -580,7 +580,7 @@ class _ExerciseCardState extends ConsumerState<_ExerciseCard> {
                             style: TextStyle(color: s.isStagnant ? Colors.orange : AppTheme.primaryColor, fontSize: 12),
                           ) : const SizedBox.shrink(),
                           loading: () => const SizedBox(height: 14, width: 14, child: CircularProgressIndicator(strokeWidth: 2)),
-                          error: (_, __) => const SizedBox.shrink(),
+                          error: (_, _) => const SizedBox.shrink(),
                         ),
                       ],
                     ],
@@ -808,7 +808,7 @@ class _ExerciseSelectionSheetState extends State<ExerciseSelectionSheet> {
                     width: 48,
                     height: 36,
                     fit: BoxFit.cover,
-                    errorWidget: (_, __, ___) => Container(
+                    errorWidget: (_, _, _) => Container(
                       width: 48, height: 36,
                       color: theme.colorScheme.surface,
                       child: Icon(Icons.fitness_center, color: theme.colorScheme.primary, size: 18),

@@ -156,7 +156,7 @@ class _WorkoutSummaryScreenState extends State<WorkoutSummaryScreen> {
         ).animate()
             .fadeIn(delay: (500 + index * 100).ms, duration: 400.ms)
             .slideX(begin: 0.2, duration: 400.ms);
-      }).toList(),
+      }),
     ];
   }
 }
@@ -492,7 +492,7 @@ class _ExerciseBreakdownCard extends StatelessWidget {
                 ],
               ),
             );
-          }).toList(),
+          }),
         ],
       ),
     );

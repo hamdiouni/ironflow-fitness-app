@@ -31,7 +31,7 @@ class ReminderSettingsNotifier extends StateNotifier<AsyncValue<ReminderSettings
     bool? enabled,
     TimeOfDayModel? time,
   }) async {
-    await state.whenData((currentSettings) async {
+    state.whenData((currentSettings) async {
       final newSettings = currentSettings.copyWith(
         workoutRemindersEnabled: enabled ?? currentSettings.workoutRemindersEnabled,
         workoutReminderTime: time ?? currentSettings.workoutReminderTime,
@@ -48,7 +48,7 @@ class ReminderSettingsNotifier extends StateNotifier<AsyncValue<ReminderSettings
     TimeOfDayModel? lunchTime,
     TimeOfDayModel? dinnerTime,
   }) async {
-    await state.whenData((currentSettings) async {
+    state.whenData((currentSettings) async {
       final newSettings = currentSettings.copyWith(
         mealRemindersEnabled: enabled ?? currentSettings.mealRemindersEnabled,
         breakfastTime: breakfastTime ?? currentSettings.breakfastTime,
@@ -65,7 +65,7 @@ class ReminderSettingsNotifier extends StateNotifier<AsyncValue<ReminderSettings
     bool? enabled,
     TimeOfDayModel? time,
   }) async {
-    await state.whenData((currentSettings) async {
+    state.whenData((currentSettings) async {
       final newSettings = currentSettings.copyWith(
         streakRemindersEnabled: enabled ?? currentSettings.streakRemindersEnabled,
         streakReminderTime: time ?? currentSettings.streakReminderTime,
@@ -80,7 +80,7 @@ class ReminderSettingsNotifier extends StateNotifier<AsyncValue<ReminderSettings
     bool? soundEnabled,
     bool? vibrationEnabled,
   }) async {
-    await state.whenData((currentSettings) async {
+    state.whenData((currentSettings) async {
       final newSettings = currentSettings.copyWith(
         soundEnabled: soundEnabled ?? currentSettings.soundEnabled,
         vibrationEnabled: vibrationEnabled ?? currentSettings.vibrationEnabled,

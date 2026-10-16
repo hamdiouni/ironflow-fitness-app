@@ -185,7 +185,7 @@ class _SuggestionsContent extends StatelessWidget {
               },
             ),
           );
-        }).toList(),
+        }),
       ],
     );
   }

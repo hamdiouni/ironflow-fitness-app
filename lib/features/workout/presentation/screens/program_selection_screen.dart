@@ -15,7 +15,7 @@ import '../providers/workout_providers.dart';
 /// 
 /// **Validates: Requirements 2.1, 2.2, 13.3, 13.4**
 class ProgramSelectionScreen extends ConsumerWidget {
-  const ProgramSelectionScreen({Key? key}) : super(key: key);
+  const ProgramSelectionScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

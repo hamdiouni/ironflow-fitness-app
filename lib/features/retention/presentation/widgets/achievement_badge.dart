@@ -10,7 +10,7 @@ class AchievementBadge extends StatelessWidget {
   final Achievement achievement;
   final VoidCallback? onTap;
 
-  const AchievementBadge({
+  const AchievementBadge({super.key, 
     required this.achievement,
     this.onTap,
   });

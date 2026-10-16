@@ -28,7 +28,7 @@ class ProfileScreen extends ConsumerWidget {
       body: SafeArea(
         child: profileAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (_, __) => const Center(child: Text('Error loading profile')),
+          error: (_, _) => const Center(child: Text('Error loading profile')),
           data: (profile) => profile == null
               ? _NoProfileView()
               : _ProfileBody(profile: profile),
@@ -851,7 +851,7 @@ Last Updated: May 13, 2026''',
                     onChanged: (_) {
                       ref.read(themeProvider.notifier).toggleTheme();
                     },
-                    activeColor: AppTheme.primaryColor,
+                    activeThumbColor: AppTheme.primaryColor,
                   ),
                   dense: true,
                 ),

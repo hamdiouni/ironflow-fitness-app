@@ -60,7 +60,7 @@ class HomeScreen extends ConsumerWidget {
                       );
                     },
                     loading: () => _LoadingWeeklyActivity(),
-                    error: (_, __) => _LoadingWeeklyActivity(),
+                    error: (_, _) => _LoadingWeeklyActivity(),
                   ),
                   loading: () => _LoadingWeeklyActivity(),
                   error: (error, stack) => _ErrorCard(
@@ -84,10 +84,10 @@ class HomeScreen extends ConsumerWidget {
                       profile: profile,
                     ),
                     loading: () => _LoadingSummaryRow(),
-                    error: (_, __) => _LoadingSummaryRow(),
+                    error: (_, _) => _LoadingSummaryRow(),
                   ),
                   loading: () => _LoadingSummaryRow(),
-                  error: (_, __) => _LoadingSummaryRow(),
+                  error: (_, _) => _LoadingSummaryRow(),
                 ),
               ),
               
@@ -103,10 +103,10 @@ class HomeScreen extends ConsumerWidget {
                       profile: profile,
                     ),
                     loading: () => const SizedBox.shrink(),
-                    error: (_, __) => const SizedBox.shrink(),
+                    error: (_, _) => const SizedBox.shrink(),
                   ),
                   loading: () => const SizedBox.shrink(),
-                  error: (_, __) => const SizedBox.shrink(),
+                  error: (_, _) => const SizedBox.shrink(),
                 ),
               ),
               
@@ -117,7 +117,7 @@ class HomeScreen extends ConsumerWidget {
                       ? _RecentWorkoutCard(workout: workouts.first)
                       : _EmptyWorkoutCard(),
                   loading: () => _LoadingWorkoutCard(),
-                  error: (_, __) => const SizedBox.shrink(),
+                  error: (_, _) => const SizedBox.shrink(),
                 ),
               ),
               

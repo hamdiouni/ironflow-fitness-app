@@ -19,7 +19,7 @@ class SyncIndicator extends ConsumerWidget {
 
     return syncStatusAsync.when(
       loading: () => const SizedBox.shrink(),
-      error: (_, __) => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
       data: (status) {
         final isOnline = isOnlineAsync.valueOrNull ?? false;
 
@@ -149,7 +149,7 @@ class CompactSyncIndicator extends ConsumerWidget {
 
     return syncStatusAsync.when(
       loading: () => const SizedBox.shrink(),
-      error: (_, __) => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
       data: (status) {
         if (!status.isSyncing && status.pendingActions == 0 && status.failedActions == 0) {
           return const SizedBox.shrink();

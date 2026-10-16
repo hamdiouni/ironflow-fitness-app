@@ -177,7 +177,7 @@ class InsightCacheServiceImpl implements InsightCacheService {
     try {
       final now = DateTime.now();
       final cacheAge = now.difference(cache.cachedAt);
-      final isStale = cacheAge > cacheTTL;
+      final isStale = cacheAge >= cacheTTL;
       
       print('🔍 [InsightCache] Cache staleness check for context: ${cache.context.name}');
       print('🔍 [InsightCache] Cache age: ${cacheAge.inMinutes} minutes, TTL: ${cacheTTL.inMinutes} minutes, Is stale: $isStale');
