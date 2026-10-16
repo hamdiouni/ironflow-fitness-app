@@ -20,16 +20,16 @@ FILES=(
   "docs/development/FINAL_IMAGE_FIX.md"
 )
 
-# Redact Gemini API key: AIzaSyD8ATUIwoIc2k4FheWOT5T1tScwe7Eqd6E
+# Redact Gemini API key
 for file in "${FILES[@]}"; do
   if [ -f "$file" ]; then
-    sed -i 's/AIzaSyD8ATUIwoIc2k4FheWOT5T1tScwe7Eqd6E/your_gemini_api_key_here/g' "$file"
+    sed -i -E 's/AIzaSy[A-Za-z0-9_-]{33}/your_gemini_api_key_here/g' "$file"
     echo "✅ Cleaned: $file"
   fi
 done
 
 # Redact NVIDIA API key
-sed -i 's/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/your_nvidia_api_key_here/g' "docs/development/FINAL_IMAGE_FIX.md"
+sed -i -E 's/nvapi-[A-Za-z0-9_-]+/your_nvidia_api_key_here/g' "docs/development/FINAL_IMAGE_FIX.md"
 
 echo "✅ All API keys have been redacted!"
 echo "⚠️  Next step: Commit these changes and force push to GitHub"

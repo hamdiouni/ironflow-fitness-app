@@ -103,7 +103,7 @@
 📡 [AI CHAT] Sending request to Gemini API...
 ═══════════════════════════════════════
 ❌ [GEMINI SERVICE ERROR] 403 Forbidden - Invalid API key
-🔑 [GEMINI SERVICE ERROR] API key used: AIzaSyD8ATUIwoIc2k4F...
+🔑 [GEMINI SERVICE ERROR] API key used: AIzaSy...[REDACTED]
 ═══════════════════════════════════════
 ❌ [AI CHAT ERROR] Gemini API failed!
 🔴 [AI CHAT ERROR] Error type: GeminiAIServiceException
@@ -157,7 +157,7 @@ Get your free key at: https://makersuite.google.com/app/apikey
 **Console shows:**
 ```
 ❌ [GEMINI SERVICE ERROR] 403 Forbidden - Invalid API key
-🔑 [GEMINI SERVICE ERROR] API key used: AIzaSyD8ATUIwoIc2k4F...
+🔑 [GEMINI SERVICE ERROR] API key used: AIzaSy...[REDACTED]
 ```
 
 **Cause**: API key is wrong or expired
@@ -227,7 +227,7 @@ Get your free key at: https://makersuite.google.com/app/apikey
 ```
 ═══════════════════════════════════════
 ❌ [GEMINI SERVICE ERROR] 403 Forbidden - Invalid API key
-🔑 [GEMINI SERVICE ERROR] API key used: AIzaSyD8ATUIwoIc2k4F...
+🔑 [GEMINI SERVICE ERROR] API key used: AIzaSy...[REDACTED]
 ═══════════════════════════════════════
 ```
 

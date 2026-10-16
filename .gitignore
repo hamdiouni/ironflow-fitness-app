@@ -60,3 +60,6 @@ app.*.map.json
 .env
 .env.*
 !.env.example
+
+# Flutter DevTools
+devtools_options.yaml
