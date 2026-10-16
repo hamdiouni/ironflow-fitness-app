@@ -45,7 +45,7 @@ class CheckAchievementsUseCase {
     // Calculate total volume
     final totalVolume = workouts.fold<double>(
       0,
-      (sum, w) => sum + (w.totalVolume ?? 0),
+      (sum, w) => sum + w.totalVolume,
     );
 
     // Get achievements with calculated progress
