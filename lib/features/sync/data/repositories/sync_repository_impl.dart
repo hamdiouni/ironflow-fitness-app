@@ -5,6 +5,8 @@ import 'package:progression_tracker/features/sync/domain/repositories/sync_repos
 import 'package:progression_tracker/features/sync/domain/usecases/sync_pending_operations_use_case.dart';
 
 class SyncRepositoryImpl implements SyncRepository {
+  // TODO: Unfinished cloud sync feature - reserved for future two-way synchronization
+  // ignore: unused_field
   final FirestoreSyncDataSource _dataSource;
   final SyncPendingOperationsUseCase _syncUseCase;
 
