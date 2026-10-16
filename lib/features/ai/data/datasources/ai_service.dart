@@ -1,4 +1,4 @@
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:progression_tracker/core/config/app_config.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -25,7 +25,7 @@ class AIService {
   AIService({
     String? apiKey,
     http.Client? httpClient,
-  })  : _apiKey = apiKey ?? dotenv.env['OPENAI_API_KEY'] ?? '',
+  })  : _apiKey = apiKey ?? AppConfig.getOpenAIApiKey(),
         _httpClient = httpClient ?? http.Client();
 
   /// Validates that API key is configured
