@@ -5,6 +5,7 @@ import '../../../../core/constants/app_theme.dart';
 import '../../../workout/presentation/providers/workout_providers.dart';
 import '../../../onboarding/presentation/providers/onboarding_provider.dart';
 import '../../../onboarding/domain/entities/user_profile.dart';
+import '../../../ai/presentation/widgets/ai_entry_button.dart';
 
 class AnalyticsScreen extends ConsumerStatefulWidget {
   const AnalyticsScreen({super.key});
@@ -23,6 +24,9 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
       appBar: AppBar(
         title: const Text('Progress Analytics'),
         elevation: 0,
+        actions: const [
+          AiEntryButton(),
+        ],
       ),
       body: workoutHistoryAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
