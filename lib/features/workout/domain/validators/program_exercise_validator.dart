@@ -1,4 +1,3 @@
-import '../../../../core/error/exceptions.dart';
 import '../exceptions/workout_exceptions.dart';
 
 /// Validator for program exercise parameters

@@ -17,7 +17,6 @@ import '../../domain/exceptions/diet_plan_exceptions.dart';
 import '../../domain/usecases/generate_diet_plan_use_case.dart';
 import '../providers/diet_plan_providers.dart';
 import '../providers/nutrition_providers.dart';
-import '../../presentation/providers/nutrition_providers.dart' as nutrition_providers;
 import '../../../onboarding/presentation/providers/onboarding_provider.dart';
 import 'food_search_screen.dart';
 

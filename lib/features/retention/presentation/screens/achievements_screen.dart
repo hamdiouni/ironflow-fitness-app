@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:progression_tracker/core/constants/app_theme.dart';
 import 'package:progression_tracker/features/retention/domain/entities/achievement.dart';
-import 'package:progression_tracker/features/retention/domain/usecases/check_achievements_use_case.dart';
 
 /// Screen for displaying user achievements and badges.
 ///

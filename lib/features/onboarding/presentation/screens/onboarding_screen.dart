@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_theme.dart';
 import '../../../../core/router/app_router.dart';
-import '../../../../shared/widgets/ironflow_logo.dart';
 import '../../../nutrition/domain/usecases/generate_diet_plan_use_case.dart';
 import '../../../nutrition/presentation/providers/diet_plan_providers.dart';
 import '../../../workout/domain/usecases/generate_workout_program_use_case.dart';
