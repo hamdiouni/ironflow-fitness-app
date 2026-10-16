@@ -23,10 +23,16 @@ void main() async {
   runZonedGuarded<Future<void>>(() async {
     WidgetsFlutterBinding.ensureInitialized();
 
-    // Load environment variables
-    await dotenv.load(fileName: ".env");
-    if (kDebugMode) {
-      print('✓ Environment variables loaded');
+    // Load environment variables if available (e.g., local debug build)
+    try {
+      await dotenv.load(fileName: ".env");
+      if (kDebugMode) {
+        print('✓ Local .env file loaded');
+      }
+    } catch (_) {
+      if (kDebugMode) {
+        print('ℹ️ No .env asset bundled; using environment configuration (--dart-define)');
+      }
     }
 
     // Initialize Firebase

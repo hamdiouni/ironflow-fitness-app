@@ -1,4 +1,4 @@
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:progression_tracker/core/config/app_config.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -33,7 +33,7 @@ class GeminiAIService {
   GeminiAIService({
     String? apiKey,
     http.Client? httpClient,
-  })  : _apiKey = apiKey ?? dotenv.env['GEMINI_API_KEY'] ?? '',
+  })  : _apiKey = apiKey ?? AppConfig.getGeminiApiKey(),
         _httpClient = httpClient ?? http.Client();
 
   /// Validates that API key is configured
