@@ -331,7 +331,7 @@ class _VolumeProgressionChart extends StatelessWidget {
                         x: e.key,
                         barRods: [
                           BarChartRodData(
-                            toY: e.value.toDouble(),
+                            toY: e.value,
                             color: AppTheme.accentColor,
                           ),
                         ],
@@ -343,11 +343,11 @@ class _VolumeProgressionChart extends StatelessWidget {
     );
   }
 
-  List<int> _calculateVolumeByWeek(List<dynamic> history) {
+  List<double> _calculateVolumeByWeek(List<dynamic> history) {
     if (history.isEmpty) return [];
 
     final now = DateTime.now();
-    final volumes = <int>[];
+    final volumes = <double>[];
 
     for (int i = 0; i < 12; i++) {
       final weekStart = now.subtract(Duration(days: now.weekday - 1 + (i * 7)));
@@ -355,7 +355,7 @@ class _VolumeProgressionChart extends StatelessWidget {
 
       final volume = history
           .where((w) => w.date.isAfter(weekStart) && w.date.isBefore(weekEnd))
-          .fold<int>(0, (sum, w) => sum + ((w.totalVolume as num?)?.toInt() ?? 0));
+          .fold<double>(0.0, (sum, w) => sum + (w.totalVolume as double));
 
       volumes.add(volume);
     }

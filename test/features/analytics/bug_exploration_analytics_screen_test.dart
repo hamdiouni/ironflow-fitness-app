@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:progression_tracker/features/analytics/presentation/screens/analytics_screen.dart';
 import 'package:progression_tracker/features/onboarding/domain/entities/user_profile.dart';
 import 'package:progression_tracker/features/onboarding/presentation/providers/onboarding_provider.dart';
@@ -124,6 +125,40 @@ void main() {
 
       expect(find.text('Weekly Consistency'), findsOneWidget);
       expect(find.text('100%'), findsOneWidget);
+    });
+
+    testWidgets('renders volume chart accurately with fractional volumes without truncation', (tester) async {
+      tester.view.physicalSize = const Size(800, 1400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final now = DateTime.now();
+      final weekStart = now.subtract(Duration(days: now.weekday - 1));
+
+      final workouts = [
+        Workout(
+          id: 'fractional_1',
+          date: weekStart.add(const Duration(hours: 10)),
+          exercises: const [],
+          duration: const Duration(minutes: 45),
+          totalVolume: 1250.75,
+        ),
+        Workout(
+          id: 'fractional_2',
+          date: weekStart.add(const Duration(days: 2, hours: 10)),
+          exercises: const [],
+          duration: const Duration(minutes: 50),
+          totalVolume: 875.50,
+        ),
+      ];
+      final profile = _createProfile(workoutDaysPerWeek: 3);
+
+      await tester.pumpWidget(buildScreen(workouts: workouts, profile: profile));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Total Volume Over Time'), findsOneWidget);
+      expect(find.byType(BarChart), findsOneWidget);
     });
   });
 }
