@@ -122,7 +122,7 @@ class _WorkoutHistoryScreenState extends ConsumerState<WorkoutHistoryScreen> {
         horizontal: AppTheme.spacingMedium,
         vertical: AppTheme.spacingSmall,
       ),
-      // Add 1 for InsightWidget at the top, plus 1 for loading indicator if loading more
+      // Add 1 for ContextualInsightBanner at the top, plus 1 for loading indicator if loading more
       itemCount: 1 + state.workouts.length + (state.isLoadingMore ? 1 : 0),
       itemBuilder: (context, index) {
         // First item is the ContextualInsightBanner
@@ -133,7 +133,7 @@ class _WorkoutHistoryScreenState extends ConsumerState<WorkoutHistoryScreen> {
           );
         }
         
-        // Adjust index for workout items (subtract 1 because InsightWidget is at index 0)
+        // Adjust index for workout items (subtract 1 because ContextualInsightBanner is at index 0)
         final workoutIndex = index - 1;
         
         if (workoutIndex == state.workouts.length) {
