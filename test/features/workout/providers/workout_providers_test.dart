@@ -268,6 +268,12 @@ void main() {
           expect(pattern, contains('[Workout]'));
         }
       });
+
+      test('should log calorie update operations', () {
+        const pattern = '✅ [Workout] Workout updated with calories: 350.0';
+        expect(pattern, contains('✅ [Workout]'));
+        expect(pattern, contains('calories'));
+      });
     });
   });
 }
