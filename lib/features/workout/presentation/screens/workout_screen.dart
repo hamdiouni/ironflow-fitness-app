@@ -10,6 +10,7 @@ import '../../domain/entities/workout_program.dart';
 import '../providers/active_program_providers.dart';
 import '../providers/workout_providers.dart';
 import '../widgets/program_exercise_card.dart';
+import '../../../ai/presentation/widgets/ai_entry_button.dart';
 
 /// Workout screen showing the user's active program and quick-start options.
 ///
@@ -34,6 +35,7 @@ class WorkoutScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Workout'),
         actions: [
+          const AiEntryButton(),
           // Edit program button
           activeProgramAsync.when(
             data: (program) => program != null

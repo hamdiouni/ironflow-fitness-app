@@ -19,6 +19,7 @@ import '../providers/diet_plan_providers.dart';
 import '../providers/nutrition_providers.dart';
 import '../../../onboarding/presentation/providers/onboarding_provider.dart';
 import 'food_search_screen.dart';
+import '../../../ai/presentation/widgets/ai_entry_button.dart';
 
 /// Nutrition screen displaying daily macro summary, meal list, and log meal form.
 ///
@@ -39,6 +40,7 @@ class NutritionScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Nutrition'),
         actions: [
+          const AiEntryButton(),
           IconButton(
             onPressed: () => context.go('/nutrition/history'),
             icon: const Icon(Icons.history),
