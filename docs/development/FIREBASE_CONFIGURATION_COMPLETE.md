@@ -13,7 +13,7 @@
 ✅ **Web Configuration**:
 ```dart
 static const FirebaseOptions web = FirebaseOptions(
-  apiKey: 'AIzaSyBLBMkDB_UVOj2fvqbMuoDhUs-HAy2hg9E',
+  apiKey: 'YOUR_FIREBASE_WEB_API_KEY',
   appId: '1:215465833827:web:a06958874b4b7e75af0f56',
   messagingSenderId: '215465833827',
   projectId: 'ironflow-5b79d',
@@ -26,7 +26,7 @@ static const FirebaseOptions web = FirebaseOptions(
 ✅ **Android Configuration**:
 ```dart
 static const FirebaseOptions android = FirebaseOptions(
-  apiKey: 'AIzaSyD8Brzp6gIKiogXOPXm0Xm3MCEPmamd_Z8',
+  apiKey: 'YOUR_FIREBASE_ANDROID_API_KEY',
   appId: '1:215465833827:android:c314e6797303209caf0f56',
   messagingSenderId: '215465833827',
   projectId: 'ironflow-5b79d',
