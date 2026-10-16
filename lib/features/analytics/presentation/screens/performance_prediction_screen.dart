@@ -37,7 +37,7 @@ class _PerformancePredictionScreenState
         ],
       ),
       body: FutureBuilder<PerformancePrediction>(
-        future: _fetchPrediction(),
+        future: _fetchPrediction(_predictionDays),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -446,7 +446,7 @@ class _PerformancePredictionScreenState
     );
   }
 
-  Future<PerformancePrediction> _fetchPrediction() async {
+  Future<PerformancePrediction> _fetchPrediction([int days = 30]) async {
     // TODO: Replace with actual provider
     throw UnimplementedError('Provider not implemented');
   }

@@ -28,7 +28,6 @@ class WorkoutScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final activeProgramAsync = ref.watch(activeProgramProvider);
     final historyAsync = ref.watch(workoutHistoryProvider);
-    final onSurface = Theme.of(context).colorScheme.onSurface;
     final secondary = Theme.of(context).colorScheme.onSurfaceVariant;
 
     return Scaffold(
