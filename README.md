@@ -272,6 +272,9 @@ lib/
    flutter build apk --release --dart-define=OPENAI_API_KEY=your_key --dart-define=GEMINI_API_KEY=your_key
    ```
 
+   > [!WARNING]
+   > **Security & Release Risk**: Strings compiled into client binaries with `--dart-define` can be reverse-engineered or extracted from decompiled APK/IPA packages using tools such as `strings` or Ghidra. For production client releases, direct client-to-AI calls pose a secret exposure risk. Production applications should route all AI coaching and LLM requests through an authenticated backend proxy or Cloud Function where secret keys remain protected server-side.
+
 4. **Configure Firebase**
    
    - Create a Firebase project at [Firebase Console](https://console.firebase.google.com/)

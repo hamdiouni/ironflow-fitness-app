@@ -32,7 +32,7 @@ class AIService {
   void validateConfiguration() {
     if (_apiKey.isEmpty) {
       throw AIServiceException(
-        message: 'OpenAI API key not configured. Set OPENAI_API_KEY in .env file.',
+        message: 'OpenAI API key not configured. Provide it via --dart-define=OPENAI_API_KEY=... or local .env file.',
         code: 'MISSING_API_KEY',
       );
     }
