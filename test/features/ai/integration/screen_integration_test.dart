@@ -345,8 +345,9 @@ void main() {
       // Act
       await tester.pump();
 
-      // Assert - Verify loading indicator is displayed
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      // Assert - Verify loading state is displayed (AI Insights header with shimmer card)
+      expect(find.text('AI Insights'), findsOneWidget);
+      expect(find.byType(GlassmorphicCard), findsOneWidget);
     });
 
     testWidgets('InsightWidget shows error state with retry button',
@@ -379,7 +380,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Assert - Verify error message is displayed
-      expect(find.text('Failed to generate insights'), findsOneWidget);
+      expect(find.text('Unable to generate insights'), findsOneWidget);
 
       // Assert - Verify retry button is displayed
       expect(find.text('Retry'), findsOneWidget);
@@ -415,9 +416,9 @@ void main() {
       await tester.pumpAndSettle();
 
       // Assert - Verify empty state message is displayed
-      expect(find.text('No insights yet'), findsOneWidget);
+      expect(find.text('Start Your Journey'), findsOneWidget);
       expect(
-        find.text('Start logging workouts and meals to get personalized insights'),
+        find.text('Log workouts and meals to get personalized coaching insights.'),
         findsOneWidget,
       );
     });
@@ -439,6 +440,14 @@ class FakeGlobalAINotifier extends GlobalAINotifier {
   }
 
   bool dismissQuickFeedbackCalled = false;
+
+  @override
+  Future<List<Insight>> getInsights(
+    InsightContext context, {
+    NutritionTargets? nutritionTargets,
+  }) async {
+    return state.getInsights(context);
+  }
 
   @override
   void dismissQuickFeedback() {

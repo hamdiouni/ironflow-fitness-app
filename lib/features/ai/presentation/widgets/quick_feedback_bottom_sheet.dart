@@ -255,11 +255,12 @@ class _QuickFeedbackBottomSheetState
           children: [
             Text(
               emoji,
-              style: const TextStyle(fontSize: 40),
+              style: const TextStyle(fontSize: 32, height: 1.0),
             ),
+            const SizedBox(height: 4),
             Icon(
               iconData,
-              size: 24,
+              size: 20,
               color: iconColor,
             ),
           ],
