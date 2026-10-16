@@ -3,9 +3,17 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:progression_tracker/features/workout/domain/repositories/workout_repository.dart';
+import 'package:progression_tracker/features/workout/domain/entities/workout.dart';
+import 'package:progression_tracker/features/workout/domain/entities/exercise.dart';
+import 'package:progression_tracker/features/workout/domain/entities/exercise_type.dart';
+import 'package:progression_tracker/features/workout/domain/entities/set_entry.dart';
 import 'package:progression_tracker/features/nutrition/domain/repositories/nutrition_repository.dart';
+import 'package:progression_tracker/features/nutrition/domain/entities/meal.dart';
 import 'package:progression_tracker/features/body/domain/repositories/body_repository.dart';
+import 'package:progression_tracker/features/body/domain/entities/body_entry.dart';
+import 'package:progression_tracker/features/body/domain/entities/measurement_type.dart';
 import 'package:progression_tracker/features/auth/domain/repositories/auth_repository.dart';
+import 'package:progression_tracker/features/auth/domain/entities/user_profile.dart';
 import 'package:progression_tracker/features/settings/domain/usecases/backup_data_use_case.dart';
 
 /// Result of a restore operation.
@@ -50,15 +58,15 @@ class RestoreDataUseCase {
   final NutritionRepository _nutritionRepository;
   final BodyRepository _bodyRepository;
   final AuthRepository _authRepository;
-  final FirebaseStorage _storage;
+  final FirebaseStorage? _storage;
 
   RestoreDataUseCase(
     this._workoutRepository,
     this._nutritionRepository,
     this._bodyRepository,
-    this._authRepository,
-    this._storage,
-  );
+    this._authRepository, [
+    FirebaseStorage? storage,
+  ]) : _storage = storage;
 
   /// Restores data from a cloud backup.
   ///
@@ -70,12 +78,16 @@ class RestoreDataUseCase {
     BackupRecord backupRecord, {
     bool overwriteExisting = false,
   }) async {
+    final storage = _storage;
+    if (storage == null) {
+      return RestoreResult.failure('Cloud storage is not configured for restore');
+    }
     try {
       // Download backup file from cloud storage
       final directory = await getApplicationDocumentsDirectory();
       final localFile = File('${directory.path}/temp_restore_${DateTime.now().millisecondsSinceEpoch}.json');
       
-      await _storage.ref(backupRecord.cloudPath).writeToFile(localFile);
+      await storage.ref(backupRecord.cloudPath).writeToFile(localFile);
       
       // Restore from local file
       final result = await restoreFromLocalFile(
@@ -204,6 +216,18 @@ class RestoreDataUseCase {
         await _clearExistingData();
       }
 
+      // Restore user profile
+      if (backupData.containsKey('user_profile') && backupData['user_profile'] != null) {
+        try {
+          final profileJson = backupData['user_profile'] as Map<String, dynamic>;
+          final profile = UserProfile.fromJson(profileJson);
+          await _authRepository.saveUserProfile(profile);
+          restoredCounts['user_profile'] = 1;
+        } catch (e) {
+          errors.add('Failed to restore user profile: $e');
+        }
+      }
+
       // Restore workouts
       if (backupData.containsKey('workouts')) {
         try {
@@ -212,15 +236,20 @@ class RestoreDataUseCase {
           
           for (final workoutData in workouts) {
             try {
-              // TODO: Convert JSON to CompletedWorkout entity and save
-              // await _workoutRepository.saveWorkout(workout);
+              if (workoutData is! Map<String, dynamic>) {
+                throw const FormatException('Workout data is not a valid JSON object');
+              }
+              final workout = _parseWorkout(workoutData);
+              await _workoutRepository.saveWorkout(workout);
               restoredWorkouts++;
             } catch (e) {
               errors.add('Failed to restore workout: $e');
             }
           }
           
-          restoredCounts['workouts'] = restoredWorkouts;
+          if (restoredWorkouts > 0 || workouts.isEmpty) {
+            restoredCounts['workouts'] = restoredWorkouts;
+          }
         } catch (e) {
           errors.add('Failed to restore workouts section: $e');
         }
@@ -230,19 +259,11 @@ class RestoreDataUseCase {
       if (backupData.containsKey('programs')) {
         try {
           final programs = backupData['programs'] as List<dynamic>;
-          int restoredPrograms = 0;
-          
-          for (final programData in programs) {
-            try {
-              // TODO: Convert JSON to Program entity and save
-              // await _workoutRepository.saveProgram(program);
-              restoredPrograms++;
-            } catch (e) {
-              errors.add('Failed to restore program: $e');
-            }
+          if (programs.isNotEmpty) {
+            errors.add('Program restoration is not currently supported');
+          } else {
+            restoredCounts['programs'] = 0;
           }
-          
-          restoredCounts['programs'] = restoredPrograms;
         } catch (e) {
           errors.add('Failed to restore programs section: $e');
         }
@@ -254,17 +275,37 @@ class RestoreDataUseCase {
           final nutritionLogs = backupData['nutrition_logs'] as List<dynamic>;
           int restoredNutrition = 0;
           
-          for (final nutritionData in nutritionLogs) {
+          for (final dayLog in nutritionLogs) {
             try {
-              // TODO: Convert JSON to DailyNutrition entity and save
-              // await _nutritionRepository.saveDailyNutrition(nutrition);
-              restoredNutrition++;
+              if (dayLog is! Map<String, dynamic>) {
+                throw const FormatException('Nutrition log is not a valid JSON object');
+              }
+              if (dayLog.containsKey('meals')) {
+                final meals = dayLog['meals'] as List<dynamic>? ?? [];
+                int mealsSaved = 0;
+                for (final mealData in meals) {
+                  if (mealData is Map<String, dynamic>) {
+                    final meal = _parseMeal(mealData);
+                    await _nutritionRepository.saveMealEntry(meal);
+                    mealsSaved++;
+                  }
+                }
+                if (mealsSaved > 0 || meals.isEmpty) {
+                  restoredNutrition++;
+                }
+              } else if (dayLog.containsKey('macros')) {
+                final meal = _parseMeal(dayLog);
+                await _nutritionRepository.saveMealEntry(meal);
+                restoredNutrition++;
+              }
             } catch (e) {
               errors.add('Failed to restore nutrition log: $e');
             }
           }
           
-          restoredCounts['nutrition_logs'] = restoredNutrition;
+          if (restoredNutrition > 0 || nutritionLogs.isEmpty) {
+            restoredCounts['nutrition_logs'] = restoredNutrition;
+          }
         } catch (e) {
           errors.add('Failed to restore nutrition section: $e');
         }
@@ -278,15 +319,20 @@ class RestoreDataUseCase {
           
           for (final measurementData in bodyMeasurements) {
             try {
-              // TODO: Convert JSON to BodyMeasurement entity and save
-              // await _bodyRepository.saveMeasurement(measurement);
+              if (measurementData is! Map<String, dynamic>) {
+                throw const FormatException('Body measurement is not a valid JSON object');
+              }
+              final entry = _parseBodyEntry(measurementData);
+              await _bodyRepository.saveBodyEntry(entry);
               restoredMeasurements++;
             } catch (e) {
               errors.add('Failed to restore body measurement: $e');
             }
           }
           
-          restoredCounts['body_measurements'] = restoredMeasurements;
+          if (restoredMeasurements > 0 || bodyMeasurements.isEmpty) {
+            restoredCounts['body_measurements'] = restoredMeasurements;
+          }
         } catch (e) {
           errors.add('Failed to restore body measurements section: $e');
         }
@@ -295,7 +341,7 @@ class RestoreDataUseCase {
       // Return result based on errors
       if (errors.isEmpty) {
         return RestoreResult.success(restoredCounts);
-      } else if (restoredCounts.isNotEmpty) {
+      } else if (restoredCounts.values.any((count) => count > 0)) {
         return RestoreResult.partial(restoredCounts, errors);
       } else {
         return RestoreResult.failure('Restore failed', errors);
@@ -303,6 +349,141 @@ class RestoreDataUseCase {
     } catch (e) {
       return RestoreResult.failure('Restore operation failed: $e');
     }
+  }
+
+  Workout _parseWorkout(Map<String, dynamic> data) {
+    final id = data['id'] as String;
+    final date = DateTime.parse(data['date'] as String);
+    final durationMinutes = (data['duration_minutes'] as num?)?.toInt() ?? 0;
+    final totalVolume = (data['total_volume'] as num?)?.toDouble() ?? 0.0;
+    final caloriesBurned = (data['calories_burned'] as num?)?.toDouble() ?? 0.0;
+
+    final exercisesList = data['exercises'] as List<dynamic>? ?? [];
+    final exercises = exercisesList.map((eData) {
+      final eMap = eData as Map<String, dynamic>;
+      final eId = eMap['id'] as String;
+      final name = eMap['name'] as String;
+      final typeStr = eMap['type'] as String? ?? 'strength';
+      final type = ExerciseType.values.firstWhere(
+        (t) => t.name.toLowerCase() == typeStr.toLowerCase(),
+        orElse: () => ExerciseType.strength,
+      );
+
+      final setsList = eMap['sets'] as List<dynamic>? ?? [];
+      final sets = setsList.map((sData) {
+        final sMap = sData as Map<String, dynamic>;
+        return SetEntry(
+          id: sMap['id'] as String,
+          reps: (sMap['reps'] as num).toInt(),
+          weight: (sMap['weight'] as num).toDouble(),
+          rpe: (sMap['rpe'] as num?)?.toInt(),
+          timestamp: sMap.containsKey('timestamp')
+              ? DateTime.parse(sMap['timestamp'] as String)
+              : date,
+        );
+      }).toList();
+
+      return Exercise(
+        id: eId,
+        name: name,
+        type: type,
+        sets: sets,
+      );
+    }).toList();
+
+    return Workout(
+      id: id,
+      date: date,
+      exercises: exercises,
+      duration: Duration(minutes: durationMinutes),
+      totalVolume: totalVolume,
+      caloriesBurned: caloriesBurned,
+    );
+  }
+
+  Meal _parseMeal(Map<String, dynamic> data) {
+    final id = data['id'] as String;
+    final name = data['name'] as String;
+    final timestamp = DateTime.parse(data['timestamp'] as String);
+
+    final macrosMap = data['macros'] as Map<String, dynamic>? ?? {};
+    final macros = MealMacros(
+      calories: (macrosMap['calories'] as num?)?.toDouble() ?? 0.0,
+      protein: (macrosMap['protein'] as num?)?.toDouble() ?? 0.0,
+      carbs: (macrosMap['carbs'] as num?)?.toDouble() ?? 0.0,
+      fats: (macrosMap['fats'] as num?)?.toDouble() ?? 0.0,
+    );
+
+    final microsMap = data['micros'] as Map<String, dynamic>?;
+    final micros = microsMap != null
+        ? MealMicros(
+            fiber: (microsMap['fiber'] as num?)?.toDouble() ?? 0.0,
+            sugar: (microsMap['sugar'] as num?)?.toDouble() ?? 0.0,
+            sodium: (microsMap['sodium'] as num?)?.toDouble() ?? 0.0,
+            potassium: (microsMap['potassium'] as num?)?.toDouble() ?? 0.0,
+          )
+        : const MealMicros(fiber: 0, sugar: 0, sodium: 0, potassium: 0);
+
+    final vitaminsMap = data['vitamins'] as Map<String, dynamic>?;
+    final vitamins = vitaminsMap != null
+        ? MealVitamins(
+            vitaminA: (vitaminsMap['vitaminA'] as num?)?.toDouble() ?? 0.0,
+            vitaminB: (vitaminsMap['vitaminB'] as num?)?.toDouble() ?? 0.0,
+            vitaminC: (vitaminsMap['vitaminC'] as num?)?.toDouble() ?? 0.0,
+            vitaminD: (vitaminsMap['vitaminD'] as num?)?.toDouble() ?? 0.0,
+            vitaminE: (vitaminsMap['vitaminE'] as num?)?.toDouble() ?? 0.0,
+          )
+        : const MealVitamins(vitaminA: 0, vitaminB: 0, vitaminC: 0, vitaminD: 0, vitaminE: 0);
+
+    final mineralsMap = data['minerals'] as Map<String, dynamic>?;
+    final minerals = mineralsMap != null
+        ? MealMinerals(
+            calcium: (mineralsMap['calcium'] as num?)?.toDouble() ?? 0.0,
+            iron: (mineralsMap['iron'] as num?)?.toDouble() ?? 0.0,
+            magnesium: (mineralsMap['magnesium'] as num?)?.toDouble() ?? 0.0,
+            zinc: (mineralsMap['zinc'] as num?)?.toDouble() ?? 0.0,
+          )
+        : const MealMinerals(calcium: 0, iron: 0, magnesium: 0, zinc: 0);
+
+    return Meal(
+      id: id,
+      name: name,
+      macros: macros,
+      micros: micros,
+      vitamins: vitamins,
+      minerals: minerals,
+      timestamp: timestamp,
+    );
+  }
+
+  BodyEntry _parseBodyEntry(Map<String, dynamic> data) {
+    final id = data['id'] as String;
+    final date = DateTime.parse(data['date'] as String);
+    final weight = (data['weight'] as num).toDouble();
+    final photoPath = data['photo_path'] as String?;
+
+    final rawMeasurements = data['measurements'] as Map<dynamic, dynamic>? ?? {};
+    final measurements = <MeasurementType, double>{};
+    for (final entry in rawMeasurements.entries) {
+      final keyStr = entry.key.toString();
+      final val = (entry.value as num?)?.toDouble();
+      if (val != null) {
+        for (final type in MeasurementType.values) {
+          if (type.name.toLowerCase() == keyStr.toLowerCase()) {
+            measurements[type] = val;
+            break;
+          }
+        }
+      }
+    }
+
+    return BodyEntry(
+      id: id,
+      date: date,
+      weight: weight,
+      measurements: measurements,
+      photoPath: photoPath,
+    );
   }
 
   /// Clears all existing user data before restore.
@@ -328,16 +509,11 @@ class RestoreDataUseCase {
   ///
   /// Returns true if compatible, false otherwise.
   bool _isVersionCompatible(String version) {
-    // For now, accept version 1.0 and later
     final parts = version.split('.');
-    if (parts.length >= 2) {
+    if (parts.isNotEmpty) {
       final major = int.tryParse(parts[0]) ?? 0;
-      final minor = int.tryParse(parts[1]) ?? 0;
-      
-      // Accept version 1.0 and later
       return major >= 1;
     }
-    
     return false;
   }
 
