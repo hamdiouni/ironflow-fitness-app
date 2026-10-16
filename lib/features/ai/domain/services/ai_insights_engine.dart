@@ -10,7 +10,7 @@ enum WeightTrend {
   increasing,
   decreasing,
   stable,
-  insufficient_data,
+  insufficientData,
 }
 
 /// Service interface for generating AI-powered coaching insights

@@ -64,7 +64,7 @@ class SyncOfflineDataUseCase {
   Future<void> syncPendingOperations() async {
     try {
       final result = await _connectivity.checkConnectivity();
-      if (result == ConnectivityResult.none) {
+      if (result.contains(ConnectivityResult.none)) {
         throw Exception('No internet connection');
       }
 
@@ -152,7 +152,7 @@ class SyncOfflineDataUseCase {
   /// Monitors connectivity and syncs when online.
   Stream<bool> monitorConnectivity() {
     return _connectivity.onConnectivityChanged.map((result) {
-      final isOnline = result != ConnectivityResult.none;
+      final isOnline = !result.contains(ConnectivityResult.none);
       if (isOnline) {
         // Trigger sync when connection restored
         syncPendingOperations();

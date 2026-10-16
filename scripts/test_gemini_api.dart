@@ -1,7 +1,7 @@
 #!/usr/bin/env dart
-/// Quick command-line test for Google Gemini API (FREE!)
-/// 
-/// Run with: dart test_gemini_api.dart
+// Quick command-line test for Google Gemini API (FREE!)
+// 
+// Run with: dart test_gemini_api.dart
 
 import 'dart:io';
 import 'dart:convert';

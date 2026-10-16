@@ -1618,7 +1618,7 @@ void main() {
       final trend = engine.analyzeWeightTrend(bodyEntries);
 
       // ASSERT
-      expect(trend, equals(WeightTrend.insufficient_data));
+      expect(trend, equals(WeightTrend.insufficientData));
     });
 
     test('analyzeWeightTrend should return insufficient_data for empty list', () {
@@ -1626,7 +1626,7 @@ void main() {
       final trend = engine.analyzeWeightTrend([]);
 
       // ASSERT
-      expect(trend, equals(WeightTrend.insufficient_data));
+      expect(trend, equals(WeightTrend.insufficientData));
     });
 
     test('calculateWeightChange should calculate positive change correctly', () {

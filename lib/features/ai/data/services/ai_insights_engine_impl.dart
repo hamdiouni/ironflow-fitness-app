@@ -680,7 +680,7 @@ class AIInsightsEngineImpl implements AIInsightsEngine {
   @override
   WeightTrend analyzeWeightTrend(List<BodyEntry> entries) {
     if (entries.length < 2) {
-      return WeightTrend.insufficient_data;
+      return WeightTrend.insufficientData;
     }
     
     // Sort entries by date to ensure chronological order
@@ -1486,7 +1486,7 @@ class AIInsightsEngineImpl implements AIInsightsEngine {
       final weightChangeRate = calculateWeightChangeRate(bodyEntries);
       final currentWeight = getMostRecentWeight(bodyEntries);
 
-      if (weightTrend != WeightTrend.insufficient_data && currentWeight != null) {
+      if (weightTrend != WeightTrend.insufficientData && currentWeight != null) {
         // --- 9.6 & 9.7: Goal alignment ---
         // We don't have user goal here, so provide informational insight
         String title;

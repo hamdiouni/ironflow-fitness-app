@@ -197,8 +197,8 @@ Future<void> uploadAllFoodsToFirestore(FirebaseFirestore firestore) async {
     }
     
     print('\nFoods by category:');
-    byCategory.forEach((category, count) {
-      print('  $category: $count');
+    byCategory.forEach((category, total) {
+      print('  $category: $total');
     });
     
   } catch (e) {
