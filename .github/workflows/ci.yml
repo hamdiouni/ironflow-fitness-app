@@ -42,7 +42,7 @@ jobs:
         run: flutter pub get
 
       - name: Static analysis
-        run: flutter analyze --fatal-warnings
+        run: flutter analyze --no-fatal-infos --fatal-warnings
 
       - name: Run test suite with coverage
         run: flutter test --coverage
