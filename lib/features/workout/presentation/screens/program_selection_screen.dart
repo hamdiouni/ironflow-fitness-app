@@ -89,7 +89,7 @@ class ProgramSelectionScreen extends ConsumerWidget {
       
       // Generate program with selected split
       final generateUseCase = ref.read(generateWorkoutProgramUseCaseProvider);
-      final program = await generateUseCase(
+      final program = generateUseCase(
         userProfile: userProfile,
         splitType: splitType,
       );
