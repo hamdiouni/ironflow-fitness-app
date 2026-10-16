@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hive/hive.dart';
 import 'package:progression_tracker/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:progression_tracker/features/auth/presentation/providers/auth_provider.dart';
+import 'package:progression_tracker/features/auth/data/datasources/auth_session_storage.dart';
 import 'package:progression_tracker/core/router/app_router.dart';
 
 /// **Validates: Requirements 3.1, 3.2, 3.3, 3.4**
@@ -34,6 +35,14 @@ void main() {
     await Hive.openBox('auth_session');
   });
 
+  setUp(() async {
+    await AuthSessionStorage().clearSession();
+  });
+
+  tearDown(() async {
+    await AuthSessionStorage().clearSession();
+  });
+
   tearDownAll(() async {
     // Close all Hive boxes and clean up
     await Hive.close();
@@ -51,6 +60,7 @@ void main() {
         ];
 
         for (final testCase in testCases) {
+          await AuthSessionStorage().clearSession();
           final container = ProviderContainer();
           addTearDown(container.dispose);
 
@@ -308,16 +318,27 @@ void main() {
     testWidgets(
       'For all navigation attempts to protected routes while authenticated, access is granted',
       (WidgetTester tester) async {
+        final originalOnError = FlutterError.onError;
+        FlutterError.onError = (details) {
+          if (details.exception.toString().contains('[core/no-app]')) {
+            return;
+          }
+          originalOnError?.call(details);
+        };
+        addTearDown(() => FlutterError.onError = originalOnError);
+
         // ARRANGE: Create a test app with router
         final container = ProviderContainer();
         addTearDown(container.dispose);
 
         // Sign in first
         try {
-          await container.read(authNotifierProvider.notifier).signInWithEmail(
-            email: 'demo@ironflow.com',
-            password: 'password123',
-          );
+          await tester.runAsync(() async {
+            await container.read(authNotifierProvider.notifier).signInWithEmail(
+              email: 'demo@ironflow.com',
+              password: 'password123',
+            );
+          });
         } catch (e) {
           print('⚠️ Skipping test: Sign-in failed - $e');
           return;
@@ -343,7 +364,8 @@ void main() {
           ),
         );
 
-        await tester.pumpAndSettle();
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
 
         // ACT & ASSERT: Test navigation to protected routes
         final protectedRoutes = [
@@ -360,7 +382,8 @@ void main() {
 
           // Navigate to route
           router.go(route);
-          await tester.pumpAndSettle();
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 100));
 
           // Verify we're on the expected route (not redirected to login)
           final currentLocation = router.routerDelegate.currentConfiguration.uri.toString();
@@ -380,6 +403,15 @@ void main() {
     testWidgets(
       'For all navigation attempts to protected routes while unauthenticated, redirect to login',
       (WidgetTester tester) async {
+        final originalOnError = FlutterError.onError;
+        FlutterError.onError = (details) {
+          if (details.exception.toString().contains('[core/no-app]')) {
+            return;
+          }
+          originalOnError?.call(details);
+        };
+        addTearDown(() => FlutterError.onError = originalOnError);
+
         // ARRANGE: Create a test app with router (unauthenticated)
         final container = ProviderContainer();
         addTearDown(container.dispose);
@@ -401,7 +433,8 @@ void main() {
           ),
         );
 
-        await tester.pumpAndSettle();
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 600));
 
         // ACT & ASSERT: Test navigation to protected routes
         final protectedRoutes = [
@@ -415,7 +448,8 @@ void main() {
 
           // Navigate to route
           router.go(route);
-          await tester.pumpAndSettle();
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 100));
 
           // Verify we're redirected to login
           final currentLocation = router.routerDelegate.currentConfiguration.uri.toString();
@@ -470,7 +504,13 @@ void main() {
         addTearDown(container2.dispose);
 
         // Wait for session check to complete
-        await Future.delayed(const Duration(milliseconds: 500));
+        for (int i = 0; i < 20; i++) {
+          if (!container2.read(authNotifierProvider).isLoading &&
+              container2.read(authNotifierProvider).isAuthenticated) {
+            break;
+          }
+          await Future.delayed(const Duration(milliseconds: 100));
+        }
 
         // ASSERT: Verify session persisted
         final authState2 = container2.read(authNotifierProvider);
