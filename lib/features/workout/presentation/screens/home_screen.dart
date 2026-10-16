@@ -12,6 +12,7 @@ import '../../../../shared/widgets/ironflow_logo.dart';
 import '../../../onboarding/domain/entities/user_profile.dart';
 import '../../../onboarding/presentation/providers/onboarding_provider.dart';
 import '../../../ai/presentation/widgets/ai_coach_hero_card.dart';
+import '../../../ai/presentation/widgets/ai_entry_button.dart';
 import '../../domain/entities/workout.dart';
 import '../providers/home_workout_provider.dart';
 
@@ -171,6 +172,8 @@ class _HomeHeader extends StatelessWidget {
               ],
             ),
           ),
+          const AiEntryButton(),
+          const SizedBox(width: 8),
           GestureDetector(
             onTap: () => context.go(AppRoutes.profile),
             child: Container(
