@@ -1,41 +1,84 @@
+import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:progression_tracker/features/ai/data/datasources/ai_service.dart';
 
-/// Test file to verify OpenAI API key works
-/// 
-/// Run with: flutter test test/features/ai/ai_service_test.dart
 void main() {
-  group('OpenAI API Integration Tests', () {
-    late AIService aiService;
-
-    setUpAll(() async {
-      // Load .env file
-      await dotenv.load(fileName: '.env');
-      aiService = AIService();
+  group('OpenAI API Service Unit Tests (Mocked HTTP)', () {
+    test('API key validation throws when key is empty', () {
+      final unconfiguredService = AIService(apiKey: '');
+      expect(
+        () => unconfiguredService.validateConfiguration(),
+        throwsA(isA<AIServiceException>()),
+      );
     });
 
-    test('API key should be configured', () {
-      expect(() => aiService.validateConfiguration(), returnsNormally);
+    test('API key validation passes when key is provided', () {
+      final service = AIService(apiKey: 'test-valid-key');
+      expect(() => service.validateConfiguration(), returnsNormally);
     });
 
     test('Should send a simple message and get response', () async {
+      final mockClient = MockClient((request) async {
+        expect(request.url.toString(), 'https://api.openai.com/v1/chat/completions');
+        expect(request.headers['Authorization'], 'Bearer test-valid-key');
+
+        final body = jsonDecode(request.body) as Map<String, dynamic>;
+        expect(body['messages'], isNotEmpty);
+
+        return http.Response(
+          jsonEncode({
+            'choices': [
+              {
+                'message': {'content': 'Hello from IronFlow!'}
+              }
+            ]
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      });
+
+      final aiService = AIService(
+        apiKey: 'test-valid-key',
+        httpClient: mockClient,
+      );
+
       final messages = [
         {'role': 'user', 'content': 'Say "Hello from IronFlow!" in exactly those words.'}
       ];
 
       final response = await aiService.sendMessage(
         messages,
-        temperature: 0.0, // Use 0 for deterministic response
+        temperature: 0.0,
         maxTokens: 50,
       );
 
-      print('✅ API Response: $response');
       expect(response, isNotEmpty);
       expect(response.toLowerCase(), contains('hello'));
-    }, timeout: const Timeout(Duration(seconds: 30)));
+    });
 
     test('Should handle fitness coaching question', () async {
+      final mockClient = MockClient((request) async {
+        return http.Response(
+          jsonEncode({
+            'choices': [
+              {
+                'message': {'content': 'Focus on progressive overload and retract your scapula.'}
+              }
+            ]
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      });
+
+      final aiService = AIService(
+        apiKey: 'test-valid-key',
+        httpClient: mockClient,
+      );
+
       final messages = [
         {
           'role': 'user',
@@ -50,14 +93,24 @@ void main() {
         maxTokens: 100,
       );
 
-      print('✅ Fitness Advice: $response');
       expect(response, isNotEmpty);
-      expect(response.length, lessThan(200)); // Should be concise
-    }, timeout: const Timeout(Duration(seconds: 30)));
+      expect(response.length, lessThan(200));
+    });
 
     test('Should handle invalid API key gracefully', () async {
-      final invalidService = AIService(apiKey: 'invalid-key-12345');
-      
+      final mockClient = MockClient((request) async {
+        return http.Response(
+          jsonEncode({'error': {'message': 'Incorrect API key provided'}}),
+          401,
+          headers: {'content-type': 'application/json'},
+        );
+      });
+
+      final invalidService = AIService(
+        apiKey: 'invalid-key-12345',
+        httpClient: mockClient,
+      );
+
       final messages = [
         {'role': 'user', 'content': 'Test'}
       ];
@@ -66,6 +119,6 @@ void main() {
         () => invalidService.sendMessage(messages),
         throwsA(isA<AIServiceException>()),
       );
-    }, timeout: const Timeout(Duration(seconds: 30)));
+    });
   });
 }
