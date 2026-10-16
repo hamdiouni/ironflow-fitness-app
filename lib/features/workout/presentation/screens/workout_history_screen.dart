@@ -5,7 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/constants/app_theme.dart';
 import '../../../../shared/widgets/empty_state_widget.dart';
 import '../../../ai/domain/entities/insight.dart';
-import '../../../ai/presentation/widgets/insight_widget.dart';
+import '../../../ai/presentation/widgets/contextual_insight_banner.dart';
 import '../../domain/entities/workout.dart';
 import '../providers/paginated_workout_provider.dart';
 
@@ -125,11 +125,11 @@ class _WorkoutHistoryScreenState extends ConsumerState<WorkoutHistoryScreen> {
       // Add 1 for InsightWidget at the top, plus 1 for loading indicator if loading more
       itemCount: 1 + state.workouts.length + (state.isLoadingMore ? 1 : 0),
       itemBuilder: (context, index) {
-        // First item is the InsightWidget
+        // First item is the ContextualInsightBanner
         if (index == 0) {
           return const Padding(
             padding: EdgeInsets.only(bottom: AppTheme.spacingSmall),
-            child: InsightWidget(context: InsightContext.workout),
+            child: ContextualInsightBanner(context: InsightContext.workout),
           );
         }
         

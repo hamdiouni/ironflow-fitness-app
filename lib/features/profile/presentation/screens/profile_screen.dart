@@ -8,7 +8,7 @@ import '../../../../core/constants/app_theme.dart';
 import '../../../../core/providers/theme_provider.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../ai/domain/entities/insight.dart';
-import '../../../ai/presentation/widgets/insight_widget.dart';
+import '../../../ai/presentation/widgets/contextual_insight_banner.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../../../nutrition/domain/entities/diet_plan.dart';
 import '../../../nutrition/domain/usecases/generate_diet_plan_use_case.dart';
@@ -73,7 +73,7 @@ class _ProfileBody extends ConsumerWidget {
       slivers: [
         SliverToBoxAdapter(child: _ProfileHeader(profile: profile)),
         SliverToBoxAdapter(child: _StatsRow(profile: profile)),
-        const SliverToBoxAdapter(child: InsightWidget(context: InsightContext.profile)),
+        const SliverToBoxAdapter(child: ContextualInsightBanner(context: InsightContext.profile)),
         SliverToBoxAdapter(child: _GoalCard(profile: profile, program: program)),
         SliverToBoxAdapter(child: _DietPlanCard(dietPlan: dietPlan)),
         SliverToBoxAdapter(child: _DietTipsCard(tips: dietPlan.tips)),
