@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -24,12 +25,11 @@ import 'package:progression_tracker/core/router/app_router.dart';
 /// These tests use a parameterized approach to test multiple scenarios,
 /// providing stronger guarantees similar to property-based testing.
 void main() {
-  // Set up Hive for testing
+  late Directory tempDir;
+
   setUpAll(() async {
-    // Initialize Hive with a temporary directory for testing
-    Hive.init('test/hive_test_db');
-    
-    // Open the auth_session box
+    tempDir = Directory.systemTemp.createTempSync('hive_auth_preservation_');
+    Hive.init(tempDir.path);
     await Hive.openBox('auth_session');
   });
 
@@ -42,8 +42,10 @@ void main() {
   });
 
   tearDownAll(() async {
-    // Close all Hive boxes and clean up
     await Hive.close();
+    try {
+      tempDir.deleteSync(recursive: true);
+    } catch (_) {}
   });
 
   group('Property 2: Preservation - Email/Password Login Flow', () {

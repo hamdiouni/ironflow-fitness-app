@@ -572,79 +572,67 @@ class _SettingsSection extends StatelessWidget {
           ),
           FilledButton(
             onPressed: () async {
-              Navigator.pop(context); // Close confirmation dialog
-              
-              // Show loading dialog
-              if (context.mounted) {
-                showDialog(
-                  context: context,
-                  barrierDismissible: false,
-                  builder: (context) => const AlertDialog(
-                    content: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        CircularProgressIndicator(),
-                        SizedBox(height: 16),
-                        Text('Logging out...'),
-                      ],
-                    ),
+              final rootNavigator = Navigator.of(context, rootNavigator: true);
+              final router = GoRouter.of(context);
+              final scaffoldMessenger = ScaffoldMessenger.of(context);
+
+              rootNavigator.pop(); // Close confirmation dialog
+
+              // Show loading dialog on root navigator
+              bool dialogOpen = true;
+              showDialog(
+                context: context,
+                useRootNavigator: true,
+                barrierDismissible: false,
+                builder: (dialogContext) => const AlertDialog(
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircularProgressIndicator(),
+                      SizedBox(height: 16),
+                      Text('Logging out...'),
+                    ],
+                  ),
+                ),
+              ).then((_) {
+                dialogOpen = false;
+              });
+
+              void dismissLoadingDialog() {
+                if (dialogOpen) {
+                  dialogOpen = false;
+                  rootNavigator.pop();
+                }
+              }
+
+              try {
+                // Sign out with 3-second timeout
+                await ref
+                    .read(authNotifierProvider.notifier)
+                    .signOut()
+                    .timeout(const Duration(seconds: 3));
+
+                dismissLoadingDialog();
+                router.go('/login');
+              } on TimeoutException {
+                dismissLoadingDialog();
+                scaffoldMessenger.showSnackBar(
+                  const SnackBar(
+                    content: Text('Logout is taking longer than expected. Redirecting...'),
+                    backgroundColor: Colors.orange,
+                    duration: Duration(seconds: 3),
                   ),
                 );
-              }
-              
-              try {
-                // Sign out with timeout
-                await ref.read(authNotifierProvider.notifier).signOut()
-                    .timeout(
-                      const Duration(seconds: 10),
-                      onTimeout: () {
-                        throw TimeoutException('Logout took too long');
-                      },
-                    );
-                
-                // Wait for auth state to update
-                await Future.delayed(const Duration(milliseconds: 1000));
-                
-                // Close loading dialog and navigate
-                if (context.mounted) {
-                  Navigator.pop(context); // Close loading dialog
-                  // Use replace to prevent back navigation to profile
-                  context.go('/login');
-                }
-              } on TimeoutException catch (_) {
-                if (context.mounted) {
-                  Navigator.pop(context); // Close loading dialog
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Text('Logout is taking longer than expected. Redirecting...'),
-                      backgroundColor: Colors.orange,
-                      duration: const Duration(seconds: 3),
-                    ),
-                  );
-                  // Force navigation anyway
-                  await Future.delayed(const Duration(seconds: 2));
-                  if (context.mounted) {
-                    context.go('/login');
-                  }
-                }
+                router.go('/login');
               } catch (e) {
-                if (context.mounted) {
-                  Navigator.pop(context); // Close loading dialog
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Logout error: ${e.toString()}'),
-                      backgroundColor: Colors.red,
-                      duration: const Duration(seconds: 5),
-                      action: SnackBarAction(
-                        label: 'Retry',
-                        onPressed: () {
-                          // Retry logout
-                          _showLogoutDialog(context);
-                        },
-                      ),
-                    ),
-                  );
-                }
+                dismissLoadingDialog();
+                scaffoldMessenger.showSnackBar(
+                  SnackBar(
+                    content: Text('Logout error: ${e.toString()}'),
+                    backgroundColor: Colors.red,
+                    duration: const Duration(seconds: 5),
+                  ),
+                );
               }
             },
             style: FilledButton.styleFrom(
