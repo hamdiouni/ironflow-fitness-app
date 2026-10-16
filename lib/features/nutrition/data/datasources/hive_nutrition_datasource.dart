@@ -315,7 +315,7 @@ class HiveNutritionDatasource {
       } else {
         final mealsCount = _mealsBox.length;
         await _mealsBox.clear();
-        print('✅ [NutritionData] Meals box cleared (${mealsCount} meals removed)');
+        print('✅ [NutritionData] Meals box cleared ($mealsCount meals removed)');
       }
       
       if (!_targetsBox.isOpen) {

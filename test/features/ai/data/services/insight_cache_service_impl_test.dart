@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:progression_tracker/features/ai/data/services/insight_cache_service_impl.dart';
@@ -8,10 +9,11 @@ void main() {
   group('InsightCacheServiceImpl', () {
     late InsightCacheServiceImpl service;
     late Box<Map> testBox;
+    late Directory tempDir;
 
     setUpAll(() async {
-      // Initialize Hive for testing
-      Hive.init('./test/hive_test_db');
+      tempDir = Directory.systemTemp.createTempSync('insight_cache_test_');
+      Hive.init(tempDir.path);
     });
 
     setUp(() async {
@@ -30,7 +32,10 @@ void main() {
     });
 
     tearDownAll(() async {
-      await Hive.deleteFromDisk();
+      await Hive.close();
+      try {
+        tempDir.deleteSync(recursive: true);
+      } catch (_) {}
     });
 
     group('init', () {

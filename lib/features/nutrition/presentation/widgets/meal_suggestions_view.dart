@@ -40,7 +40,7 @@ class MealSuggestionsView extends ConsumerWidget {
         height: _SuggestionCard.cardHeight,
         child: Center(child: CircularProgressIndicator()),
       ),
-      error: (_, __) => SizedBox(
+      error: (_, _) => SizedBox(
         height: _SuggestionCard.cardHeight,
         child: Center(
           child: Text(

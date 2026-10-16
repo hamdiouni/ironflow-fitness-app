@@ -310,7 +310,7 @@ class _ExerciseCard extends StatelessWidget {
                 imageUrl: exercise.imageUrl,
                 fit: BoxFit.cover,
                 width: double.infinity,
-                placeholder: (_, __) => Container(
+                placeholder: (_, _) => Container(
                   color: isDark
                       ? Colors.white.withValues(alpha: 0.05)
                       : Colors.black.withValues(alpha: 0.03),
@@ -320,7 +320,7 @@ class _ExerciseCard extends StatelessWidget {
                         size: 32),
                   ),
                 ),
-                errorWidget: (_, __, ___) => Container(
+                errorWidget: (_, _, _) => Container(
                   color: isDark
                       ? Colors.white.withValues(alpha: 0.05)
                       : Colors.black.withValues(alpha: 0.03),

@@ -313,7 +313,7 @@ Workout _createDetailedWorkout({
 }
 
 /// Helper function to create a SetEntry with proper structure
-_createSetEntry({required double weight, required int reps}) {
+SetEntry _createSetEntry({required double weight, required int reps}) {
   return SetEntry(
     id: 'set-${DateTime.now().millisecondsSinceEpoch}',
     weight: weight,

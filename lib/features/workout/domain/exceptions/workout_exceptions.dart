@@ -2,6 +2,7 @@
 ///
 /// These exceptions provide specific error types for different workout-related
 /// operations, enabling precise error handling and user-friendly error messages.
+library;
 
 /// Exception thrown when an error occurs during active program operations.
 ///

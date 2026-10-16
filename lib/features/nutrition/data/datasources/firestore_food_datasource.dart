@@ -60,7 +60,7 @@ class FirestoreFoodDatasource {
     final snapshot = await _firestore
         .collection('foods')
         .where('name', isGreaterThanOrEqualTo: query)
-        .where('name', isLessThan: query + 'z')
+        .where('name', isLessThan: '${query}z')
         .get();
     return snapshot.docs
         .map((doc) => mapToFood(doc.data(), doc.id))
