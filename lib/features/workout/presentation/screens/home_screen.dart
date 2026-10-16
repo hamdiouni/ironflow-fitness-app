@@ -11,8 +11,7 @@ import '../../../../core/router/app_router.dart';
 import '../../../../shared/widgets/ironflow_logo.dart';
 import '../../../onboarding/domain/entities/user_profile.dart';
 import '../../../onboarding/presentation/providers/onboarding_provider.dart';
-import '../../../ai/domain/entities/insight.dart';
-import '../../../ai/presentation/widgets/insight_widget.dart';
+import '../../../ai/presentation/widgets/ai_coach_hero_card.dart';
 import '../../domain/entities/workout.dart';
 import '../providers/home_workout_provider.dart';
 
@@ -70,9 +69,9 @@ class HomeScreen extends ConsumerWidget {
                 ),
               ),
               
-              // AI Insights Widget
+              // AI Coach Hero Card
               const SliverToBoxAdapter(
-                child: InsightWidget(context: InsightContext.home),
+                child: AiCoachHeroCard(),
               ),
               
               // Today Summary Row
