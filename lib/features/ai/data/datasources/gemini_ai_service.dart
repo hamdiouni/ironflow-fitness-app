@@ -40,7 +40,7 @@ class GeminiAIService {
   void validateConfiguration() {
     if (_apiKey.isEmpty) {
       throw GeminiAIServiceException(
-        message: 'Gemini API key not configured. Set GEMINI_API_KEY in .env file.\n'
+        message: 'Gemini API key not configured. Provide it via --dart-define=GEMINI_API_KEY=... or local .env file.\n'
             'Get your free key at: https://makersuite.google.com/app/apikey',
         code: 'MISSING_API_KEY',
       );
