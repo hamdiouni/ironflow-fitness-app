@@ -7,7 +7,6 @@ import 'package:uuid/uuid.dart';
 // Import existing providers from their respective modules
 import 'package:progression_tracker/features/auth/presentation/providers/auth_provider.dart';
 import 'package:progression_tracker/features/workout/presentation/providers/workout_providers.dart';
-import 'package:progression_tracker/features/workout/presentation/providers/active_program_providers.dart';
 import 'package:progression_tracker/features/nutrition/presentation/providers/nutrition_providers.dart';
 import 'package:progression_tracker/features/body/presentation/providers/body_providers.dart';
 import 'package:progression_tracker/core/providers/analytics_provider.dart';
@@ -93,7 +92,6 @@ class AIChatNotifier extends StateNotifier<AIChatState> {
       print('📊 [AI CHAT] Step 1: Gathering user data...');
       final authRepo = _ref.read(authRepositoryProvider);
       final workoutRepo = _ref.read(workoutRepositoryProvider);
-      final activeProgramRepo = _ref.read(activeProgramRepositoryProvider);
       final nutritionRepo = _ref.read(nutritionRepositoryProvider);
       final bodyRepo = _ref.read(bodyRepositoryProvider);
 

@@ -933,7 +933,6 @@ class _ErrorCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final onSurface = Theme.of(context).colorScheme.onSurface;
-    final secondary = Theme.of(context).colorScheme.onSurfaceVariant;
     
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),

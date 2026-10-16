@@ -72,7 +72,7 @@ class ImageGenerationService {
 
     // Add fitness-specific styling for better results
     final enhancedPrompt = '''
-$userRequest, fitness illustration, professional diagram, clean background, 
+$cleanRequest, fitness illustration, professional diagram, clean background, 
 high quality, detailed, anatomically correct, exercise demonstration, 
 fitness guide style, clear and educational
 '''.trim();

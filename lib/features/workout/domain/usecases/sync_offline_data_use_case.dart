@@ -45,6 +45,9 @@ class SyncOfflineDataUseCase {
 
   SyncOfflineDataUseCase(this._repository, this._connectivity);
 
+  /// The underlying workout repository
+  WorkoutRepository get repository => _repository;
+
   /// Queues an operation for syncing.
   Future<void> queueOperation(PendingOperation operation) async {
     try {

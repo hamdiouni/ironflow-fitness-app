@@ -32,7 +32,9 @@ class PaginatedWorkoutNotifier extends StateNotifier<PaginatedWorkoutState> {
     this._getWorkoutsPaginated,
     this._getWorkoutCount,
     this._ref,
-  ) : super(const PaginatedWorkoutState());
+  ) : super(const PaginatedWorkoutState()) {
+    _listenToWorkoutChanges();
+  }
 
   /// Load the first page of workouts.
   Future<void> loadInitial() async {

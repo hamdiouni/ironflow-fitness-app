@@ -140,7 +140,7 @@ class StabilityTester {
     try {
       // Create and destroy many objects
       for (int i = 0; i < 1000; i++) {
-        final data = List.generate(100, (j) => {'value': j});
+        List.generate(100, (j) => {'value': j});
         // Objects should be garbage collected
       }
 

@@ -140,7 +140,7 @@ class MockAuthDataSourceImpl implements MockAuthDataSource {
       }
 
       // Get authentication details
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      await googleUser.authentication;
       
       if (kDebugMode) {
         print('✅ [Auth] Got authentication tokens');

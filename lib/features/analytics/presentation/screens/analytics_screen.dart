@@ -14,8 +14,6 @@ class AnalyticsScreen extends ConsumerStatefulWidget {
 }
 
 class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
-  DateTimeRange? _selectedRange;
-
   @override
   Widget build(BuildContext context) {
     final workoutHistoryAsync = ref.watch(workoutHistoryProvider);

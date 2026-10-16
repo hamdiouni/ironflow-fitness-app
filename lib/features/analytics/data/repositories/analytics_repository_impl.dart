@@ -49,8 +49,8 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
           int totalSets = exercise.sets.length;
 
           for (final set in exercise.sets) {
-            final weight = set.weight ?? 0;
-            final reps = set.reps ?? 0;
+            final weight = set.weight;
+            final reps = set.reps;
             totalVolume += weight * reps;
             if (weight > maxWeight) maxWeight = weight;
             totalReps += reps;

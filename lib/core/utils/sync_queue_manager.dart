@@ -3,7 +3,6 @@ import 'package:progression_tracker/core/utils/hive_manager.dart';
 import 'package:uuid/uuid.dart';
 
 class SyncQueueManager {
-  static const String _syncQueueKey = 'sync_queue';
   static const uuid = Uuid();
 
   /// Add operation to sync queue
@@ -40,7 +39,7 @@ class SyncQueueManager {
       for (int i = 0; i < box.length; i++) {
         final raw = box.getAt(i);
         if (raw != null) {
-          final data = Map<String, dynamic>.from(raw as Map);
+          final data = Map<String, dynamic>.from(raw);
           operations.add(SyncOperation.fromJson(data));
         }
       }
@@ -74,7 +73,7 @@ class SyncQueueManager {
       if (index != -1) {
         final raw = box.getAt(index);
         if (raw != null) {
-          final data = Map<String, dynamic>.from(raw as Map);
+          final data = Map<String, dynamic>.from(raw);
           final operation = SyncOperation.fromJson(data);
           final updated = operation.copyWith(retryCount: retryCount);
           await box.putAt(index, updated.toJson());

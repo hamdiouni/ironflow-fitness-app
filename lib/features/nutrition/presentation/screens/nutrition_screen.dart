@@ -427,7 +427,6 @@ class _DefaultTargetsDisplay extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final onSurface = Theme.of(context).colorScheme.onSurface;
-    final secondary = Theme.of(context).colorScheme.onSurfaceVariant;
     final userProfileAsync = ref.watch(userProfileProvider);
 
     return Padding(
@@ -687,7 +686,6 @@ class _RemainingMacrosCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final remaining = summary.remainingMacros;
     final proteinRemaining = (summary.target?.macros.protein ?? 0) - summary.totalProtein;
     final carbsRemaining = (summary.target?.macros.carbs ?? 0) - summary.totalCarbs;
     final fatsRemaining = (summary.target?.macros.fats ?? 0) - summary.totalFats;

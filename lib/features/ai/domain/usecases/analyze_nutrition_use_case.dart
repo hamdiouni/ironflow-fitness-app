@@ -57,24 +57,9 @@ class AnalyzeNutritionUseCase {
     }
 
     // Calculate averages
-    final avgCalories = nutritionHistory.fold<double>(
-      0,
-      (sum, day) => sum + day.totalCalories,
-    ) / nutritionHistory.length;
-
     final avgProtein = nutritionHistory.fold<double>(
       0,
       (sum, day) => sum + day.totalProtein,
-    ) / nutritionHistory.length;
-
-    final avgCarbs = nutritionHistory.fold<double>(
-      0,
-      (sum, day) => sum + day.totalCarbs,
-    ) / nutritionHistory.length;
-
-    final avgFats = nutritionHistory.fold<double>(
-      0,
-      (sum, day) => sum + day.totalFats,
     ) / nutritionHistory.length;
 
     final avgFiber = nutritionHistory.fold<double>(

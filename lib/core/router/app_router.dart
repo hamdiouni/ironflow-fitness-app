@@ -31,6 +31,7 @@ import '../../features/auth/presentation/screens/signup_screen.dart';
 import '../../features/auth/presentation/providers/auth_notifier.dart';
 import '../../features/notifications/presentation/screens/reminder_settings_screen.dart';
 import '../../features/ai/presentation/screens/ai_chat_screen.dart';
+import '../../features/workout/domain/entities/exercise_definition.dart';
 
 // ---------------------------------------------------------------------------
 // Route path constants
@@ -256,7 +257,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>? ?? {};
           return ExercisePickerScreen(
-            initialMuscleGroup: extra['muscleGroup'] as dynamic?,
+            initialMuscleGroup: extra['muscleGroup'] as MuscleGroup?,
           );
         },
       ),

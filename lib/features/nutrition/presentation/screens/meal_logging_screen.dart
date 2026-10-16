@@ -538,12 +538,10 @@ class _FoodListTile extends StatelessWidget {
 class _QuantityInputSheet extends StatefulWidget {
   final FoodItemFull food;
   final Function(double) onConfirm;
-  final Function(FoodItemFull)? onSwap;
 
   const _QuantityInputSheet({
     required this.food,
     required this.onConfirm,
-    this.onSwap,
   });
 
   @override

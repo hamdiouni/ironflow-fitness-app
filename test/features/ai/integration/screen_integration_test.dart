@@ -36,7 +36,6 @@ import 'package:progression_tracker/features/body/domain/entities/body_entry.dar
 /// - 12.1: Navigation to AI chat from InsightWidget
 void main() {
   group('Screen Integration Tests', () {
-    late GlobalAINotifier mockNotifier;
     late GlobalAIState mockState;
 
     setUp(() {
