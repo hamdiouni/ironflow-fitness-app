@@ -19,7 +19,13 @@ import 'package:progression_tracker/features/ai/data/services/image_generation_s
 ///
 /// **Validates: Requirements 7.1, 7.5**
 class AIChatScreen extends ConsumerStatefulWidget {
-  const AIChatScreen({super.key});
+  const AIChatScreen({
+    super.key,
+    this.initialMessage,
+  });
+
+  /// Optional initial message to pre-populate in the input field.
+  final String? initialMessage;
 
   @override
   ConsumerState<AIChatScreen> createState() => _AIChatScreenState();
@@ -28,6 +34,14 @@ class AIChatScreen extends ConsumerStatefulWidget {
 class _AIChatScreenState extends ConsumerState<AIChatScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialMessage != null && widget.initialMessage!.trim().isNotEmpty) {
+      _messageController.text = widget.initialMessage!;
+    }
+  }
 
   @override
   void dispose() {
