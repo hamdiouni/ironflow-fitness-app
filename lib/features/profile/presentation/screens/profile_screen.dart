@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -825,16 +826,17 @@ Last Updated: May 13, 2026''',
                   color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
                   height: 1,
                 ),
-                // AI Coach button
-                _SettingsTile(
-                  icon: Icons.smart_toy,
-                  label: 'AI Fitness Coach',
-                  onTap: () => context.go(AppRoutes.aiChat),
-                ),
-                Divider(
-                  color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
-                  height: 1,
-                ),
+                if (kDebugMode) ...[
+                  _SettingsTile(
+                    icon: Icons.bug_report_outlined,
+                    label: 'AI Diagnostic Test (Debug Only)',
+                    onTap: () => context.push(AppRoutes.aiTest),
+                  ),
+                  Divider(
+                    color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
+                    height: 1,
+                  ),
+                ],
                 // Theme toggle
                 ListTile(
                   leading: Icon(

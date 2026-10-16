@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:progression_tracker/core/config/app_config.dart';
 import 'package:progression_tracker/features/ai/data/datasources/ai_service.dart';
 
 /// Simple test screen to verify OpenAI API key works
@@ -30,12 +29,10 @@ class _AITestScreenState extends State<AITestScreen> {
   void _checkAPIKey() {
     try {
       _aiService.validateConfiguration();
-      final key = AppConfig.getOpenAIApiKey();
-      final maskedKey = key.length > 20 ? '${key.substring(0, 20)}...' : 'configured';
       setState(() {
         _messages.add({
           'role': 'system',
-          'content': '✅ API Key is configured!\n\nAPI Key: $maskedKey\n\nYou can now test the AI by sending a message below.',
+          'content': '✅ API Key is configured!\n\nYou can now test the AI by sending a message below.',
         });
       });
     } catch (e) {
