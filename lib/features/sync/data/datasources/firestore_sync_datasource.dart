@@ -12,7 +12,7 @@ abstract class FirestoreSyncDataSource {
 
   // Programs
   Future<void> syncProgram(String userId, WorkoutProgramModel program);
-  Future<WorkoutProgramModel?> getActiveProgram(String userId);
+  Future<WorkoutProgramModel?> getActiveProgram(String userId, {DateTime? since});
   Future<void> deleteProgram(String userId, String programId);
 
   // Nutrition (simplified for now)
@@ -107,20 +107,24 @@ class FirestoreSyncDataSourceImpl implements FirestoreSyncDataSource {
   }
 
   @override
-  Future<WorkoutProgramModel?> getActiveProgram(String userId) async {
+  Future<WorkoutProgramModel?> getActiveProgram(String userId, {DateTime? since}) async {
     try {
-      final snapshot = await _firestore
+      Query query = _firestore
           .collection(_programsCollection)
           .where('userId', isEqualTo: userId)
-          .where('isActive', isEqualTo: true)
-          .limit(1)
-          .get();
+          .where('isActive', isEqualTo: true);
+
+      if (since != null) {
+        query = query.where('syncedAt', isGreaterThan: Timestamp.fromDate(since));
+      }
+
+      final snapshot = await query.limit(1).get();
 
       if (snapshot.docs.isEmpty) {
         return null;
       }
 
-      return WorkoutProgramModel.fromJson(snapshot.docs.first.data());
+      return WorkoutProgramModel.fromJson(snapshot.docs.first.data() as Map<String, dynamic>);
     } catch (e) {
       throw Exception('Failed to get active program: $e');
     }
