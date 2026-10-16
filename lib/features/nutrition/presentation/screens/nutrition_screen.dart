@@ -8,7 +8,7 @@ import '../../../../core/utils/error_handler.dart';
 import '../../../../shared/widgets/macro_wheel_chart.dart';
 import '../../../../shared/widgets/swipeable_meal_cards.dart';
 import '../../../ai/domain/entities/insight.dart';
-import '../../../ai/presentation/widgets/insight_widget.dart';
+import '../../../ai/presentation/widgets/contextual_insight_banner.dart';
 import '../../domain/entities/daily_nutrition_summary.dart';
 import '../../domain/entities/diet_plan_state.dart';
 import '../../domain/entities/food_item.dart';
@@ -274,10 +274,10 @@ class _NutritionBody extends StatelessWidget {
           _RemainingMacrosCard(summary: summary),
           const SizedBox(height: AppTheme.spacingMedium),
 
-          // AI Insights Widget
+          // AI Insights Banner
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: AppTheme.spacingMedium),
-            child: InsightWidget(context: InsightContext.nutrition),
+            child: ContextualInsightBanner(context: InsightContext.nutrition),
           ),
           const SizedBox(height: AppTheme.spacingMedium),
 
