@@ -1,7 +1,7 @@
 #!/usr/bin/env dart
-/// Quick command-line test for OpenAI API
-/// 
-/// Run with: dart test_openai_api.dart
+// Quick command-line test for OpenAI API
+// 
+// Run with: dart test_openai_api.dart
 
 import 'dart:io';
 import 'dart:convert';
