@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/app_theme_tokens.dart';
+import '../../../../core/theme/app_typography.dart';
 import '../../domain/entities/workout_program.dart';
 
 /// Card widget for editing a single exercise in the program editor.
@@ -42,8 +44,22 @@ class ExerciseEditCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    final tokens = context.tokens;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      decoration: BoxDecoration(
+        color: tokens.card,
+        borderRadius: BorderRadius.circular(tokens.radiusMd),
+        border: Border.all(color: tokens.borderSubtle, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Row(
@@ -51,12 +67,16 @@ class ExerciseEditCard extends StatelessWidget {
             // Drag handle
             ReorderableDragStartListener(
               index: exerciseIndex,
-              child: const Icon(
-                Icons.drag_handle,
-                color: Colors.grey,
+              child: Padding(
+                padding: const EdgeInsets.all(4),
+                child: Icon(
+                  Icons.drag_indicator_rounded,
+                  color: tokens.textMuted,
+                  size: 22,
+                ),
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 8),
             // Exercise info
             Expanded(
               child: Column(
@@ -64,39 +84,46 @@ class ExerciseEditCard extends StatelessWidget {
                 children: [
                   Text(
                     exercise.exerciseName,
-                    style: Theme.of(context).textTheme.titleMedium,
+                    style: TextStyle(
+                      color: tokens.textPrimary,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      fontFamily: AppTypography.fontFamilyHeadings,
+                      letterSpacing: -0.2,
+                    ),
                   ),
                   const SizedBox(height: 8),
-                  Row(
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 4,
                     children: [
                       _buildInfoChip(
-                        context,
-                        '${exercise.sets} sets',
+                        tokens,
+                        '${exercise.sets} SETS',
                         Icons.repeat,
                       ),
-                      const SizedBox(width: 8),
                       _buildInfoChip(
-                        context,
-                        '${exercise.reps} reps',
+                        tokens,
+                        '${exercise.reps} REPS',
                         Icons.fitness_center,
                       ),
-                      const SizedBox(width: 8),
                       _buildInfoChip(
-                        context,
-                        '${exercise.restSeconds}s rest',
+                        tokens,
+                        '${exercise.restSeconds}S REST',
                         Icons.schedule,
                       ),
                     ],
                   ),
                   if (exercise.notes != null && exercise.notes!.isNotEmpty)
                     Padding(
-                      padding: const EdgeInsets.only(top: 8),
+                      padding: const EdgeInsets.only(top: 6),
                       child: Text(
                         exercise.notes!,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              fontStyle: FontStyle.italic,
-                              color: Colors.grey,
-                            ),
+                        style: TextStyle(
+                          fontStyle: FontStyle.italic,
+                          color: tokens.textMuted,
+                          fontSize: 11,
+                        ),
                       ),
                     ),
                 ],
@@ -104,6 +131,12 @@ class ExerciseEditCard extends StatelessWidget {
             ),
             // Menu button
             PopupMenuButton<String>(
+              color: tokens.panel,
+              iconColor: tokens.textMuted,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(tokens.radiusSm),
+                side: BorderSide(color: tokens.borderSubtle, width: 1),
+              ),
               onSelected: (value) {
                 switch (value) {
                   case 'replace':
@@ -118,33 +151,33 @@ class ExerciseEditCard extends StatelessWidget {
                 }
               },
               itemBuilder: (BuildContext context) => [
-                const PopupMenuItem<String>(
+                PopupMenuItem<String>(
                   value: 'replace',
                   child: Row(
                     children: [
-                      Icon(Icons.swap_horiz, size: 20),
-                      SizedBox(width: 8),
-                      Text('Replace'),
+                      Icon(Icons.swap_horiz, size: 18, color: tokens.cyanAccent),
+                      const SizedBox(width: 8),
+                      Text('Replace', style: TextStyle(color: tokens.textPrimary, fontSize: 13)),
                     ],
                   ),
                 ),
-                const PopupMenuItem<String>(
+                PopupMenuItem<String>(
                   value: 'edit',
                   child: Row(
                     children: [
-                      Icon(Icons.edit, size: 20),
-                      SizedBox(width: 8),
-                      Text('Edit'),
+                      Icon(Icons.edit_outlined, size: 18, color: tokens.textPrimary),
+                      const SizedBox(width: 8),
+                      Text('Edit', style: TextStyle(color: tokens.textPrimary, fontSize: 13)),
                     ],
                   ),
                 ),
-                const PopupMenuItem<String>(
+                PopupMenuItem<String>(
                   value: 'delete',
                   child: Row(
                     children: [
-                      Icon(Icons.delete, size: 20),
-                      SizedBox(width: 8),
-                      Text('Delete'),
+                      Icon(Icons.delete_outline, size: 18, color: tokens.error),
+                      const SizedBox(width: 8),
+                      Text('Delete', style: TextStyle(color: tokens.error, fontSize: 13)),
                     ],
                   ),
                 ),
@@ -156,16 +189,36 @@ class ExerciseEditCard extends StatelessWidget {
     );
   }
 
-  /// Builds an info chip with icon and text.
+  /// Builds a monolithic info chip with icon and text.
   Widget _buildInfoChip(
-    BuildContext context,
+    AppThemeTokens tokens,
     String label,
     IconData icon,
   ) {
-    return Chip(
-      avatar: Icon(icon, size: 16),
-      label: Text(label),
-      visualDensity: VisualDensity.compact,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: tokens.panel,
+        borderRadius: BorderRadius.circular(tokens.radiusSm),
+        border: Border.all(color: tokens.borderSubtle, width: 1),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: tokens.kineticAccent),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: tokens.textSecondary,
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              fontFamily: AppTypography.fontFamilyHeadings,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
