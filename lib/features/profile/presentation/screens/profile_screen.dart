@@ -836,6 +836,15 @@ Last Updated: May 13, 2026''',
                     color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
                     height: 1,
                   ),
+                  _SettingsTile(
+                    icon: Icons.palette_outlined,
+                    label: 'Design System Gallery (Debug Only)',
+                    onTap: () => context.push(AppRoutes.designGallery),
+                  ),
+                  Divider(
+                    color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
+                    height: 1,
+                  ),
                 ],
                 // Theme toggle
                 ListTile(
