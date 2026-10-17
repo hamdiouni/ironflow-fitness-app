@@ -2,7 +2,6 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
-import '../theme/app_spacings.dart';
 import '../theme/app_theme_tokens.dart';
 import '../theme/app_typography.dart';
 

@@ -1,11 +1,7 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../core/constants/app_theme.dart';
-import '../../core/theme/app_theme_tokens.dart';
-import '../../core/theme/app_typography.dart';
 import '../../features/nutrition/domain/entities/meal.dart';
 import 'empty_state_widget.dart';
 
