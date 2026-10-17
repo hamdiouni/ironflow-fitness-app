@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/constants/app_theme.dart';
 import 'ai_destination.dart';
 
 /// Shared, consistent entry button for launching the AI Fitness Coach from screen headers.
@@ -17,8 +18,7 @@ class AiEntryButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final primary = theme.colorScheme.primary;
+    final tokens = context.tokens;
 
     return Semantics(
       button: true,
@@ -40,20 +40,27 @@ class AiEntryButton extends ConsumerWidget {
               customBorder: const CircleBorder(),
               child: Center(
                 child: Container(
-                  width: 36,
-                  height: 36,
+                  width: 38,
+                  height: 38,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: primary.withValues(alpha: 0.12),
+                    color: tokens.card,
                     border: Border.all(
-                      color: primary.withValues(alpha: 0.3),
-                      width: 1,
+                      color: tokens.kineticAccent.withValues(alpha: 0.4),
+                      width: 1.2,
                     ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: tokens.kineticAccent.withValues(alpha: tokens.isDark ? 0.18 : 0.08),
+                        blurRadius: 10,
+                        spreadRadius: 1,
+                      ),
+                    ],
                   ),
                   child: Icon(
                     Icons.auto_awesome,
                     size: 18,
-                    color: primary,
+                    color: tokens.kineticAccent,
                   ),
                 ),
               ),
