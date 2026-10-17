@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:progression_tracker/core/constants/app_theme.dart';
+import 'package:progression_tracker/core/router/app_router.dart';
+import 'package:progression_tracker/features/auth/presentation/providers/auth_notifier.dart';
+import 'package:progression_tracker/features/onboarding/data/user_profile_storage.dart';
 
 /// Splash screen that checks authentication status and redirects accordingly
 class SplashScreen extends ConsumerStatefulWidget {
@@ -19,16 +22,22 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   }
 
   Future<void> _checkAuthStatus() async {
-    // Skip splash delay and go directly to login for faster startup
     if (!mounted) return;
 
-    // Always go to login for now (mock auth)
-    // In production, check actual auth state here
-    await Future.delayed(const Duration(milliseconds: 500));
-    
+    // Small delay for smooth splash presentation
+    await Future.delayed(const Duration(milliseconds: 600));
     if (!mounted) return;
-    
-    context.go('/login');
+
+    final authState = ref.read(authNotifierProvider);
+    final isOnboarded = UserProfileStorage().isOnboardedSync();
+
+    if (!authState.isAuthenticated) {
+      context.go(AppRoutes.login);
+    } else if (!isOnboarded) {
+      context.go(AppRoutes.onboarding);
+    } else {
+      context.go(AppRoutes.home);
+    }
   }
 
   @override

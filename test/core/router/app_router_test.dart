@@ -7,6 +7,7 @@ import 'package:hive/hive.dart';
 import 'package:progression_tracker/core/router/app_router.dart';
 import 'package:progression_tracker/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:progression_tracker/features/auth/data/datasources/auth_session_storage.dart';
+import 'package:progression_tracker/features/onboarding/data/user_profile_storage.dart';
 
 void main() {
   late Directory tempDir;
@@ -36,14 +37,17 @@ void main() {
     await Hive.openBox('foods');
     await Hive.openBox<String>('app_settings');
     await Hive.openBox('auth_session');
+    await Hive.openBox('user_profile');
   });
 
   setUp(() async {
     await AuthSessionStorage().clearSession();
+    await UserProfileStorage().resetOnboarding();
   });
 
   tearDown(() async {
     await AuthSessionStorage().clearSession();
+    await UserProfileStorage().resetOnboarding();
   });
 
   tearDownAll(() async {
@@ -126,12 +130,13 @@ void main() {
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
-      // Authenticate
+      // Authenticate & Mark Onboarded
       await tester.runAsync(() async {
         await container.read(authNotifierProvider.notifier).signInWithEmail(
               email: 'demo@ironflow.com',
               password: 'password123',
             );
+        await UserProfileStorage().markOnboarded();
       });
 
       final router = container.read(routerProvider);
@@ -215,12 +220,13 @@ void main() {
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
-      // Authenticate
+      // Authenticate & Mark Onboarded
       await tester.runAsync(() async {
         await container.read(authNotifierProvider.notifier).signInWithEmail(
               email: 'demo@ironflow.com',
               password: 'password123',
             );
+        await UserProfileStorage().markOnboarded();
       });
 
       final router = container.read(routerProvider);
@@ -263,6 +269,51 @@ void main() {
         router.routerDelegate.currentConfiguration.uri.toString(),
         equals(AppRoutes.home),
       );
+
+      // Drain any remaining timers
+      await tester.pump(const Duration(seconds: 3));
+    });
+
+    testWidgets('Authenticated user who has not completed onboarding is redirected from splash to /onboarding',
+        (tester) async {
+      final originalOnError = FlutterError.onError;
+      FlutterError.onError = (details) {
+        if (details.exception.toString().contains('[core/no-app]')) {
+          return;
+        }
+        originalOnError?.call(details);
+      };
+      addTearDown(() => FlutterError.onError = originalOnError);
+
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await tester.runAsync(() async {
+        await container.read(authNotifierProvider.notifier).signInWithEmail(
+              email: 'demo@ironflow.com',
+              password: 'password123',
+            );
+      });
+
+      final router = container.read(routerProvider);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp.router(
+            routerConfig: router,
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(
+        router.routerDelegate.currentConfiguration.uri.toString(),
+        equals(AppRoutes.onboarding),
+      );
+
+      await tester.pump(const Duration(seconds: 3));
     });
   });
 }
