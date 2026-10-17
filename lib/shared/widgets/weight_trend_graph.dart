@@ -1,10 +1,7 @@
-import 'dart:ui';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/constants/app_theme.dart';
-import '../../core/theme/app_theme_tokens.dart';
-import '../../core/theme/app_typography.dart';
 import '../../core/utils/chart_data_sampler.dart';
 import '../../features/body/domain/entities/weight_data_point.dart';
 

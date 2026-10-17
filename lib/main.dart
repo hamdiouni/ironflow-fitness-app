@@ -16,6 +16,7 @@ import 'features/workout/presentation/managers/workout_state_manager.dart';
 import 'features/workout/presentation/providers/workout_providers.dart';
 import 'features/notifications/domain/services/notification_service.dart';
 import 'features/ai/presentation/providers/global_ai_provider.dart';
+import 'shared/presentation/services/app_haptics.dart';
 
 void main() async {
   // Run app in error zone to catch all errors
@@ -230,6 +231,7 @@ class MainScaffold extends StatelessWidget {
           currentIndex: currentIndex,
           onTap: (index) {
             if (index != currentIndex) {
+              AppHaptics.shared.selectionChanged();
               context.go(_tabRoutes[index]);
             }
           },
