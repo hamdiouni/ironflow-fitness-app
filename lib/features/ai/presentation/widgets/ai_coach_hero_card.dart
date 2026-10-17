@@ -23,7 +23,13 @@ import 'ai_offline_state.dart';
 /// - Offline (with cached indication)
 /// - Missing API Key (safe explanation without secrets)
 class AiCoachHeroCard extends ConsumerStatefulWidget {
-  const AiCoachHeroCard({super.key});
+  const AiCoachHeroCard({
+    super.key,
+    this.isConfigured,
+  });
+
+  /// Optional override for API key presence (defaults to AppConfig check).
+  final bool? isConfigured;
 
   @override
   ConsumerState<AiCoachHeroCard> createState() => _AiCoachHeroCardState();
@@ -51,7 +57,8 @@ class _AiCoachHeroCardState extends ConsumerState<AiCoachHeroCard> {
     final primary = theme.colorScheme.primary;
 
     // Check configuration and connectivity
-    final hasKey = AppConfig.hasOpenAI || AppConfig.hasGemini || AppConfig.hasNvidia;
+    final hasKey = widget.isConfigured ??
+        (AppConfig.hasOpenAI || AppConfig.hasGemini || AppConfig.hasNvidia);
     final isOnline = ref.watch(isOnlineProvider).value ?? true;
 
     // Watch GlobalAIState for Home context
@@ -94,40 +101,26 @@ class _AiCoachHeroCardState extends ConsumerState<AiCoachHeroCard> {
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: hasKey && insights.isNotEmpty
-                  ? () {
-                      final active = insights[_activeInsightIndex.clamp(0, insights.length - 1)];
-                      navigateToAiCoach(
-                        context,
-                        initialMessage: 'Tell me more about: ${active.title}',
-                      );
-                    }
-                  : null,
-              child: Padding(
-                padding: const EdgeInsets.all(AppTheme.spacingMedium),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Top header row
-                    _buildHeader(context, primary, isLoading, hasKey),
-                    const SizedBox(height: AppTheme.spacingSmall),
+          child: Padding(
+            padding: const EdgeInsets.all(AppTheme.spacingMedium),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Top header row
+                _buildHeader(context, primary, isLoading, hasKey),
+                const SizedBox(height: AppTheme.spacingSmall),
 
-                    // Main state content
-                    _buildContent(
-                      context: context,
-                      hasKey: hasKey,
-                      isOnline: isOnline,
-                      insights: insights,
-                      isLoading: isLoading,
-                      error: error,
-                    ),
-                  ],
+                // Main state content
+                _buildContent(
+                  context: context,
+                  hasKey: hasKey,
+                  isOnline: isOnline,
+                  insights: insights,
+                  isLoading: isLoading,
+                  error: error,
                 ),
-              ),
+              ],
             ),
           ),
         ),
@@ -211,41 +204,40 @@ class _AiCoachHeroCardState extends ConsumerState<AiCoachHeroCard> {
     required bool isLoading,
     required String? error,
   }) {
-    // 1. Missing API Key
+    // 1. Success: Always show insights if available (including cached insights when offline)
+    if (insights.isNotEmpty) {
+      final safeIndex = _activeInsightIndex.clamp(0, insights.length - 1);
+      final insight = insights[safeIndex];
+      return _buildSuccessContent(context, insight, insights.length);
+    }
+
+    // 2. Missing API Key (when no insights available)
     if (!hasKey) {
       return const AiNoKeyState();
     }
 
-    // 2. Offline with no cached insights
-    if (!isOnline && insights.isEmpty) {
+    // 3. Offline (when no insights available)
+    if (!isOnline) {
       return AiOfflineState(onRetry: _refresh);
     }
 
-    // 3. Loading with no previous insights
-    if (isLoading && insights.isEmpty) {
+    // 4. Loading (when no insights available)
+    if (isLoading) {
       return const AiLoadingState();
     }
 
-    // 4. Error with no cached insights
-    if (error != null && insights.isEmpty) {
+    // 5. Error (when no insights available)
+    if (error != null) {
       return AiErrorState(
         message: error,
         onRetry: _refresh,
       );
     }
 
-    // 5. Empty insights
-    if (insights.isEmpty) {
-      return AiEmptyState(
-        onAction: () => navigateToAiCoach(context),
-      );
-    }
-
-    // 6. Success: Show top insight
-    final safeIndex = _activeInsightIndex.clamp(0, insights.length - 1);
-    final insight = insights[safeIndex];
-
-    return _buildSuccessContent(context, insight, insights.length);
+    // 6. Clean Empty state
+    return AiEmptyState(
+      onAction: () => navigateToAiCoach(context),
+    );
   }
 
   Widget _buildSuccessContent(
@@ -261,54 +253,64 @@ class _AiCoachHeroCardState extends ConsumerState<AiCoachHeroCard> {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Insight Icon badge
-            Container(
-              width: 44,
-              height: 44,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: primary.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
+        InkWell(
+          borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
+          onTap: () {
+            navigateToAiCoach(
+              context,
+              initialMessage: 'Tell me more about: ${insight.title}',
+            );
+          },
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Insight Icon badge
+              Container(
+                width: 44,
+                height: 44,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: primary.withValues(alpha: 0.12),
+                  borderRadius:
+                      BorderRadius.circular(AppTheme.borderRadiusSmall),
+                ),
+                child: Text(
+                  insight.icon,
+                  style: const TextStyle(fontSize: 22),
+                ),
               ),
-              child: Text(
-                insight.icon,
-                style: const TextStyle(fontSize: 22),
-              ),
-            ),
-            const SizedBox(width: AppTheme.spacingMedium),
-            // Title & message
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    insight.title,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.onSurface,
+              const SizedBox(width: AppTheme.spacingMedium),
+              // Title & message
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      insight.title,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onSurface,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: AppTheme.spacingXSmall),
-                  Text(
-                    insight.message,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: isDark
-                          ? AppTheme.darkTextSecondary
-                          : AppTheme.lightTextSecondary,
-                      height: 1.4,
+                    const SizedBox(height: AppTheme.spacingXSmall),
+                    Text(
+                      insight.message,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: isDark
+                            ? AppTheme.darkTextSecondary
+                            : AppTheme.lightTextSecondary,
+                        height: 1.4,
+                      ),
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         const SizedBox(height: AppTheme.spacingMedium),
 
@@ -324,23 +326,30 @@ class _AiCoachHeroCardState extends ConsumerState<AiCoachHeroCard> {
                 mainAxisSize: MainAxisSize.min,
                 children: List.generate(totalCount, (index) {
                   final isActive = index == _activeInsightIndex;
-                  return GestureDetector(
+                  return InkWell(
+                    key: ValueKey('carousel_dot_$index'),
+                    borderRadius: BorderRadius.circular(12),
                     onTap: () {
                       setState(() {
                         _activeInsightIndex = index;
                       });
                     },
-                    child: Container(
-                      margin: const EdgeInsets.only(right: 6),
-                      width: isActive ? 18 : 6,
-                      height: 6,
-                      decoration: BoxDecoration(
-                        color: isActive
-                            ? primary
-                            : (isDark
-                                ? AppTheme.darkTextDisabled
-                                : AppTheme.lightTextDisabled),
-                        borderRadius: BorderRadius.circular(3),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 8,
+                      ),
+                      child: Container(
+                        width: isActive ? 18 : 6,
+                        height: 6,
+                        decoration: BoxDecoration(
+                          color: isActive
+                              ? primary
+                              : (isDark
+                                  ? AppTheme.darkTextDisabled
+                                  : AppTheme.lightTextDisabled),
+                          borderRadius: BorderRadius.circular(3),
+                        ),
                       ),
                     ),
                   );
