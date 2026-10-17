@@ -243,6 +243,9 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
       glowDecoration: BoxDecoration.lerp(glowDecoration, other.glowDecoration, t)!,
     );
   }
+
+  /// Convenience static helper to retrieve tokens from [BuildContext].
+  static AppThemeTokens of(BuildContext context) => context.tokens;
 }
 
 /// Extension on [BuildContext] for ergonomic access to design tokens.
@@ -256,3 +259,4 @@ extension AppThemeContextExtension on BuildContext {
         : AppThemeTokens.light;
   }
 }
+

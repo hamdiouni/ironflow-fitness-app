@@ -3,7 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/app_router.dart';
+import '../../../../core/theme/app_theme_tokens.dart';
+import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/error_handler.dart';
+import '../../../../shared/presentation/components/components.dart';
 import '../../domain/entities/workout_program.dart';
 import '../../domain/exceptions/workout_exceptions.dart';
 import '../providers/active_program_providers.dart';
@@ -37,15 +40,36 @@ class _ProgramEditorScreenState extends ConsumerState<ProgramEditorScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     final activeProgramAsync = ref.watch(activeProgramProvider);
 
     return activeProgramAsync.when(
       data: (activeProgram) {
         if (activeProgram == null) {
           return Scaffold(
-            appBar: AppBar(title: const Text('Program Editor')),
-            body: const Center(
-              child: Text('No active program'),
+            backgroundColor: tokens.canvas,
+            appBar: AppBar(
+              backgroundColor: tokens.canvas,
+              elevation: 0,
+              title: Text(
+                'EDIT PROGRAM',
+                style: TextStyle(
+                  color: tokens.textPrimary,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  fontFamily: AppTypography.fontFamilyHeadings,
+                  letterSpacing: 1.2,
+                ),
+              ),
+            ),
+            body: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: AppStateView.empty(
+                  title: 'NO ACTIVE PROGRAM',
+                  message: 'Initialize a training split before editing protocol parameters.',
+                ),
+              ),
             ),
           );
         }
@@ -54,26 +78,45 @@ class _ProgramEditorScreenState extends ConsumerState<ProgramEditorScreen> {
         final currentDay = program.days[_selectedDayIndex];
 
         return Scaffold(
+          backgroundColor: tokens.canvas,
           appBar: AppBar(
-            title: const Text('Edit Program'),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.check),
-                onPressed: () => Navigator.of(context).pop(),
-                tooltip: 'Save and close',
+            backgroundColor: tokens.canvas,
+            elevation: 0,
+            surfaceTintColor: Colors.transparent,
+            title: Text(
+              'EDIT PROGRAM',
+              style: TextStyle(
+                color: tokens.textPrimary,
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                fontFamily: AppTypography.fontFamilyHeadings,
+                letterSpacing: 1.2,
               ),
+            ),
+            actions: [
+              SizedBox(
+                width: 48,
+                height: 48,
+                child: IconButton(
+                  icon: Icon(Icons.check, color: tokens.kineticAccent, size: 22),
+                  onPressed: () => Navigator.of(context).pop(),
+                  tooltip: 'Save and close',
+                ),
+              ),
+              const SizedBox(width: 8),
             ],
           ),
           body: Column(
             children: [
               // Day selector with horizontal scrollable chips
-              _buildDaySelector(program),
+              _buildDaySelector(program, tokens),
               // Exercise list with drag-drop reordering
               Expanded(
                 child: _buildExerciseList(
                   activeProgram,
                   _selectedDayIndex,
                   currentDay,
+                  tokens,
                 ),
               ),
             ],
@@ -81,23 +124,57 @@ class _ProgramEditorScreenState extends ConsumerState<ProgramEditorScreen> {
         );
       },
       loading: () => Scaffold(
-        appBar: AppBar(title: const Text('Program Editor')),
-        body: const Center(child: CircularProgressIndicator()),
+        backgroundColor: context.tokens.canvas,
+        appBar: AppBar(
+          backgroundColor: context.tokens.canvas,
+          elevation: 0,
+          title: Text(
+            'EDIT PROGRAM',
+            style: TextStyle(
+              color: context.tokens.textPrimary,
+              fontFamily: AppTypography.fontFamilyHeadings,
+            ),
+          ),
+        ),
+        body: Center(
+          child: CircularProgressIndicator(
+            strokeWidth: 2.5,
+            color: context.tokens.kineticAccent,
+          ),
+        ),
       ),
       error: (error, stackTrace) => Scaffold(
-        appBar: AppBar(title: const Text('Program Editor')),
+        backgroundColor: context.tokens.canvas,
+        appBar: AppBar(
+          backgroundColor: context.tokens.canvas,
+          elevation: 0,
+          title: Text(
+            'EDIT PROGRAM',
+            style: TextStyle(
+              color: context.tokens.textPrimary,
+              fontFamily: AppTypography.fontFamilyHeadings,
+            ),
+          ),
+        ),
         body: Center(
-          child: Text('Error: $error'),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: AppStateView.error(
+              title: 'LOAD FAILED',
+              message: error.toString(),
+              onRetry: () => ref.refresh(activeProgramProvider),
+            ),
+          ),
         ),
       ),
     );
   }
 
   /// Builds the day selector with horizontal scrollable chips.
-  Widget _buildDaySelector(WorkoutProgram program) {
+  Widget _buildDaySelector(WorkoutProgram program, AppThemeTokens tokens) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: List.generate(
           program.days.length,
@@ -107,14 +184,42 @@ class _ProgramEditorScreenState extends ConsumerState<ProgramEditorScreen> {
 
             return Padding(
               padding: const EdgeInsets.only(right: 8),
-              child: FilterChip(
-                label: Text(day.name),
-                selected: isSelected,
-                onSelected: (selected) {
+              child: GestureDetector(
+                onTap: () {
                   setState(() {
                     _selectedDayIndex = index;
                   });
                 },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: isSelected ? tokens.panel : tokens.card,
+                    borderRadius: BorderRadius.circular(tokens.radiusPill),
+                    border: Border.all(
+                      color: isSelected ? tokens.kineticAccent : tokens.borderSubtle,
+                      width: isSelected ? 1.5 : 1,
+                    ),
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: tokens.kineticAccent.withValues(alpha: 0.2),
+                              blurRadius: 6,
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: Text(
+                    day.name.toUpperCase(),
+                    style: TextStyle(
+                      color: isSelected ? tokens.kineticAccent : tokens.textMuted,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      fontFamily: AppTypography.fontFamilyHeadings,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
               ),
             );
           },
@@ -128,16 +233,30 @@ class _ProgramEditorScreenState extends ConsumerState<ProgramEditorScreen> {
     dynamic activeProgram,
     int dayIndex,
     ProgramDay day,
+    AppThemeTokens tokens,
   ) {
     if (day.isRestDay) {
-      return const Center(
-        child: Text('Rest Day'),
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: AppStateView.empty(
+            title: 'RECOVERY DAY',
+            message: 'No exercises scheduled for rest and tissue adaptation.',
+            icon: Icon(Icons.bedtime_outlined, size: 48, color: tokens.kineticAccent),
+          ),
+        ),
       );
     }
 
     if (day.exercises.isEmpty) {
-      return const Center(
-        child: Text('No exercises'),
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: AppStateView.empty(
+            title: 'NO EXERCISES IN DAY',
+            message: 'Add exercises to this training split day.',
+          ),
+        ),
       );
     }
 
@@ -219,6 +338,7 @@ class _ProgramEditorScreenState extends ConsumerState<ProgramEditorScreen> {
 
   /// Shows dialog to edit exercise parameters.
   void _showEditDialog(int dayIndex, int exerciseIndex) {
+    final tokens = context.tokens;
     final exercise = ref
         .read(activeProgramProvider)
         .value
@@ -241,33 +361,83 @@ class _ProgramEditorScreenState extends ConsumerState<ProgramEditorScreen> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          title: const Text('Edit Parameters'),
+          backgroundColor: tokens.card,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(tokens.radiusLg),
+            side: BorderSide(color: tokens.borderSubtle, width: 1),
+          ),
+          title: Text(
+            'EDIT PARAMETERS',
+            style: TextStyle(
+              color: tokens.textPrimary,
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              fontFamily: AppTypography.fontFamilyHeadings,
+              letterSpacing: 0.5,
+            ),
+          ),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(
                   controller: setsController,
+                  style: TextStyle(color: tokens.textPrimary),
                   decoration: InputDecoration(
                     labelText: 'Sets',
+                    labelStyle: TextStyle(color: tokens.textMuted, fontSize: 12),
                     errorText: setsError,
+                    filled: true,
+                    fillColor: tokens.panel,
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(tokens.radiusSm),
+                      borderSide: BorderSide(color: tokens.borderSubtle, width: 1),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(tokens.radiusSm),
+                      borderSide: BorderSide(color: tokens.kineticAccent, width: 1.5),
+                    ),
                   ),
                   keyboardType: TextInputType.number,
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 14),
                 TextField(
                   controller: repsController,
+                  style: TextStyle(color: tokens.textPrimary),
                   decoration: InputDecoration(
                     labelText: 'Reps (e.g., "8-12" or "15")',
+                    labelStyle: TextStyle(color: tokens.textMuted, fontSize: 12),
                     errorText: repsError,
+                    filled: true,
+                    fillColor: tokens.panel,
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(tokens.radiusSm),
+                      borderSide: BorderSide(color: tokens.borderSubtle, width: 1),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(tokens.radiusSm),
+                      borderSide: BorderSide(color: tokens.kineticAccent, width: 1.5),
+                    ),
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 14),
                 TextField(
                   controller: restController,
+                  style: TextStyle(color: tokens.textPrimary),
                   decoration: InputDecoration(
                     labelText: 'Rest (seconds)',
+                    labelStyle: TextStyle(color: tokens.textMuted, fontSize: 12),
                     errorText: restError,
+                    filled: true,
+                    fillColor: tokens.panel,
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(tokens.radiusSm),
+                      borderSide: BorderSide(color: tokens.borderSubtle, width: 1),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(tokens.radiusSm),
+                      borderSide: BorderSide(color: tokens.kineticAccent, width: 1.5),
+                    ),
                   ),
                   keyboardType: TextInputType.number,
                 ),
@@ -277,9 +447,12 @@ class _ProgramEditorScreenState extends ConsumerState<ProgramEditorScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
+              child: Text('Cancel', style: TextStyle(color: tokens.textMuted)),
             ),
-            TextButton(
+            AppButton(
+              label: 'SAVE',
+              variant: AppButtonVariant.primary,
+              height: 40,
               onPressed: () async {
                 // Validate inputs
                 setState(() {
@@ -353,7 +526,6 @@ class _ProgramEditorScreenState extends ConsumerState<ProgramEditorScreen> {
                   }
                 }
               },
-              child: const Text('Save'),
             ),
           ],
         ),

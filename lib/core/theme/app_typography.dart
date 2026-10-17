@@ -10,6 +10,8 @@ class AppTypography {
 
   static const String displayFontFamily = 'SpaceGrotesk';
   static const String bodyFontFamily = 'Inter';
+  static const String fontFamilyHeadings = displayFontFamily;
+  static const String fontFamilyBody = bodyFontFamily;
 
   /// Generates a complete Material 3 TextTheme adapted to [isDark].
   static TextTheme createTextTheme({required bool isDark}) {
