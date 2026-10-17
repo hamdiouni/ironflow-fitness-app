@@ -387,10 +387,12 @@ void main() {
 
           // Verify we're on the expected route (not redirected to login)
           final currentLocation = router.routerDelegate.currentConfiguration.uri.toString();
+          final expectedTarget =
+              route == AppRoutes.analytics ? AppRoutes.progress : route;
           
           expect(
             currentLocation,
-            contains(route),
+            contains(expectedTarget),
             reason: 'Should be able to navigate to protected route $route when authenticated. '
                 'Current location: $currentLocation',
           );

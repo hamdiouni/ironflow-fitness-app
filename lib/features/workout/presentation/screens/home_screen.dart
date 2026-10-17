@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/constants/app_theme.dart';
-import '../../../../core/providers/theme_provider.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../shared/presentation/components/components.dart';
 import '../../../../shared/widgets/ironflow_logo.dart';
@@ -186,11 +185,11 @@ class _HomeHeader extends StatelessWidget {
           const SizedBox(width: AppSpacings.xs),
           Semantics(
             button: true,
-            label: 'Open Profile',
+            label: 'Open User Profile and Settings',
             child: ConstrainedBox(
               constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
               child: InkWell(
-                onTap: () => context.go(AppRoutes.profile),
+                onTap: () => _openUserHub(context, tokens),
                 customBorder: const CircleBorder(),
                 child: Center(
                   child: Container(
@@ -207,43 +206,127 @@ class _HomeHeader extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: AppSpacings.xs),
-          Consumer(
-            builder: (context, ref, child) {
-              return Semantics(
-                button: true,
-                label: 'Toggle Light and Dark Theme',
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-                  child: InkWell(
-                    onTap: () {
-                      ref.read(themeProvider.notifier).toggleTheme();
-                    },
-                    customBorder: const CircleBorder(),
-                    child: Center(
-                      child: Container(
-                        width: 38,
-                        height: 38,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: tokens.card,
-                          border: Border.all(color: tokens.borderSubtle, width: 1),
-                        ),
-                        child: Icon(
-                          tokens.isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
-                          color: tokens.kineticAccent,
-                          size: 18,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
         ],
       ),
     ).animate().fadeIn(duration: 350.ms).slideY(begin: -0.05);
+  }
+
+  void _openUserHub(BuildContext context, AppThemeTokens tokens) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: tokens.panel,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(tokens.radiusLg)),
+        side: BorderSide(color: tokens.borderSubtle, width: 1),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: tokens.card,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: tokens.kineticAccent, width: 1.5),
+                    ),
+                    child: Icon(Icons.person, color: tokens.kineticAccent, size: 24),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'OPERATOR HUB',
+                          style: TextStyle(
+                            fontFamily: AppTypography.displayFontFamily,
+                            color: tokens.textPrimary,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        Text(
+                          'PROFILE & SYSTEM CONFIGURATION',
+                          style: TextStyle(
+                            fontFamily: AppTypography.displayFontFamily,
+                            color: tokens.textMuted,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.8,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              ListTile(
+                leading: Icon(Icons.badge_outlined, color: tokens.kineticAccent),
+                title: Text(
+                  'PROFILE & BIOMETRICS',
+                  style: TextStyle(
+                    fontFamily: AppTypography.displayFontFamily,
+                    color: tokens.textPrimary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                subtitle: Text(
+                  'Directives, fitness level, and nutrition targets',
+                  style: TextStyle(
+                    fontFamily: AppTypography.bodyFontFamily,
+                    color: tokens.textSecondary,
+                    fontSize: 11,
+                  ),
+                ),
+                trailing: Icon(Icons.chevron_right, color: tokens.textTertiary),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  context.push(AppRoutes.profile);
+                },
+              ),
+              Divider(color: tokens.borderSubtle, height: 1),
+              ListTile(
+                leading: Icon(Icons.settings_outlined, color: tokens.kineticAccent),
+                title: Text(
+                  'SETTINGS & DATA',
+                  style: TextStyle(
+                    fontFamily: AppTypography.displayFontFamily,
+                    color: tokens.textPrimary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                subtitle: Text(
+                  'Appearance, haptics, export, backup, and restore',
+                  style: TextStyle(
+                    fontFamily: AppTypography.bodyFontFamily,
+                    color: tokens.textSecondary,
+                    fontSize: 11,
+                  ),
+                ),
+                trailing: Icon(Icons.chevron_right, color: tokens.textTertiary),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  context.push(AppRoutes.settings);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 

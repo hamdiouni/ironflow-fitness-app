@@ -188,95 +188,96 @@ class MainApp extends ConsumerWidget {
   }
 }
 
-/// Scaffold that wraps each top-level route with a shared [BottomNavigationBar].
+/// Scaffold that wraps the 4 primary tabs with a bottom navigation dock.
 class MainScaffold extends StatelessWidget {
-  const MainScaffold({super.key, required this.child});
+  const MainScaffold({
+    super.key,
+    required this.navigationShell,
+  });
 
-  final Widget child;
+  final StatefulNavigationShell navigationShell;
 
-  static const List<String> _tabRoutes = [
+  static const List<String> tabRoutes = [
     AppRoutes.home,
     AppRoutes.workout,
-    AppRoutes.progress,
     AppRoutes.nutrition,
-    AppRoutes.profile,
+    AppRoutes.progress,
   ];
-
-  int _currentIndex(String location) {
-    for (int i = _tabRoutes.length - 1; i >= 0; i--) {
-      if (location.startsWith(_tabRoutes[i])) return i;
-    }
-    return 0;
-  }
 
   @override
   Widget build(BuildContext context) {
-    final location = GoRouterState.of(context).uri.toString();
-    final currentIndex = _currentIndex(location);
+    final currentIndex = navigationShell.currentIndex;
     final tokens = context.tokens;
 
-    return Scaffold(
-      body: child,
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: tokens.panel,
-          border: Border(
-            top: BorderSide(
-              color: tokens.borderSubtle,
-              width: 1,
+    return PopScope(
+      canPop: currentIndex == 0,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        navigationShell.goBranch(0);
+      },
+      child: Scaffold(
+        body: navigationShell,
+        bottomNavigationBar: Container(
+          decoration: BoxDecoration(
+            color: tokens.panel,
+            border: Border(
+              top: BorderSide(
+                color: tokens.borderSubtle,
+                width: 1,
+              ),
             ),
           ),
-        ),
-        child: BottomNavigationBar(
-          currentIndex: currentIndex,
-          onTap: (index) {
-            if (index != currentIndex) {
-              AppHaptics.shared.selectionChanged();
-              context.go(_tabRoutes[index]);
-            }
-          },
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          selectedItemColor: tokens.kineticAccent,
-          unselectedItemColor: tokens.textTertiary,
-          selectedLabelStyle: const TextStyle(
-            fontFamily: AppTypography.displayFontFamily,
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.2,
+          child: BottomNavigationBar(
+            currentIndex: currentIndex,
+            onTap: (index) {
+              if (index != currentIndex) {
+                AppHaptics.shared.selectionChanged();
+                navigationShell.goBranch(
+                  index,
+                  initialLocation: index == navigationShell.currentIndex,
+                );
+              }
+            },
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            type: BottomNavigationBarType.fixed,
+            selectedItemColor: tokens.kineticAccent,
+            unselectedItemColor: tokens.textTertiary,
+            selectedLabelStyle: const TextStyle(
+              fontFamily: AppTypography.displayFontFamily,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.5,
+            ),
+            unselectedLabelStyle: const TextStyle(
+              fontFamily: AppTypography.displayFontFamily,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.5,
+            ),
+            items: const [
+              BottomNavigationBarItem(
+                icon: Icon(Icons.home_outlined),
+                activeIcon: Icon(Icons.home),
+                label: 'TODAY',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.fitness_center_outlined),
+                activeIcon: Icon(Icons.fitness_center),
+                label: 'TRAIN',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.restaurant_outlined),
+                activeIcon: Icon(Icons.restaurant),
+                label: 'FUEL',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.show_chart_outlined),
+                activeIcon: Icon(Icons.show_chart),
+                label: 'PROGRESS',
+              ),
+            ],
           ),
-          unselectedLabelStyle: const TextStyle(
-            fontFamily: AppTypography.bodyFontFamily,
-            fontSize: 11,
-            fontWeight: FontWeight.w500,
-          ),
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home_outlined),
-              activeIcon: Icon(Icons.home),
-              label: 'Home',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.fitness_center_outlined),
-              activeIcon: Icon(Icons.fitness_center),
-              label: 'Workout',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.show_chart_outlined),
-              activeIcon: Icon(Icons.show_chart),
-              label: 'Progress',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.restaurant_outlined),
-              activeIcon: Icon(Icons.restaurant),
-              label: 'Nutrition',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline),
-              activeIcon: Icon(Icons.person),
-              label: 'Profile',
-            ),
-          ],
         ),
       ),
     );
