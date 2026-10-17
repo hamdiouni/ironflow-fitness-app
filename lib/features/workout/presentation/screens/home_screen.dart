@@ -13,7 +13,11 @@ import '../../../onboarding/presentation/providers/onboarding_provider.dart';
 import '../../../ai/presentation/widgets/ai_coach_hero_card.dart';
 import '../../../ai/presentation/widgets/ai_entry_button.dart';
 import '../../domain/entities/workout.dart';
+import '../../../nutrition/presentation/providers/nutrition_providers.dart';
+import '../providers/active_program_providers.dart';
 import '../providers/home_workout_provider.dart';
+import '../providers/workout_providers.dart';
+import '../../../../shared/presentation/services/app_haptics.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -27,9 +31,11 @@ class HomeScreen extends ConsumerWidget {
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () async {
-            // Refresh both providers
+            // Refresh all providers
             ref.invalidate(homeWorkoutDataProvider);
             ref.invalidate(userProfileProvider);
+            ref.invalidate(activeProgramProvider);
+            ref.invalidate(dailyNutritionSummaryProvider(DateTime.now()));
             // Wait for data to load
             await Future.wait([
               ref.read(homeWorkoutDataProvider.future),
@@ -39,12 +45,36 @@ class HomeScreen extends ConsumerWidget {
           child: CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
-              // Header - always visible
+              // 1. Header (Avatar -> Operator Hub, IronFlow Logo, AI Entry)
               SliverToBoxAdapter(
                 child: _HomeHeader(profileAsync: profileAsync),
               ),
 
-              // Weekly Activity Section
+              // 2. Today's Program Directive (Protocol Day or Rest Day card)
+              const SliverToBoxAdapter(
+                child: _TodayDirectiveCard(),
+              ),
+
+              // 3. Daily Fuel Telemetry (Summary bar connecting directly to /nutrition)
+              SliverToBoxAdapter(
+                child: _DailyFuelSummaryBar(profileAsync: profileAsync),
+              ),
+
+              // 4. Quick Workout Actions (Quick Start + Repeat Last Workout)
+              SliverToBoxAdapter(
+                child: historyAsync.when(
+                  data: (workouts) => _QuickWorkoutActions(workouts: workouts),
+                  loading: () => const _QuickWorkoutActions(workouts: []),
+                  error: (_, _) => const _QuickWorkoutActions(workouts: []),
+                ),
+              ),
+
+              // 5. AI Coach Hero Card
+              const SliverToBoxAdapter(
+                child: AiCoachHeroCard(),
+              ),
+
+              // 6. Weekly Activity Section
               SliverToBoxAdapter(
                 child: historyAsync.when(
                   data: (workouts) => profileAsync.when(
@@ -68,12 +98,7 @@ class HomeScreen extends ConsumerWidget {
                 ),
               ),
 
-              // AI Coach Hero Card
-              const SliverToBoxAdapter(
-                child: AiCoachHeroCard(),
-              ),
-
-              // Today Summary Row
+              // 7. Today Summary Metric Cards
               SliverToBoxAdapter(
                 child: profileAsync.when(
                   data: (profile) => historyAsync.when(
@@ -89,10 +114,7 @@ class HomeScreen extends ConsumerWidget {
                 ),
               ),
 
-              // Start Workout CTA
-              const SliverToBoxAdapter(child: _StartWorkoutCTA()),
-
-              // Suggestion Card
+              // 8. Suggestion Card
               SliverToBoxAdapter(
                 child: historyAsync.when(
                   data: (workouts) => profileAsync.when(
@@ -108,7 +130,7 @@ class HomeScreen extends ConsumerWidget {
                 ),
               ),
 
-              // Recent Workout Card
+              // 9. Recent Workout Card (with Repeat CTA)
               SliverToBoxAdapter(
                 child: historyAsync.when(
                   data: (workouts) => workouts.isNotEmpty
@@ -612,64 +634,526 @@ class _SummaryCard extends StatelessWidget {
   }
 }
 
-// ── Start Workout CTA ─────────────────────────────────────────────────────────
+// ── Today's Program Directive Card ──────────────────────────────────────────
 
-class _StartWorkoutCTA extends StatelessWidget {
-  const _StartWorkoutCTA();
+class _TodayDirectiveCard extends ConsumerWidget {
+  const _TodayDirectiveCard();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final activeProgramAsync = ref.watch(activeProgramProvider);
     final tokens = context.tokens;
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacings.lg,
-        AppSpacings.md,
-        AppSpacings.lg,
-        AppSpacings.sm,
-      ),
-      child: Semantics(
-        button: true,
-        label: 'Start Workout',
-        child: InkWell(
-          onTap: () => context.go(AppRoutes.workoutActive),
-          borderRadius: BorderRadius.circular(tokens.radiusSm),
+    return activeProgramAsync.when(
+      data: (activeProgram) {
+        if (activeProgram == null) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacings.lg, vertical: AppSpacings.xs),
+            child: AppCard(
+              padding: const EdgeInsets.all(AppSpacings.md),
+              child: Row(
+                children: [
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: tokens.card,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: tokens.kineticAccent.withValues(alpha: 0.5)),
+                    ),
+                    child: Icon(Icons.fitness_center_rounded, color: tokens.kineticAccent, size: 20),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'NO ACTIVE PROTOCOL',
+                          style: TextStyle(
+                            fontFamily: AppTypography.displayFontFamily,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.5,
+                            color: tokens.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Initialize an AI training split or load a program.',
+                          style: TextStyle(
+                            fontFamily: AppTypography.bodyFontFamily,
+                            fontSize: 11,
+                            color: tokens.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => context.go(AppRoutes.workoutProgramSelection),
+                    child: Text(
+                      'SETUP',
+                      style: TextStyle(
+                        fontFamily: AppTypography.displayFontFamily,
+                        fontWeight: FontWeight.w800,
+                        color: tokens.kineticAccent,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        final isRest = activeProgram.isRestDay;
+        final currentDay = activeProgram.currentDay;
+
+        if (isRest) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacings.lg, vertical: AppSpacings.xs),
+            child: Container(
+              padding: const EdgeInsets.all(AppSpacings.md),
+              decoration: BoxDecoration(
+                color: tokens.panel,
+                borderRadius: BorderRadius.circular(tokens.radiusMd),
+                border: Border.all(color: tokens.cyanAccent.withValues(alpha: 0.4)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: tokens.cyanAccent.withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: tokens.cyanAccent.withValues(alpha: 0.4)),
+                    ),
+                    child: Icon(Icons.bedtime_outlined, color: tokens.cyanAccent, size: 22),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              'RECOVERY DIRECTIVE',
+                              style: TextStyle(
+                                fontFamily: AppTypography.displayFontFamily,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.5,
+                                color: tokens.cyanAccent,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                              decoration: BoxDecoration(
+                                color: tokens.cyanAccent.withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(tokens.radiusXs),
+                              ),
+                              child: Text(
+                                'REST DAY',
+                                style: TextStyle(
+                                  fontFamily: AppTypography.displayFontFamily,
+                                  fontSize: 8,
+                                  fontWeight: FontWeight.w900,
+                                  color: tokens.cyanAccent,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          'Deep tissue recovery & neural adaptation active. Prioritize hydration & sleep.',
+                          style: TextStyle(
+                            fontFamily: AppTypography.bodyFontFamily,
+                            fontSize: 11,
+                            color: tokens.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        // Active workout day
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacings.lg, vertical: AppSpacings.xs),
           child: Container(
-            height: 52,
+            padding: const EdgeInsets.all(AppSpacings.md),
             decoration: BoxDecoration(
-              color: tokens.kineticAccent,
-              borderRadius: BorderRadius.circular(tokens.radiusSm),
+              color: tokens.panel,
+              borderRadius: BorderRadius.circular(tokens.radiusMd),
+              border: Border.all(color: tokens.kineticAccent.withValues(alpha: 0.5)),
               boxShadow: [
                 BoxShadow(
-                  color: tokens.kineticAccent.withValues(
-                    alpha: tokens.isDark ? 0.35 : 0.2,
-                  ),
-                  blurRadius: 16,
-                  offset: const Offset(0, 4),
+                  color: tokens.kineticAccent.withValues(alpha: 0.12),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
                 ),
               ],
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.play_arrow_rounded, color: Colors.black, size: 26),
-                const SizedBox(width: AppSpacings.sm),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.flash_on_rounded, color: tokens.kineticAccent, size: 18),
+                        const SizedBox(width: 6),
+                        Text(
+                          'TODAY\'S PROTOCOL DIRECTIVE',
+                          style: TextStyle(
+                            fontFamily: AppTypography.displayFontFamily,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.8,
+                            color: tokens.kineticAccent,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      'DAY ${activeProgram.currentDayIndex + 1} OF ${activeProgram.program.days.length}',
+                      style: TextStyle(
+                        fontFamily: AppTypography.displayFontFamily,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.6,
+                        color: tokens.textMuted,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
                 Text(
-                  'START WORKOUT',
+                  currentDay.name.toUpperCase(),
                   style: TextStyle(
                     fontFamily: AppTypography.displayFontFamily,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1.0,
-                    color: Colors.black,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.3,
+                    color: tokens.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${currentDay.exercises.length} Exercises Scheduled · ${activeProgram.program.name}',
+                  style: TextStyle(
+                    fontFamily: AppTypography.bodyFontFamily,
+                    fontSize: 12,
+                    color: tokens.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  height: 42,
+                  width: double.infinity,
+                  child: AppButton(
+                    label: 'EXECUTE TODAY\'S DIRECTIVE',
+                    variant: AppButtonVariant.primary,
+                    icon: const Icon(Icons.play_arrow_rounded, size: 20),
+                    onPressed: () async {
+                      AppHaptics.shared.selectionChanged();
+                      await ref.read(workoutNotifierProvider.notifier).start();
+                      if (context.mounted) context.go(AppRoutes.workoutActive);
+                    },
                   ),
                 ),
               ],
             ),
           ),
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
+    );
+  }
+}
+
+// ── Daily Fuel Telemetry Summary Bar ────────────────────────────────────────
+
+class _DailyFuelSummaryBar extends ConsumerWidget {
+  final AsyncValue<UserProfile?> profileAsync;
+  const _DailyFuelSummaryBar({required this.profileAsync});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tokens = context.tokens;
+    final now = DateTime.now();
+    final nutritionAsync = ref.watch(dailyNutritionSummaryProvider(now));
+
+    final targetCalories = profileAsync.valueOrNull?.dailyCalorieTarget ?? 2000.0;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacings.lg, vertical: AppSpacings.xs),
+      child: InkWell(
+        onTap: () {
+          AppHaptics.shared.selectionChanged();
+          context.go(AppRoutes.nutrition);
+        },
+        borderRadius: BorderRadius.circular(tokens.radiusMd),
+        child: Container(
+          padding: const EdgeInsets.all(AppSpacings.md),
+          decoration: BoxDecoration(
+            color: tokens.card,
+            borderRadius: BorderRadius.circular(tokens.radiusMd),
+            border: Border.all(color: tokens.borderSubtle, width: 1),
+          ),
+          child: nutritionAsync.when(
+            data: (summary) {
+              final consumed = summary.totalCalories;
+              final progress = (consumed / targetCalories).clamp(0.0, 1.0);
+              final protein = summary.totalProtein.round();
+              final carbs = summary.totalCarbs.round();
+              final fats = summary.totalFats.round();
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.restaurant_menu_rounded, color: tokens.warning, size: 16),
+                          const SizedBox(width: 6),
+                          Text(
+                            'DAILY FUEL TELEMETRY',
+                            style: TextStyle(
+                              fontFamily: AppTypography.displayFontFamily,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.8,
+                              color: tokens.textMuted,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          Text(
+                            'OPEN FUEL DOCK',
+                            style: TextStyle(
+                              fontFamily: AppTypography.displayFontFamily,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w700,
+                              color: tokens.kineticAccent,
+                            ),
+                          ),
+                          Icon(Icons.chevron_right, size: 14, color: tokens.kineticAccent),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(
+                        '${consumed.toInt()}',
+                        style: TextStyle(
+                          fontFamily: AppTypography.displayFontFamily,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w900,
+                          color: tokens.textPrimary,
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                        ),
+                      ),
+                      Text(
+                        ' / ${targetCalories.toInt()} KCAL',
+                        style: TextStyle(
+                          fontFamily: AppTypography.displayFontFamily,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: tokens.textMuted,
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        '${(progress * 100).toInt()}%',
+                        style: TextStyle(
+                          fontFamily: AppTypography.displayFontFamily,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          color: tokens.warning,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(3),
+                    child: LinearProgressIndicator(
+                      value: progress,
+                      minHeight: 6,
+                      backgroundColor: tokens.panel,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        progress > 0.95 ? tokens.kineticAccent : tokens.warning,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      _FuelMacroChip(label: 'P', value: '${protein}g', color: tokens.cyanAccent, tokens: tokens),
+                      const SizedBox(width: 8),
+                      _FuelMacroChip(label: 'C', value: '${carbs}g', color: tokens.warning, tokens: tokens),
+                      const SizedBox(width: 8),
+                      _FuelMacroChip(label: 'F', value: '${fats}g', color: tokens.violetAccent, tokens: tokens),
+                    ],
+                  ),
+                ],
+              );
+            },
+            loading: () => SizedBox(
+              height: 48,
+              child: Center(
+                child: SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: tokens.warning),
+                ),
+              ),
+            ),
+            error: (_, _) => const SizedBox.shrink(),
+          ),
         ),
       ),
-    ).animate().fadeIn(delay: 300.ms).scale(begin: const Offset(0.97, 0.97));
+    );
+  }
+}
+
+class _FuelMacroChip extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+  final AppThemeTokens tokens;
+
+  const _FuelMacroChip({
+    required this.label,
+    required this.value,
+    required this.color,
+    required this.tokens,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(tokens.radiusXs),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontFamily: AppTypography.displayFontFamily,
+              fontWeight: FontWeight.w900,
+              fontSize: 10,
+              color: color,
+            ),
+          ),
+          const SizedBox(width: 4),
+          Text(
+            value,
+            style: TextStyle(
+              fontFamily: AppTypography.displayFontFamily,
+              fontWeight: FontWeight.w700,
+              fontSize: 10,
+              color: tokens.textPrimary,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Quick Workout Actions ───────────────────────────────────────────────────
+
+class _QuickWorkoutActions extends ConsumerWidget {
+  final List<Workout> workouts;
+  const _QuickWorkoutActions({required this.workouts});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final hasRecentWorkout = workouts.isNotEmpty;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacings.lg,
+        vertical: AppSpacings.xs,
+      ),
+      child: hasRecentWorkout
+          ? Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: 46,
+                    child: AppButton(
+                      label: 'QUICK START',
+                      variant: AppButtonVariant.ghost,
+                      icon: const Icon(Icons.add_rounded, size: 18),
+                      onPressed: () async {
+                        AppHaptics.shared.selectionChanged();
+                        await ref.read(workoutNotifierProvider.notifier).start(initialExercises: const []);
+                        if (context.mounted) context.go(AppRoutes.workoutActive);
+                      },
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: SizedBox(
+                    height: 46,
+                    child: AppButton(
+                      label: 'REPEAT LAST',
+                      variant: AppButtonVariant.secondary,
+                      icon: const Icon(Icons.replay_rounded, size: 18),
+                      onPressed: () async {
+                        AppHaptics.shared.selectionChanged();
+                        await ref.read(workoutNotifierProvider.notifier).repeatWorkout(workouts.first);
+                        if (context.mounted) context.go(AppRoutes.workoutActive);
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            )
+          : SizedBox(
+              height: 48,
+              width: double.infinity,
+              child: AppButton(
+                label: 'QUICK START EMPTY WORKOUT',
+                variant: AppButtonVariant.primary,
+                icon: const Icon(Icons.play_arrow_rounded, size: 20),
+                onPressed: () async {
+                  AppHaptics.shared.selectionChanged();
+                  await ref.read(workoutNotifierProvider.notifier).start(initialExercises: const []);
+                  if (context.mounted) context.go(AppRoutes.workoutActive);
+                },
+              ),
+            ),
+    );
   }
 }
 
@@ -788,12 +1272,12 @@ class _SuggestionData {
 
 // ── Recent Workout Card ───────────────────────────────────────────────────────
 
-class _RecentWorkoutCard extends StatelessWidget {
+class _RecentWorkoutCard extends ConsumerWidget {
   const _RecentWorkoutCard({required this.workout});
   final Workout workout;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final dateStr = DateFormat('EEE, MMM d').format(workout.date);
     final h = workout.duration.inHours;
     final m = workout.duration.inMinutes.remainder(60);
@@ -868,6 +1352,21 @@ class _RecentWorkoutCard extends StatelessWidget {
                   accentColor: tokens.violetAccent,
                 ),
               ],
+            ),
+            const SizedBox(height: AppSpacings.md),
+            SizedBox(
+              height: 38,
+              width: double.infinity,
+              child: AppButton(
+                label: 'REPEAT THIS WORKOUT',
+                variant: AppButtonVariant.secondary,
+                icon: const Icon(Icons.replay_rounded, size: 18),
+                onPressed: () async {
+                  AppHaptics.shared.selectionChanged();
+                  await ref.read(workoutNotifierProvider.notifier).repeatWorkout(workout);
+                  if (context.mounted) context.go(AppRoutes.workoutActive);
+                },
+              ),
             ),
           ],
         ),

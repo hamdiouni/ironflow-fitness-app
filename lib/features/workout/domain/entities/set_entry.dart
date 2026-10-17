@@ -50,3 +50,26 @@ class SetEntry with _$SetEntry {
     );
   }
 }
+
+/// Represents the execution protocol/intensity of an exercise set.
+enum SetType {
+  normal,
+  warmup,
+  drop,
+  failure;
+
+  String get label => switch (this) {
+        SetType.normal => 'Normal',
+        SetType.warmup => 'Warmup',
+        SetType.drop => 'Drop Set',
+        SetType.failure => 'Failure',
+      };
+
+  String get shortCode => switch (this) {
+        SetType.normal => 'N',
+        SetType.warmup => 'W',
+        SetType.drop => 'D',
+        SetType.failure => 'F',
+      };
+}
+
