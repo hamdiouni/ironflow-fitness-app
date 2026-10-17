@@ -3,21 +3,23 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
+import 'package:progression_tracker/core/constants/app_theme.dart';
+import 'package:progression_tracker/core/router/app_router.dart';
 import 'package:progression_tracker/features/ai/presentation/providers/ai_provider.dart';
 import 'package:progression_tracker/features/ai/presentation/providers/tts_provider.dart';
 import 'package:progression_tracker/features/ai/presentation/providers/image_generation_provider.dart';
 import 'package:progression_tracker/features/ai/data/services/image_generation_service.dart';
+import 'package:progression_tracker/shared/presentation/services/app_haptics.dart';
 
-/// AI Chat Screen for personalized fitness coaching
+/// Monolithic Sci-Fi AI Chat Screen for personalized fitness coaching
 ///
 /// Features:
-/// - Rich markdown formatting with icons and colors
-/// - Animated message bubbles
-/// - Quick action buttons
-/// - Streaming responses
-/// - Error handling
-///
-/// **Validates: Requirements 7.1, 7.5**
+/// - Monolithic dark titanium sci-fi design system
+/// - Live telemetry status (Online Gemini vs Local Fallback vs Key Missing)
+/// - Rich markdown formatting with custom sci-fi styling
+/// - Quick action protocol prompt chips
+/// - Local chat history persistence
+/// - Audio voice controls and TTS integration
 class AIChatScreen extends ConsumerStatefulWidget {
   const AIChatScreen({
     super.key,
@@ -67,14 +69,15 @@ class _AIChatScreenState extends ConsumerState<AIChatScreen> {
   void _sendMessage(String message) {
     if (message.trim().isEmpty) return;
 
+    AppHaptics.shared.buttonPress();
     ref.read(aiChatProvider.notifier).sendMessage(message);
     _messageController.clear();
 
-    // Scroll to bottom after a short delay to allow message to be added
     Future.delayed(const Duration(milliseconds: 100), _scrollToBottom);
   }
 
   void _sendQuickAction(String action) {
+    AppHaptics.shared.selectionChanged();
     String message;
     switch (action) {
       case 'generate_workout':
@@ -89,6 +92,12 @@ class _AIChatScreenState extends ConsumerState<AIChatScreen> {
       case 'whats_next':
         message = 'What should I focus on next?';
         break;
+      case 'plateau_tactics':
+        message = 'How do I break through a strength plateau?';
+        break;
+      case 'form_cues':
+        message = 'Give me form cues for standard compound lifts';
+        break;
       default:
         return;
     }
@@ -96,8 +105,9 @@ class _AIChatScreenState extends ConsumerState<AIChatScreen> {
     _messageController.text = message;
     _sendMessage(message);
   }
-  
+
   void _showTTSSettings(BuildContext context) {
+    AppHaptics.shared.selectionChanged();
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -109,28 +119,39 @@ class _AIChatScreenState extends ConsumerState<AIChatScreen> {
   @override
   Widget build(BuildContext context) {
     final chatState = ref.watch(aiChatProvider);
-    final theme = Theme.of(context);
+    final tokens = AppThemeTokens.of(context);
 
-    // Show error if present
+    // Show error snackbar if error present
     if (chatState.error != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(
               children: [
-                const Icon(Icons.error_outline, color: Colors.white),
+                Icon(Icons.info_outline_rounded, color: tokens.kineticAccent, size: 20),
                 const SizedBox(width: 12),
-                Expanded(child: Text(chatState.error!)),
+                Expanded(
+                  child: Text(
+                    chatState.error!,
+                    style: TextStyle(
+                      fontFamily: AppTypography.bodyFontFamily,
+                      fontSize: 12,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
               ],
             ),
-            backgroundColor: Colors.red.shade700,
+            backgroundColor: tokens.panel,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(8),
+              side: BorderSide(color: tokens.borderSubtle),
             ),
             action: SnackBarAction(
-              label: 'Dismiss',
-              textColor: Colors.white,
+              label: 'DISMISS',
+              textColor: tokens.kineticAccent,
               onPressed: () {
                 ref.read(aiChatProvider.notifier).clearError();
               },
@@ -142,16 +163,18 @@ class _AIChatScreenState extends ConsumerState<AIChatScreen> {
     }
 
     return Scaffold(
+      backgroundColor: tokens.canvas,
       appBar: AppBar(
+        backgroundColor: tokens.panel,
+        elevation: 0,
+        scrolledUnderElevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
-            // Use go_router's context.pop() instead of Navigator.pop()
-            // If we can't pop (no previous route), go to home
             if (context.canPop()) {
               context.pop();
             } else {
-              context.go('/home');
+              context.go(AppRoutes.home);
             }
           },
           tooltip: 'Back',
@@ -159,71 +182,111 @@ class _AIChatScreenState extends ConsumerState<AIChatScreen> {
         title: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(6),
+              padding: const EdgeInsets.all(7),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    theme.colorScheme.primary,
-                    theme.colorScheme.secondary,
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(8),
+                color: tokens.card,
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: tokens.kineticAccent.withValues(alpha: 0.5)),
+                boxShadow: [
+                  BoxShadow(
+                    color: tokens.kineticAccent.withValues(alpha: 0.2),
+                    blurRadius: 8,
+                  ),
+                ],
               ),
               child: Icon(
                 Icons.psychology,
-                color: Colors.white,
-                size: 20,
+                color: tokens.kineticAccent,
+                size: 18,
               ),
             ),
             const SizedBox(width: 12),
-            const Column(
+            Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('IronFlow AI Coach', style: TextStyle(fontSize: 16)),
+                Text(
+                  'IronFlow AI Coach',
+                  style: TextStyle(
+                    fontFamily: AppTypography.displayFontFamily,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: tokens.textPrimary,
+                  ),
+                ),
                 Text(
                   'Powered by Gemini',
-                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w400),
+                  style: TextStyle(
+                    fontFamily: AppTypography.bodyFontFamily,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w400,
+                    color: tokens.textMuted,
+                  ),
                 ),
               ],
             ),
           ],
         ),
         actions: [
-          // TTS Settings button
           IconButton(
             icon: const Icon(Icons.settings_voice),
-            onPressed: () {
-              _showTTSSettings(context);
-            },
+            onPressed: () => _showTTSSettings(context),
             tooltip: 'Voice settings',
           ),
           IconButton(
             icon: const Icon(Icons.delete_outline),
             onPressed: () {
+              AppHaptics.shared.selectionChanged();
               showDialog(
                 context: context,
                 builder: (context) => AlertDialog(
-                  icon: Icon(
-                    Icons.delete_forever,
-                    size: 48,
-                    color: theme.colorScheme.error,
+                  backgroundColor: tokens.panel,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    side: BorderSide(color: tokens.borderSubtle),
                   ),
-                  title: const Text('Clear Chat History'),
-                  content: const Text(
+                  icon: const Icon(
+                    Icons.delete_forever,
+                    size: 40,
+                    color: Colors.redAccent,
+                  ),
+                  title: Text(
+                    'Clear Chat History',
+                    style: TextStyle(
+                      fontFamily: AppTypography.displayFontFamily,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: tokens.textPrimary,
+                    ),
+                  ),
+                  content: Text(
                     'Are you sure you want to clear all chat history? This cannot be undone.',
+                    style: TextStyle(
+                      fontFamily: AppTypography.bodyFontFamily,
+                      fontSize: 12,
+                      color: tokens.textSecondary,
+                    ),
                   ),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(context),
-                      child: const Text('Cancel'),
+                      child: Text(
+                        'Cancel',
+                        style: TextStyle(
+                          fontFamily: AppTypography.displayFontFamily,
+                          color: tokens.textMuted,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                     FilledButton(
                       onPressed: () {
+                        AppHaptics.shared.buttonPress();
                         ref.read(aiChatProvider.notifier).clearHistory();
                         Navigator.pop(context);
                       },
                       style: FilledButton.styleFrom(
-                        backgroundColor: theme.colorScheme.error,
+                        backgroundColor: Colors.redAccent.shade700,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                       ),
                       child: const Text('Clear'),
                     ),
@@ -237,141 +300,19 @@ class _AIChatScreenState extends ConsumerState<AIChatScreen> {
       ),
       body: Column(
         children: [
-          // Quick action buttons
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  theme.colorScheme.surfaceContainerHighest,
-                  theme.colorScheme.surface,
-                ],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
-              border: Border(
-                bottom: BorderSide(
-                  color: theme.dividerColor.withOpacity(0.3),
-                  width: 1,
-                ),
-              ),
-            ),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  _QuickActionButton(
-                    icon: Icons.fitness_center,
-                    label: 'Workout Plan',
-                    gradient: LinearGradient(
-                      colors: [Colors.orange.shade400, Colors.deepOrange.shade600],
-                    ),
-                    onPressed: () => _sendQuickAction('generate_workout'),
-                  ),
-                  const SizedBox(width: 8),
-                  _QuickActionButton(
-                    icon: Icons.restaurant_menu,
-                    label: 'Nutrition',
-                    gradient: LinearGradient(
-                      colors: [Colors.green.shade400, Colors.teal.shade600],
-                    ),
-                    onPressed: () => _sendQuickAction('adjust_diet'),
-                  ),
-                  const SizedBox(width: 8),
-                  _QuickActionButton(
-                    icon: Icons.trending_up,
-                    label: 'Progress',
-                    gradient: LinearGradient(
-                      colors: [Colors.blue.shade400, Colors.indigo.shade600],
-                    ),
-                    onPressed: () => _sendQuickAction('analyze_progress'),
-                  ),
-                  const SizedBox(width: 8),
-                  _QuickActionButton(
-                    icon: Icons.lightbulb,
-                    label: "What's Next",
-                    gradient: LinearGradient(
-                      colors: [Colors.purple.shade400, Colors.deepPurple.shade600],
-                    ),
-                    onPressed: () => _sendQuickAction('whats_next'),
-                  ),
-                ],
-              ),
-            ),
-          ),
+          // Live Telemetry Status Bar
+          _buildTelemetryStatusBanner(tokens, chatState),
 
-          // Chat messages
+          // Quick Action Protocol Chips
+          _buildQuickActionsBar(tokens),
+
+          // Messages View or Empty State
           Expanded(
             child: chatState.messages.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(24),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                theme.colorScheme.primary.withOpacity(0.1),
-                                theme.colorScheme.secondary.withOpacity(0.1),
-                              ],
-                            ),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.psychology,
-                            size: 64,
-                            color: theme.colorScheme.primary,
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        Text(
-                          'Your AI Fitness Coach',
-                          style: theme.textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: theme.colorScheme.onSurface,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 48),
-                          child: Text(
-                            'Ask me anything about workouts, nutrition, form, or your fitness journey',
-                            textAlign: TextAlign.center,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: theme.colorScheme.onSurface.withOpacity(0.6),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 32),
-                        Wrap(
-                          alignment: WrapAlignment.center,
-                          spacing: 12,
-                          runSpacing: 12,
-                          children: [
-                            _SuggestionChip(
-                              icon: Icons.fitness_center,
-                              label: 'Create workout',
-                              color: Colors.orange,
-                            ),
-                            _SuggestionChip(
-                              icon: Icons.restaurant,
-                              label: 'Nutrition tips',
-                              color: Colors.green,
-                            ),
-                            _SuggestionChip(
-                              icon: Icons.trending_up,
-                              label: 'Track progress',
-                              color: Colors.blue,
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  )
+                ? _buildEmptyState(tokens)
                 : ListView.builder(
                     controller: _scrollController,
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     itemCount: chatState.messages.length,
                     itemBuilder: (context, index) {
                       final message = chatState.messages[index];
@@ -385,178 +326,414 @@ class _AIChatScreenState extends ConsumerState<AIChatScreen> {
                   ),
           ),
 
-          // Loading indicator
-          if (chatState.isLoading)
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.5),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.5,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        theme.colorScheme.primary,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    'AI is analyzing your data...',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.primary,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
+          // Loading Telemetry Indicator
+          if (chatState.isLoading) _buildLoadingIndicator(tokens),
+
+          // Terminal Message Input
+          _buildTerminalInput(tokens, chatState),
+        ],
+      ),
+    );
+  }
+
+  // ─── Status Banner ──────────────────────────────────────────────────────────
+
+  Widget _buildTelemetryStatusBanner(AppThemeTokens tokens, AIChatState state) {
+    if (state.isKeyMissing) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        color: tokens.warning.withValues(alpha: 0.12),
+        child: Row(
+          children: [
+            Icon(Icons.vpn_key_off_outlined, size: 14, color: tokens.warning),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'STATUS: OFFLINE HEURISTIC // API KEY REQUIRED FOR GEMINI CLOUD',
+                style: TextStyle(
+                  fontFamily: AppTypography.displayFontFamily,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.6,
+                  color: tokens.warning,
+                ),
               ),
             ),
+          ],
+        ),
+      );
+    }
 
-          // Message input
+    if (state.isOfflineFallback) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        color: tokens.cyanAccent.withValues(alpha: 0.1),
+        child: Row(
+          children: [
+            Icon(Icons.sync_problem_rounded, size: 14, color: tokens.cyanAccent),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'STATUS: LOCAL FALLBACK ACTIVE // HEURISTIC ENGINE RESPONDED',
+                style: TextStyle(
+                  fontFamily: AppTypography.displayFontFamily,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.6,
+                  color: tokens.cyanAccent,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      color: tokens.panel,
+      child: Row(
+        children: [
           Container(
-            padding: const EdgeInsets.all(12),
+            width: 6,
+            height: 6,
             decoration: BoxDecoration(
-              color: theme.colorScheme.surface,
+              color: tokens.kineticAccent,
+              shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, -2),
+                  color: tokens.kineticAccent.withValues(alpha: 0.6),
+                  blurRadius: 4,
                 ),
               ],
             ),
-            child: SafeArea(
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(
-                          color: theme.colorScheme.outline.withOpacity(0.2),
-                        ),
-                      ),
-                      child: TextField(
-                        controller: _messageController,
-                        decoration: InputDecoration(
-                          hintText: 'Ask me anything...',
-                          hintStyle: TextStyle(
-                            color: theme.colorScheme.onSurface.withOpacity(0.5),
-                          ),
-                          border: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 12,
-                          ),
-                          prefixIcon: Icon(
-                            Icons.chat_bubble_outline,
-                            color: theme.colorScheme.primary.withOpacity(0.6),
-                            size: 20,
-                          ),
-                        ),
-                        maxLines: null,
-                        textInputAction: TextInputAction.send,
-                        onSubmitted: _sendMessage,
-                        enabled: !chatState.isLoading,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: chatState.isLoading
-                            ? [Colors.grey.shade400, Colors.grey.shade500]
-                            : [
-                                theme.colorScheme.primary,
-                                theme.colorScheme.secondary,
-                              ],
-                      ),
-                      shape: BoxShape.circle,
-                      boxShadow: chatState.isLoading
-                          ? []
-                          : [
-                              BoxShadow(
-                                color: theme.colorScheme.primary.withOpacity(0.3),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                    ),
-                    child: IconButton(
-                      icon: const Icon(Icons.send_rounded),
-                      onPressed: chatState.isLoading
-                          ? null
-                          : () => _sendMessage(_messageController.text),
-                      color: Colors.white,
-                      iconSize: 22,
-                    ),
-                  ),
-                ],
-              ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            'STATUS: NEURAL CORE ONLINE // GEMINI-1.5-FLASH ACTIVE',
+            style: TextStyle(
+              fontFamily: AppTypography.displayFontFamily,
+              fontSize: 9,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.8,
+              color: tokens.textSecondary,
             ),
           ),
         ],
       ),
     );
   }
+
+  // ─── Quick Actions Bar ──────────────────────────────────────────────────────
+
+  Widget _buildQuickActionsBar(AppThemeTokens tokens) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: tokens.panel,
+        border: Border(
+          bottom: BorderSide(color: tokens.borderSubtle, width: 1),
+        ),
+      ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            _QuickActionButton(
+              code: '01',
+              label: 'Workout Plan',
+              icon: Icons.fitness_center_rounded,
+              onPressed: () => _sendQuickAction('generate_workout'),
+            ),
+            const SizedBox(width: 8),
+            _QuickActionButton(
+              code: '02',
+              label: 'Nutrition',
+              icon: Icons.restaurant_menu_rounded,
+              onPressed: () => _sendQuickAction('adjust_diet'),
+            ),
+            const SizedBox(width: 8),
+            _QuickActionButton(
+              code: '03',
+              label: 'Progress',
+              icon: Icons.trending_up_rounded,
+              onPressed: () => _sendQuickAction('analyze_progress'),
+            ),
+            const SizedBox(width: 8),
+            _QuickActionButton(
+              code: '04',
+              label: "What's Next",
+              icon: Icons.lightbulb_outline_rounded,
+              onPressed: () => _sendQuickAction('whats_next'),
+            ),
+            const SizedBox(width: 8),
+            _QuickActionButton(
+              code: '05',
+              label: 'Plateau Breaking',
+              icon: Icons.speed_rounded,
+              onPressed: () => _sendQuickAction('plateau_tactics'),
+            ),
+            const SizedBox(width: 8),
+            _QuickActionButton(
+              code: '06',
+              label: 'Form Protocol',
+              icon: Icons.accessibility_new_rounded,
+              onPressed: () => _sendQuickAction('form_cues'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ─── Empty State ────────────────────────────────────────────────────────────
+
+  Widget _buildEmptyState(AppThemeTokens tokens) {
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: tokens.panel,
+                shape: BoxShape.circle,
+                border: Border.all(color: tokens.kineticAccent.withValues(alpha: 0.5)),
+                boxShadow: [
+                  BoxShadow(
+                    color: tokens.kineticAccent.withValues(alpha: 0.25),
+                    blurRadius: 16,
+                  ),
+                ],
+              ),
+              child: Icon(
+                Icons.psychology,
+                size: 36,
+                color: tokens.kineticAccent,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Tactical Training Core',
+              style: TextStyle(
+                fontFamily: AppTypography.displayFontFamily,
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: tokens.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Ask me anything about workouts, nutrition, form, or your fitness journey',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: AppTypography.bodyFontFamily,
+                fontSize: 13,
+                color: tokens.textMuted,
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 28),
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                _SuggestionChip(
+                  icon: Icons.fitness_center_rounded,
+                  label: 'Create workout',
+                  onTap: () => _sendQuickAction('generate_workout'),
+                ),
+                _SuggestionChip(
+                  icon: Icons.restaurant_rounded,
+                  label: 'Nutrition tips',
+                  onTap: () => _sendQuickAction('adjust_diet'),
+                ),
+                _SuggestionChip(
+                  icon: Icons.trending_up_rounded,
+                  label: 'Track progress',
+                  onTap: () => _sendQuickAction('analyze_progress'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ─── Loading Indicator ──────────────────────────────────────────────────────
+
+  Widget _buildLoadingIndicator(AppThemeTokens tokens) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+      decoration: BoxDecoration(
+        color: tokens.panel,
+        border: Border(top: BorderSide(color: tokens.borderSubtle)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          SizedBox(
+            width: 14,
+            height: 14,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(tokens.kineticAccent),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Text(
+            'AI is analyzing your data...',
+            style: TextStyle(
+              fontFamily: AppTypography.displayFontFamily,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: tokens.kineticAccent,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─── Terminal Input ─────────────────────────────────────────────────────────
+
+  Widget _buildTerminalInput(AppThemeTokens tokens, AIChatState chatState) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: tokens.panel,
+        border: Border(
+          top: BorderSide(color: tokens.borderSubtle, width: 1),
+        ),
+      ),
+      child: SafeArea(
+        child: Row(
+          children: [
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: tokens.card,
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: tokens.borderSubtle),
+                ),
+                child: TextField(
+                  controller: _messageController,
+                  style: TextStyle(
+                    fontFamily: AppTypography.bodyFontFamily,
+                    fontSize: 14,
+                    color: tokens.textPrimary,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: 'Ask me anything...',
+                    hintStyle: TextStyle(
+                      fontFamily: AppTypography.bodyFontFamily,
+                      fontSize: 13,
+                      color: tokens.textMuted,
+                    ),
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
+                    prefixIcon: Icon(
+                      Icons.chat_bubble_outline,
+                      color: tokens.kineticAccent.withValues(alpha: 0.7),
+                      size: 18,
+                    ),
+                  ),
+                  maxLines: null,
+                  textInputAction: TextInputAction.send,
+                  onSubmitted: _sendMessage,
+                  enabled: !chatState.isLoading,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              decoration: BoxDecoration(
+                color: chatState.isLoading
+                    ? tokens.borderSubtle
+                    : tokens.kineticAccent,
+                borderRadius: BorderRadius.circular(6),
+                boxShadow: chatState.isLoading
+                    ? null
+                    : [
+                        BoxShadow(
+                          color: tokens.kineticAccent.withValues(alpha: 0.35),
+                          blurRadius: 8,
+                        ),
+                      ],
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.send_rounded),
+                onPressed: chatState.isLoading
+                    ? null
+                    : () => _sendMessage(_messageController.text),
+                color: Colors.black,
+                iconSize: 20,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
-/// Quick action button widget with gradient
+/// Quick action button widget with Monolithic Sci-Fi styling
 class _QuickActionButton extends StatelessWidget {
-  final IconData icon;
+  final String code;
   final String label;
-  final Gradient gradient;
+  final IconData icon;
   final VoidCallback onPressed;
 
   const _QuickActionButton({
-    required this.icon,
+    required this.code,
     required this.label,
-    required this.gradient,
+    required this.icon,
     required this.onPressed,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          decoration: BoxDecoration(
-            gradient: gradient,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: gradient.colors.first.withOpacity(0.3),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
+    final tokens = AppThemeTokens.of(context);
+
+    return InkWell(
+      onTap: onPressed,
+      borderRadius: BorderRadius.circular(6),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        decoration: BoxDecoration(
+          color: tokens.card,
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: tokens.borderSubtle),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14, color: tokens.kineticAccent),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontFamily: AppTypography.displayFontFamily,
+                color: tokens.textPrimary,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.3,
               ),
-            ],
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 18, color: Colors.white),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -567,45 +744,50 @@ class _QuickActionButton extends StatelessWidget {
 class _SuggestionChip extends StatelessWidget {
   final IconData icon;
   final String label;
-  final Color color;
+  final VoidCallback onTap;
 
   const _SuggestionChip({
     required this.icon,
     required this.label,
-    required this.color,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: color.withOpacity(0.3),
+    final tokens = AppThemeTokens.of(context);
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: tokens.panel,
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: tokens.borderSubtle),
         ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 16, color: color),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: TextStyle(
-              color: color,
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14, color: tokens.kineticAccent),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: TextStyle(
+                fontFamily: AppTypography.displayFontFamily,
+                color: tokens.textPrimary,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 }
 
-/// Enhanced chat bubble with markdown support and rich formatting
+/// Enhanced chat bubble with Monolithic Sci-Fi styling and markdown support
 class _ChatBubble extends ConsumerWidget {
   final String role;
   final String content;
@@ -621,164 +803,111 @@ class _ChatBubble extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
+    final tokens = AppThemeTokens.of(context);
     final isUser = role == 'user';
     final ttsState = ref.watch(ttsProvider);
 
-    return TweenAnimationBuilder<double>(
-      duration: Duration(milliseconds: isFirst ? 0 : 300),
-      tween: Tween(begin: 0.0, end: 1.0),
-      curve: Curves.easeOut,
-      builder: (context, value, child) {
-        return Opacity(
-          opacity: value,
-          child: Transform.translate(
-            offset: Offset(0, 20 * (1 - value)),
-            child: child,
-          ),
-        );
-      },
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 20),
-        child: Row(
-          mainAxisAlignment:
-              isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (!isUser) ...[
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      theme.colorScheme.primary,
-                      theme.colorScheme.secondary,
-                    ],
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        mainAxisAlignment:
+            isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Flexible(
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 580),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: isUser ? tokens.card : tokens.panel,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: isUser
+                      ? tokens.kineticAccent.withValues(alpha: 0.3)
+                      : tokens.borderSubtle,
+                  width: 1,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.2),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
                   ),
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: theme.colorScheme.primary.withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.psychology,
-                  color: Colors.white,
-                  size: 20,
-                ),
+                ],
               ),
-              const SizedBox(width: 12),
-            ],
-            Flexible(
               child: Column(
-                crossAxisAlignment:
-                    isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      gradient: isUser
-                          ? LinearGradient(
-                              colors: [
-                                theme.colorScheme.primary,
-                                theme.colorScheme.primary.withOpacity(0.8),
-                              ],
-                            )
-                          : null,
-                      color: isUser
-                          ? null
-                          : theme.colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(isUser ? 20 : 4),
-                        topRight: Radius.circular(isUser ? 4 : 20),
-                        bottomLeft: const Radius.circular(20),
-                        bottomRight: const Radius.circular(20),
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 10,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: isUser
-                        ? Text(
-                            content,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: Colors.white,
-                              height: 1.5,
-                            ),
-                          )
-                        : _AIResponseContent(content: content),
-                  ),
-                  const SizedBox(height: 6),
+                  // Call Sign / Role Tag
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Timestamp
-                      Icon(
-                        Icons.access_time,
-                        size: 12,
-                        color: theme.colorScheme.onSurface.withOpacity(0.4),
+                      Container(
+                        width: 5,
+                        height: 5,
+                        decoration: BoxDecoration(
+                          color: isUser ? tokens.textMuted : tokens.kineticAccent,
+                          shape: BoxShape.circle,
+                        ),
                       ),
-                      const SizedBox(width: 4),
+                      const SizedBox(width: 6),
+                      Text(
+                        isUser ? 'OPERATOR // QUERY' : 'AI CORE // ADVISORY',
+                        style: TextStyle(
+                          fontFamily: AppTypography.displayFontFamily,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.8,
+                          color: isUser
+                              ? tokens.textMuted
+                              : tokens.kineticAccent,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Message Content
+                  isUser
+                      ? Text(
+                          content,
+                          style: TextStyle(
+                            fontFamily: AppTypography.bodyFontFamily,
+                            fontSize: 14,
+                            color: tokens.textPrimary,
+                            height: 1.45,
+                          ),
+                        )
+                      : _AIResponseContent(content: content),
+
+                  const SizedBox(height: 8),
+
+                  // Footer: timestamp & audio playback
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
                       Text(
                         _formatTimestamp(timestamp),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface.withOpacity(0.5),
-                          fontSize: 11,
+                        style: TextStyle(
+                          fontFamily: AppTypography.displayFontFamily,
+                          fontSize: 9,
+                          color: tokens.textMuted,
                         ),
                       ),
-                      
-                      // Audio controls for AI messages
-                      if (!isUser) ...[
-                        const SizedBox(width: 12),
-                        Container(
-                          height: 20,
-                          width: 1,
-                          color: theme.colorScheme.onSurface.withOpacity(0.2),
-                        ),
-                        const SizedBox(width: 8),
+                      if (!isUser)
                         _AudioControls(
                           content: content,
                           ttsState: ttsState,
                           onPlay: () => ref.read(ttsProvider.notifier).speak(content),
                           onStop: () => ref.read(ttsProvider.notifier).stop(),
                         ),
-                      ],
                     ],
                   ),
                 ],
               ),
             ),
-            if (isUser) ...[
-              const SizedBox(width: 12),
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.secondary,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: theme.colorScheme.secondary.withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Icon(
-                  Icons.person,
-                  color: theme.colorScheme.onSecondary,
-                  size: 20,
-                ),
-              ),
-            ],
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -788,13 +917,13 @@ class _ChatBubble extends ConsumerWidget {
     final difference = now.difference(timestamp);
 
     if (difference.inMinutes < 1) {
-      return 'Just now';
+      return 'JUST NOW';
     } else if (difference.inHours < 1) {
-      return '${difference.inMinutes}m ago';
+      return '${difference.inMinutes}M AGO';
     } else if (difference.inDays < 1) {
-      return '${difference.inHours}h ago';
+      return '${difference.inHours}H AGO';
     } else {
-      return '${timestamp.hour}:${timestamp.minute.toString().padLeft(2, '0')}';
+      return '${timestamp.hour.toString().padLeft(2, '0')}:${timestamp.minute.toString().padLeft(2, '0')}';
     }
   }
 }
@@ -807,6 +936,7 @@ class _AIResponseContent extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final tokens = AppThemeTokens.of(context);
     final theme = Theme.of(context);
     final imageState = ref.watch(imageGenerationProvider);
     
@@ -826,75 +956,84 @@ class _AIResponseContent extends ConsumerWidget {
           data: content,
           selectable: true,
           styleSheet: MarkdownStyleSheet(
-        p: theme.textTheme.bodyMedium?.copyWith(
-          height: 1.6,
-          color: theme.colorScheme.onSurface,
-        ),
-        h1: theme.textTheme.headlineSmall?.copyWith(
-          fontWeight: FontWeight.bold,
-          color: theme.colorScheme.primary,
-          height: 1.3,
-        ),
-        h2: theme.textTheme.titleLarge?.copyWith(
-          fontWeight: FontWeight.bold,
-          color: theme.colorScheme.primary,
-          height: 1.3,
-        ),
-        h3: theme.textTheme.titleMedium?.copyWith(
-          fontWeight: FontWeight.w600,
-          color: theme.colorScheme.primary,
-          height: 1.3,
-        ),
-        strong: theme.textTheme.bodyMedium?.copyWith(
-          fontWeight: FontWeight.bold,
-          color: theme.colorScheme.onSurface,
-        ),
-        em: theme.textTheme.bodyMedium?.copyWith(
-          fontStyle: FontStyle.italic,
-          color: theme.colorScheme.onSurface.withOpacity(0.9),
-        ),
-        code: theme.textTheme.bodySmall?.copyWith(
-          fontFamily: 'monospace',
-          backgroundColor: theme.colorScheme.surfaceContainerHighest,
-          color: theme.colorScheme.primary,
-        ),
-        codeblockDecoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: theme.colorScheme.outline.withOpacity(0.2),
-          ),
-        ),
-        codeblockPadding: const EdgeInsets.all(12),
-        blockquote: theme.textTheme.bodyMedium?.copyWith(
-          color: theme.colorScheme.onSurface.withOpacity(0.8),
-          fontStyle: FontStyle.italic,
-        ),
-        blockquoteDecoration: BoxDecoration(
-          color: theme.colorScheme.primary.withOpacity(0.05),
-          borderRadius: BorderRadius.circular(8),
-          border: Border(
-            left: BorderSide(
-              color: theme.colorScheme.primary,
-              width: 4,
+            p: TextStyle(
+              fontFamily: AppTypography.bodyFontFamily,
+              fontSize: 14,
+              color: tokens.textPrimary,
+              height: 1.5,
             ),
-          ),
-        ),
-        blockquotePadding: const EdgeInsets.all(12),
-        listBullet: theme.textTheme.bodyMedium?.copyWith(
-          color: theme.colorScheme.primary,
-          fontWeight: FontWeight.bold,
-        ),
-        listIndent: 24,
-        tableHead: theme.textTheme.bodyMedium?.copyWith(
-          fontWeight: FontWeight.bold,
-          color: theme.colorScheme.onSurface,
-        ),
-        tableBorder: TableBorder.all(
-          color: theme.colorScheme.outline.withOpacity(0.2),
-        ),
-        tableColumnWidth: const FlexColumnWidth(),
-        tableCellsPadding: const EdgeInsets.all(8),
+            h1: TextStyle(
+              fontFamily: AppTypography.displayFontFamily,
+              fontSize: 19,
+              fontWeight: FontWeight.w700,
+              color: tokens.kineticAccent,
+              height: 1.3,
+            ),
+            h2: TextStyle(
+              fontFamily: AppTypography.displayFontFamily,
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: tokens.kineticAccent,
+              height: 1.3,
+            ),
+            h3: TextStyle(
+              fontFamily: AppTypography.displayFontFamily,
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: tokens.cyanAccent,
+              height: 1.3,
+            ),
+            strong: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: tokens.textPrimary,
+            ),
+            em: TextStyle(
+              fontStyle: FontStyle.italic,
+              color: tokens.textSecondary,
+            ),
+            code: TextStyle(
+              fontFamily: 'monospace',
+              fontSize: 12,
+              backgroundColor: tokens.canvas,
+              color: tokens.kineticAccent,
+            ),
+            codeblockDecoration: BoxDecoration(
+              color: tokens.canvas,
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: tokens.borderSubtle),
+            ),
+            codeblockPadding: const EdgeInsets.all(10),
+            blockquote: TextStyle(
+              fontFamily: AppTypography.bodyFontFamily,
+              color: tokens.textSecondary,
+              fontStyle: FontStyle.italic,
+            ),
+            blockquoteDecoration: BoxDecoration(
+              color: tokens.kineticAccent.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(4),
+              border: Border(
+                left: BorderSide(
+                  color: tokens.kineticAccent,
+                  width: 3,
+                ),
+              ),
+            ),
+            blockquotePadding: const EdgeInsets.all(10),
+            listBullet: TextStyle(
+              color: tokens.kineticAccent,
+              fontWeight: FontWeight.bold,
+            ),
+            listIndent: 20,
+            tableHead: TextStyle(
+              fontFamily: AppTypography.displayFontFamily,
+              fontWeight: FontWeight.bold,
+              color: tokens.textPrimary,
+            ),
+            tableBorder: TableBorder.all(
+              color: tokens.borderSubtle,
+            ),
+            tableColumnWidth: const FlexColumnWidth(),
+            tableCellsPadding: const EdgeInsets.all(8),
           ),
         ),
         
