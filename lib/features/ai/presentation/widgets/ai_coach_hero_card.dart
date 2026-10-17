@@ -52,9 +52,8 @@ class _AiCoachHeroCardState extends ConsumerState<AiCoachHeroCard> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final primary = theme.colorScheme.primary;
+    final tokens = context.tokens;
+    final primary = tokens.kineticAccent;
 
     // Check configuration and connectivity
     final hasKey = widget.isConfigured ??
@@ -72,44 +71,40 @@ class _AiCoachHeroCardState extends ConsumerState<AiCoachHeroCard> {
       (state) => state.getError(InsightContext.home),
     ));
 
-    final cardBg = isDark
-        ? AppTheme.darkCard.withValues(alpha: 0.85)
-        : AppTheme.lightCard.withValues(alpha: 0.95);
-
     return Semantics(
       container: true,
       label: 'AI Coach Hero Card',
       child: Container(
         margin: const EdgeInsets.symmetric(
-          horizontal: AppTheme.spacingMedium,
-          vertical: AppTheme.spacingSmall,
+          horizontal: AppSpacings.lg,
+          vertical: AppSpacings.sm,
         ),
         decoration: BoxDecoration(
-          color: cardBg,
-          borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+          color: tokens.card,
+          borderRadius: BorderRadius.circular(tokens.radiusMd),
           border: Border.all(
-            color: primary.withValues(alpha: 0.25),
+            color: tokens.kineticAccent.withValues(alpha: 0.35),
             width: 1.2,
           ),
           boxShadow: [
             BoxShadow(
-              color: primary.withValues(alpha: isDark ? 0.08 : 0.05),
+              color: tokens.kineticAccent.withValues(alpha: tokens.isDark ? 0.08 : 0.04),
               blurRadius: 16,
               offset: const Offset(0, 4),
             ),
           ],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+          borderRadius: BorderRadius.circular(tokens.radiusMd),
           child: Padding(
-            padding: const EdgeInsets.all(AppTheme.spacingMedium),
+            padding: const EdgeInsets.all(AppSpacings.lg),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
                 // Top header row
                 _buildHeader(context, primary, isLoading, hasKey),
-                const SizedBox(height: AppTheme.spacingSmall),
+                const SizedBox(height: AppSpacings.sm),
 
                 // Main state content
                 _buildContent(
@@ -134,28 +129,33 @@ class _AiCoachHeroCardState extends ConsumerState<AiCoachHeroCard> {
     bool isLoading,
     bool hasKey,
   ) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final tokens = context.tokens;
 
     return Row(
       children: [
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
-            color: primary.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
+            color: tokens.kineticAccent.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(tokens.radiusXs),
+            border: Border.all(
+              color: tokens.kineticAccent.withValues(alpha: 0.3),
+              width: 0.8,
+            ),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.auto_awesome, size: 14, color: primary),
+              Icon(Icons.auto_awesome, size: 14, color: tokens.kineticAccent),
               const SizedBox(width: 6),
               Text(
                 'AI COACH',
-                style: theme.textTheme.labelSmall?.copyWith(
+                style: TextStyle(
+                  fontFamily: AppTypography.displayFontFamily,
+                  fontSize: 11,
                   fontWeight: FontWeight.bold,
-                  letterSpacing: 0.8,
-                  color: primary,
+                  letterSpacing: 1.0,
+                  color: tokens.kineticAccent,
                 ),
               ),
             ],
@@ -168,7 +168,7 @@ class _AiCoachHeroCardState extends ConsumerState<AiCoachHeroCard> {
             height: 16,
             child: CircularProgressIndicator(
               strokeWidth: 2,
-              valueColor: AlwaysStoppedAnimation<Color>(primary),
+              valueColor: AlwaysStoppedAnimation<Color>(tokens.kineticAccent),
             ),
           )
         else if (hasKey)
@@ -183,9 +183,7 @@ class _AiCoachHeroCardState extends ConsumerState<AiCoachHeroCard> {
                   icon: Icon(
                     Icons.refresh,
                     size: 18,
-                    color: isDark
-                        ? AppTheme.darkTextSecondary
-                        : AppTheme.lightTextSecondary,
+                    color: tokens.textSecondary,
                   ),
                   onPressed: _refresh,
                 ),
@@ -245,16 +243,14 @@ class _AiCoachHeroCardState extends ConsumerState<AiCoachHeroCard> {
     Insight insight,
     int totalCount,
   ) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final primary = theme.colorScheme.primary;
+    final tokens = context.tokens;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
         InkWell(
-          borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
+          borderRadius: BorderRadius.circular(tokens.radiusSm),
           onTap: () {
             navigateToAiCoach(
               context,
@@ -270,16 +266,16 @@ class _AiCoachHeroCardState extends ConsumerState<AiCoachHeroCard> {
                 height: 44,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: primary.withValues(alpha: 0.12),
-                  borderRadius:
-                      BorderRadius.circular(AppTheme.borderRadiusSmall),
+                  color: tokens.elevated,
+                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                  border: Border.all(color: tokens.borderSubtle, width: 1),
                 ),
                 child: Text(
                   insight.icon,
                   style: const TextStyle(fontSize: 22),
                 ),
               ),
-              const SizedBox(width: AppTheme.spacingMedium),
+              const SizedBox(width: AppSpacings.md),
               // Title & message
               Expanded(
                 child: Column(
@@ -287,20 +283,23 @@ class _AiCoachHeroCardState extends ConsumerState<AiCoachHeroCard> {
                   children: [
                     Text(
                       insight.title,
-                      style: theme.textTheme.titleMedium?.copyWith(
+                      style: TextStyle(
+                        fontFamily: AppTypography.displayFontFamily,
+                        fontSize: 15,
                         fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.onSurface,
+                        color: tokens.textPrimary,
+                        letterSpacing: -0.2,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: AppTheme.spacingXSmall),
+                    const SizedBox(height: AppSpacings.xs),
                     Text(
                       insight.message,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: isDark
-                            ? AppTheme.darkTextSecondary
-                            : AppTheme.lightTextSecondary,
+                      style: TextStyle(
+                        fontFamily: AppTypography.bodyFontFamily,
+                        fontSize: 13,
+                        color: tokens.textSecondary,
                         height: 1.4,
                       ),
                       maxLines: 3,
@@ -312,14 +311,14 @@ class _AiCoachHeroCardState extends ConsumerState<AiCoachHeroCard> {
             ],
           ),
         ),
-        const SizedBox(height: AppTheme.spacingMedium),
+        const SizedBox(height: AppSpacings.md),
 
         // Bottom action row: Carousel indicator + CTA button
         Wrap(
           alignment: WrapAlignment.spaceBetween,
           crossAxisAlignment: WrapCrossAlignment.center,
-          spacing: AppTheme.spacingSmall,
-          runSpacing: AppTheme.spacingSmall,
+          spacing: AppSpacings.sm,
+          runSpacing: AppSpacings.sm,
           children: [
             if (totalCount > 1)
               Row(
@@ -344,10 +343,8 @@ class _AiCoachHeroCardState extends ConsumerState<AiCoachHeroCard> {
                         height: 6,
                         decoration: BoxDecoration(
                           color: isActive
-                              ? primary
-                              : (isDark
-                                  ? AppTheme.darkTextDisabled
-                                  : AppTheme.lightTextDisabled),
+                              ? tokens.kineticAccent
+                              : tokens.textTertiary,
                           borderRadius: BorderRadius.circular(3),
                         ),
                       ),
@@ -371,15 +368,20 @@ class _AiCoachHeroCardState extends ConsumerState<AiCoachHeroCard> {
                 icon: const Icon(Icons.chat_bubble_outline, size: 16),
                 label: const Text('Chat with Coach'),
                 style: FilledButton.styleFrom(
-                  backgroundColor: primary,
+                  backgroundColor: tokens.kineticAccent,
                   foregroundColor: Colors.black,
                   padding: const EdgeInsets.symmetric(
-                    horizontal: AppTheme.spacingMedium,
-                    vertical: AppTheme.spacingSmall,
+                    horizontal: AppSpacings.md,
+                    vertical: AppSpacings.sm,
                   ),
                   shape: RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.circular(AppTheme.borderRadiusMedium),
+                    borderRadius: BorderRadius.circular(tokens.radiusSm),
+                  ),
+                  textStyle: const TextStyle(
+                    fontFamily: AppTypography.displayFontFamily,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.2,
                   ),
                 ),
               ),

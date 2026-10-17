@@ -108,9 +108,20 @@ class AppTheme {
         ),
       ),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor: isDark ? const Color(0xFF111319) : lightSurface,
+        backgroundColor: tokens.panel,
         selectedItemColor: tokens.kineticAccent,
-        unselectedItemColor: onSurf2,
+        unselectedItemColor: tokens.textTertiary,
+        selectedLabelStyle: const TextStyle(
+          fontFamily: AppTypography.displayFontFamily,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.2,
+        ),
+        unselectedLabelStyle: const TextStyle(
+          fontFamily: AppTypography.bodyFontFamily,
+          fontSize: 11,
+          fontWeight: FontWeight.w500,
+        ),
         type: BottomNavigationBarType.fixed,
         elevation: 0,
       ),
