@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +7,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/constants/app_theme.dart';
 import '../../../../core/providers/theme_provider.dart';
 import '../../../../core/router/app_router.dart';
+import '../../../../shared/presentation/components/components.dart';
 import '../../../../shared/widgets/ironflow_logo.dart';
 import '../../../onboarding/domain/entities/user_profile.dart';
 import '../../../onboarding/presentation/providers/onboarding_provider.dart';
@@ -44,37 +44,36 @@ class HomeScreen extends ConsumerWidget {
               SliverToBoxAdapter(
                 child: _HomeHeader(profileAsync: profileAsync),
               ),
-              
+
               // Weekly Activity Section
               SliverToBoxAdapter(
                 child: historyAsync.when(
                   data: (workouts) => profileAsync.when(
                     data: (profile) {
-                      // Handle null profile gracefully without hardcoded fallback
                       if (profile == null) {
-                        return _ProfileSetupPrompt();
+                        return const _ProfileSetupPrompt();
                       }
                       return _WeeklyActivitySection(
                         workouts: workouts,
                         target: profile.workoutDaysPerWeek,
                       );
                     },
-                    loading: () => _LoadingWeeklyActivity(),
-                    error: (_, _) => _LoadingWeeklyActivity(),
+                    loading: () => const _LoadingWeeklyActivity(),
+                    error: (_, _) => const _LoadingWeeklyActivity(),
                   ),
-                  loading: () => _LoadingWeeklyActivity(),
+                  loading: () => const _LoadingWeeklyActivity(),
                   error: (error, stack) => _ErrorCard(
                     message: 'Failed to load workout data',
                     onRetry: () => ref.invalidate(homeWorkoutDataProvider),
                   ),
                 ),
               ),
-              
+
               // AI Coach Hero Card
               const SliverToBoxAdapter(
                 child: AiCoachHeroCard(),
               ),
-              
+
               // Today Summary Row
               SliverToBoxAdapter(
                 child: profileAsync.when(
@@ -83,17 +82,17 @@ class HomeScreen extends ConsumerWidget {
                       workouts: workouts,
                       profile: profile,
                     ),
-                    loading: () => _LoadingSummaryRow(),
-                    error: (_, _) => _LoadingSummaryRow(),
+                    loading: () => const _LoadingSummaryRow(),
+                    error: (_, _) => const _LoadingSummaryRow(),
                   ),
-                  loading: () => _LoadingSummaryRow(),
-                  error: (_, _) => _LoadingSummaryRow(),
+                  loading: () => const _LoadingSummaryRow(),
+                  error: (_, _) => const _LoadingSummaryRow(),
                 ),
               ),
-              
+
               // Start Workout CTA
-              SliverToBoxAdapter(child: _StartWorkoutCTA()),
-              
+              const SliverToBoxAdapter(child: _StartWorkoutCTA()),
+
               // Suggestion Card
               SliverToBoxAdapter(
                 child: historyAsync.when(
@@ -109,18 +108,18 @@ class HomeScreen extends ConsumerWidget {
                   error: (_, _) => const SizedBox.shrink(),
                 ),
               ),
-              
+
               // Recent Workout Card
               SliverToBoxAdapter(
                 child: historyAsync.when(
                   data: (workouts) => workouts.isNotEmpty
                       ? _RecentWorkoutCard(workout: workouts.first)
-                      : _EmptyWorkoutCard(),
-                  loading: () => _LoadingWorkoutCard(),
+                      : const _EmptyWorkoutCard(),
+                  loading: () => const _LoadingWorkoutCard(),
                   error: (_, _) => const SizedBox.shrink(),
                 ),
               ),
-              
+
               const SliverToBoxAdapter(child: SizedBox(height: 100)),
             ],
           ),
@@ -144,67 +143,99 @@ class _HomeHeader extends StatelessWidget {
         : hour < 17
             ? 'Good Afternoon'
             : 'Good Evening';
-    final onSurface = Theme.of(context).colorScheme.onSurface;
-    final secondary = Theme.of(context).colorScheme.onSurfaceVariant;
-    final surfaceHigh = Theme.of(context).colorScheme.surfaceContainerHighest;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final tokens = context.tokens;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacings.lg,
+        AppSpacings.md,
+        AppSpacings.lg,
+        AppSpacings.xs,
+      ),
       child: Row(
         children: [
           const IronFlowLogo(size: 40),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacings.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(greeting, style: TextStyle(color: secondary, fontSize: 14)),
+                Text(
+                  greeting,
+                  style: TextStyle(
+                    fontFamily: AppTypography.bodyFontFamily,
+                    color: tokens.textSecondary,
+                    fontSize: 13,
+                  ),
+                ),
                 const SizedBox(height: 2),
                 Text(
                   'IronFlow',
                   style: TextStyle(
-                    color: onSurface,
+                    fontFamily: AppTypography.displayFontFamily,
+                    color: tokens.textPrimary,
                     fontSize: 22,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.3,
                   ),
                 ),
               ],
             ),
           ),
           const AiEntryButton(),
-          const SizedBox(width: 8),
-          GestureDetector(
-            onTap: () => context.go(AppRoutes.profile),
-            child: Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppTheme.primaryColor.withValues(alpha: 0.15),
-                border: Border.all(color: AppTheme.primaryColor.withValues(alpha: 0.4)),
+          const SizedBox(width: AppSpacings.xs),
+          Semantics(
+            button: true,
+            label: 'Open Profile',
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+              child: InkWell(
+                onTap: () => context.go(AppRoutes.profile),
+                customBorder: const CircleBorder(),
+                child: Center(
+                  child: Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: tokens.card,
+                      border: Border.all(color: tokens.borderSubtle, width: 1),
+                    ),
+                    child: Icon(Icons.person_outline, color: tokens.textPrimary, size: 20),
+                  ),
+                ),
               ),
-              child: const Icon(Icons.person, color: AppTheme.primaryColor, size: 22),
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSpacings.xs),
           Consumer(
             builder: (context, ref, child) {
-              return GestureDetector(
-                onTap: () {
-                  ref.read(themeProvider.notifier).toggleTheme();
-                },
-                child: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: surfaceHigh.withValues(alpha: 0.7),
-                  ),
-                  child: Icon(
-                    isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
-                    color: secondary,
-                    size: 18,
+              return Semantics(
+                button: true,
+                label: 'Toggle Light and Dark Theme',
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                  child: InkWell(
+                    onTap: () {
+                      ref.read(themeProvider.notifier).toggleTheme();
+                    },
+                    customBorder: const CircleBorder(),
+                    child: Center(
+                      child: Container(
+                        width: 38,
+                        height: 38,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: tokens.card,
+                          border: Border.all(color: tokens.borderSubtle, width: 1),
+                        ),
+                        child: Icon(
+                          tokens.isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+                          color: tokens.kineticAccent,
+                          size: 18,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               );
@@ -212,11 +243,11 @@ class _HomeHeader extends StatelessWidget {
           ),
         ],
       ),
-    ).animate().fadeIn(duration: 400.ms).slideY(begin: -0.1);
+    ).animate().fadeIn(duration: 350.ms).slideY(begin: -0.05);
   }
 }
 
-// ── Weekly Activity Ring ──────────────────────────────────────────────────────
+// ── Weekly Activity Section ───────────────────────────────────────────────────
 
 class _WeeklyActivitySection extends StatelessWidget {
   const _WeeklyActivitySection({required this.workouts, required this.target});
@@ -229,59 +260,62 @@ class _WeeklyActivitySection extends StatelessWidget {
     final weekStart = now.subtract(const Duration(days: 6));
     final weekWorkouts = workouts.where((w) => w.date.isAfter(weekStart)).toList();
     final count = weekWorkouts.length;
-    final onSurface = Theme.of(context).colorScheme.onSurface;
-    final secondary = Theme.of(context).colorScheme.onSurfaceVariant;
+    final tokens = context.tokens;
+    final progress = target > 0 ? (count / target).clamp(0.0, 1.0) : 0.0;
+    final isGoalMet = count >= target && target > 0;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      child: AppTheme.glassmorphicCard(
-        padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacings.lg,
+        vertical: AppSpacings.sm,
+      ),
+      child: AppCard(
+        isGlowing: isGoalMet,
+        padding: const EdgeInsets.all(AppSpacings.lg),
         child: Row(
           children: [
-            SizedBox(
-              width: 90,
-              height: 90,
-              child: Stack(
-                alignment: Alignment.center,
+            AppProgressRing(
+              progress: progress,
+              size: 82,
+              strokeWidth: 8,
+              progressColor: tokens.kineticAccent,
+              backgroundColor: tokens.elevated,
+              centerWidget: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  CustomPaint(
-                    size: const Size(90, 90),
-                    painter: _RingPainter(
-                      progress: (count / target).clamp(0.0, 1.0),
-                      color: AppTheme.primaryColor,
+                  Text(
+                    '$count',
+                    style: AppTypography.tabularMetric(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: tokens.kineticAccent,
                     ),
                   ),
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        '$count',
-                        style: const TextStyle(
-                          color: AppTheme.primaryColor,
-                          fontSize: 26,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        '/ $target',
-                        style: TextStyle(color: secondary, fontSize: 11),
-                      ),
-                    ],
+                  Text(
+                    '/ $target',
+                    style: TextStyle(
+                      fontFamily: AppTypography.displayFontFamily,
+                      color: tokens.textSecondary,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(width: 20),
+            const SizedBox(width: AppSpacings.lg),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Weekly Activity',
+                    'WEEKLY ACTIVITY',
                     style: TextStyle(
-                      color: onSurface,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                      fontFamily: AppTypography.displayFontFamily,
+                      color: tokens.textSecondary,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.8,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -289,11 +323,16 @@ class _WeeklyActivitySection extends StatelessWidget {
                     count == 0
                         ? 'Start your first workout!'
                         : count < target
-                            ? '${target - count} more to hit your goal'
-                            : '🎉 Weekly goal achieved!',
-                    style: TextStyle(color: secondary, fontSize: 13),
+                            ? '${target - count} more to reach goal'
+                            : 'Weekly goal achieved!',
+                    style: TextStyle(
+                      fontFamily: AppTypography.bodyFontFamily,
+                      color: tokens.textPrimary,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppSpacings.md),
                   _WeekDayDots(workouts: weekWorkouts),
                 ],
               ),
@@ -301,7 +340,7 @@ class _WeeklyActivitySection extends StatelessWidget {
           ],
         ),
       ),
-    ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1);
+    ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.05);
   }
 }
 
@@ -316,8 +355,7 @@ class _WeekDayDots extends StatelessWidget {
     final workoutDates = workouts
         .map((w) => DateTime(w.date.year, w.date.month, w.date.day))
         .toSet();
-    final secondary = Theme.of(context).colorScheme.onSurfaceVariant;
-    final surfaceHigh = Theme.of(context).colorScheme.surfaceContainerHighest;
+    final tokens = context.tokens;
 
     return Row(
       children: days.map((day) {
@@ -327,29 +365,54 @@ class _WeekDayDots extends StatelessWidget {
           child: Column(
             children: [
               Container(
-                width: 28,
-                height: 28,
+                width: 26,
+                height: 26,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: hasWorkout
-                      ? AppTheme.primaryColor
+                      ? tokens.kineticAccent
                       : isToday
-                          ? AppTheme.primaryColor.withValues(alpha: 0.2)
-                          : surfaceHigh,
+                          ? tokens.elevated
+                          : tokens.panel,
                   border: isToday
-                      ? Border.all(color: AppTheme.primaryColor, width: 1.5)
+                      ? Border.all(color: tokens.kineticAccent, width: 1.5)
+                      : Border.all(color: tokens.borderSubtle, width: 0.5),
+                  boxShadow: hasWorkout
+                      ? [
+                          BoxShadow(
+                            color: tokens.kineticAccent.withValues(alpha: 0.3),
+                            blurRadius: 6,
+                          ),
+                        ]
                       : null,
                 ),
                 child: hasWorkout
                     ? const Icon(Icons.check, size: 14, color: Colors.black)
-                    : null,
+                    : isToday
+                        ? Center(
+                            child: Container(
+                              width: 6,
+                              height: 6,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: tokens.kineticAccent,
+                              ),
+                            ),
+                          )
+                        : null,
               ),
-              const SizedBox(height: 3),
+              const SizedBox(height: 4),
               Text(
                 DateFormat('E').format(day).substring(0, 1),
                 style: TextStyle(
+                  fontFamily: AppTypography.displayFontFamily,
                   fontSize: 10,
-                  color: isToday ? AppTheme.primaryColor : secondary,
+                  fontWeight: FontWeight.w600,
+                  color: isToday
+                      ? tokens.kineticAccent
+                      : hasWorkout
+                          ? tokens.textPrimary
+                          : tokens.textMuted,
                 ),
               ),
             ],
@@ -358,41 +421,6 @@ class _WeekDayDots extends StatelessWidget {
       }).toList(),
     );
   }
-}
-
-class _RingPainter extends CustomPainter {
-  const _RingPainter({required this.progress, required this.color});
-  final double progress;
-  final Color color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = (size.width - 10) / 2;
-    const strokeWidth = 8.0;
-    canvas.drawCircle(
-      center,
-      radius,
-      Paint()
-        ..color = color.withValues(alpha: 0.15)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = strokeWidth,
-    );
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      -math.pi / 2,
-      2 * math.pi * progress,
-      false,
-      Paint()
-        ..color = color
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = strokeWidth
-        ..strokeCap = StrokeCap.round,
-    );
-  }
-
-  @override
-  bool shouldRepaint(_RingPainter old) => old.progress != progress;
 }
 
 // ── Today Summary Row ─────────────────────────────────────────────────────────
@@ -413,9 +441,13 @@ class _TodaySummaryRow extends StatelessWidget {
         : 'None';
     final calories = profile?.dailyCalorieTarget.toInt() ?? 2000;
     final weight = profile?.weightKg.toStringAsFixed(1) ?? '--';
+    final tokens = context.tokens;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacings.lg,
+        vertical: AppSpacings.xs,
+      ),
       child: Row(
         children: [
           Expanded(
@@ -423,26 +455,26 @@ class _TodaySummaryRow extends StatelessWidget {
               icon: Icons.fitness_center,
               label: 'Last Workout',
               value: lastDate,
-              color: AppTheme.accentColor,
-            ).animate().fadeIn(delay: 200.ms).slideX(begin: -0.1),
+              color: tokens.cyanAccent,
+            ).animate().fadeIn(delay: 150.ms).slideX(begin: -0.05),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: AppSpacings.sm),
           Expanded(
             child: _SummaryCard(
               icon: Icons.local_fire_department,
               label: 'Calories',
               value: '$calories kcal',
-              color: Colors.orange,
-            ).animate().fadeIn(delay: 250.ms),
+              color: tokens.warning,
+            ).animate().fadeIn(delay: 200.ms),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: AppSpacings.sm),
           Expanded(
             child: _SummaryCard(
               icon: Icons.monitor_weight_outlined,
               label: 'Weight',
               value: '${weight}kg',
-              color: AppTheme.primaryColor,
-            ).animate().fadeIn(delay: 300.ms).slideX(begin: 0.1),
+              color: tokens.kineticAccent,
+            ).animate().fadeIn(delay: 250.ms).slideX(begin: 0.05),
           ),
         ],
       ),
@@ -464,22 +496,33 @@ class _SummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final secondary = Theme.of(context).colorScheme.onSurfaceVariant;
-    return AppTheme.glassmorphicCard(
-      padding: const EdgeInsets.all(12),
+    final tokens = context.tokens;
+    return AppCard(
+      padding: const EdgeInsets.all(AppSpacings.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(icon, color: color, size: 20),
-          const SizedBox(height: 6),
+          const SizedBox(height: AppSpacings.xs),
           Text(
             value,
-            style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.bold),
+            style: AppTypography.tabularMetric(
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 2),
-          Text(label, style: TextStyle(color: secondary, fontSize: 10)),
+          Text(
+            label,
+            style: TextStyle(
+              fontFamily: AppTypography.bodyFontFamily,
+              color: tokens.textSecondary,
+              fontSize: 10,
+            ),
+          ),
         ],
       ),
     );
@@ -489,48 +532,61 @@ class _SummaryCard extends StatelessWidget {
 // ── Start Workout CTA ─────────────────────────────────────────────────────────
 
 class _StartWorkoutCTA extends StatelessWidget {
+  const _StartWorkoutCTA();
+
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-      child: GestureDetector(
-        onTap: () => context.go(AppRoutes.workoutActive),
-        child: Container(
-          height: 64,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-            gradient: const LinearGradient(
-              colors: [AppTheme.primaryColor, Color(0xFF00CC00)],
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: AppTheme.primaryColor.withValues(alpha: 0.4),
-                blurRadius: 20,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
-          child: const Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.play_arrow_rounded, color: Colors.black, size: 28),
-              SizedBox(width: 8),
-              Text(
-                'Start Workout',
-                style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.5,
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacings.lg,
+        AppSpacings.md,
+        AppSpacings.lg,
+        AppSpacings.sm,
+      ),
+      child: Semantics(
+        button: true,
+        label: 'Start Workout',
+        child: InkWell(
+          onTap: () => context.go(AppRoutes.workoutActive),
+          borderRadius: BorderRadius.circular(tokens.radiusSm),
+          child: Container(
+            height: 52,
+            decoration: BoxDecoration(
+              color: tokens.kineticAccent,
+              borderRadius: BorderRadius.circular(tokens.radiusSm),
+              boxShadow: [
+                BoxShadow(
+                  color: tokens.kineticAccent.withValues(
+                    alpha: tokens.isDark ? 0.35 : 0.2,
+                  ),
+                  blurRadius: 16,
+                  offset: const Offset(0, 4),
                 ),
-              ),
-            ],
+              ],
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.play_arrow_rounded, color: Colors.black, size: 26),
+                const SizedBox(width: AppSpacings.sm),
+                Text(
+                  'START WORKOUT',
+                  style: TextStyle(
+                    fontFamily: AppTypography.displayFontFamily,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.0,
+                    color: Colors.black,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
-    ).animate().fadeIn(delay: 350.ms).scale(begin: const Offset(0.95, 0.95));
+    ).animate().fadeIn(delay: 300.ms).scale(begin: const Offset(0.97, 0.97));
   }
 }
 
@@ -543,26 +599,30 @@ class _SuggestionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final suggestion = _buildSuggestion();
-    final onSurface = Theme.of(context).colorScheme.onSurface;
-    final secondary = Theme.of(context).colorScheme.onSurfaceVariant;
+    final tokens = context.tokens;
+    final suggestion = _buildSuggestion(tokens);
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      child: AppTheme.glassmorphicCard(
-        padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacings.lg,
+        vertical: AppSpacings.sm,
+      ),
+      child: AppCard(
+        onTap: () => context.go(AppRoutes.workoutActive),
+        padding: const EdgeInsets.all(AppSpacings.md),
         child: Row(
           children: [
             Container(
-              width: 44,
-              height: 44,
+              width: 40,
+              height: 40,
               decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: suggestion.color.withValues(alpha: 0.15),
+                color: tokens.elevated,
+                borderRadius: BorderRadius.circular(tokens.radiusSm),
+                border: Border.all(color: tokens.borderSubtle, width: 0.8),
               ),
-              child: Icon(suggestion.icon, color: suggestion.color, size: 22),
+              child: Icon(suggestion.icon, color: suggestion.color, size: 20),
             ),
-            const SizedBox(width: 14),
+            const SizedBox(width: AppSpacings.md),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -570,40 +630,45 @@ class _SuggestionCard extends StatelessWidget {
                   Text(
                     suggestion.title,
                     style: TextStyle(
-                      color: onSurface,
+                      fontFamily: AppTypography.displayFontFamily,
+                      color: tokens.textPrimary,
                       fontSize: 14,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     suggestion.body,
-                    style: TextStyle(color: secondary, fontSize: 12),
+                    style: TextStyle(
+                      fontFamily: AppTypography.bodyFontFamily,
+                      color: tokens.textSecondary,
+                      fontSize: 12,
+                    ),
                   ),
                 ],
               ),
             ),
-            Icon(Icons.arrow_forward_ios, color: secondary, size: 14),
+            Icon(Icons.arrow_forward_ios, color: tokens.textMuted, size: 12),
           ],
         ),
       ),
-    ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1);
+    ).animate().fadeIn(delay: 350.ms).slideY(begin: 0.05);
   }
 
-  _SuggestionData _buildSuggestion() {
+  _SuggestionData _buildSuggestion(AppThemeTokens tokens) {
     if (workouts.isEmpty) {
       return _SuggestionData(
         icon: Icons.rocket_launch,
-        color: AppTheme.primaryColor,
+        color: tokens.kineticAccent,
         title: 'Start your journey!',
-        body: 'Log your first workout to unlock progression tracking.',
+        body: 'Log your first workout to unlock telemetry progression tracking.',
       );
     }
     final daysSince = DateTime.now().difference(workouts.first.date).inDays;
     if (daysSince >= 3) {
       return _SuggestionData(
         icon: Icons.warning_amber_rounded,
-        color: Colors.orange,
+        color: tokens.warning,
         title: 'Time to train!',
         body: 'It\'s been $daysSince days since your last workout. Keep the momentum!',
       );
@@ -611,14 +676,14 @@ class _SuggestionCard extends StatelessWidget {
     if (profile?.goal == FitnessGoal.gainMuscle) {
       return _SuggestionData(
         icon: Icons.trending_up,
-        color: AppTheme.accentColor,
+        color: tokens.cyanAccent,
         title: 'Progressive Overload',
         body: 'Try adding 2.5kg to your main lifts this session.',
       );
     }
     return _SuggestionData(
       icon: Icons.local_fire_department,
-      color: Colors.deepOrange,
+      color: tokens.warning,
       title: 'Stay consistent!',
       body: 'Great work! Keep showing up and results will follow.',
     );
@@ -650,13 +715,16 @@ class _RecentWorkoutCard extends StatelessWidget {
     final h = workout.duration.inHours;
     final m = workout.duration.inMinutes.remainder(60);
     final duration = h > 0 ? '${h}h ${m}m' : '${m}m';
-    final onSurface = Theme.of(context).colorScheme.onSurface;
-    final secondary = Theme.of(context).colorScheme.onSurfaceVariant;
+    final tokens = context.tokens;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      child: AppTheme.glassmorphicCard(
-        padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacings.lg,
+        vertical: AppSpacings.sm,
+      ),
+      child: AppCard(
+        onTap: () => context.go(AppRoutes.workout),
+        padding: const EdgeInsets.all(AppSpacings.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -664,51 +732,64 @@ class _RecentWorkoutCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Last Workout',
+                  'LAST WORKOUT',
                   style: TextStyle(
-                    color: secondary,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
+                    fontFamily: AppTypography.displayFontFamily,
+                    color: tokens.textMuted,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.8,
                   ),
                 ),
-                Text(dateStr, style: TextStyle(color: secondary, fontSize: 12)),
+                Text(
+                  dateStr,
+                  style: TextStyle(
+                    fontFamily: AppTypography.bodyFontFamily,
+                    color: tokens.textSecondary,
+                    fontSize: 12,
+                  ),
+                ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacings.sm),
             Text(
-              '${workout.exercises.length} exercises',
+              '${workout.exercises.length} Exercises Completed',
               style: TextStyle(
-                color: onSurface,
-                fontSize: 18,
+                fontFamily: AppTypography.displayFontFamily,
+                color: tokens.textPrimary,
+                fontSize: 17,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacings.md),
             Row(
               children: [
                 _WorkoutStat(
                   icon: Icons.fitness_center,
-                  value: '${workout.totalVolume.toStringAsFixed(0)}kg',
+                  value: '${workout.totalVolume.toStringAsFixed(0)} kg',
                   label: 'Volume',
+                  accentColor: tokens.cyanAccent,
                 ),
-                const SizedBox(width: 20),
+                const SizedBox(width: AppSpacings.xl),
                 _WorkoutStat(
                   icon: Icons.timer_outlined,
                   value: duration,
                   label: 'Duration',
+                  accentColor: tokens.kineticAccent,
                 ),
-                const SizedBox(width: 20),
+                const SizedBox(width: AppSpacings.xl),
                 _WorkoutStat(
                   icon: Icons.repeat,
                   value: '${workout.exercises.fold<int>(0, (s, e) => s + e.sets.length)}',
-                  label: 'Sets',
+                  label: 'Total Sets',
+                  accentColor: tokens.violetAccent,
                 ),
               ],
             ),
           ],
         ),
       ),
-    ).animate().fadeIn(delay: 450.ms).slideY(begin: 0.1);
+    ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.05);
   }
 }
 
@@ -717,33 +798,41 @@ class _WorkoutStat extends StatelessWidget {
     required this.icon,
     required this.value,
     required this.label,
+    required this.accentColor,
   });
   final IconData icon;
   final String value;
   final String label;
+  final Color accentColor;
 
   @override
   Widget build(BuildContext context) {
-    final onSurface = Theme.of(context).colorScheme.onSurface;
-    final secondary = Theme.of(context).colorScheme.onSurfaceVariant;
+    final tokens = context.tokens;
 
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 14, color: AppTheme.primaryColor),
-        const SizedBox(width: 4),
+        Icon(icon, size: 14, color: accentColor),
+        const SizedBox(width: AppSpacings.xs),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               value,
-              style: TextStyle(
-                color: onSurface,
+              style: AppTypography.tabularMetric(
+                color: tokens.textPrimary,
                 fontSize: 13,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            Text(label, style: TextStyle(color: secondary, fontSize: 10)),
+            Text(
+              label,
+              style: TextStyle(
+                fontFamily: AppTypography.bodyFontFamily,
+                color: tokens.textSecondary,
+                fontSize: 10,
+              ),
+            ),
           ],
         ),
       ],
@@ -754,113 +843,69 @@ class _WorkoutStat extends StatelessWidget {
 // ── Loading States ────────────────────────────────────────────────────────────
 
 class _LoadingWeeklyActivity extends StatelessWidget {
+  const _LoadingWeeklyActivity();
+
   @override
   Widget build(BuildContext context) {
-    final surfaceHigh = Theme.of(context).colorScheme.surfaceContainerHighest;
-    
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      child: AppTheme.glassmorphicCard(
-        padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacings.lg,
+        vertical: AppSpacings.sm,
+      ),
+      child: AppCard(
+        padding: const EdgeInsets.all(AppSpacings.lg),
         child: Row(
           children: [
-            Container(
-              width: 90,
-              height: 90,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: surfaceHigh.withValues(alpha: 0.3),
-              ),
-              child: const Center(
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: AppTheme.primaryColor,
-                ),
-              ),
-            ),
-            const SizedBox(width: 20),
+            const AppShimmer(width: 82, height: 82, isCircle: true),
+            const SizedBox(width: AppSpacings.lg),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    height: 16,
-                    width: 120,
-                    decoration: BoxDecoration(
-                      color: surfaceHigh.withValues(alpha: 0.3),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    height: 12,
-                    width: 180,
-                    decoration: BoxDecoration(
-                      color: surfaceHigh.withValues(alpha: 0.3),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
+                children: const [
+                  AppShimmer(width: 120, height: 14),
+                  SizedBox(height: AppSpacings.sm),
+                  AppShimmer(width: 180, height: 12),
                 ],
               ),
             ),
           ],
         ),
       ),
-    ).animate(onPlay: (controller) => controller.repeat())
-        .shimmer(duration: 1500.ms, color: surfaceHigh.withValues(alpha: 0.1));
+    );
   }
 }
 
 class _LoadingSummaryRow extends StatelessWidget {
+  const _LoadingSummaryRow();
+
   @override
   Widget build(BuildContext context) {
-    final surfaceHigh = Theme.of(context).colorScheme.surfaceContainerHighest;
-    
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacings.lg,
+        vertical: AppSpacings.xs,
+      ),
       child: Row(
         children: List.generate(3, (index) {
           return Expanded(
             child: Padding(
               padding: EdgeInsets.only(
-                left: index == 0 ? 0 : 5,
-                right: index == 2 ? 0 : 5,
+                left: index == 0 ? 0 : 4,
+                right: index == 2 ? 0 : 4,
               ),
-              child: AppTheme.glassmorphicCard(
-                padding: const EdgeInsets.all(12),
+              child: const AppCard(
+                padding: EdgeInsets.all(AppSpacings.md),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      width: 20,
-                      height: 20,
-                      decoration: BoxDecoration(
-                        color: surfaceHigh.withValues(alpha: 0.3),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Container(
-                      height: 13,
-                      width: 50,
-                      decoration: BoxDecoration(
-                        color: surfaceHigh.withValues(alpha: 0.3),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Container(
-                      height: 10,
-                      width: 40,
-                      decoration: BoxDecoration(
-                        color: surfaceHigh.withValues(alpha: 0.3),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
+                    AppShimmer(width: 20, height: 20, isCircle: true),
+                    SizedBox(height: AppSpacings.xs),
+                    AppShimmer(width: 50, height: 14),
+                    SizedBox(height: 4),
+                    AppShimmer(width: 40, height: 10),
                   ],
                 ),
-              ).animate(onPlay: (controller) => controller.repeat())
-                  .shimmer(duration: 1500.ms, color: surfaceHigh.withValues(alpha: 0.1)),
+              ),
             ),
           );
         }),
@@ -870,54 +915,36 @@ class _LoadingSummaryRow extends StatelessWidget {
 }
 
 class _LoadingWorkoutCard extends StatelessWidget {
+  const _LoadingWorkoutCard();
+
   @override
   Widget build(BuildContext context) {
-    final surfaceHigh = Theme.of(context).colorScheme.surfaceContainerHighest;
-    
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      child: AppTheme.glassmorphicCard(
-        padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacings.lg,
+        vertical: AppSpacings.sm,
+      ),
+      child: const AppCard(
+        padding: EdgeInsets.all(AppSpacings.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              height: 12,
-              width: 100,
-              decoration: BoxDecoration(
-                color: surfaceHigh.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Container(
-              height: 18,
-              width: 150,
-              decoration: BoxDecoration(
-                color: surfaceHigh.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-            const SizedBox(height: 12),
+            AppShimmer(width: 100, height: 12),
+            SizedBox(height: AppSpacings.sm),
+            AppShimmer(width: 160, height: 18),
+            SizedBox(height: AppSpacings.md),
             Row(
-              children: List.generate(3, (index) {
-                return Padding(
-                  padding: EdgeInsets.only(right: index < 2 ? 20 : 0),
-                  child: Container(
-                    height: 14,
-                    width: 60,
-                    decoration: BoxDecoration(
-                      color: surfaceHigh.withValues(alpha: 0.3),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
-                );
-              }),
+              children: [
+                AppShimmer(width: 60, height: 14),
+                SizedBox(width: AppSpacings.lg),
+                AppShimmer(width: 60, height: 14),
+                SizedBox(width: AppSpacings.lg),
+                AppShimmer(width: 60, height: 14),
+              ],
             ),
           ],
         ),
-      ).animate(onPlay: (controller) => controller.repeat())
-          .shimmer(duration: 1500.ms, color: surfaceHigh.withValues(alpha: 0.1)),
+      ),
     );
   }
 }
@@ -934,39 +961,34 @@ class _ErrorCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final onSurface = Theme.of(context).colorScheme.onSurface;
-    
+    final tokens = context.tokens;
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      child: AppTheme.glassmorphicCard(
-        padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacings.lg,
+        vertical: AppSpacings.sm,
+      ),
+      child: AppCard(
+        padding: const EdgeInsets.all(AppSpacings.xl),
         child: Column(
           children: [
-            Icon(
-              Icons.error_outline,
-              color: Colors.orange,
-              size: 48,
-            ),
-            const SizedBox(height: 12),
+            Icon(Icons.error_outline, color: tokens.error, size: 44),
+            const SizedBox(height: AppSpacings.md),
             Text(
               message,
               style: TextStyle(
-                color: onSurface,
+                fontFamily: AppTypography.bodyFontFamily,
+                color: tokens.textPrimary,
                 fontSize: 14,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w600,
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: onRetry,
+            const SizedBox(height: AppSpacings.lg),
+            AppButton(
+              label: 'Retry',
               icon: const Icon(Icons.refresh, size: 18),
-              label: const Text('Retry'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryColor,
-                foregroundColor: Colors.black,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              ),
+              onPressed: onRetry,
             ),
           ],
         ),
@@ -978,36 +1000,42 @@ class _ErrorCard extends StatelessWidget {
 // ── Empty States ──────────────────────────────────────────────────────────────
 
 class _EmptyWorkoutCard extends StatelessWidget {
+  const _EmptyWorkoutCard();
+
   @override
   Widget build(BuildContext context) {
-    final onSurface = Theme.of(context).colorScheme.onSurface;
-    final secondary = Theme.of(context).colorScheme.onSurfaceVariant;
-    
+    final tokens = context.tokens;
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      child: AppTheme.glassmorphicCard(
-        padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacings.lg,
+        vertical: AppSpacings.sm,
+      ),
+      child: AppCard(
+        padding: const EdgeInsets.all(AppSpacings.xl),
         child: Column(
           children: [
             Icon(
-              Icons.fitness_center,
-              color: AppTheme.primaryColor.withValues(alpha: 0.5),
-              size: 48,
+              Icons.fitness_center_outlined,
+              color: tokens.textMuted,
+              size: 44,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacings.md),
             Text(
-              'No workouts yet',
+              'No workouts logged yet',
               style: TextStyle(
-                color: onSurface,
+                fontFamily: AppTypography.displayFontFamily,
+                color: tokens.textPrimary,
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 4),
             Text(
-              'Start your first workout to see it here',
+              'Complete your first workout session to view telemetry stats here.',
               style: TextStyle(
-                color: secondary,
+                fontFamily: AppTypography.bodyFontFamily,
+                color: tokens.textSecondary,
                 fontSize: 13,
               ),
               textAlign: TextAlign.center,
@@ -1015,41 +1043,43 @@ class _EmptyWorkoutCard extends StatelessWidget {
           ],
         ),
       ),
-    ).animate().fadeIn(delay: 450.ms).slideY(begin: 0.1);
+    ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.05);
   }
 }
 
 class _ProfileSetupPrompt extends StatelessWidget {
+  const _ProfileSetupPrompt();
+
   @override
   Widget build(BuildContext context) {
-    final onSurface = Theme.of(context).colorScheme.onSurface;
-    final secondary = Theme.of(context).colorScheme.onSurfaceVariant;
-    
+    final tokens = context.tokens;
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      child: AppTheme.glassmorphicCard(
-        padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacings.lg,
+        vertical: AppSpacings.sm,
+      ),
+      child: AppCard(
+        padding: const EdgeInsets.all(AppSpacings.xl),
         child: Column(
           children: [
-            Icon(
-              Icons.person_outline,
-              color: AppTheme.primaryColor.withValues(alpha: 0.7),
-              size: 48,
-            ),
-            const SizedBox(height: 12),
+            Icon(Icons.person_outline, color: tokens.kineticAccent, size: 44),
+            const SizedBox(height: AppSpacings.md),
             Text(
               'Complete your profile',
               style: TextStyle(
-                color: onSurface,
+                fontFamily: AppTypography.displayFontFamily,
+                color: tokens.textPrimary,
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 4),
             Text(
-              'Set your weekly workout goal to track your progress',
+              'Set your weekly workout goal to track your telemetry progress.',
               style: TextStyle(
-                color: secondary,
+                fontFamily: AppTypography.bodyFontFamily,
+                color: tokens.textSecondary,
                 fontSize: 13,
               ),
               textAlign: TextAlign.center,
@@ -1057,6 +1087,6 @@ class _ProfileSetupPrompt extends StatelessWidget {
           ],
         ),
       ),
-    ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1);
+    ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.05);
   }
 }

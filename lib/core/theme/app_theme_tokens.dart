@@ -66,10 +66,14 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
   final BoxDecoration glowDecoration;
 
   // Spacing & Radii references
+  double get radiusXs => AppSpacings.radiusXs;
   double get radiusSm => AppSpacings.radiusSm;
   double get radiusMd => AppSpacings.radiusMd;
   double get radiusLg => AppSpacings.radiusLg;
   double get radiusPill => AppSpacings.radiusPill;
+
+  // Convenient alias
+  Color get textTertiary => textMuted;
 
   /// Monolithic Sci-Fi Dark Tokens.
   static final AppThemeTokens dark = AppThemeTokens(

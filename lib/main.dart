@@ -212,16 +212,16 @@ class MainScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     final location = GoRouterState.of(context).uri.toString();
     final currentIndex = _currentIndex(location);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final tokens = context.tokens;
 
     return Scaffold(
       body: child,
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF111111) : Colors.white,
+          color: tokens.panel,
           border: Border(
             top: BorderSide(
-              color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.08),
+              color: tokens.borderSubtle,
               width: 1,
             ),
           ),
@@ -235,6 +235,19 @@ class MainScaffold extends StatelessWidget {
           },
           backgroundColor: Colors.transparent,
           elevation: 0,
+          selectedItemColor: tokens.kineticAccent,
+          unselectedItemColor: tokens.textTertiary,
+          selectedLabelStyle: const TextStyle(
+            fontFamily: AppTypography.displayFontFamily,
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.2,
+          ),
+          unselectedLabelStyle: const TextStyle(
+            fontFamily: AppTypography.bodyFontFamily,
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+          ),
           items: const [
             BottomNavigationBarItem(
               icon: Icon(Icons.home_outlined),

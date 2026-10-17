@@ -49,9 +49,7 @@ class ContextualInsightBanner extends ConsumerWidget {
     }
 
     final insight = activeInsights.first;
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final primary = theme.colorScheme.primary;
+    final tokens = context.tokens;
 
     return Semantics(
       container: true,
@@ -59,22 +57,22 @@ class ContextualInsightBanner extends ConsumerWidget {
       child: Container(
         margin: margin ??
             const EdgeInsets.symmetric(
-              horizontal: AppTheme.spacingMedium,
-              vertical: AppTheme.spacingSmall,
+              horizontal: AppSpacings.lg,
+              vertical: AppSpacings.sm,
             ),
         decoration: BoxDecoration(
-          color: isDark
-              ? AppTheme.darkCard.withValues(alpha: 0.8)
-              : AppTheme.lightCard,
-          borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+          color: tokens.card,
+          borderRadius: BorderRadius.circular(tokens.radiusSm),
           border: Border.all(
-            color: primary.withValues(alpha: 0.2),
+            color: tokens.kineticAccent.withValues(alpha: 0.3),
             width: 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
-              blurRadius: 8,
+              color: tokens.kineticAccent.withValues(
+                alpha: tokens.isDark ? 0.08 : 0.04,
+              ),
+              blurRadius: 10,
               offset: const Offset(0, 2),
             ),
           ],
@@ -82,7 +80,7 @@ class ContextualInsightBanner extends ConsumerWidget {
         child: Material(
           color: Colors.transparent,
           child: InkWell(
-            borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+            borderRadius: BorderRadius.circular(tokens.radiusSm),
             onTap: () {
               navigateToAiCoach(
                 context,
@@ -91,8 +89,8 @@ class ContextualInsightBanner extends ConsumerWidget {
             },
             child: Padding(
               padding: const EdgeInsets.symmetric(
-                horizontal: AppTheme.spacingMedium,
-                vertical: AppTheme.spacingSmall,
+                horizontal: AppSpacings.md,
+                vertical: AppSpacings.sm,
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -103,15 +101,19 @@ class ContextualInsightBanner extends ConsumerWidget {
                     height: 36,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: primary.withValues(alpha: 0.12),
+                      color: tokens.elevated,
                       shape: BoxShape.circle,
+                      border: Border.all(
+                        color: tokens.borderSubtle,
+                        width: 0.8,
+                      ),
                     ),
                     child: Text(
                       insight.icon,
                       style: const TextStyle(fontSize: 18),
                     ),
                   ),
-                  const SizedBox(width: AppTheme.spacingSmall),
+                  const SizedBox(width: AppSpacings.sm),
 
                   // Content
                   Expanded(
@@ -121,9 +123,11 @@ class ContextualInsightBanner extends ConsumerWidget {
                       children: [
                         Text(
                           insight.title,
-                          style: theme.textTheme.titleSmall?.copyWith(
+                          style: TextStyle(
+                            fontFamily: AppTypography.displayFontFamily,
                             fontWeight: FontWeight.bold,
-                            color: theme.colorScheme.onSurface,
+                            fontSize: 13,
+                            color: tokens.textPrimary,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -131,10 +135,10 @@ class ContextualInsightBanner extends ConsumerWidget {
                         const SizedBox(height: 2),
                         Text(
                           insight.message,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: isDark
-                                ? AppTheme.darkTextSecondary
-                                : AppTheme.lightTextSecondary,
+                          style: TextStyle(
+                            fontFamily: AppTypography.bodyFontFamily,
+                            fontSize: 12,
+                            color: tokens.textSecondary,
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
@@ -142,7 +146,7 @@ class ContextualInsightBanner extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(width: AppTheme.spacingSmall),
+                  const SizedBox(width: AppSpacings.sm),
 
                   // Dismiss button (constrained to 48dp minimum tap target)
                   Semantics(
@@ -159,9 +163,7 @@ class ContextualInsightBanner extends ConsumerWidget {
                           icon: Icon(
                             Icons.close,
                             size: 16,
-                            color: isDark
-                                ? AppTheme.darkTextSecondary
-                                : AppTheme.lightTextSecondary,
+                            color: tokens.textMuted,
                           ),
                           onPressed: () {
                             ref
