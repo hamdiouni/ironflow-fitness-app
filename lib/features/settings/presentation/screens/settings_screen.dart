@@ -12,6 +12,8 @@ import '../../../../shared/presentation/services/app_haptics.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../../../onboarding/domain/entities/user_profile.dart';
 import '../../../onboarding/presentation/providers/onboarding_provider.dart';
+import '../../../onboarding/data/user_profile_storage.dart';
+import '../../../ai/data/datasources/gemini_ai_service.dart';
 import 'export_settings_screen.dart';
 import 'privacy_settings_screen.dart';
 
@@ -212,6 +214,147 @@ class SettingsScreen extends ConsumerWidget {
               style: TextStyle(
                 fontFamily: AppTypography.displayFontFamily,
                 fontWeight: FontWeight.w700,
+                color: tokens.kineticAccent,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _resetOnboarding(BuildContext context, WidgetRef ref, AppThemeTokens tokens) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: tokens.panel,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(tokens.radiusMd),
+          side: BorderSide(color: tokens.borderSubtle, width: 1),
+        ),
+        title: Text(
+          'RESET ONBOARDING PROTOCOL',
+          style: TextStyle(
+            fontFamily: AppTypography.displayFontFamily,
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.5,
+            color: tokens.textPrimary,
+          ),
+        ),
+        content: Text(
+          'This will clear the onboarding completion flag and redirect you to the guided goal selection stepper. Your existing workouts and account remain safe.',
+          style: TextStyle(
+            fontFamily: AppTypography.bodyFontFamily,
+            fontSize: 13,
+            color: tokens.textSecondary,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(
+              'CANCEL',
+              style: TextStyle(
+                fontFamily: AppTypography.displayFontFamily,
+                color: tokens.textSecondary,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: tokens.kineticAccent,
+              foregroundColor: Colors.black,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('RESET & RE-RUN'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      await UserProfileStorage().resetOnboarding();
+      ref.invalidate(isOnboardedProvider);
+      ref.invalidate(userProfileProvider);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Onboarding reset! Redirecting to setup...'),
+            backgroundColor: tokens.kineticAccent,
+          ),
+        );
+        context.go(AppRoutes.onboarding);
+      }
+    }
+  }
+
+  void _showStateInspector(BuildContext context, WidgetRef ref, AppThemeTokens tokens) {
+    final authState = ref.read(authNotifierProvider);
+    final isOnboarded = UserProfileStorage().isOnboardedSync();
+    final isGeminiConfigured = GeminiAIService().isConfigured;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: tokens.panel,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(tokens.radiusMd),
+          side: BorderSide(color: tokens.borderSubtle, width: 1),
+        ),
+        title: Row(
+          children: [
+            Icon(Icons.monitor_heart_outlined, color: tokens.kineticAccent, size: 20),
+            const SizedBox(width: 8),
+            Text(
+              'APP STATE TELEMETRY',
+              style: TextStyle(
+                fontFamily: AppTypography.displayFontFamily,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: tokens.textPrimary,
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _SettingItem(
+              label: 'AUTH STATUS',
+              value: authState.isAuthenticated ? 'AUTHENTICATED' : 'ANONYMOUS',
+              tokens: tokens,
+            ),
+            const SizedBox(height: 8),
+            _SettingItem(
+              label: 'USER ID',
+              value: (authState.user != null && authState.user!.id.isNotEmpty)
+                  ? authState.user!.id.substring(0, authState.user!.id.length > 12 ? 12 : authState.user!.id.length)
+                  : 'NONE',
+              tokens: tokens,
+            ),
+            const SizedBox(height: 8),
+            _SettingItem(
+              label: 'ONBOARDING STATUS',
+              value: isOnboarded ? 'COMPLETED' : 'PENDING',
+              tokens: tokens,
+            ),
+            const SizedBox(height: 8),
+            _SettingItem(
+              label: 'GEMINI API KEY',
+              value: isGeminiConfigured ? 'CONFIGURED' : 'NOT SET',
+              tokens: tokens,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(
+              'DISMISS',
+              style: TextStyle(
+                fontFamily: AppTypography.displayFontFamily,
                 color: tokens.kineticAccent,
               ),
             ),
@@ -679,6 +822,24 @@ Last Updated: October 2026''',
                   child: Column(
                     children: [
                       _SettingsTile(
+                        title: 'Reset Onboarding Protocol',
+                        subtitle: 'Clear onboarding flag and re-run goal selection stepper',
+                        icon: Icons.restart_alt_rounded,
+                        tokens: tokens,
+                        iconColor: tokens.warning,
+                        titleColor: tokens.warning,
+                        onTap: () => _resetOnboarding(context, ref, tokens),
+                      ),
+                      Divider(color: tokens.borderSubtle, height: 1),
+                      _SettingsTile(
+                        title: 'Inspect App State Telemetry',
+                        subtitle: 'Inspect live Auth, Onboarding & Gemini API configuration',
+                        icon: Icons.monitor_heart_outlined,
+                        tokens: tokens,
+                        onTap: () => _showStateInspector(context, ref, tokens),
+                      ),
+                      Divider(color: tokens.borderSubtle, height: 1),
+                      _SettingsTile(
                         title: 'AI Diagnostic Test',
                         subtitle: 'Test Gemini inference and mock responses',
                         icon: Icons.bug_report_outlined,
@@ -706,13 +867,15 @@ Last Updated: October 2026''',
             title: 'CORE APPLICATION SYSTEM',
             tokens: tokens,
             children: [
-              Container(
-                decoration: BoxDecoration(
-                  color: tokens.panel,
-                  borderRadius: BorderRadius.circular(tokens.radiusMd),
-                  border: Border.all(color: tokens.borderSubtle, width: 1),
-                ),
-                padding: const EdgeInsets.all(AppTheme.spacingMedium),
+              GestureDetector(
+                onLongPress: () => _showStateInspector(context, ref, tokens),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: tokens.panel,
+                    borderRadius: BorderRadius.circular(tokens.radiusMd),
+                    border: Border.all(color: tokens.borderSubtle, width: 1),
+                  ),
+                  padding: const EdgeInsets.all(AppTheme.spacingMedium),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -736,7 +899,8 @@ Last Updated: October 2026''',
                   ],
                 ),
               ),
-            ],
+            ),
+          ],
           ),
         ],
       ),

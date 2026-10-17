@@ -24,7 +24,7 @@ class GeminiAIServiceException implements Exception {
 /// Get your free API key: https://makersuite.google.com/app/apikey
 class GeminiAIService {
   static const String _baseUrl = 'https://generativelanguage.googleapis.com/v1beta';
-  static const String _model = 'gemini-2.5-flash'; // Latest fast & free model
+  static const String _model = 'gemini-1.5-flash'; // High-speed, generous free-tier model
   static const int _timeoutSeconds = 30;
 
   final String _apiKey;
@@ -36,11 +36,14 @@ class GeminiAIService {
   })  : _apiKey = apiKey ?? AppConfig.getGeminiApiKey(),
         _httpClient = httpClient ?? http.Client();
 
+  /// Whether a Gemini API key is configured
+  bool get isConfigured => _apiKey.isNotEmpty;
+
   /// Validates that API key is configured
   void validateConfiguration() {
     if (_apiKey.isEmpty) {
       throw GeminiAIServiceException(
-        message: 'Gemini API key not configured. Provide it via --dart-define=GEMINI_API_KEY=... or local .env file.\n'
+        message: 'Gemini API key not configured. Provide it via env.json or --dart-define=GEMINI_API_KEY=...\n'
             'Get your free key at: https://makersuite.google.com/app/apikey',
         code: 'MISSING_API_KEY',
       );

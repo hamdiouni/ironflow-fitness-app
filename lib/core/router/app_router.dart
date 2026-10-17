@@ -28,6 +28,7 @@ import '../../features/auth/presentation/screens/splash_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/signup_screen.dart';
 import '../../features/auth/presentation/providers/auth_notifier.dart';
+import '../../features/onboarding/data/user_profile_storage.dart';
 import '../../features/notifications/presentation/screens/reminder_settings_screen.dart';
 import '../../features/ai/presentation/screens/ai_chat_screen.dart';
 import '../../features/ai/presentation/screens/ai_test_screen.dart';
@@ -86,50 +87,47 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Read auth state directly here (not watched in provider)
       final authState = ref.read(authNotifierProvider);
       final isAuthenticated = authState.isAuthenticated;
-      final isAuthRoute = state.matchedLocation == AppRoutes.login ||
-          state.matchedLocation == AppRoutes.signup ||
-          state.matchedLocation == AppRoutes.splash;
-      final isOnboarding = state.matchedLocation == AppRoutes.onboarding;
+      final isOnboarded = UserProfileStorage().isOnboardedSync();
+
+      final loc = state.matchedLocation;
+      final isAuthRoute = loc == AppRoutes.login ||
+          loc == AppRoutes.signup ||
+          loc == AppRoutes.splash;
+      final isOnboarding = loc == AppRoutes.onboarding;
 
       if (kDebugMode) {
         print('🔍 [Router] Redirect check:');
-        print('  - Location: ${state.matchedLocation}');
+        print('  - Location: $loc');
         print('  - Authenticated: $isAuthenticated');
+        print('  - Onboarded: $isOnboarded');
         print('  - Is auth route: $isAuthRoute');
         print('  - Is onboarding: $isOnboarding');
       }
 
-      // Allow onboarding for both authenticated and unauthenticated users
-      if (isOnboarding) {
-        if (kDebugMode) {
-          print('✅ [Router] Allowing onboarding access');
-        }
-        return null;
-      }
-
-      // If authenticated and trying to access auth routes, redirect to home
-      // This prevents the router from allowing authenticated users to stay on login/signup
-      if (isAuthenticated && isAuthRoute) {
-        if (kDebugMode) {
-          print('⚠️ [Router] Already authenticated, redirecting away from auth route to /home');
-        }
-        return AppRoutes.home;
-      }
-
-      // If not authenticated and trying to access auth routes, allow it
-      if (!isAuthenticated && isAuthRoute) {
-        if (kDebugMode) {
-          print('✅ [Router] Allowing auth route access');
-        }
-        return null;
-      }
-
-      // If not authenticated and trying to access protected routes, redirect to login
+      // Case 1: Unauthenticated user
       if (!isAuthenticated) {
+        if (isAuthRoute) {
+          // Allow splash, login, and signup
+          return null;
+        }
         if (kDebugMode) {
           print('⚠️ [Router] Not authenticated, redirecting to login');
         }
         return AppRoutes.login;
+      }
+
+      // Case 2: Authenticated user accessing auth routes (/splash, /login, /signup)
+      if (isAuthRoute) {
+        if (!isOnboarded) {
+          if (kDebugMode) {
+            print('📊 [Router] Authenticated on auth route, needs onboarding -> /onboarding');
+          }
+          return AppRoutes.onboarding;
+        }
+        if (kDebugMode) {
+          print('⚠️ [Router] Already authenticated and onboarded, redirecting away from auth route to /home');
+        }
+        return AppRoutes.home;
       }
 
       if (kDebugMode) {

@@ -11,6 +11,16 @@ class UserProfileStorage {
 
   Future<Box> get _box async => Hive.openBox(_boxName);
 
+  /// Synchronous check if user is onboarded.
+  /// Relies on HiveManager.initialize() having opened the box, or returns false if unopened.
+  bool isOnboardedSync() {
+    if (Hive.isBoxOpen(_boxName)) {
+      final result = Hive.box(_boxName).get(_onboardedKey, defaultValue: false) as bool;
+      return result;
+    }
+    return false;
+  }
+
   Future<bool> isOnboarded() async {
     final box = await _box;
     final result = box.get(_onboardedKey, defaultValue: false) as bool;
@@ -25,6 +35,14 @@ class UserProfileStorage {
     await box.put(_onboardedKey, true);
     if (kDebugMode) {
       print('✅ [Onboarding] User marked as onboarded');
+    }
+  }
+
+  Future<void> resetOnboarding() async {
+    final box = await _box;
+    await box.put(_onboardedKey, false);
+    if (kDebugMode) {
+      print('🔄 [Onboarding] User marked as NOT onboarded (reset)');
     }
   }
 

@@ -111,7 +111,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         // Invalidate providers and navigate
         ref.invalidate(isOnboardedProvider);
         ref.invalidate(userProfileProvider);
-        context.go(AppRoutes.workout);
+        context.go(AppRoutes.home);
       }
     } catch (e) {
       if (mounted) {

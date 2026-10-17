@@ -14,6 +14,24 @@ import '../../integration/screen_integration_test.dart';
 
 import 'package:progression_tracker/features/workout/domain/entities/active_program.dart';
 import 'package:progression_tracker/features/workout/presentation/providers/active_program_providers.dart';
+import 'package:progression_tracker/features/nutrition/domain/entities/daily_nutrition_summary.dart';
+import 'package:progression_tracker/features/nutrition/presentation/providers/nutrition_providers.dart';
+
+class _FakeDailyNutritionNotifier
+    extends StateNotifier<AsyncValue<DailyNutritionSummary>>
+    implements DailyNutritionNotifier {
+  _FakeDailyNutritionNotifier()
+      : super(AsyncValue.data(
+          DailyNutritionSummary(
+            date: DateTime(2026, 1, 1),
+            meals: const [],
+            target: null,
+          ),
+        ));
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
 
 class _FakeActiveProgramNotifier
     extends StateNotifier<AsyncValue<ActiveProgram?>>
@@ -89,6 +107,12 @@ void main() {
             userProfileProvider.overrideWith((ref) async => null),
             globalAIProvider.overrideWith(
               (ref) => FakeGlobalAINotifier(const GlobalAIState()),
+            ),
+            activeProgramProvider.overrideWith(
+              (ref) => _FakeActiveProgramNotifier(),
+            ),
+            dailyNutritionSummaryProvider.overrideWith(
+              (ref, date) => _FakeDailyNutritionNotifier(),
             ),
           ],
           child: const MaterialApp(

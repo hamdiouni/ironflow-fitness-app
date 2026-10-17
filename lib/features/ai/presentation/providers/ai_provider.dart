@@ -27,12 +27,16 @@ class AIChatState {
   final bool isLoading;
   final String? error;
   final String? streamingMessage;
+  final bool isOfflineFallback;
+  final bool isKeyMissing;
 
   AIChatState({
     this.messages = const [],
     this.isLoading = false,
     this.error,
     this.streamingMessage,
+    this.isOfflineFallback = false,
+    this.isKeyMissing = false,
   });
 
   AIChatState copyWith({
@@ -40,12 +44,16 @@ class AIChatState {
     bool? isLoading,
     String? error,
     String? streamingMessage,
+    bool? isOfflineFallback,
+    bool? isKeyMissing,
   }) {
     return AIChatState(
       messages: messages ?? this.messages,
       isLoading: isLoading ?? this.isLoading,
       error: error,
       streamingMessage: streamingMessage,
+      isOfflineFallback: isOfflineFallback ?? this.isOfflineFallback,
+      isKeyMissing: isKeyMissing ?? this.isKeyMissing,
     );
   }
 }
@@ -63,7 +71,9 @@ class AIChatNotifier extends StateNotifier<AIChatState> {
   })  : _localCoach = localCoach,
         _geminiService = geminiService,
         _ref = ref,
-        super(AIChatState());
+        super(AIChatState(
+          isKeyMissing: !geminiService.isConfigured,
+        ));
 
   Future<void> sendMessage(String message) async {
     if (message.trim().isEmpty) return;
@@ -140,35 +150,13 @@ class AIChatNotifier extends StateNotifier<AIChatState> {
       print('✅ [AI CHAT] System prompt built (${systemPrompt.length} chars)');
 
       String responseText;
+      bool isFallback = false;
+      String? errorMessage;
       
-      try {
-        print('═══════════════════════════════════════');
-        print('🤖 [AI CHAT] Step 7: Calling Gemini AI (FREE!)');
-        print('📡 [AI CHAT] Sending request to Gemini API...');
-        print('═══════════════════════════════════════');
-        
-        responseText = await _geminiService.sendMessage(
-          [{'role': 'user', 'content': message}],
-          systemPrompt: systemPrompt,
-          temperature: 0.8,
-          maxTokens: 8000, // Increased from 2000 to 8000 for longer, complete responses
-        );
-        
-        print('═══════════════════════════════════════');
-        print('✅ [AI CHAT] Gemini response received!');
-        print('📝 [AI CHAT] Response length: ${responseText.length} chars');
-        print('💬 [AI CHAT] Response preview: ${responseText.substring(0, responseText.length > 100 ? 100 : responseText.length)}...');
-        print('═══════════════════════════════════════');
-      } catch (e, stackTrace) {
-        print('═══════════════════════════════════════');
-        print('❌ [AI CHAT ERROR] Gemini API failed!');
-        print('🔴 [AI CHAT ERROR] Error type: ${e.runtimeType}');
-        print('🔴 [AI CHAT ERROR] Error message: $e');
-        print('🔴 [AI CHAT ERROR] Stack trace:');
-        print(stackTrace.toString().split('\n').take(10).join('\n'));
-        print('═══════════════════════════════════════');
-        print('🔄 [AI CHAT] Falling back to LocalAI...');
-        
+      if (!_geminiService.isConfigured) {
+        print('⚠️ [AI CHAT] No Gemini API key configured. Using Local AI Coach...');
+        isFallback = true;
+        errorMessage = 'Gemini API key is not configured. Running offline rule-based coach.';
         responseText = _localCoach.generateResponse(
           message,
           profile: profile,
@@ -177,9 +165,47 @@ class AIChatNotifier extends StateNotifier<AIChatState> {
           nutritionTargets: nutritionTargets,
           bodyEntries: bodyEntries,
         );
-        
-        print('✅ [AI CHAT] LocalAI response generated');
-        print('📝 [AI CHAT] Response length: ${responseText.length} chars');
+      } else {
+        try {
+          print('═══════════════════════════════════════');
+          print('🤖 [AI CHAT] Step 7: Calling Gemini AI (FREE!)');
+          print('📡 [AI CHAT] Sending request to Gemini API...');
+          print('═══════════════════════════════════════');
+          
+          responseText = await _geminiService.sendMessage(
+            [{'role': 'user', 'content': message}],
+            systemPrompt: systemPrompt,
+            temperature: 0.8,
+            maxTokens: 8000,
+          );
+          
+          print('═══════════════════════════════════════');
+          print('✅ [AI CHAT] Gemini response received!');
+          print('📝 [AI CHAT] Response length: ${responseText.length} chars');
+          print('═══════════════════════════════════════');
+        } catch (e, stackTrace) {
+          print('═══════════════════════════════════════');
+          print('❌ [AI CHAT ERROR] Gemini API failed!');
+          print('🔴 [AI CHAT ERROR] Error type: ${e.runtimeType}');
+          print('🔴 [AI CHAT ERROR] Error message: $e');
+          print('🔴 [AI CHAT ERROR] Stack trace:');
+          print(stackTrace.toString().split('\n').take(10).join('\n'));
+          print('═══════════════════════════════════════');
+          print('🔄 [AI CHAT] Falling back to LocalAI with transparent warning...');
+          
+          isFallback = true;
+          final errorText = e is GeminiAIServiceException ? e.message : e.toString();
+          errorMessage = 'Cloud AI error: $errorText. Responded with local fallback coach.';
+          
+          responseText = _localCoach.generateResponse(
+            message,
+            profile: profile,
+            recentWorkouts: recentWorkouts,
+            nutritionHistory: nutritionHistory,
+            nutritionTargets: nutritionTargets,
+            bodyEntries: bodyEntries,
+          );
+        }
       }
 
       // Add assistant message
@@ -194,6 +220,8 @@ class AIChatNotifier extends StateNotifier<AIChatState> {
       state = state.copyWith(
         messages: [...state.messages, assistantMessage],
         isLoading: false,
+        isOfflineFallback: isFallback,
+        error: errorMessage,
       );
       
       // Track AI query event
