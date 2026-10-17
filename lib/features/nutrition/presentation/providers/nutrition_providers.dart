@@ -127,6 +127,7 @@ class DailyNutritionNotifier extends StateNotifier<AsyncValue<DailyNutritionSumm
         
         state = AsyncValue.data(updatedSummary);
       });
+      _ref.invalidate(recentFoodsProvider);
       
       // Track meal logged event
       try {
@@ -184,6 +185,7 @@ class DailyNutritionNotifier extends StateNotifier<AsyncValue<DailyNutritionSumm
         
         state = AsyncValue.data(updatedSummary);
       });
+      _ref.invalidate(recentFoodsProvider);
     } catch (e, stackTrace) {
       if (kDebugMode) {
         print('❌ [Nutrition] Failed to delete meal: $e');
@@ -205,6 +207,58 @@ final dailyNutritionSummaryProvider = StateNotifierProvider.family<
     DateTime>((ref, date) {
   final repository = ref.watch(nutritionRepositoryProvider);
   return DailyNutritionNotifier(repository, date, ref);
+});
+
+// ---------------------------------------------------------------------------
+// Recent foods provider (derived from existing logs, no new storage)
+// ---------------------------------------------------------------------------
+
+/// Provides top distinct recent meal entries derived from existing nutrition history.
+///
+/// Top distinct entries are deduplicated by meal name, sorted most recent first.
+/// Validates: Batch 5 - Fuel quick-add.
+final recentFoodsProvider = FutureProvider<List<Meal>>((ref) async {
+  final repository = ref.watch(nutritionRepositoryProvider);
+  try {
+    // 1. Fetch recent nutrition history summaries (up to 14 days)
+    final summaries = await repository.getNutritionHistoryPaginated(
+      offset: 0,
+      limit: 14,
+    );
+
+    // 2. Also fetch today's summary to include any meals logged today
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final todaySummary = await repository.getDailyNutrition(today);
+
+    // 3. Aggregate all meals
+    final allMeals = <Meal>[
+      ...todaySummary.meals,
+      for (final summary in summaries) ...summary.meals,
+    ];
+
+    // 4. Sort descending by timestamp
+    allMeals.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+
+    // 5. Deduplicate distinct names (case-insensitive)
+    final seenNames = <String>{};
+    final distinctRecent = <Meal>[];
+    for (final meal in allMeals) {
+      final normalized = meal.name.trim().toLowerCase();
+      if (normalized.isNotEmpty && !seenNames.contains(normalized)) {
+        seenNames.add(normalized);
+        distinctRecent.add(meal);
+        if (distinctRecent.length >= 8) break;
+      }
+    }
+
+    return distinctRecent;
+  } catch (e) {
+    if (kDebugMode) {
+      print('⚠️ [Nutrition] Error fetching recent foods: $e');
+    }
+    return <Meal>[];
+  }
 });
 
 // ---------------------------------------------------------------------------
