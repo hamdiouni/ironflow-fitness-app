@@ -21,6 +21,7 @@ import '../providers/workout_providers.dart';
 import '../providers/active_program_providers.dart';
 import '../widgets/program_complete_dialog.dart';
 import '../widgets/exercise_video_player.dart';
+import '../widgets/plate_calculator_sheet.dart';
 import '../../../ai/presentation/widgets/quick_feedback_bottom_sheet.dart';
 import '../../../ai/presentation/providers/global_ai_provider.dart';
 import '../../../../shared/presentation/services/app_haptics.dart';
@@ -558,25 +559,43 @@ class _RestTimerSection extends ConsumerWidget {
         child: Column(
           children: [
             const RestTimerCircular(size: 90),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 SizedBox(
-                  height: 38,
+                  height: 36,
                   child: AppButton(
-                    label: 'SKIP',
+                    label: '-15s',
                     variant: AppButtonVariant.ghost,
-                    onPressed: () => ref.read(restTimerProvider.notifier).skip(),
+                    onPressed: () {
+                      AppHaptics.shared.buttonPress();
+                      ref.read(restTimerProvider.notifier).addTime(-15);
+                    },
                   ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 8),
                 SizedBox(
-                  height: 38,
+                  height: 36,
+                  child: AppButton(
+                    label: 'SKIP',
+                    variant: AppButtonVariant.secondary,
+                    onPressed: () {
+                      AppHaptics.shared.selectionChanged();
+                      ref.read(restTimerProvider.notifier).skip();
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                SizedBox(
+                  height: 36,
                   child: AppButton(
                     label: '+30s',
-                    variant: AppButtonVariant.secondary,
-                    onPressed: () => ref.read(restTimerProvider.notifier).addTime(30),
+                    variant: AppButtonVariant.primary,
+                    onPressed: () {
+                      AppHaptics.shared.buttonPress();
+                      ref.read(restTimerProvider.notifier).addTime(30);
+                    },
                   ),
                 ),
               ],
@@ -589,26 +608,35 @@ class _RestTimerSection extends ConsumerWidget {
     if (timerState.isComplete) {
       return Container(
         margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 14),
         decoration: BoxDecoration(
           color: tokens.kineticAccent.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(tokens.radiusSm),
           border: Border.all(color: tokens.kineticAccent.withValues(alpha: 0.4), width: 1),
         ),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.bolt, color: tokens.kineticAccent, size: 18),
-            const SizedBox(width: 6),
-            Text(
-              'REST COMPLETE — TIME TO LIFT',
-              style: TextStyle(
-                color: tokens.kineticAccent,
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                fontFamily: AppTypography.fontFamilyHeadings,
-                letterSpacing: 0.5,
+            Icon(Icons.bolt, color: tokens.kineticAccent, size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'REST COMPLETE — READY TO LIFT',
+                style: TextStyle(
+                  color: tokens.kineticAccent,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  fontFamily: AppTypography.fontFamilyHeadings,
+                  letterSpacing: 0.5,
+                ),
               ),
+            ),
+            IconButton(
+              icon: Icon(Icons.close, color: tokens.kineticAccent, size: 18),
+              tooltip: 'Dismiss',
+              onPressed: () {
+                AppHaptics.shared.selectionChanged();
+                ref.read(restTimerProvider.notifier).stop();
+              },
             ),
           ],
         ),
@@ -642,6 +670,8 @@ class _ExerciseCardState extends ConsumerState<_ExerciseCard> {
   final _weightController = TextEditingController(text: '0');
   bool _isLogging = false;
   bool _showVideo = false;
+  SetType _selectedSetType = SetType.normal;
+  final Map<int, SetType> _setTypes = {};
 
   @override
   void dispose() {
@@ -769,42 +799,140 @@ class _ExerciseCardState extends ConsumerState<_ExerciseCard> {
                 spacing: 6,
                 runSpacing: 6,
                 children: widget.exercise.sets.asMap().entries.map((e) {
-                  final setNumber = e.key + 1;
+                  final setIndex = e.key;
+                  final setNumber = setIndex + 1;
                   final isSuggestedSetCompleted = widget.programExercise != null && setNumber <= widget.programExercise!.sets;
+                  final setType = _setTypes[setIndex] ?? SetType.normal;
+                  final typeColor = switch (setType) {
+                    SetType.warmup => tokens.cyanAccent,
+                    SetType.normal => isSuggestedSetCompleted ? tokens.kineticAccent : tokens.textSecondary,
+                    SetType.drop => tokens.warning,
+                    SetType.failure => tokens.error,
+                  };
                   
                   return Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: tokens.panel,
                       borderRadius: BorderRadius.circular(tokens.radiusSm),
                       border: Border.all(
-                        color: isSuggestedSetCompleted 
-                            ? tokens.kineticAccent.withValues(alpha: 0.4)
-                            : tokens.borderSubtle,
+                        color: typeColor.withValues(alpha: 0.4),
                         width: 1,
                       ),
                     ),
-                    child: Text(
-                      'SET $setNumber: ${e.value.weight}KG × ${e.value.reps}',
-                      style: TextStyle(
-                        color: isSuggestedSetCompleted ? tokens.kineticAccent : tokens.textSecondary,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        fontFamily: AppTypography.fontFamilyHeadings,
-                        fontFeatures: const [FontFeature.tabularFigures()],
-                      ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                          margin: const EdgeInsets.only(right: 5),
+                          decoration: BoxDecoration(
+                            color: typeColor.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                          child: Text(
+                            setType.shortCode,
+                            style: TextStyle(
+                              color: typeColor,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w900,
+                              fontFamily: AppTypography.displayFontFamily,
+                            ),
+                          ),
+                        ),
+                        Text(
+                          'SET $setNumber: ${e.value.weight}KG × ${e.value.reps}',
+                          style: TextStyle(
+                            color: typeColor,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            fontFamily: AppTypography.fontFamilyHeadings,
+                            fontFeatures: const [FontFeature.tabularFigures()],
+                          ),
+                        ),
+                      ],
                     ),
                   );
                 }).toList(),
               ),
             ],
             const SizedBox(height: 14),
+
+            // ── Set Type Selector Row ─────────────────────────────────
+            Row(
+              children: SetType.values.map((type) {
+                final isSelected = _selectedSetType == type;
+                final color = switch (type) {
+                  SetType.warmup => tokens.cyanAccent,
+                  SetType.normal => tokens.kineticAccent,
+                  SetType.drop => tokens.warning,
+                  SetType.failure => tokens.error,
+                };
+                return Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 2),
+                    child: InkWell(
+                      onTap: () {
+                        AppHaptics.shared.selectionChanged();
+                        setState(() => _selectedSetType = type);
+                      },
+                      borderRadius: BorderRadius.circular(tokens.radiusSm),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 5),
+                        decoration: BoxDecoration(
+                          color: isSelected ? color.withValues(alpha: 0.18) : tokens.panel,
+                          borderRadius: BorderRadius.circular(tokens.radiusSm),
+                          border: Border.all(
+                            color: isSelected ? color : tokens.borderSubtle,
+                            width: isSelected ? 1.5 : 1,
+                          ),
+                        ),
+                        child: Center(
+                          child: Text(
+                            type.label.toUpperCase(),
+                            style: TextStyle(
+                              fontFamily: AppTypography.displayFontFamily,
+                              fontSize: 9,
+                              fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                              letterSpacing: 0.3,
+                              color: isSelected ? color : tokens.textMuted,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 10),
+
+            // ── Inputs Row (Reps, Weight, Plate Calc, Log Set) ─────────
             Row(
               children: [
                 Expanded(child: _NumberField(controller: _repsController, label: 'REPS', tokens: tokens)),
                 const SizedBox(width: 8),
                 Expanded(child: _NumberField(controller: _weightController, label: 'WEIGHT (KG)', isDecimal: true, tokens: tokens)),
-                const SizedBox(width: 10),
+                const SizedBox(width: 4),
+                IconButton(
+                  tooltip: 'Plate Calculator',
+                  icon: Icon(Icons.calculate_outlined, color: tokens.kineticAccent, size: 24),
+                  onPressed: () {
+                    final currentWeight = double.tryParse(_weightController.text) ?? 60.0;
+                    PlateCalculatorSheet.show(
+                      context,
+                      initialWeight: currentWeight,
+                      onApplyWeight: (calcWeight) {
+                        setState(() {
+                          _weightController.text = calcWeight == calcWeight.roundToDouble()
+                              ? calcWeight.toInt().toString()
+                              : calcWeight.toStringAsFixed(1);
+                        });
+                      },
+                    );
+                  },
+                ),
+                const SizedBox(width: 6),
                 SizedBox(
                   height: 48,
                   child: AppButton(
@@ -835,6 +963,8 @@ class _ExerciseCardState extends ConsumerState<_ExerciseCard> {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enter valid reps and weight')));
       return;
     }
+    final nextIndex = widget.exercise.sets.length;
+    _setTypes[nextIndex] = _selectedSetType;
     setState(() => _isLogging = true);
     try { await widget.onLogSet(reps, weight); }
     catch (e, s) { if (mounted) ErrorHandler.handleError(context, e, s); }

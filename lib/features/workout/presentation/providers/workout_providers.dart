@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../data/datasources/hive_workout_data_source.dart';
 import '../../data/repositories/workout_repository_impl.dart';
@@ -122,11 +123,34 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
         super(const WorkoutState.initial());
 
   /// Starts a new workout session and transitions to [WorkoutState.inProgress].
-  Future<void> start() async {
+  /// If [initialExercises] are passed, uses them directly. Otherwise, loads from the active program,
+  /// falling back gracefully to an empty workout if no active program exists.
+  Future<void> start({List<Exercise>? initialExercises}) async {
     try {
-      print('📊 [Workout] Starting new workout session...');
-      
-      final workout = await _startWorkout();
+      print('📊 [Workout] Starting workout session...');
+      Workout workout;
+      if (initialExercises != null) {
+        workout = Workout(
+          id: const Uuid().v4(),
+          date: DateTime.now(),
+          exercises: initialExercises,
+          duration: Duration.zero,
+          totalVolume: 0,
+        );
+      } else {
+        try {
+          workout = await _startWorkout();
+        } catch (e) {
+          print('⚠️ [Workout] Could not load active program workout ($e); launching empty workout');
+          workout = Workout(
+            id: const Uuid().v4(),
+            date: DateTime.now(),
+            exercises: const [],
+            duration: Duration.zero,
+            totalVolume: 0,
+          );
+        }
+      }
       final startTime = DateTime.now();
       
       print('✅ [Workout] Workout created successfully');
@@ -153,6 +177,17 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
       print('🔍 [Workout] Stack trace: $stackTrace');
       rethrow;
     }
+  }
+
+  /// Starts a repeated workout based on a previous workout template.
+  Future<void> repeatWorkout(Workout previous) async {
+    final freshExercises = previous.exercises.map((e) => Exercise(
+      id: const Uuid().v4(),
+      name: e.name,
+      type: e.type,
+      sets: const [],
+    )).toList();
+    await start(initialExercises: freshExercises);
   }
 
   /// Restores a previously saved workout state on app launch.

@@ -14,6 +14,7 @@ import '../../../retention/presentation/widgets/streak_display.dart';
 import '../../domain/entities/workout_program.dart';
 import '../providers/active_program_providers.dart';
 import '../providers/workout_providers.dart';
+import '../widgets/plate_calculator_sheet.dart';
 import '../widgets/program_exercise_card.dart';
 
 /// Workout screen showing the user's active program and quick-start options.
@@ -70,6 +71,15 @@ class WorkoutScreen extends ConsumerWidget {
                 : const SizedBox.shrink(),
             loading: () => const SizedBox.shrink(),
             error: (_, _) => const SizedBox.shrink(),
+          ),
+          SizedBox(
+            width: 48,
+            height: 48,
+            child: IconButton(
+              onPressed: () => PlateCalculatorSheet.show(context),
+              icon: Icon(Icons.calculate_outlined, color: tokens.kineticAccent, size: 20),
+              tooltip: 'Plate Calculator',
+            ),
           ),
           SizedBox(
             width: 48,
