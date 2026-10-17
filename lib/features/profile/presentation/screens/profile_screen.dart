@@ -63,9 +63,26 @@ class ProfileScreen extends ConsumerWidget {
             ),
           ],
         ),
-        actions: const [
-          AiEntryButton(),
-          SizedBox(width: 8),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          tooltip: 'Back',
+          onPressed: () {
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            } else {
+              context.go(AppRoutes.home);
+            }
+          },
+        ),
+        actions: [
+          const AiEntryButton(),
+          const SizedBox(width: 4),
+          IconButton(
+            icon: const Icon(Icons.settings_outlined),
+            tooltip: 'Settings',
+            onPressed: () => context.push(AppRoutes.settings),
+          ),
+          const SizedBox(width: 8),
         ],
       ),
       body: SafeArea(
@@ -1300,6 +1317,13 @@ Last Updated: May 13, 2026''',
                   icon: Icons.search_rounded,
                   label: 'Exercise Catalog',
                   onTap: () => context.go(AppRoutes.workoutCatalog),
+                  tokens: tokens,
+                ),
+                Divider(color: tokens.borderSubtle, height: 1),
+                _SettingsTile(
+                  icon: Icons.settings_outlined,
+                  label: 'System Settings & Data',
+                  onTap: () => context.push(AppRoutes.settings),
                   tokens: tokens,
                 ),
                 Divider(color: tokens.borderSubtle, height: 1),
