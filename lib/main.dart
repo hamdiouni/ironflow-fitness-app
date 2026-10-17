@@ -115,7 +115,9 @@ void main() async {
     );
   }, (error, stack) {
     // Catch errors that occur outside of Flutter's error handling
-    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    if (!kIsWeb) {
+      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    }
   });
 }
 
