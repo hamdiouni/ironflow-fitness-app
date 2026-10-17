@@ -33,6 +33,7 @@ class UserProfileStorage {
   Future<void> markOnboarded() async {
     final box = await _box;
     await box.put(_onboardedKey, true);
+    await clearDraft();
     if (kDebugMode) {
       print('✅ [Onboarding] User marked as onboarded');
     }
@@ -41,9 +42,39 @@ class UserProfileStorage {
   Future<void> resetOnboarding() async {
     final box = await _box;
     await box.put(_onboardedKey, false);
+    await clearDraft();
     if (kDebugMode) {
       print('🔄 [Onboarding] User marked as NOT onboarded (reset)');
     }
+  }
+
+  static const _draftStepKey = 'draft_step';
+  static const _draftDataKey = 'draft_data';
+
+  Future<void> saveDraft({required int step, required Map<String, dynamic> data}) async {
+    final box = await _box;
+    await box.put(_draftStepKey, step);
+    await box.put(_draftDataKey, jsonEncode(data));
+  }
+
+  Future<Map<String, dynamic>?> getDraft() async {
+    final box = await _box;
+    final raw = box.get(_draftDataKey) as String?;
+    final step = box.get(_draftStepKey, defaultValue: 0) as int;
+    if (raw == null) return null;
+    try {
+      final map = jsonDecode(raw) as Map<String, dynamic>;
+      map['draft_step'] = step;
+      return map;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> clearDraft() async {
+    final box = await _box;
+    await box.delete(_draftStepKey);
+    await box.delete(_draftDataKey);
   }
 
   Future<void> saveProfile(UserProfile profile) async {
