@@ -1,30 +1,36 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/constants/app_theme.dart';
+import '../../../../core/theme/app_theme_tokens.dart';
+import '../../../../core/theme/app_typography.dart';
+import '../../../../shared/presentation/components/app_button.dart';
 import '../../domain/entities/daily_nutrition_summary.dart';
 import '../providers/paginated_nutrition_provider.dart';
 
 /// Displays the full nutrition history with lazy loading for performance.
 ///
-/// Uses pagination to load nutrition entries in batches of 20 days, loading more
-/// as the user scrolls. This handles 1000+ nutrition entries efficiently (Requirement 8.1).
+/// Upgraded to the Monolithic Sci-Fi design system.
+/// Uses pagination to load nutrition entries in batches of 20 days.
 class NutritionHistoryScreen extends ConsumerStatefulWidget {
   const NutritionHistoryScreen({super.key});
 
   @override
-  ConsumerState<NutritionHistoryScreen> createState() => _NutritionHistoryScreenState();
+  ConsumerState<NutritionHistoryScreen> createState() =>
+      _NutritionHistoryScreenState();
 }
 
-class _NutritionHistoryScreenState extends ConsumerState<NutritionHistoryScreen> {
+class _NutritionHistoryScreenState
+    extends ConsumerState<NutritionHistoryScreen> {
   final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
-    
+
     // Load initial data
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(paginatedNutritionProvider.notifier).loadInitial();
@@ -39,30 +45,58 @@ class _NutritionHistoryScreenState extends ConsumerState<NutritionHistoryScreen>
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels >= 
+    if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 200) {
-      // Load more when user is 200px from bottom
       ref.read(paginatedNutritionProvider.notifier).loadMore();
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AppThemeTokens.of(context);
     final state = ref.watch(paginatedNutritionProvider);
 
     return Scaffold(
+      backgroundColor: tokens.canvas,
       appBar: AppBar(
-        title: const Text('Nutrition History'),
+        backgroundColor: tokens.canvas,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        title: Text(
+          'NUTRITION LOGS',
+          style: TextStyle(
+            fontFamily: AppTypography.displayFontFamily,
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.5,
+            color: tokens.textPrimary,
+          ),
+        ),
         actions: [
           if (state.totalCount > 0)
             Padding(
               padding: const EdgeInsets.only(right: 16),
               child: Center(
-                child: Text(
-                  '${state.nutritionHistory.length}/${state.totalCount}',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    fontSize: 12,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: tokens.cyanAccent.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(tokens.radiusSm),
+                    border: Border.all(
+                      color: tokens.cyanAccent.withValues(alpha: 0.4),
+                      width: 1,
+                    ),
+                  ),
+                  child: Text(
+                    '${state.nutritionHistory.length} / ${state.totalCount}',
+                    style: TextStyle(
+                      fontFamily: AppTypography.displayFontFamily,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.8,
+                      color: tokens.cyanAccent,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
                   ),
                 ),
               ),
@@ -70,15 +104,23 @@ class _NutritionHistoryScreenState extends ConsumerState<NutritionHistoryScreen>
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: () => ref.read(paginatedNutritionProvider.notifier).refresh(),
-        child: _buildBody(state),
+        color: tokens.kineticAccent,
+        backgroundColor: tokens.panel,
+        onRefresh: () =>
+            ref.read(paginatedNutritionProvider.notifier).refresh(),
+        child: _buildBody(state, tokens),
       ),
     );
   }
 
-  Widget _buildBody(PaginatedNutritionState state) {
+  Widget _buildBody(PaginatedNutritionState state, AppThemeTokens tokens) {
     if (state.isLoading && state.nutritionHistory.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return Center(
+        child: CircularProgressIndicator(
+          color: tokens.kineticAccent,
+          strokeWidth: 2.5,
+        ),
+      );
     }
 
     if (state.error != null && state.nutritionHistory.isEmpty) {
@@ -88,15 +130,29 @@ class _NutritionHistoryScreenState extends ConsumerState<NutritionHistoryScreen>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(
-                'Failed to load nutrition history.\n${state.error}',
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: AppTheme.errorColor),
-              ),
+              Icon(Icons.warning_amber_rounded, size: 48, color: tokens.error),
               const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () => ref.read(paginatedNutritionProvider.notifier).refresh(),
-                child: const Text('Retry'),
+              Text(
+                'LOG ARCHIVE UNREACHABLE',
+                style: TextStyle(
+                  fontFamily: AppTypography.displayFontFamily,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: tokens.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '${state.error}',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: tokens.textSecondary, fontSize: 13),
+              ),
+              const SizedBox(height: 20),
+              AppButton(
+                label: 'RETRY ARCHIVE FETCH',
+                icon: const Icon(Icons.refresh_rounded, size: 18),
+                onPressed: () =>
+                    ref.read(paginatedNutritionProvider.notifier).refresh(),
               ),
             ],
           ),
@@ -106,12 +162,26 @@ class _NutritionHistoryScreenState extends ConsumerState<NutritionHistoryScreen>
 
     if (state.nutritionHistory.isEmpty && !state.isLoading) {
       return Center(
-        child: Text(
-          'No nutrition data yet.\nStart logging your meals!',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.inventory_2_outlined, size: 48, color: tokens.textMuted),
+            const SizedBox(height: 16),
+            Text(
+              'NO ARCHIVED TELEMETRY',
+              style: TextStyle(
+                fontFamily: AppTypography.displayFontFamily,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: tokens.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Log your first meal to initialize your database',
+              style: TextStyle(color: tokens.textMuted, fontSize: 13),
+            ),
+          ],
         ),
       );
     }
@@ -125,11 +195,13 @@ class _NutritionHistoryScreenState extends ConsumerState<NutritionHistoryScreen>
       itemCount: state.nutritionHistory.length + (state.isLoadingMore ? 1 : 0),
       itemBuilder: (context, index) {
         if (index == state.nutritionHistory.length) {
-          // Loading indicator at the end
-          return const Padding(
-            padding: EdgeInsets.all(16),
+          return Padding(
+            padding: const EdgeInsets.all(16),
             child: Center(
-              child: CircularProgressIndicator(),
+              child: CircularProgressIndicator(
+                color: tokens.kineticAccent,
+                strokeWidth: 2,
+              ),
             ),
           );
         }
@@ -149,147 +221,150 @@ class _NutritionHistoryItem extends StatelessWidget {
 
   final DailyNutritionSummary summary;
 
-  // Static DateFormat instances avoid re-allocation on every build call,
-  // which matters when scrolling through 1000+ items (Requirement 8.1).
   static final _dateFormat = DateFormat('EEE, MMM d, yyyy');
   static final _dayFormat = DateFormat('d');
   static final _monthFormat = DateFormat('MMM');
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AppThemeTokens.of(context);
     final dateLabel = _dateFormat.format(summary.date);
-    final caloriesLabel = '${summary.totalCalories.toStringAsFixed(0)} kcal';
+    final caloriesLabel = '${summary.totalCalories.toStringAsFixed(0)} KCAL';
     final proteinLabel = '${summary.totalProtein.toStringAsFixed(1)}g protein';
     final mealCount = summary.meals.length;
     final mealCountLabel = '$mealCount meal${mealCount == 1 ? '' : 's'}';
 
-    // Calculate macro percentages for progress indicators
     final calorieTarget = summary.target?.macros.calories ?? 2000;
     final proteinTarget = summary.target?.macros.protein ?? 150;
     final carbsTarget = summary.target?.macros.carbs ?? 200;
     final fatsTarget = summary.target?.macros.fats ?? 60;
 
-    final calorieProgress = (summary.totalCalories / calorieTarget).clamp(0.0, 1.0);
-    final proteinProgress = (summary.totalProtein / proteinTarget).clamp(0.0, 1.0);
-    final carbsProgress = (summary.totalCarbs / carbsTarget).clamp(0.0, 1.0);
-    final fatsProgress = (summary.totalFats / fatsTarget).clamp(0.0, 1.0);
+    final calorieProgress =
+        (summary.totalCalories / calorieTarget).clamp(0.0, 1.0);
+    final proteinProgress =
+        (summary.totalProtein / proteinTarget).clamp(0.0, 1.0);
+    final carbsProgress =
+        (summary.totalCarbs / carbsTarget).clamp(0.0, 1.0);
+    final fatsProgress =
+        (summary.totalFats / fatsTarget).clamp(0.0, 1.0);
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppTheme.spacingSmall),
-      child: AppTheme.glassmorphicCard(
-        padding: const EdgeInsets.all(AppTheme.spacingMedium),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Date badge
-            Container(
-              width: 52,
-              padding: const EdgeInsets.symmetric(
-                vertical: AppTheme.spacingSmall,
-              ),
-              decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withValues(alpha: 0.15),
-                borderRadius:
-                    BorderRadius.circular(AppTheme.borderRadiusSmall),
-              ),
-              child: Column(
-                children: [
-                  Text(
-                    _dayFormat.format(summary.date),
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.primaryColor,
-                    ),
-                  ),
-                  Text(
-                    _monthFormat.format(summary.date).toUpperCase(),
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: AppTheme.primaryColor,
-                      letterSpacing: 1,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: AppTheme.spacingMedium),
-            // Details
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    dateLabel,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(height: AppTheme.spacingXSmall),
-                  Row(
-                    children: [
-                      _Stat(
-                        icon: Icons.restaurant,
-                        label: mealCountLabel,
-                      ),
-                      const SizedBox(width: AppTheme.spacingMedium),
-                      _Stat(
-                        icon: Icons.local_fire_department,
-                        label: caloriesLabel,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: AppTheme.spacingSmall),
-                  Text(
-                    proteinLabel,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  const SizedBox(height: AppTheme.spacingSmall),
-                  // Macro progress bars
-                  _MacroProgressBars(
-                    calorieProgress: calorieProgress,
-                    proteinProgress: proteinProgress,
-                    carbsProgress: carbsProgress,
-                    fatsProgress: fatsProgress,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: tokens.panel,
+        borderRadius: BorderRadius.circular(tokens.radiusMd),
+        border: Border.all(color: tokens.borderSubtle, width: 1),
       ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Small stat chip
-// ---------------------------------------------------------------------------
-
-class _Stat extends StatelessWidget {
-  const _Stat({required this.icon, required this.label});
-
-  final IconData icon;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final secondary = Theme.of(context).colorScheme.onSurfaceVariant;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 13, color: secondary),
-        const SizedBox(width: 3),
-        Text(
-          label,
-          style: TextStyle(fontSize: 12, color: secondary),
-        ),
-      ],
+      padding: const EdgeInsets.all(AppTheme.spacingMedium),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Date badge
+          Container(
+            width: 50,
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            decoration: BoxDecoration(
+              color: tokens.card,
+              borderRadius: BorderRadius.circular(tokens.radiusSm),
+              border: Border.all(
+                color: tokens.borderSubtle,
+                width: 1,
+              ),
+            ),
+            child: Column(
+              children: [
+                Text(
+                  _dayFormat.format(summary.date),
+                  style: TextStyle(
+                    fontFamily: AppTypography.displayFontFamily,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: tokens.kineticAccent,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
+                ),
+                Text(
+                  _monthFormat.format(summary.date).toUpperCase(),
+                  style: TextStyle(
+                    fontFamily: AppTypography.displayFontFamily,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: tokens.textMuted,
+                    letterSpacing: 1,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppTheme.spacingMedium),
+          // Details
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      dateLabel,
+                      style: TextStyle(
+                        fontFamily: AppTypography.displayFontFamily,
+                        color: tokens.textPrimary,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                    ),
+                    Text(
+                      caloriesLabel,
+                      style: TextStyle(
+                        fontFamily: AppTypography.displayFontFamily,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: tokens.textPrimary,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Icon(Icons.restaurant_rounded, size: 12, color: tokens.textMuted),
+                    const SizedBox(width: 4),
+                    Text(
+                      mealCountLabel,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: tokens.textMuted,
+                        fontFamily: AppTypography.bodyFontFamily,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      proteinLabel,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: tokens.protein,
+                        fontWeight: FontWeight.w600,
+                        fontFamily: AppTypography.bodyFontFamily,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                // Macro progress bars
+                _MacroProgressBars(
+                  calorieProgress: calorieProgress,
+                  proteinProgress: proteinProgress,
+                  carbsProgress: carbsProgress,
+                  fatsProgress: fatsProgress,
+                  tokens: tokens,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -304,12 +379,14 @@ class _MacroProgressBars extends StatelessWidget {
     required this.proteinProgress,
     required this.carbsProgress,
     required this.fatsProgress,
+    required this.tokens,
   });
 
   final double calorieProgress;
   final double proteinProgress;
   final double carbsProgress;
   final double fatsProgress;
+  final AppThemeTokens tokens;
 
   @override
   Widget build(BuildContext context) {
@@ -317,33 +394,37 @@ class _MacroProgressBars extends StatelessWidget {
       children: [
         _ProgressBar(
           progress: calorieProgress,
-          color: AppTheme.primaryColor,
+          color: tokens.kineticAccent,
           height: 4,
+          tokens: tokens,
         ),
-        const SizedBox(height: 2),
+        const SizedBox(height: 4),
         Row(
           children: [
             Expanded(
               child: _ProgressBar(
                 progress: proteinProgress,
-                color: AppTheme.proteinColor,
+                color: tokens.protein,
                 height: 3,
+                tokens: tokens,
               ),
             ),
             const SizedBox(width: 4),
             Expanded(
               child: _ProgressBar(
                 progress: carbsProgress,
-                color: AppTheme.carbsColor,
+                color: tokens.carbs,
                 height: 3,
+                tokens: tokens,
               ),
             ),
             const SizedBox(width: 4),
             Expanded(
               child: _ProgressBar(
                 progress: fatsProgress,
-                color: AppTheme.fatsColor,
+                color: tokens.fats,
                 height: 3,
+                tokens: tokens,
               ),
             ),
           ],
@@ -353,20 +434,18 @@ class _MacroProgressBars extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Progress bar widget
-// ---------------------------------------------------------------------------
-
 class _ProgressBar extends StatelessWidget {
   const _ProgressBar({
     required this.progress,
     required this.color,
     required this.height,
+    required this.tokens,
   });
 
   final double progress;
   final Color color;
   final double height;
+  final AppThemeTokens tokens;
 
   @override
   Widget build(BuildContext context) {
@@ -374,7 +453,7 @@ class _ProgressBar extends StatelessWidget {
       height: height,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(height / 2),
-        color: color.withValues(alpha: 0.2),
+        color: tokens.card,
       ),
       child: FractionallySizedBox(
         alignment: Alignment.centerLeft,
@@ -383,6 +462,12 @@ class _ProgressBar extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(height / 2),
             color: color,
+            boxShadow: [
+              BoxShadow(
+                color: color.withValues(alpha: 0.4),
+                blurRadius: 3,
+              ),
+            ],
           ),
         ),
       ),
