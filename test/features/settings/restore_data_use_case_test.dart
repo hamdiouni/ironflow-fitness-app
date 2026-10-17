@@ -484,5 +484,180 @@ void main() {
       expect(result.success, isFalse);
       expect(result.errors, contains('Missing export_info section'));
     });
+
+    test('Pre-validation preview accurately counts records without touching repositories', () async {
+      final backupJson = jsonEncode({
+        'export_info': {
+          'export_version': '1.0',
+          'export_date': '2026-10-17T12:00:00.000Z',
+        },
+        'user_profile': {
+          'userId': 'u1',
+          'email': 'u1@test.com',
+          'name': 'Test User',
+          'age': 30,
+          'gender': 'other',
+          'fitnessLevel': 'intermediate',
+          'goals': ['strength'],
+          'equipment': ['barbell'],
+          'createdAt': '2026-10-17T12:00:00.000Z',
+          'updatedAt': '2026-10-17T12:00:00.000Z',
+        },
+        'workouts': [
+          {'id': 'w1', 'date': '2026-10-17T10:00:00.000Z', 'exercises': []},
+          {'id': 'w2', 'date': '2026-10-16T10:00:00.000Z', 'exercises': []},
+        ],
+        'daily_nutrition': [
+          {'date': '2026-10-17T00:00:00.000Z', 'meals': []},
+        ],
+        'body_measurements': [
+          {'id': 'b1', 'date': '2026-10-17T08:00:00.000Z', 'weight': 80.0},
+          {'id': 'b2', 'date': '2026-10-16T08:00:00.000Z', 'weight': 80.5},
+          {'id': 'b3', 'date': '2026-10-15T08:00:00.000Z', 'weight': 81.0},
+        ],
+      });
+
+      final preview = restoreUseCase.getRestorePreviewFromJson(backupJson);
+
+      expect(preview.isValid, isTrue);
+      expect(preview.exportVersion, '1.0');
+      expect(preview.workoutCount, 2);
+      expect(preview.nutritionCount, 1);
+      expect(preview.bodyMeasurementCount, 3);
+      expect(preview.hasUserProfile, isTrue);
+
+      // Verify zero repository mutations occurred during preview
+      expect(await workoutRepo.getWorkoutCount(), 0);
+      expect(await bodyRepo.getAllBodyEntries(), isEmpty);
+    });
+
+    test('Data safety: invalid schema rejection leaves existing data completely untouched', () async {
+      // 1. Seed existing data
+      final existingWorkout = Workout(
+        id: 'existing-w',
+        date: DateTime(2026, 1, 1),
+        duration: const Duration(minutes: 30),
+        totalVolume: 5000,
+        caloriesBurned: 200,
+        exercises: [],
+      );
+      await workoutRepo.saveWorkout(existingWorkout);
+
+      final existingBody = BodyEntry(
+        id: 'existing-b',
+        date: DateTime(2026, 1, 1),
+        weight: 77.0,
+        measurements: const {},
+      );
+      await bodyRepo.saveBodyEntry(existingBody);
+
+      expect(await workoutRepo.getWorkoutCount(), 1);
+      expect((await bodyRepo.getAllBodyEntries()).length, 1);
+
+      // 2. Attempt to restore completely corrupt JSON with overwriteExisting = true
+      final corruptJson = '{"invalid_key": "not a backup"}';
+      final result = await restoreUseCase.restoreFromJsonString(corruptJson, overwriteExisting: true);
+
+      expect(result.success, isFalse);
+
+      // 3. Verify existing data was NOT wiped or touched
+      final workoutsAfter = await workoutRepo.getAllWorkouts();
+      expect(workoutsAfter.length, 1);
+      expect(workoutsAfter.first.id, 'existing-w');
+
+      final bodyAfter = await bodyRepo.getAllBodyEntries();
+      expect(bodyAfter.length, 1);
+      expect(bodyAfter.first.id, 'existing-b');
+    });
+
+    test('Dual-key support: restores daily_nutrition and weight_kg without errors', () async {
+      final dualKeyJson = jsonEncode({
+        'export_info': {'export_version': '1.0'},
+        'workouts': [
+          {
+            'id': 'w-dual',
+            'date': '2026-10-17T12:00:00.000Z',
+            'duration_minutes': 45,
+            'total_volume_kg': 6000.0,
+            'exercises': [
+              {
+                'id': 'ex-dual',
+                'name': 'Squat',
+                'type': 'ExerciseType.strength',
+                'sets': [
+                  {
+                    'id': 's-1',
+                    'reps': 5,
+                    'weight_kg': 120.0,
+                    'rpe': 8,
+                  }
+                ],
+              }
+            ],
+          }
+        ],
+        'daily_nutrition': [
+          {
+            'date': '2026-10-17T00:00:00.000Z',
+            'meals': [
+              {
+                'id': 'meal-dual',
+                'name': 'Oatmeal',
+                'timestamp': '2026-10-17T08:00:00.000Z',
+                'macros': {
+                  'calories': 400.0,
+                  'protein': 20.0,
+                  'carbs': 60.0,
+                  'fats': 8.0,
+                },
+              }
+            ],
+          }
+        ],
+      });
+
+      final result = await restoreUseCase.restoreFromJsonString(dualKeyJson, overwriteExisting: false);
+
+      expect(result.success, isTrue);
+      expect(result.restoredCounts['workouts'], 1);
+      expect(result.restoredCounts['nutrition_logs'], 1);
+
+      final w = (await workoutRepo.getAllWorkouts()).firstWhere((x) => x.id == 'w-dual');
+      expect(w.totalVolume, 6000.0);
+      expect(w.exercises.first.sets.first.weight, 120.0);
+    });
+
+    test('Merge mode preserves existing records while appending restored records', () async {
+      final initialWorkout = Workout(
+        id: 'initial-w',
+        date: DateTime(2026, 5, 1),
+        duration: const Duration(minutes: 40),
+        totalVolume: 4000,
+        caloriesBurned: 250,
+        exercises: [],
+      );
+      await workoutRepo.saveWorkout(initialWorkout);
+
+      final backupJson = jsonEncode({
+        'export_info': {'export_version': '1.0'},
+        'workouts': [
+          {
+            'id': 'restored-w',
+            'date': '2026-10-17T12:00:00.000Z',
+            'duration_minutes': 50,
+            'total_volume': 8000.0,
+            'exercises': [],
+          }
+        ],
+      });
+
+      final result = await restoreUseCase.restoreFromJsonString(backupJson, overwriteExisting: false);
+
+      expect(result.success, isTrue);
+      final all = await workoutRepo.getAllWorkouts();
+      expect(all.length, 2);
+      expect(all.map((w) => w.id), containsAll(['initial-w', 'restored-w']));
+    });
   });
 }
+
