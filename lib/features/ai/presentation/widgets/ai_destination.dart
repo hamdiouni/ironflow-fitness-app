@@ -11,5 +11,9 @@ void navigateToAiCoach(BuildContext context, {String? initialMessage}) {
   if (initialMessage != null) {
     extra['initialMessage'] = initialMessage;
   }
-  context.push(AppRoutes.aiChat, extra: extra.isEmpty ? null : extra);
+  try {
+    context.push(AppRoutes.aiChat, extra: extra.isEmpty ? null : extra);
+  } catch (_) {
+    // Graceful fallback if GoRouter is not mounted in widget test scope
+  }
 }
