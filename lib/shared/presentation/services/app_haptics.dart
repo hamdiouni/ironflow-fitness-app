@@ -17,6 +17,9 @@ class AppHaptics {
     Set<String>? triggeredMilestones,
   }) : _triggeredMilestones = triggeredMilestones ?? <String>{};
 
+  @visibleForTesting
+  Set<String> get triggeredMilestones => Set.unmodifiable(_triggeredMilestones);
+
   static AppHaptics? _sharedInstance;
 
   /// Global shared instance for non-consumer widgets (e.g., AppButton).
