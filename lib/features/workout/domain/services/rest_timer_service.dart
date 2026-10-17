@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:flutter/services.dart';
 
 /// Service for managing rest timer between sets
 /// Provides countdown timer with audio/vibration alerts
@@ -30,11 +29,6 @@ class RestTimerService {
         _complete();
       } else {
         onTick?.call(_remainingSeconds);
-        
-        // Vibrate on last 3 seconds
-        if (_remainingSeconds <= 3) {
-          HapticFeedback.mediumImpact();
-        }
       }
     });
   }
@@ -70,9 +64,6 @@ class RestTimerService {
   /// Complete the timer
   void _complete() {
     stop();
-    
-    // Vibrate on completion
-    HapticFeedback.heavyImpact();
     
     // Notify completion
     onComplete?.call();

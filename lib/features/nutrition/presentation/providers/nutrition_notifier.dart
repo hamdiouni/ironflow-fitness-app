@@ -5,6 +5,7 @@ import '../../domain/entities/meal.dart';
 import '../../domain/entities/nutrition_targets.dart';
 import '../../domain/repositories/food_repository.dart';
 import '../../domain/repositories/nutrition_repository.dart';
+import '../../../../shared/presentation/services/app_haptics.dart';
 import 'nutrition_state.dart';
 
 /// Unified Nutrition State Notifier - Single Source of Truth
@@ -114,11 +115,34 @@ class NutritionNotifier extends StateNotifier<NutritionState> {
         print('✅ [Nutrition] Meal saved to repository');
       }
       
+      final prevProtein = state.totalProtein;
+      final prevCalories = state.totalCalories;
+      final prevCarbs = state.totalCarbs;
+      final prevFats = state.totalFats;
+      final targets = state.targets;
+
       // 2. Update state IMMEDIATELY (immutable - create new list)
       state = state.copyWith(
         todayMeals: [...state.todayMeals, meal],
         error: null,
       );
+      
+      // Check for macro milestones achieved on this meal addition
+      if (targets != null) {
+        final macros = targets.macros;
+        if (prevProtein < macros.protein && state.totalProtein >= macros.protein) {
+          AppHaptics.shared.milestoneReached(milestoneId: 'protein', date: state.currentDate);
+        }
+        if (prevCalories < macros.calories && state.totalCalories >= macros.calories) {
+          AppHaptics.shared.milestoneReached(milestoneId: 'calories', date: state.currentDate);
+        }
+        if (prevCarbs < macros.carbs && state.totalCarbs >= macros.carbs) {
+          AppHaptics.shared.milestoneReached(milestoneId: 'carbs', date: state.currentDate);
+        }
+        if (prevFats < macros.fats && state.totalFats >= macros.fats) {
+          AppHaptics.shared.milestoneReached(milestoneId: 'fats', date: state.currentDate);
+        }
+      }
       
       if (kDebugMode) {
         print('✅ [Nutrition] State updated with new meal');

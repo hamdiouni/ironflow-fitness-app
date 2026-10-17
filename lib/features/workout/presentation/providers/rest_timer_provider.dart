@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/services/rest_timer_service.dart';
 import '../../../../core/providers/analytics_provider.dart';
+import '../../../../shared/presentation/services/app_haptics.dart';
 
 /// State for rest timer
 class RestTimerState {
@@ -150,6 +151,9 @@ class RestTimerNotifier extends StateNotifier<RestTimerState> {
       isPaused: false,
       isComplete: true,
     );
+    
+    // Trigger haptic feedback for rest timer completion
+    _ref.read(appHapticsProvider).restTimerComplete();
     
     // Track rest timer completed
     try {

@@ -5,6 +5,7 @@ import '../../../../core/constants/app_theme.dart';
 import '../../../../core/providers/theme_provider.dart';
 import '../../../../core/theme/app_theme_tokens.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../shared/presentation/services/app_haptics.dart';
 import 'export_settings_screen.dart';
 import 'privacy_settings_screen.dart';
 
@@ -17,6 +18,7 @@ class SettingsScreen extends ConsumerWidget {
     final tokens = AppThemeTokens.of(context);
     final themeMode = ref.watch(themeProvider);
     final isDark = themeMode == ThemeMode.dark;
+    final hapticsEnabled = ref.watch(hapticsEnabledProvider);
 
     return Scaffold(
       backgroundColor: tokens.canvas,
@@ -101,6 +103,61 @@ class SettingsScreen extends ConsumerWidget {
                         ref
                             .read(themeProvider.notifier)
                             .setTheme(value ? ThemeMode.dark : ThemeMode.light);
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+
+          // Tactile Telemetry (Haptics) section
+          _SettingsSection(
+            title: 'TACTILE TELEMETRY',
+            tokens: tokens,
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  color: tokens.panel,
+                  borderRadius: BorderRadius.circular(tokens.radiusMd),
+                  border: Border.all(color: tokens.borderSubtle, width: 1),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'HAPTIC FEEDBACK',
+                          style: TextStyle(
+                            fontFamily: AppTypography.displayFontFamily,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.5,
+                            color: tokens.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          hapticsEnabled
+                              ? 'Active — Tactile pulses on sets, timers & tabs'
+                              : 'Disabled',
+                          style: TextStyle(
+                            fontFamily: AppTypography.bodyFontFamily,
+                            fontSize: 11,
+                            color: tokens.textMuted,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Switch(
+                      value: hapticsEnabled,
+                      activeColor: tokens.kineticAccent,
+                      onChanged: (value) {
+                        ref.read(hapticsEnabledProvider.notifier).toggle(value);
                       },
                     ),
                   ],

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import '../services/app_haptics.dart';
 import '../../../../core/constants/app_theme.dart';
 
 /// Button variant enum for [AppButton].
@@ -229,7 +229,7 @@ class _AppButtonState extends State<AppButton> with SingleTickerProviderStateMix
                 borderRadius: BorderRadius.circular(radius),
                 onTap: _isEnabled
                     ? () {
-                        HapticFeedback.lightImpact();
+                        AppHaptics.shared.buttonPress();
                         widget.onPressed?.call();
                       }
                     : null,

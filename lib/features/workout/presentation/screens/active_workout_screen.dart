@@ -23,6 +23,7 @@ import '../widgets/program_complete_dialog.dart';
 import '../widgets/exercise_video_player.dart';
 import '../../../ai/presentation/widgets/quick_feedback_bottom_sheet.dart';
 import '../../../ai/presentation/providers/global_ai_provider.dart';
+import '../../../../shared/presentation/services/app_haptics.dart';
 
 class ActiveWorkoutScreen extends ConsumerStatefulWidget {
   final ActiveProgram? activeProgram;
@@ -286,6 +287,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
       final isPR = await ref.read(workoutNotifierProvider.notifier).logSetForExercise(exercise.id, set);
       
       print('✅ [WorkoutUI] Set logged successfully');
+      ref.read(appHapticsProvider).setLogged();
       
       if (mounted) setState(() => _animatingExerciseId = exercise.id);
       
