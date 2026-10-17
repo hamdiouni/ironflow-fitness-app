@@ -1,35 +1,45 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 
-/// IronFlow application theme — supports dark and light modes.
+import '../theme/app_colors.dart';
+import '../theme/app_spacings.dart';
+import '../theme/app_theme_tokens.dart';
+import '../theme/app_typography.dart';
+
+export '../theme/app_colors.dart';
+export '../theme/app_spacings.dart';
+export '../theme/app_theme_tokens.dart';
+export '../theme/app_typography.dart';
+
+/// IronFlow application theme — Monolithic Sci-Fi styling with dark and light modes.
 class AppTheme {
   // ── Brand colors (same in both modes) ──────────────────────────────────────
-  static const Color primaryColor = Color(0xFF00E676);   // Neon green
-  static const Color accentColor  = Color(0xFF00B0FF);   // Neon blue
-  static const Color warningColor = Color(0xFFFF9500);
-  static const Color errorColor   = Color(0xFFFF3B30);
-  static const Color successColor = Color(0xFF00E676);
+  static const Color primaryColor = Color(0xFF00FF87);   // Monolithic Neon green
+  static const Color accentColor  = Color(0xFF00D2FF);   // Cyan pulse
+  static const Color warningColor = Color(0xFFFFB800);
+  static const Color errorColor   = Color(0xFFFF3B56);
+  static const Color successColor = Color(0xFF00FF87);
 
   // Macro colors
-  static const Color proteinColor = Color(0xFFFF5252);
-  static const Color carbsColor   = Color(0xFF448AFF);
-  static const Color fatsColor    = Color(0xFFFFD740);
+  static const Color proteinColor = Color(0xFFFF4B6E);
+  static const Color carbsColor   = Color(0xFF00D2FF);
+  static const Color fatsColor    = Color(0xFFFFB800);
 
   // ── Dark mode palette ───────────────────────────────────────────────────────
-  static const Color darkBackground = Color(0xFF0A0A0A);
-  static const Color darkSurface    = Color(0xFF1A1A1A);
-  static const Color darkCard       = Color(0xFF1E1E1E);
-  static const Color darkTextPrimary   = Color(0xFFFFFFFF);
-  static const Color darkTextSecondary = Color(0xFFB0B0B0);
-  static const Color darkTextDisabled  = Color(0xFF555555);
+  static const Color darkBackground = AppColors.canvasDark;
+  static const Color darkSurface    = AppColors.panelDark;
+  static const Color darkCard       = AppColors.cardDark;
+  static const Color darkTextPrimary   = AppColors.textPrimaryDark;
+  static const Color darkTextSecondary = AppColors.textSecondaryDark;
+  static const Color darkTextDisabled  = AppColors.textMutedDark;
 
   // ── Light mode palette ──────────────────────────────────────────────────────
-  static const Color lightBackground = Color(0xFFF5F5F5);
-  static const Color lightSurface    = Color(0xFFFFFFFF);
-  static const Color lightCard       = Color(0xFFFFFFFF);
-  static const Color lightTextPrimary   = Color(0xFF111111);
-  static const Color lightTextSecondary = Color(0xFF666666);
-  static const Color lightTextDisabled  = Color(0xFFBBBBBB);
+  static const Color lightBackground = AppColors.canvasLight;
+  static const Color lightSurface    = AppColors.panelLight;
+  static const Color lightCard       = AppColors.cardLight;
+  static const Color lightTextPrimary   = AppColors.textPrimaryLight;
+  static const Color lightTextSecondary = AppColors.textSecondaryLight;
+  static const Color lightTextDisabled  = AppColors.textMutedLight;
 
   // ── Static aliases kept for backward compat with existing widgets ───────────
   // These resolve to dark-mode values (existing code uses them directly).
@@ -62,50 +72,62 @@ class AppTheme {
 
   static ThemeData _buildTheme(Brightness brightness) {
     final isDark = brightness == Brightness.dark;
-    final bg      = isDark ? darkBackground    : lightBackground;
-    final surface = isDark ? darkSurface       : lightSurface;
-    final onSurf  = isDark ? darkTextPrimary   : lightTextPrimary;
-    final onSurf2 = isDark ? darkTextSecondary : lightTextSecondary;
-    final disabled = isDark ? darkTextDisabled : lightTextDisabled;
+    final tokens = isDark ? AppThemeTokens.dark : AppThemeTokens.light;
+    final bg = tokens.canvas;
+    final surface = tokens.panel;
+    final onSurf = tokens.textPrimary;
+    final onSurf2 = tokens.textSecondary;
+    final disabled = tokens.textMuted;
 
     return ThemeData(
+      useMaterial3: true,
       brightness: brightness,
-      primaryColor: primaryColor,
+      primaryColor: tokens.kineticAccent,
       scaffoldBackgroundColor: bg,
+      extensions: [tokens],
       cardTheme: CardThemeData(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(borderRadiusMedium),
+          side: BorderSide(color: tokens.borderSubtle, width: 1),
         ),
-        color: surface.withValues(alpha: 0.8),
+        color: tokens.card,
         elevation: 0,
       ),
       appBarTheme: AppBarTheme(
         backgroundColor: bg,
         elevation: 0,
+        scrolledUnderElevation: 0,
         centerTitle: true,
         foregroundColor: onSurf,
         titleTextStyle: TextStyle(
+          fontFamily: AppTypography.displayFontFamily,
           color: onSurf,
           fontSize: 18,
           fontWeight: FontWeight.bold,
+          letterSpacing: -0.2,
         ),
       ),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor: isDark ? const Color(0xFF111111) : lightSurface,
-        selectedItemColor: primaryColor,
+        backgroundColor: isDark ? const Color(0xFF111319) : lightSurface,
+        selectedItemColor: tokens.kineticAccent,
         unselectedItemColor: onSurf2,
         type: BottomNavigationBarType.fixed,
-        elevation: 8,
+        elevation: 0,
       ),
       tabBarTheme: TabBarThemeData(
-        labelColor: primaryColor,
+        labelColor: tokens.kineticAccent,
         unselectedLabelColor: onSurf2,
-        indicatorColor: primaryColor,
+        indicatorColor: tokens.kineticAccent,
+        labelStyle: const TextStyle(
+          fontFamily: AppTypography.displayFontFamily,
+          fontWeight: FontWeight.w600,
+        ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: primaryColor,
+          backgroundColor: tokens.kineticAccent,
           foregroundColor: Colors.black,
+          elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(borderRadiusMedium),
           ),
@@ -113,58 +135,104 @@ class AppTheme {
             horizontal: spacingLarge,
             vertical: spacingMedium,
           ),
+          textStyle: const TextStyle(
+            fontFamily: AppTypography.displayFontFamily,
+            fontWeight: FontWeight.w700,
+            fontSize: 15,
+          ),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: primaryColor,
-          side: const BorderSide(color: primaryColor),
+          foregroundColor: tokens.kineticAccent,
+          side: BorderSide(color: tokens.kineticAccent, width: 1.5),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(borderRadiusMedium),
+          ),
+          padding: const EdgeInsets.symmetric(
+            horizontal: spacingLarge,
+            vertical: spacingMedium,
+          ),
+          textStyle: const TextStyle(
+            fontFamily: AppTypography.displayFontFamily,
+            fontWeight: FontWeight.w600,
+            fontSize: 15,
           ),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: surface,
+        fillColor: tokens.elevated,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(borderRadiusMedium),
-          borderSide: BorderSide.none,
+          borderSide: BorderSide(color: tokens.borderSubtle, width: 1),
         ),
-        labelStyle: TextStyle(color: onSurf2),
-        hintStyle: TextStyle(color: disabled),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(borderRadiusMedium),
+          borderSide: BorderSide(color: tokens.borderSubtle, width: 1),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(borderRadiusMedium),
+          borderSide: BorderSide(color: tokens.kineticAccent, width: 1.5),
+        ),
+        labelStyle: TextStyle(
+          fontFamily: AppTypography.bodyFontFamily,
+          color: onSurf2,
+        ),
+        hintStyle: TextStyle(
+          fontFamily: AppTypography.bodyFontFamily,
+          color: disabled,
+        ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: spacingMedium,
           vertical: spacingMedium,
         ),
       ),
-      textTheme: TextTheme(
-        displayLarge:  TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: onSurf),
-        displayMedium: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: onSurf),
-        displaySmall:  TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: onSurf),
-        headlineMedium:TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: onSurf),
-        titleLarge:    TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: onSurf),
-        bodyLarge:     TextStyle(fontSize: 16, color: onSurf),
-        bodyMedium:    TextStyle(fontSize: 14, color: onSurf2),
-        bodySmall:     TextStyle(fontSize: 12, color: onSurf2),
-      ),
+      textTheme: AppTypography.createTextTheme(isDark: isDark),
       colorScheme: ColorScheme(
         brightness: brightness,
-        primary: primaryColor,
+        primary: tokens.kineticAccent,
         onPrimary: Colors.black,
-        secondary: accentColor,
+        secondary: tokens.cyanAccent,
         onSecondary: Colors.black,
         surface: surface,
         onSurface: onSurf,
-        error: errorColor,
+        error: tokens.error,
         onError: Colors.white,
       ),
-      dividerColor: isDark ? Colors.white12 : Colors.black12,
+      dividerColor: tokens.borderSubtle,
       iconTheme: IconThemeData(color: onSurf2),
       chipTheme: ChipThemeData(
-        backgroundColor: surface,
-        labelStyle: TextStyle(color: onSurf),
-        side: BorderSide(color: isDark ? Colors.white12 : Colors.black12),
+        backgroundColor: tokens.elevated,
+        labelStyle: TextStyle(
+          fontFamily: AppTypography.bodyFontFamily,
+          color: onSurf,
+        ),
+        side: BorderSide(color: tokens.borderSubtle),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(borderRadiusSmall),
+        ),
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: tokens.card,
+        elevation: 16,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(borderRadiusLarge),
+          side: BorderSide(color: tokens.borderSubtle, width: 1),
+        ),
+        titleTextStyle: TextStyle(
+          fontFamily: AppTypography.displayFontFamily,
+          fontSize: 20,
+          fontWeight: FontWeight.w700,
+          color: onSurf,
+        ),
+      ),
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: tokens.panel,
+        elevation: 16,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
       ),
     );
   }
