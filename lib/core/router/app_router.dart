@@ -24,7 +24,6 @@ import '../../features/workout/presentation/screens/exercise_picker_screen.dart'
 import '../../features/workout/presentation/screens/program_selection_screen.dart';
 import '../../features/onboarding/presentation/screens/onboarding_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
-import '../../features/analytics/presentation/screens/analytics_screen.dart';
 import '../../features/auth/presentation/screens/splash_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/signup_screen.dart';
@@ -33,6 +32,7 @@ import '../../features/notifications/presentation/screens/reminder_settings_scre
 import '../../features/ai/presentation/screens/ai_chat_screen.dart';
 import '../../features/ai/presentation/screens/ai_test_screen.dart';
 import '../../features/design_system/presentation/screens/design_gallery_screen.dart';
+import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/workout/domain/entities/exercise_definition.dart';
 
 // ---------------------------------------------------------------------------
@@ -62,6 +62,7 @@ class AppRoutes {
   static const String nutritionHistory = '/nutrition/history';
   static const String profile = '/profile';
   static const String reminderSettings = '/profile/reminder-settings';
+  static const String settings = '/settings';
   static const String aiChat = '/ai-chat';
   static const String aiTest = '/ai-test';
   static const String designGallery = '/design-gallery';
@@ -160,96 +161,128 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const OnboardingScreen(),
       ),
 
-      // ShellRoute wraps the 5 top-level tabs with MainScaffold
-      ShellRoute(
-        builder: (context, state, child) => MainScaffold(child: child),
-        routes: [
-          GoRoute(
-            path: AppRoutes.home,
-            builder: (context, state) => const HomeScreen(),
-          ),
-          GoRoute(
-            path: AppRoutes.workout,
-            builder: (context, state) => const WorkoutScreen(),
+      // StatefulShellRoute wraps the 4 primary tabs with MainScaffold
+      // preserving each tab's state in an IndexedStack
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) =>
+            MainScaffold(navigationShell: navigationShell),
+        branches: [
+          // Tab 0: TODAY
+          StatefulShellBranch(
             routes: [
               GoRoute(
-                path: 'active',
-                builder: (context, state) =>
-                    const active_workout.ActiveWorkoutScreen(),
-              ),
-              GoRoute(
-                path: 'summary',
-                builder: (context, state) {
-                  final extra =
-                      state.extra as Map<String, dynamic>? ?? {};
-                  return WorkoutSummaryScreen(
-                    totalSets: extra['totalSets'] as int? ?? 0,
-                    totalVolume: extra['totalVolume'] as double? ?? 0.0,
-                    duration: extra['duration'] as Duration? ??
-                        Duration.zero,
-                    prCount: extra['prCount'] as int? ?? 0,
-                    exerciseNames: extra['exerciseNames'] as List<String>? ?? [],
-                  );
-                },
-              ),
-              GoRoute(
-                path: 'history',
-                builder: (context, state) =>
-                    const workout_history.WorkoutHistoryScreen(),
-              ),
-              GoRoute(
-                path: 'exercise/:name',
-                builder: (context, state) {
-                  final name = state.pathParameters['name'] ?? '';
-                  return exercise_detail.ExerciseDetailScreen(name: name);
-                },
-              ),
-              GoRoute(
-                path: 'catalog',
-                builder: (context, state) => const ExerciseCatalogScreen(),
-              ),
-              GoRoute(
-                path: 'editor',
-                builder: (context, state) => const ProgramEditorScreen(),
-              ),
-              GoRoute(
-                path: 'program-selection',
-                builder: (context, state) => const ProgramSelectionScreen(),
+                path: AppRoutes.home,
+                builder: (context, state) => const HomeScreen(),
               ),
             ],
           ),
-          GoRoute(
-            path: AppRoutes.progress,
-            builder: (context, state) =>
-                const body_progress.ProgressScreen(),
-          ),
-          GoRoute(
-            path: AppRoutes.analytics,
-            builder: (context, state) => const AnalyticsScreen(),
-          ),
-          GoRoute(
-            path: AppRoutes.nutrition,
-            builder: (context, state) =>
-                const nutrition.NutritionScreen(),
+          // Tab 1: TRAIN
+          StatefulShellBranch(
             routes: [
               GoRoute(
-                path: 'history',
-                builder: (context, state) =>
-                    const nutrition_history.NutritionHistoryScreen(),
+                path: AppRoutes.workout,
+                builder: (context, state) => const WorkoutScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'active',
+                    builder: (context, state) =>
+                        const active_workout.ActiveWorkoutScreen(),
+                  ),
+                  GoRoute(
+                    path: 'summary',
+                    builder: (context, state) {
+                      final extra =
+                          state.extra as Map<String, dynamic>? ?? {};
+                      return WorkoutSummaryScreen(
+                        totalSets: extra['totalSets'] as int? ?? 0,
+                        totalVolume: extra['totalVolume'] as double? ?? 0.0,
+                        duration: extra['duration'] as Duration? ??
+                            Duration.zero,
+                        prCount: extra['prCount'] as int? ?? 0,
+                        exerciseNames: extra['exerciseNames'] as List<String>? ?? [],
+                      );
+                    },
+                  ),
+                  GoRoute(
+                    path: 'history',
+                    builder: (context, state) =>
+                        const workout_history.WorkoutHistoryScreen(),
+                  ),
+                  GoRoute(
+                    path: 'exercise/:name',
+                    builder: (context, state) {
+                      final name = state.pathParameters['name'] ?? '';
+                      return exercise_detail.ExerciseDetailScreen(name: name);
+                    },
+                  ),
+                  GoRoute(
+                    path: 'catalog',
+                    builder: (context, state) => const ExerciseCatalogScreen(),
+                  ),
+                  GoRoute(
+                    path: 'editor',
+                    builder: (context, state) => const ProgramEditorScreen(),
+                  ),
+                  GoRoute(
+                    path: 'program-selection',
+                    builder: (context, state) => const ProgramSelectionScreen(),
+                  ),
+                ],
               ),
             ],
           ),
-          GoRoute(
-            path: AppRoutes.profile,
-            builder: (context, state) => const ProfileScreen(),
+          // Tab 2: FUEL
+          StatefulShellBranch(
             routes: [
               GoRoute(
-                path: 'reminder-settings',
-                builder: (context, state) => const ReminderSettingsScreen(),
+                path: AppRoutes.nutrition,
+                builder: (context, state) =>
+                    const nutrition.NutritionScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'history',
+                    builder: (context, state) =>
+                        const nutrition_history.NutritionHistoryScreen(),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          // Tab 3: PROGRESS
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.progress,
+                builder: (context, state) =>
+                    const body_progress.ProgressScreen(),
               ),
             ],
           ),
         ],
+      ),
+
+      // Pushed route: Profile (outside bottom dock shell)
+      GoRoute(
+        path: AppRoutes.profile,
+        builder: (context, state) => const ProfileScreen(),
+        routes: [
+          GoRoute(
+            path: 'reminder-settings',
+            builder: (context, state) => const ReminderSettingsScreen(),
+          ),
+        ],
+      ),
+
+      // Pushed route: Settings (outside bottom dock shell)
+      GoRoute(
+        path: AppRoutes.settings,
+        builder: (context, state) => const SettingsScreen(),
+      ),
+
+      // Redirect route: /analytics -> /progress (selects Lifts & Volume tab)
+      GoRoute(
+        path: AppRoutes.analytics,
+        redirect: (context, state) => '${AppRoutes.progress}?tab=lifts',
       ),
       // AI Chat route (outside shell - full screen)
       GoRoute(
