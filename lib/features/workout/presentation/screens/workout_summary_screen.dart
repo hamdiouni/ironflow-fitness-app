@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_theme.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../shared/animations/pr_celebration_animation.dart';
+import '../../../../shared/presentation/services/app_haptics.dart';
 import '../providers/workout_providers.dart';
 import '../widgets/progression_suggestion_card.dart';
 
@@ -50,6 +51,9 @@ class _WorkoutSummaryScreenState extends State<WorkoutSummaryScreen> {
   @override
   void initState() {
     super.initState();
+    if (widget.prCount > 0) {
+      AppHaptics.shared.milestoneReached(milestoneId: 'workout_pr');
+    }
     // Increased to 5 seconds to give user time to read
     _autoNavTimer = Timer(const Duration(seconds: 5), _navigateHome);
   }
@@ -86,7 +90,7 @@ class _WorkoutSummaryScreenState extends State<WorkoutSummaryScreen> {
                 
                 // Celebration animation for PRs
                 if (widget.prCount > 0) ...[
-                  const PRCelebrationAnimation(),
+                  PRCelebrationAnimation(prCount: widget.prCount),
                   const SizedBox(height: AppTheme.spacingMedium),
                 ],
                 
@@ -300,13 +304,13 @@ class _WorkoutSummaryCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Icon(
-                    Icons.emoji_events,
+                    Icons.workspace_premium_rounded,
                     color: AppTheme.primaryColor,
                     size: 24,
                   ),
                   const SizedBox(width: 12),
                   Text(
-                    '$prCount Personal ${prCount == 1 ? 'Record' : 'Records'}! 🎉',
+                    '$prCount Personal ${prCount == 1 ? 'Record' : 'Records'} Achieved',
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
