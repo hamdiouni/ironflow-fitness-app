@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:progression_tracker/features/ai/domain/entities/chat_message.dart';
 import 'package:progression_tracker/features/ai/domain/services/local_ai_coach.dart';
 import 'package:progression_tracker/features/ai/data/datasources/gemini_ai_service.dart';
+import 'package:progression_tracker/features/ai/data/datasources/ai_chat_storage.dart';
 import 'package:uuid/uuid.dart';
 
 // Import existing providers from their respective modules
@@ -58,22 +59,36 @@ class AIChatState {
   }
 }
 
-/// Notifier for AI chat
 class AIChatNotifier extends StateNotifier<AIChatState> {
   final LocalAICoach _localCoach;
   final GeminiAIService _geminiService;
   final Ref _ref;
+  final AIChatStorage? _chatStorage;
 
   AIChatNotifier({
     required LocalAICoach localCoach,
     required GeminiAIService geminiService,
     required Ref ref,
+    AIChatStorage? chatStorage,
   })  : _localCoach = localCoach,
         _geminiService = geminiService,
         _ref = ref,
+        _chatStorage = chatStorage,
         super(AIChatState(
           isKeyMissing: !geminiService.isConfigured,
-        ));
+        )) {
+    _loadHistory();
+  }
+
+  Future<void> _loadHistory() async {
+    if (_chatStorage == null) return;
+    try {
+      final history = await _chatStorage.loadMessages();
+      if (history.isNotEmpty && mounted) {
+        state = state.copyWith(messages: history);
+      }
+    } catch (_) {}
+  }
 
   Future<void> sendMessage(String message) async {
     if (message.trim().isEmpty) return;
@@ -91,6 +106,7 @@ class AIChatNotifier extends StateNotifier<AIChatState> {
       isLoading: true,
       error: null,
     );
+    _chatStorage?.saveMessages(state.messages);
 
     try {
       print('═══════════════════════════════════════');
@@ -223,6 +239,7 @@ class AIChatNotifier extends StateNotifier<AIChatState> {
         isOfflineFallback: isFallback,
         error: errorMessage,
       );
+      _chatStorage?.saveMessages(state.messages);
       
       // Track AI query event
       try {
@@ -358,6 +375,7 @@ class AIChatNotifier extends StateNotifier<AIChatState> {
 
   Future<void> clearHistory() async {
     state = state.copyWith(messages: []);
+    await _chatStorage?.clearMessages();
   }
 
   void clearError() {
@@ -370,6 +388,7 @@ final aiChatProvider = StateNotifierProvider<AIChatNotifier, AIChatState>((ref) 
   return AIChatNotifier(
     localCoach: ref.watch(localAICoachProvider),
     geminiService: ref.watch(geminiAIServiceProvider),
+    chatStorage: ref.watch(aiChatStorageProvider),
     ref: ref,
   );
 });

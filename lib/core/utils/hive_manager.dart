@@ -18,6 +18,7 @@ class HiveManager {
   static const String _authSessionBox = 'auth_session';
   static const String _insightCacheBox = 'insight_cache';
   static const String _userProfileBox = 'user_profile';
+  static const String _aiChatHistoryBox = 'ai_chat_history';
 
   /// Initialize Hive
   static Future<void> initialize() async {
@@ -68,6 +69,11 @@ class HiveManager {
       print('📊 [Hive] Opening box: $_userProfileBox...');
       await Hive.openBox(_userProfileBox);
       print('✅ [Hive] Box opened: $_userProfileBox');
+
+      // Open AI chat history box (dynamic type for persisted messages)
+      print('📊 [Hive] Opening box: $_aiChatHistoryBox...');
+      await Hive.openBox(_aiChatHistoryBox);
+      print('✅ [Hive] Box opened: $_aiChatHistoryBox');
       
       print('✅ [Hive] All boxes opened successfully');
     } catch (e, stackTrace) {
@@ -202,6 +208,14 @@ class HiveManager {
     print('📊 [Hive] Getting user profile box...');
     final box = Hive.box(_userProfileBox);
     print('✅ [Hive] User profile box retrieved (isOpen: ${box.isOpen})');
+    return box;
+  }
+
+  /// Get AI chat history box
+  static Box getAIChatHistoryBox() {
+    print('📊 [Hive] Getting AI chat history box...');
+    final box = Hive.box(_aiChatHistoryBox);
+    print('✅ [Hive] AI chat history box retrieved (isOpen: ${box.isOpen})');
     return box;
   }
 
