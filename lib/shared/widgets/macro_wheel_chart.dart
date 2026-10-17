@@ -1,9 +1,13 @@
+import 'dart:ui';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/constants/app_theme.dart';
+import '../../core/theme/app_theme_tokens.dart';
+import '../../core/theme/app_typography.dart';
 
-/// A pure UI widget that displays an animated macro distribution pie chart.
+/// A pure UI widget that displays an animated macro distribution pie chart
+/// styled in the Monolithic Sci-Fi design system.
 ///
 /// Requirements: 6.3, 13.6
 class MacroWheelChart extends StatelessWidget {
@@ -23,49 +27,93 @@ class MacroWheelChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        SizedBox(
-          height: 200,
-          child: _hasData ? _buildChart(context) : _buildEmptyChart(context),
-        ),
-        const SizedBox(height: AppTheme.spacingMedium),
-        _buildLegend(context),
-      ],
+    final tokens = AppThemeTokens.of(context);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: tokens.panel,
+        borderRadius: BorderRadius.circular(tokens.radiusMd),
+        border: Border.all(color: tokens.borderSubtle, width: 1),
+      ),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppTheme.spacingMedium,
+        vertical: AppTheme.spacingLarge,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            height: 200,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                _hasData ? _buildChart(context, tokens) : _buildEmptyChart(context, tokens),
+                // Center Telemetry Readout
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'MACROS',
+                      style: TextStyle(
+                        fontFamily: AppTypography.displayFontFamily,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.5,
+                        color: tokens.textMuted,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      _hasData ? '${_total.toInt()}g' : '0g',
+                      style: TextStyle(
+                        fontFamily: AppTypography.displayFontFamily,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: tokens.textPrimary,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppTheme.spacingLarge),
+          _buildLegend(context, tokens),
+        ],
+      ),
     )
         .animate()
         .fadeIn(duration: 300.ms, curve: Curves.easeOut)
         .scale(
-          begin: const Offset(0.85, 0.85),
+          begin: const Offset(0.95, 0.95),
           end: const Offset(1.0, 1.0),
           duration: 300.ms,
           curve: Curves.easeOut,
         );
   }
 
-  Widget _buildChart(BuildContext context) {
+  Widget _buildChart(BuildContext context, AppThemeTokens tokens) {
     return PieChart(
       PieChartData(
-        sectionsSpace: 2,
-        centerSpaceRadius: 50,
-        sections: _buildSections(context),
+        sectionsSpace: 3,
+        centerSpaceRadius: 54,
+        sections: _buildSections(context, tokens),
         borderData: FlBorderData(show: false),
       ),
     );
   }
 
-  Widget _buildEmptyChart(BuildContext context) {
-    final surface = Theme.of(context).colorScheme.surfaceContainerHighest;
+  Widget _buildEmptyChart(BuildContext context, AppThemeTokens tokens) {
     return PieChart(
       PieChartData(
         sectionsSpace: 0,
-        centerSpaceRadius: 50,
+        centerSpaceRadius: 54,
         sections: [
           PieChartSectionData(
             value: 1,
-            color: surface,
-            radius: 40,
+            color: tokens.card,
+            radius: 36,
             showTitle: false,
           ),
         ],
@@ -74,16 +122,33 @@ class MacroWheelChart extends StatelessWidget {
     );
   }
 
-  List<PieChartSectionData> _buildSections(BuildContext context) {
-    final labelColor = Theme.of(context).colorScheme.onSurface;
+  List<PieChartSectionData> _buildSections(BuildContext context, AppThemeTokens tokens) {
     final total = _total;
     return [
       if (protein > 0)
-        _buildSection(value: protein, total: total, color: AppTheme.proteinColor, label: 'P', labelColor: labelColor),
+        _buildSection(
+          value: protein,
+          total: total,
+          color: tokens.protein,
+          label: 'P',
+          labelColor: Colors.black,
+        ),
       if (carbs > 0)
-        _buildSection(value: carbs, total: total, color: AppTheme.carbsColor, label: 'C', labelColor: labelColor),
+        _buildSection(
+          value: carbs,
+          total: total,
+          color: tokens.carbs,
+          label: 'C',
+          labelColor: Colors.black,
+        ),
       if (fats > 0)
-        _buildSection(value: fats, total: total, color: AppTheme.fatsColor, label: 'F', labelColor: labelColor),
+        _buildSection(
+          value: fats,
+          total: total,
+          color: tokens.fats,
+          label: 'F',
+          labelColor: Colors.black,
+        ),
     ];
   }
 
@@ -98,26 +163,41 @@ class MacroWheelChart extends StatelessWidget {
     return PieChartSectionData(
       value: value,
       color: color,
-      radius: 40,
+      radius: 36,
       title: '$percentage%',
       titleStyle: TextStyle(
-        fontSize: 12,
-        fontWeight: FontWeight.bold,
+        fontFamily: AppTypography.displayFontFamily,
+        fontSize: 11,
+        fontWeight: FontWeight.w700,
         color: labelColor,
+        fontFeatures: const [FontFeature.tabularFigures()],
       ),
-      titlePositionPercentageOffset: 0.6,
+      titlePositionPercentageOffset: 0.55,
     );
   }
 
-  Widget _buildLegend(BuildContext context) {
+  Widget _buildLegend(BuildContext context, AppThemeTokens tokens) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        _LegendItem(color: AppTheme.proteinColor, label: 'Protein', value: protein),
-        const SizedBox(width: AppTheme.spacingMedium),
-        _LegendItem(color: AppTheme.carbsColor, label: 'Carbs', value: carbs),
-        const SizedBox(width: AppTheme.spacingMedium),
-        _LegendItem(color: AppTheme.fatsColor, label: 'Fats', value: fats),
+        _LegendItem(
+          color: tokens.protein,
+          label: 'PROTEIN',
+          value: protein,
+          tokens: tokens,
+        ),
+        _LegendItem(
+          color: tokens.carbs,
+          label: 'CARBS',
+          value: carbs,
+          tokens: tokens,
+        ),
+        _LegendItem(
+          color: tokens.fats,
+          label: 'FATS',
+          value: fats,
+          tokens: tokens,
+        ),
       ],
     );
   }
@@ -127,30 +207,71 @@ class _LegendItem extends StatelessWidget {
   final Color color;
   final String label;
   final double value;
+  final AppThemeTokens tokens;
 
   const _LegendItem({
     required this.color,
     required this.label,
     required this.value,
+    required this.tokens,
   });
 
   @override
   Widget build(BuildContext context) {
-    final secondary = Theme.of(context).colorScheme.onSurfaceVariant;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 10,
-          height: 10,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
-        const SizedBox(width: AppTheme.spacingXSmall),
-        Text(
-          '$label ${value.toStringAsFixed(0)}g',
-          style: TextStyle(fontSize: 12, color: secondary),
-        ),
-      ],
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: tokens.card,
+        borderRadius: BorderRadius.circular(tokens.radiusSm),
+        border: Border.all(color: tokens.borderSubtle, width: 1),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: color.withValues(alpha: 0.5),
+                  blurRadius: 4,
+                  spreadRadius: 1,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontFamily: AppTypography.displayFontFamily,
+                  fontSize: 9,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.8,
+                  color: tokens.textMuted,
+                ),
+              ),
+              Text(
+                '${value.toStringAsFixed(0)}g',
+                style: TextStyle(
+                  fontFamily: AppTypography.displayFontFamily,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: tokens.textPrimary,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

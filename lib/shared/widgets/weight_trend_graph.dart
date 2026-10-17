@@ -1,11 +1,16 @@
+import 'dart:ui';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/constants/app_theme.dart';
+import '../../core/theme/app_theme_tokens.dart';
+import '../../core/theme/app_typography.dart';
 import '../../core/utils/chart_data_sampler.dart';
 import '../../features/body/domain/entities/weight_data_point.dart';
 
 /// Animated weight trend line chart — theme-adaptive (dark + light).
+///
+/// Upgraded to Monolithic Sci-Fi styling with kinetic energy curve.
 class WeightTrendGraph extends StatelessWidget {
   final List<WeightDataPoint> dataPoints;
 
@@ -19,27 +24,29 @@ class WeightTrendGraph extends StatelessWidget {
     )
         .animate()
         .fadeIn(duration: 350.ms, curve: Curves.easeOut)
-        .slideY(begin: 0.15, end: 0.0, duration: 400.ms, curve: Curves.easeOut);
+        .slideY(begin: 0.1, end: 0.0, duration: 400.ms, curve: Curves.easeOut);
   }
 
   Widget _buildEmpty(BuildContext context) {
+    final tokens = AppThemeTokens.of(context);
     return Center(
       child: Text(
         'No weight data yet.\nLog your first weight entry!',
         textAlign: TextAlign.center,
-        style: Theme.of(context).textTheme.bodyMedium,
+        style: TextStyle(
+          color: tokens.textMuted,
+          fontSize: 13,
+          fontFamily: AppTypography.bodyFontFamily,
+        ),
       ),
     );
   }
 
   Widget _buildChart(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    // Use theme-adaptive colors
-    final gridColor = theme.dividerColor;
-    final labelColor = theme.colorScheme.onSurface.withValues(alpha: 0.5);
-    final dotStrokeColor = theme.scaffoldBackgroundColor;
+    final tokens = AppThemeTokens.of(context);
+    final gridColor = tokens.borderSubtle;
+    final labelColor = tokens.textMuted;
+    final dotStrokeColor = tokens.panel;
 
     final sampledPoints = ChartDataSampler.sample(dataPoints);
     final spots = sampledPoints.asMap().entries.map((e) {
@@ -73,7 +80,11 @@ class WeightTrendGraph extends StatelessWidget {
               interval: interval,
               getTitlesWidget: (value, _) => Text(
                 value.toStringAsFixed(1),
-                style: TextStyle(color: labelColor, fontSize: 11),
+                style: TextStyle(
+                  color: labelColor,
+                  fontSize: 10,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
               ),
             ),
           ),
@@ -92,7 +103,12 @@ class WeightTrendGraph extends StatelessWidget {
                   padding: const EdgeInsets.only(top: 6),
                   child: Text(
                     '${date.month}/${date.day}',
-                    style: TextStyle(color: labelColor, fontSize: 10),
+                    style: TextStyle(
+                      fontFamily: AppTypography.displayFontFamily,
+                      color: labelColor,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 );
               },
@@ -106,14 +122,14 @@ class WeightTrendGraph extends StatelessWidget {
             spots: spots,
             isCurved: true,
             curveSmoothness: 0.35,
-            color: AppTheme.accentColor,
+            color: tokens.kineticAccent,
             barWidth: 2.5,
             isStrokeCapRound: true,
             dotData: FlDotData(
               show: true,
               getDotPainter: (_, _, _, _) => FlDotCirclePainter(
                 radius: 4,
-                color: AppTheme.accentColor,
+                color: tokens.kineticAccent,
                 strokeWidth: 2,
                 strokeColor: dotStrokeColor,
               ),
@@ -122,8 +138,8 @@ class WeightTrendGraph extends StatelessWidget {
               show: true,
               gradient: LinearGradient(
                 colors: [
-                  AppTheme.accentColor.withValues(alpha: isDark ? 0.35 : 0.15),
-                  AppTheme.accentColor.withValues(alpha: 0.0),
+                  tokens.kineticAccent.withValues(alpha: tokens.isDark ? 0.30 : 0.15),
+                  tokens.kineticAccent.withValues(alpha: 0.0),
                 ],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
