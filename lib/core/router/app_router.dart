@@ -33,6 +33,8 @@ import '../../features/ai/presentation/screens/ai_chat_screen.dart';
 import '../../features/ai/presentation/screens/ai_test_screen.dart';
 import '../../features/design_system/presentation/screens/design_gallery_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
+import '../../features/settings/presentation/screens/export_settings_screen.dart';
+import '../../features/settings/presentation/screens/privacy_settings_screen.dart';
 import '../../features/workout/domain/entities/exercise_definition.dart';
 
 // ---------------------------------------------------------------------------
@@ -63,6 +65,8 @@ class AppRoutes {
   static const String profile = '/profile';
   static const String reminderSettings = '/profile/reminder-settings';
   static const String settings = '/settings';
+  static const String exportSettings = '/settings/export';
+  static const String privacySettings = '/settings/privacy';
   static const String aiChat = '/ai-chat';
   static const String aiTest = '/ai-test';
   static const String designGallery = '/design-gallery';
@@ -277,6 +281,16 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.settings,
         builder: (context, state) => const SettingsScreen(),
+        routes: [
+          GoRoute(
+            path: 'export',
+            builder: (context, state) => const ExportSettingsScreen(),
+          ),
+          GoRoute(
+            path: 'privacy',
+            builder: (context, state) => const PrivacySettingsScreen(),
+          ),
+        ],
       ),
 
       // Redirect route: /analytics -> /progress (selects Lifts & Volume tab)
