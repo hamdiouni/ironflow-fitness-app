@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/constants/app_theme.dart';
+import '../../../../core/theme/app_theme_tokens.dart';
+import '../../../../core/theme/app_typography.dart';
 import '../../domain/entities/workout_program.dart';
 
 /// A card widget displaying a program exercise with its parameters.
@@ -25,9 +26,7 @@ class ProgramExerciseCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final onSurface = Theme.of(context).colorScheme.onSurface;
-    final secondary = Theme.of(context).colorScheme.onSurfaceVariant;
-    final surface = Theme.of(context).colorScheme.surfaceContainerHighest;
+    final tokens = AppThemeTokens.of(context);
 
     return GestureDetector(
       onTap: onTap,
@@ -35,32 +34,45 @@ class ProgramExerciseCard extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-          color: surface.withValues(alpha: 0.5),
+          borderRadius: BorderRadius.circular(tokens.radiusMd),
+          color: tokens.card,
           border: Border.all(
-            color: onSurface.withValues(alpha: 0.08),
+            color: tokens.borderSubtle,
+            width: 1,
           ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.25),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Exercise name with index
+            // Exercise name with index badge
             Row(
               children: [
                 Container(
                   width: 32,
                   height: 32,
                   decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: AppTheme.primaryColor.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(tokens.radiusSm),
+                    color: tokens.kineticAccent.withValues(alpha: 0.12),
+                    border: Border.all(
+                      color: tokens.kineticAccent.withValues(alpha: 0.3),
+                      width: 1,
+                    ),
                   ),
                   child: Center(
                     child: Text(
                       '${index + 1}',
-                      style: const TextStyle(
-                        color: AppTheme.primaryColor,
+                      style: TextStyle(
+                        color: tokens.kineticAccent,
                         fontSize: 13,
                         fontWeight: FontWeight.bold,
+                        fontFamily: AppTypography.fontFamilyHeadings,
                       ),
                     ),
                   ),
@@ -70,9 +82,11 @@ class ProgramExerciseCard extends StatelessWidget {
                   child: Text(
                     exercise.exerciseName,
                     style: TextStyle(
-                      color: onSurface,
+                      color: tokens.textPrimary,
                       fontSize: 15,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w700,
+                      fontFamily: AppTypography.fontFamilyHeadings,
+                      letterSpacing: -0.2,
                     ),
                   ),
                 ),
@@ -84,20 +98,23 @@ class ProgramExerciseCard extends StatelessWidget {
               children: [
                 _InfoChip(
                   icon: Icons.repeat,
-                  label: 'Sets',
+                  label: 'SETS',
                   value: '${exercise.sets}',
+                  tokens: tokens,
                 ),
                 const SizedBox(width: 8),
                 _InfoChip(
                   icon: Icons.trending_up,
-                  label: 'Reps',
+                  label: 'REPS',
                   value: exercise.reps,
+                  tokens: tokens,
                 ),
                 const SizedBox(width: 8),
                 _InfoChip(
                   icon: Icons.schedule,
-                  label: 'Rest',
+                  label: 'REST',
                   value: '${exercise.restSeconds}s',
+                  tokens: tokens,
                 ),
               ],
             ),
@@ -107,7 +124,7 @@ class ProgramExerciseCard extends StatelessWidget {
               Text(
                 exercise.notes!,
                 style: TextStyle(
-                  color: secondary,
+                  color: tokens.textMuted,
                   fontSize: 12,
                   fontStyle: FontStyle.italic,
                 ),
@@ -124,48 +141,51 @@ class _InfoChip extends StatelessWidget {
   final IconData icon;
   final String label;
   final String value;
+  final AppThemeTokens tokens;
 
   const _InfoChip({
     required this.icon,
     required this.label,
     required this.value,
+    required this.tokens,
   });
 
   @override
   Widget build(BuildContext context) {
-    final secondary = Theme.of(context).colorScheme.onSurfaceVariant;
-    final surface = Theme.of(context).colorScheme.surfaceContainerHighest;
-
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: surface.withValues(alpha: 0.8),
-        borderRadius: BorderRadius.circular(8),
+        color: tokens.panel,
+        borderRadius: BorderRadius.circular(tokens.radiusSm),
         border: Border.all(
-          color: secondary.withValues(alpha: 0.1),
+          color: tokens.borderSubtle,
+          width: 1,
         ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: AppTheme.primaryColor),
-          const SizedBox(width: 4),
+          Icon(icon, size: 13, color: tokens.kineticAccent),
+          const SizedBox(width: 6),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 label,
                 style: TextStyle(
-                  color: secondary,
-                  fontSize: 10,
+                  color: tokens.textMuted,
+                  fontSize: 9,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.5,
                 ),
               ),
               Text(
                 value,
-                style: const TextStyle(
-                  color: AppTheme.primaryColor,
+                style: TextStyle(
+                  color: tokens.textPrimary,
                   fontSize: 12,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w700,
+                  fontFamily: AppTypography.fontFamilyHeadings,
                 ),
               ),
             ],
@@ -175,3 +195,4 @@ class _InfoChip extends StatelessWidget {
     );
   }
 }
+

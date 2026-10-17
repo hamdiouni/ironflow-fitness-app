@@ -2,11 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+
+import '../../../../core/theme/app_theme_tokens.dart';
+import '../../../../core/theme/app_typography.dart';
+import '../../../../shared/presentation/components/components.dart';
 import '../../domain/entities/exercise_definition.dart';
 import '../providers/exercise_providers.dart';
 import 'exercise_detail_screen.dart';
 
-/// Exercise catalog with muscle-group tabs and search.
+/// Exercise catalog with muscle-group tabs, search, and Monolithic Sci-Fi cards.
 class ExerciseCatalogScreen extends ConsumerStatefulWidget {
   const ExerciseCatalogScreen({super.key, this.onSelect});
   final void Function(ExerciseDefinition)? onSelect;
@@ -22,23 +26,21 @@ class _ExerciseCatalogScreenState extends ConsumerState<ExerciseCatalogScreen>
   late TabController _tabController;
 
   static const _tabs = [
-    (label: 'All',       group: null as MuscleGroup?),
-    (label: 'Chest',     group: MuscleGroup.chest),
-    (label: 'Back',      group: MuscleGroup.back),
-    (label: 'Legs',      group: MuscleGroup.legs),
-    (label: 'Shoulders', group: MuscleGroup.shoulders),
-    (label: 'Arms',      group: MuscleGroup.arms),
-    (label: 'Abs',       group: MuscleGroup.abs),
-    (label: 'Glutes',    group: MuscleGroup.glutes),
-    (label: 'Cardio',    group: MuscleGroup.cardio),
+    (label: 'ALL',       group: null as MuscleGroup?),
+    (label: 'CHEST',     group: MuscleGroup.chest),
+    (label: 'BACK',      group: MuscleGroup.back),
+    (label: 'LEGS',      group: MuscleGroup.legs),
+    (label: 'SHOULDERS', group: MuscleGroup.shoulders),
+    (label: 'ARMS',      group: MuscleGroup.arms),
+    (label: 'ABS',       group: MuscleGroup.abs),
+    (label: 'GLUTES',    group: MuscleGroup.glutes),
+    (label: 'CARDIO',    group: MuscleGroup.cardio),
   ];
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: _tabs.length, vsync: this);
-    // FIX: use animation listener instead of addListener to catch tab changes
-    // reliably — addListener fires on every animation frame, not just on settle.
     _tabController.animation?.addListener(_onTabAnimation);
   }
 
@@ -49,7 +51,6 @@ class _ExerciseCatalogScreenState extends ConsumerState<ExerciseCatalogScreen>
     if (index != _lastTabIndex) {
       _lastTabIndex = index;
       final group = _tabs[index].group;
-      // Use post-frame to avoid calling setState during build
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           ref.read(exerciseFilterProvider.notifier).setMuscleGroup(group);
@@ -68,15 +69,28 @@ class _ExerciseCatalogScreenState extends ConsumerState<ExerciseCatalogScreen>
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     final exercises = ref.watch(filteredExercisesProvider);
     final filter = ref.watch(exerciseFilterProvider);
-    final theme = Theme.of(context);
 
     return Scaffold(
+      backgroundColor: tokens.canvas,
       appBar: AppBar(
-        title: const Text('Exercises'),
+        backgroundColor: tokens.canvas,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        title: Text(
+          'EXERCISE CATALOG',
+          style: TextStyle(
+            color: tokens.textPrimary,
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            fontFamily: AppTypography.fontFamilyHeadings,
+            letterSpacing: 1.2,
+          ),
+        ),
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(100),
+          preferredSize: const Size.fromHeight(104),
           child: Column(
             children: [
               // Search bar
@@ -86,12 +100,14 @@ class _ExerciseCatalogScreenState extends ConsumerState<ExerciseCatalogScreen>
                   controller: _searchController,
                   onChanged: (v) =>
                       ref.read(exerciseFilterProvider.notifier).setQuery(v),
+                  style: TextStyle(color: tokens.textPrimary, fontSize: 14),
                   decoration: InputDecoration(
-                    hintText: 'Search exercises...',
-                    prefixIcon: const Icon(Icons.search, size: 20),
+                    hintText: 'Search exercise database...',
+                    hintStyle: TextStyle(color: tokens.textMuted, fontSize: 13),
+                    prefixIcon: Icon(Icons.search, size: 20, color: tokens.textMuted),
                     suffixIcon: filter.query.isNotEmpty
                         ? IconButton(
-                            icon: const Icon(Icons.clear, size: 18),
+                            icon: Icon(Icons.clear, size: 18, color: tokens.textMuted),
                             onPressed: () {
                               _searchController.clear();
                               ref
@@ -100,8 +116,18 @@ class _ExerciseCatalogScreenState extends ConsumerState<ExerciseCatalogScreen>
                             },
                           )
                         : null,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                    filled: true,
+                    fillColor: tokens.panel,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
                     isDense: true,
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(tokens.radiusSm),
+                      borderSide: BorderSide(color: tokens.borderSubtle, width: 1),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(tokens.radiusSm),
+                      borderSide: BorderSide(color: tokens.kineticAccent, width: 1.5),
+                    ),
                   ),
                 ),
               ),
@@ -110,25 +136,38 @@ class _ExerciseCatalogScreenState extends ConsumerState<ExerciseCatalogScreen>
                 controller: _tabController,
                 isScrollable: true,
                 tabAlignment: TabAlignment.start,
+                indicatorColor: tokens.kineticAccent,
+                indicatorWeight: 2.5,
+                dividerColor: tokens.borderSubtle,
+                labelColor: tokens.kineticAccent,
+                unselectedLabelColor: tokens.textMuted,
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 tabs: _tabs.map((t) {
-                  final color = t.group?.color ?? theme.colorScheme.primary;
+                  final color = t.group?.color ?? tokens.kineticAccent;
                   return Tab(
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         if (t.group != null) ...[
                           Container(
-                            width: 8,
-                            height: 8,
+                            width: 6,
+                            height: 6,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               color: color,
                             ),
                           ),
-                          const SizedBox(width: 5),
+                          const SizedBox(width: 6),
                         ],
-                        Text(t.label, style: const TextStyle(fontSize: 12)),
+                        Text(
+                          t.label,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            fontFamily: AppTypography.fontFamilyHeadings,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
                       ],
                     ),
                   );
@@ -142,21 +181,23 @@ class _ExerciseCatalogScreenState extends ConsumerState<ExerciseCatalogScreen>
         children: [
           // Equipment filter row
           SizedBox(
-            height: 44,
+            height: 46,
             child: ListView(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               children: [
                 _EquipChip(
-                  label: 'Any',
+                  label: 'ANY',
                   selected: filter.equipment == null,
+                  tokens: tokens,
                   onTap: () => ref
                       .read(exerciseFilterProvider.notifier)
                       .setEquipment(null),
                 ),
                 ...Equipment.values.map((eq) => _EquipChip(
-                      label: eq.displayName,
+                      label: eq.displayName.toUpperCase(),
                       selected: filter.equipment == eq,
+                      tokens: tokens,
                       onTap: () => ref
                           .read(exerciseFilterProvider.notifier)
                           .setEquipment(filter.equipment == eq ? null : eq),
@@ -166,12 +207,18 @@ class _ExerciseCatalogScreenState extends ConsumerState<ExerciseCatalogScreen>
           ),
           // Count
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: Align(
               alignment: Alignment.centerLeft,
               child: Text(
-                '${exercises.length} exercises',
-                style: theme.textTheme.bodySmall,
+                '${exercises.length} EXERCISES CATALOGED',
+                style: TextStyle(
+                  color: tokens.textMuted,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  fontFamily: AppTypography.fontFamilyHeadings,
+                  letterSpacing: 0.8,
+                ),
               ),
             ),
           ),
@@ -179,17 +226,17 @@ class _ExerciseCatalogScreenState extends ConsumerState<ExerciseCatalogScreen>
           Expanded(
             child: exercises.isEmpty
                 ? Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.search_off,
-                            size: 48,
-                            color: theme.colorScheme.onSurface
-                                .withValues(alpha: 0.3)),
-                        const SizedBox(height: 12),
-                        Text('No exercises found',
-                            style: theme.textTheme.bodyMedium),
-                      ],
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: AppStateView.empty(
+                        title: 'NO EXERCISES FOUND',
+                        message: 'No exercises match the selected query and equipment criteria.',
+                        actionLabel: 'RESET FILTERS',
+                        onAction: () {
+                          _searchController.clear();
+                          ref.read(exerciseFilterProvider.notifier).reset();
+                        },
+                      ),
                     ),
                   )
                 : GridView.builder(
@@ -197,7 +244,7 @@ class _ExerciseCatalogScreenState extends ConsumerState<ExerciseCatalogScreen>
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
-                      childAspectRatio: 0.78,
+                      childAspectRatio: 0.80,
                       crossAxisSpacing: 10,
                       mainAxisSpacing: 10,
                     ),
@@ -206,6 +253,7 @@ class _ExerciseCatalogScreenState extends ConsumerState<ExerciseCatalogScreen>
                       final ex = exercises[index];
                       return _ExerciseCard(
                         exercise: ex,
+                        tokens: tokens,
                         onTap: () {
                           if (widget.onSelect != null) {
                             widget.onSelect!(ex);
@@ -217,8 +265,8 @@ class _ExerciseCatalogScreenState extends ConsumerState<ExerciseCatalogScreen>
                           }
                         },
                       ).animate().fadeIn(
-                            delay: Duration(milliseconds: index * 25),
-                            duration: const Duration(milliseconds: 200),
+                            delay: Duration(milliseconds: index * 20),
+                            duration: const Duration(milliseconds: 180),
                           );
                     },
                   ),
@@ -235,15 +283,16 @@ class _EquipChip extends StatelessWidget {
   const _EquipChip({
     required this.label,
     required this.selected,
+    required this.tokens,
     required this.onTap,
   });
   final String label;
   final bool selected;
+  final AppThemeTokens tokens;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final primary = Theme.of(context).colorScheme.primary;
     return Padding(
       padding: const EdgeInsets.only(right: 6),
       child: GestureDetector(
@@ -253,21 +302,32 @@ class _EquipChip extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
             color: selected
-                ? primary.withValues(alpha: 0.15)
-                : Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(20),
+                ? tokens.kineticAccent.withValues(alpha: 0.15)
+                : tokens.panel,
+            borderRadius: BorderRadius.circular(tokens.radiusPill),
             border: Border.all(
-              color: selected ? primary : Theme.of(context).dividerColor,
+              color: selected ? tokens.kineticAccent : tokens.borderSubtle,
+              width: selected ? 1.5 : 1,
             ),
+            boxShadow: selected
+                ? [
+                    BoxShadow(
+                      color: tokens.kineticAccent.withValues(alpha: 0.2),
+                      blurRadius: 6,
+                    ),
+                  ]
+                : null,
           ),
           child: Text(
             label,
             style: TextStyle(
-              fontSize: 11,
-              fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              fontFamily: AppTypography.fontFamilyHeadings,
+              letterSpacing: 0.5,
               color: selected
-                  ? primary
-                  : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                  ? tokens.kineticAccent
+                  : tokens.textMuted,
             ),
           ),
         ),
@@ -279,26 +339,34 @@ class _EquipChip extends StatelessWidget {
 // ── Exercise card ─────────────────────────────────────────────────────────────
 
 class _ExerciseCard extends StatelessWidget {
-  const _ExerciseCard({required this.exercise, required this.onTap});
+  const _ExerciseCard({
+    required this.exercise,
+    required this.tokens,
+    required this.onTap,
+  });
   final ExerciseDefinition exercise;
+  final AppThemeTokens tokens;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
     return GestureDetector(
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.06)
-              : Colors.black.withValues(alpha: 0.04),
+          borderRadius: BorderRadius.circular(tokens.radiusMd),
+          color: tokens.card,
           border: Border.all(
-            color: isDark ? Colors.white12 : Colors.black12,
+            color: tokens.borderSubtle,
+            width: 1,
           ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.25),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         clipBehavior: Clip.antiAlias,
         child: Column(
@@ -311,23 +379,23 @@ class _ExerciseCard extends StatelessWidget {
                 fit: BoxFit.cover,
                 width: double.infinity,
                 placeholder: (_, _) => Container(
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.05)
-                      : Colors.black.withValues(alpha: 0.03),
+                  color: tokens.panel,
                   child: Center(
-                    child: Icon(Icons.fitness_center,
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.2),
-                        size: 32),
+                    child: Icon(
+                      Icons.fitness_center_rounded,
+                      color: tokens.kineticAccent.withValues(alpha: 0.3),
+                      size: 28,
+                    ),
                   ),
                 ),
                 errorWidget: (_, _, _) => Container(
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.05)
-                      : Colors.black.withValues(alpha: 0.03),
+                  color: tokens.panel,
                   child: Center(
-                    child: Icon(Icons.fitness_center,
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.2),
-                        size: 32),
+                    child: Icon(
+                      Icons.fitness_center_rounded,
+                      color: tokens.kineticAccent.withValues(alpha: 0.3),
+                      size: 28,
+                    ),
                   ),
                 ),
               ),
@@ -340,19 +408,21 @@ class _ExerciseCard extends StatelessWidget {
                 children: [
                   Text(
                     exercise.name,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
+                    style: TextStyle(
+                      color: tokens.textPrimary,
+                      fontWeight: FontWeight.w700,
+                      fontFamily: AppTypography.fontFamilyHeadings,
                       fontSize: 13,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
                   Row(
                     children: [
-                      _MuscleTag(exercise.muscleGroup),
+                      _MuscleTag(exercise.muscleGroup, tokens: tokens),
                       const Spacer(),
-                      _DifficultyDots(exercise.difficulty),
+                      _DifficultyDots(exercise.difficulty, tokens: tokens),
                     ],
                   ),
                 ],
@@ -366,23 +436,30 @@ class _ExerciseCard extends StatelessWidget {
 }
 
 class _MuscleTag extends StatelessWidget {
-  const _MuscleTag(this.group);
+  const _MuscleTag(this.group, {required this.tokens});
   final MuscleGroup group;
+  final AppThemeTokens tokens;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: group.color.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(6),
+        color: group.color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(tokens.radiusXs),
+        border: Border.all(
+          color: group.color.withValues(alpha: 0.3),
+          width: 0.5,
+        ),
       ),
       child: Text(
-        group.displayName,
+        group.displayName.toUpperCase(),
         style: TextStyle(
-          fontSize: 10,
+          fontSize: 9,
           color: group.color,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w700,
+          fontFamily: AppTypography.fontFamilyHeadings,
+          letterSpacing: 0.3,
         ),
       ),
     );
@@ -390,8 +467,9 @@ class _MuscleTag extends StatelessWidget {
 }
 
 class _DifficultyDots extends StatelessWidget {
-  const _DifficultyDots(this.difficulty);
+  const _DifficultyDots(this.difficulty, {required this.tokens});
   final Difficulty difficulty;
+  final AppThemeTokens tokens;
 
   @override
   Widget build(BuildContext context) {
@@ -399,14 +477,14 @@ class _DifficultyDots extends StatelessWidget {
       children: List.generate(
         3,
         (i) => Container(
-          width: 6,
-          height: 6,
-          margin: const EdgeInsets.only(left: 2),
+          width: 5,
+          height: 5,
+          margin: const EdgeInsets.only(left: 3),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: i < difficulty.level
                 ? difficulty.color
-                : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.15),
+                : tokens.textMuted.withValues(alpha: 0.3),
           ),
         ),
       ),
