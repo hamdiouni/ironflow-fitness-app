@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -8,7 +9,11 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_theme.dart';
 import '../../../../core/providers/theme_provider.dart';
 import '../../../../core/router/app_router.dart';
+import '../../../../core/theme/app_theme_tokens.dart';
+import '../../../../core/theme/app_typography.dart';
+import '../../../../shared/presentation/components/app_button.dart';
 import '../../../ai/domain/entities/insight.dart';
+import '../../../ai/presentation/widgets/ai_entry_button.dart';
 import '../../../ai/presentation/widgets/contextual_insight_banner.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../../../nutrition/domain/entities/diet_plan.dart';
@@ -18,21 +23,66 @@ import '../../../onboarding/presentation/providers/onboarding_provider.dart';
 import '../../../workout/domain/entities/workout_program.dart';
 import '../../../workout/domain/usecases/generate_workout_program_use_case.dart';
 
+/// Monolithic Sci-Fi Profile & Settings screen.
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final tokens = AppThemeTokens.of(context);
     final profileAsync = ref.watch(userProfileProvider);
 
     return Scaffold(
+      backgroundColor: tokens.canvas,
+      appBar: AppBar(
+        backgroundColor: tokens.canvas,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'PROFILE',
+              style: TextStyle(
+                fontFamily: AppTypography.displayFontFamily,
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.5,
+                color: tokens.textPrimary,
+              ),
+            ),
+            Text(
+              'BIOMETRIC ID & DIRECTIVES',
+              style: TextStyle(
+                fontFamily: AppTypography.displayFontFamily,
+                fontSize: 9,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.2,
+                color: tokens.textMuted,
+              ),
+            ),
+          ],
+        ),
+        actions: const [
+          AiEntryButton(),
+          SizedBox(width: 8),
+        ],
+      ),
       body: SafeArea(
+        top: false,
         child: profileAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (_, _) => const Center(child: Text('Error loading profile')),
+          loading: () => Center(
+            child: CircularProgressIndicator(color: tokens.kineticAccent),
+          ),
+          error: (error, _) => Center(
+            child: Text(
+              'Error loading profile telemetry: $error',
+              style: TextStyle(color: tokens.error),
+            ),
+          ),
           data: (profile) => profile == null
-              ? _NoProfileView()
-              : _ProfileBody(profile: profile),
+              ? _NoProfileView(tokens: tokens)
+              : _ProfileBody(profile: profile, tokens: tokens),
         ),
       ),
     );
@@ -40,30 +90,64 @@ class ProfileScreen extends ConsumerWidget {
 }
 
 class _NoProfileView extends StatelessWidget {
+  const _NoProfileView({required this.tokens});
+  final AppThemeTokens tokens;
+
   @override
   Widget build(BuildContext context) {
-    final secondary = Theme.of(context).colorScheme.onSurfaceVariant;
     return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.person_outline, size: 64, color: secondary),
-          const SizedBox(height: 16),
-          Text('No profile found', style: TextStyle(color: secondary)),
-          const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: () => context.go(AppRoutes.onboarding),
-            child: const Text('Complete Onboarding'),
-          ),
-        ],
+      child: Padding(
+        padding: const EdgeInsets.all(AppTheme.spacingLarge),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: tokens.panel,
+                borderRadius: BorderRadius.circular(tokens.radiusLg),
+                border: Border.all(color: tokens.borderSubtle, width: 1),
+              ),
+              child: Icon(Icons.person_outline, size: 48, color: tokens.textMuted),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'NO PROFILE DETECTED',
+              style: TextStyle(
+                fontFamily: AppTypography.displayFontFamily,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.5,
+                color: tokens.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Calibrate biometric telemetry to initialize personalized AI protocols.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: AppTypography.bodyFontFamily,
+                fontSize: 13,
+                color: tokens.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 24),
+            AppButton(
+              label: 'INITIALIZE ONBOARDING',
+              icon: const Icon(Icons.play_arrow_rounded, size: 18),
+              onPressed: () => context.go(AppRoutes.onboarding),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
 class _ProfileBody extends ConsumerWidget {
-  const _ProfileBody({required this.profile});
+  const _ProfileBody({required this.profile, required this.tokens});
   final UserProfile profile;
+  final AppThemeTokens tokens;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -72,13 +156,26 @@ class _ProfileBody extends ConsumerWidget {
 
     return CustomScrollView(
       slivers: [
-        SliverToBoxAdapter(child: _ProfileHeader(profile: profile)),
-        SliverToBoxAdapter(child: _StatsRow(profile: profile)),
-        const SliverToBoxAdapter(child: ContextualInsightBanner(context: InsightContext.profile)),
-        SliverToBoxAdapter(child: _GoalCard(profile: profile, program: program)),
-        SliverToBoxAdapter(child: _DietPlanCard(dietPlan: dietPlan)),
-        SliverToBoxAdapter(child: _DietTipsCard(tips: dietPlan.tips)),
-        SliverToBoxAdapter(child: _SettingsSection(ref: ref)),
+        SliverToBoxAdapter(child: _ProfileHeader(profile: profile, tokens: tokens)),
+        SliverToBoxAdapter(child: _StatsRow(profile: profile, tokens: tokens)),
+        const SliverToBoxAdapter(
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: ContextualInsightBanner(context: InsightContext.profile),
+          ),
+        ),
+        SliverToBoxAdapter(
+          child: _GoalCard(profile: profile, program: program, tokens: tokens),
+        ),
+        SliverToBoxAdapter(
+          child: _DietPlanCard(dietPlan: dietPlan, tokens: tokens),
+        ),
+        SliverToBoxAdapter(
+          child: _DietTipsCard(tips: dietPlan.tips, tokens: tokens),
+        ),
+        SliverToBoxAdapter(
+          child: _SettingsSection(ref: ref, tokens: tokens),
+        ),
         const SliverToBoxAdapter(child: SizedBox(height: 100)),
       ],
     );
@@ -88,136 +185,159 @@ class _ProfileBody extends ConsumerWidget {
 // ── Profile Header ────────────────────────────────────────────────────────────
 
 class _ProfileHeader extends StatelessWidget {
-  const _ProfileHeader({required this.profile});
+  const _ProfileHeader({required this.profile, required this.tokens});
   final UserProfile profile;
+  final AppThemeTokens tokens;
 
   @override
   Widget build(BuildContext context) {
-    final onSurface = Theme.of(context).colorScheme.onSurface;
-    final secondary = Theme.of(context).colorScheme.onSurfaceVariant;
-
     return Padding(
-      padding: const EdgeInsets.all(20),
-      child: Row(
-        children: [
-          Container(
-            width: 72,
-            height: 72,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                colors: [AppTheme.primaryColor, AppTheme.accentColor],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      child: Container(
+        padding: const EdgeInsets.all(AppTheme.spacingMedium),
+        decoration: BoxDecoration(
+          color: tokens.panel,
+          borderRadius: BorderRadius.circular(tokens.radiusMd),
+          border: Border.all(color: tokens.borderSubtle, width: 1),
+        ),
+        child: Row(
+          children: [
+            // Monolithic Avatar Icon
+            Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                color: tokens.card,
+                borderRadius: BorderRadius.circular(tokens.radiusSm),
+                border: Border.all(color: tokens.borderSubtle, width: 1),
+              ),
+              child: Center(
+                child: Text(
+                  profile.goal.emoji,
+                  style: const TextStyle(fontSize: 28),
+                ),
               ),
             ),
-            child: Center(
-              child: Text(
-                profile.goal.emoji,
-                style: const TextStyle(fontSize: 32),
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  profile.goal.displayName,
-                  style: TextStyle(
-                    color: onSurface,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${profile.fitnessLevel.displayName} · ${profile.equipment.displayName}',
-                  style: TextStyle(color: secondary, fontSize: 13),
-                ),
-                const SizedBox(height: 4),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryColor.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    '${profile.workoutDaysPerWeek} days/week',
-                    style: const TextStyle(
-                      color: AppTheme.primaryColor,
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    profile.goal.displayName.toUpperCase(),
+                    style: TextStyle(
+                      fontFamily: AppTypography.displayFontFamily,
+                      color: tokens.textPrimary,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -0.3,
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 4),
+                  Text(
+                    '${profile.fitnessLevel.displayName.toUpperCase()} · ${profile.equipment.displayName.toUpperCase()}',
+                    style: TextStyle(
+                      fontFamily: AppTypography.displayFontFamily,
+                      color: tokens.textMuted,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: tokens.kineticAccent.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(tokens.radiusSm),
+                      border: Border.all(
+                        color: tokens.kineticAccent.withValues(alpha: 0.35),
+                        width: 1,
+                      ),
+                    ),
+                    child: Text(
+                      '${profile.workoutDaysPerWeek} DAYS / WEEK PROTOCOL',
+                      style: TextStyle(
+                        fontFamily: AppTypography.displayFontFamily,
+                        color: tokens.kineticAccent,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.8,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ).animate().fadeIn(duration: 400.ms);
+    ).animate().fadeIn(duration: 350.ms);
   }
 }
 
 // ── Stats Row ─────────────────────────────────────────────────────────────────
 
 class _StatsRow extends StatelessWidget {
-  const _StatsRow({required this.profile});
+  const _StatsRow({required this.profile, required this.tokens});
   final UserProfile profile;
+  final AppThemeTokens tokens;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Row(
         children: [
           Expanded(
             child: _StatCard(
-              label: 'Age',
+              label: 'AGE',
               value: '${profile.age}',
-              unit: 'years',
-              color: AppTheme.accentColor,
+              unit: 'YRS',
+              color: tokens.cyanAccent,
+              tokens: tokens,
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 8),
           Expanded(
             child: _StatCard(
-              label: 'Weight',
+              label: 'WEIGHT',
               value: profile.weightKg.toStringAsFixed(1),
-              unit: 'kg',
-              color: AppTheme.primaryColor,
+              unit: 'KG',
+              color: tokens.kineticAccent,
+              tokens: tokens,
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 8),
           Expanded(
             child: _StatCard(
-              label: 'Height',
+              label: 'HEIGHT',
               value: profile.heightCm.toStringAsFixed(0),
-              unit: 'cm',
-              color: Colors.purple,
+              unit: 'CM',
+              color: tokens.violetAccent,
+              tokens: tokens,
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 8),
           Expanded(
             child: _StatCard(
               label: 'BMI',
               value: profile.bmi.toStringAsFixed(1),
-              unit: '',
+              unit: 'INDEX',
               color: _bmiColor(profile.bmi),
+              tokens: tokens,
             ),
           ),
         ],
       ),
-    ).animate().fadeIn(delay: 100.ms);
+    ).animate().fadeIn(delay: 80.ms);
   }
 
   Color _bmiColor(double bmi) {
-    if (bmi < 18.5) return Colors.blue;
-    if (bmi < 25) return AppTheme.primaryColor;
-    if (bmi < 30) return Colors.orange;
-    return AppTheme.errorColor;
+    if (bmi < 18.5) return tokens.cyanAccent;
+    if (bmi < 25) return tokens.kineticAccent;
+    if (bmi < 30) return tokens.warning;
+    return tokens.error;
   }
 }
 
@@ -227,31 +347,58 @@ class _StatCard extends StatelessWidget {
     required this.value,
     required this.unit,
     required this.color,
+    required this.tokens,
   });
+
   final String label;
   final String value;
   final String unit;
   final Color color;
+  final AppThemeTokens tokens;
 
   @override
   Widget build(BuildContext context) {
-    final secondary = Theme.of(context).colorScheme.onSurfaceVariant;
-    return AppTheme.glassmorphicCard(
-      padding: const EdgeInsets.all(12),
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
+      decoration: BoxDecoration(
+        color: tokens.panel,
+        borderRadius: BorderRadius.circular(tokens.radiusSm),
+        border: Border.all(color: tokens.borderSubtle, width: 1),
+      ),
       child: Column(
         children: [
           Text(
-            value,
+            label,
             style: TextStyle(
-              color: color,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
+              fontFamily: AppTypography.displayFontFamily,
+              color: tokens.textMuted,
+              fontSize: 9,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.8,
             ),
           ),
-          if (unit.isNotEmpty)
-            Text(unit, style: TextStyle(color: secondary, fontSize: 10)),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: TextStyle(
+              fontFamily: AppTypography.displayFontFamily,
+              color: color,
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
+          ),
           const SizedBox(height: 2),
-          Text(label, style: TextStyle(color: secondary, fontSize: 11)),
+          Text(
+            unit,
+            style: TextStyle(
+              fontFamily: AppTypography.displayFontFamily,
+              color: tokens.textMuted,
+              fontSize: 8,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.5,
+            ),
+          ),
         ],
       ),
     );
@@ -261,73 +408,150 @@ class _StatCard extends StatelessWidget {
 // ── Goal Card ─────────────────────────────────────────────────────────────────
 
 class _GoalCard extends StatelessWidget {
-  const _GoalCard({required this.profile, required this.program});
+  const _GoalCard({
+    required this.profile,
+    required this.program,
+    required this.tokens,
+  });
+
   final UserProfile profile;
   final WorkoutProgram program;
+  final AppThemeTokens tokens;
 
   @override
   Widget build(BuildContext context) {
-    final onSurface = Theme.of(context).colorScheme.onSurface;
-    final secondary = Theme.of(context).colorScheme.onSurfaceVariant;
-
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-      child: AppTheme.glassmorphicCard(
-        padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      child: Container(
+        padding: const EdgeInsets.all(AppTheme.spacingMedium),
+        decoration: BoxDecoration(
+          color: tokens.panel,
+          borderRadius: BorderRadius.circular(tokens.radiusMd),
+          border: Border.all(color: tokens.borderSubtle, width: 1),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Your Workout Plan',
-              style: TextStyle(color: secondary, fontSize: 12, fontWeight: FontWeight.w500),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    'WORKOUT PROGRAM',
+                    style: TextStyle(
+                      fontFamily: AppTypography.displayFontFamily,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.5,
+                      color: tokens.textPrimary,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: tokens.card,
+                    borderRadius: BorderRadius.circular(tokens.radiusSm),
+                    border: Border.all(color: tokens.borderSubtle, width: 1),
+                  ),
+                  child: Text(
+                    'ACTIVE PROTOCOL',
+                    style: TextStyle(
+                      fontFamily: AppTypography.displayFontFamily,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.8,
+                      color: tokens.textMuted,
+                    ),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             Text(
               program.name,
-              style: TextStyle(color: onSurface, fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontFamily: AppTypography.displayFontFamily,
+                color: tokens.textPrimary,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
             ),
             const SizedBox(height: 4),
             Text(
               program.description,
-              style: TextStyle(color: secondary, fontSize: 13),
+              style: TextStyle(
+                fontFamily: AppTypography.bodyFontFamily,
+                color: tokens.textSecondary,
+                fontSize: 12,
+                height: 1.4,
+              ),
             ),
             const SizedBox(height: 12),
-            Row(
+            Wrap(
+              spacing: 8,
+              runSpacing: 6,
               children: [
-                _PlanChip(icon: Icons.calendar_today, label: '${program.durationWeeks} weeks'),
-                const SizedBox(width: 8),
-                _PlanChip(icon: Icons.fitness_center, label: program.difficulty),
-                const SizedBox(width: 8),
-                _PlanChip(icon: Icons.repeat, label: '${profile.workoutDaysPerWeek}x/week'),
+                _PlanChip(
+                  icon: Icons.calendar_today_rounded,
+                  label: '${program.durationWeeks} WEEKS',
+                  tokens: tokens,
+                ),
+                _PlanChip(
+                  icon: Icons.fitness_center_rounded,
+                  label: program.difficulty.toUpperCase(),
+                  tokens: tokens,
+                ),
+                _PlanChip(
+                  icon: Icons.repeat_rounded,
+                  label: '${profile.workoutDaysPerWeek}X / WEEK',
+                  tokens: tokens,
+                ),
               ],
             ),
           ],
         ),
       ),
-    ).animate().fadeIn(delay: 200.ms);
+    ).animate().fadeIn(delay: 150.ms);
   }
 }
 
 class _PlanChip extends StatelessWidget {
-  const _PlanChip({required this.icon, required this.label});
+  const _PlanChip({
+    required this.icon,
+    required this.label,
+    required this.tokens,
+  });
+
   final IconData icon;
   final String label;
+  final AppThemeTokens tokens;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: AppTheme.primaryColor.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppTheme.primaryColor.withValues(alpha: 0.2)),
+        color: tokens.card,
+        borderRadius: BorderRadius.circular(tokens.radiusSm),
+        border: Border.all(color: tokens.borderSubtle, width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: AppTheme.primaryColor),
-          const SizedBox(width: 4),
-          Text(label, style: const TextStyle(color: AppTheme.primaryColor, fontSize: 11)),
+          Icon(icon, size: 12, color: tokens.kineticAccent),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: TextStyle(
+              fontFamily: AppTypography.displayFontFamily,
+              color: tokens.textPrimary,
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.5,
+            ),
+          ),
         ],
       ),
     );
@@ -337,79 +561,119 @@ class _PlanChip extends StatelessWidget {
 // ── Diet Plan Card ────────────────────────────────────────────────────────────
 
 class _DietPlanCard extends StatelessWidget {
-  const _DietPlanCard({required this.dietPlan});
+  const _DietPlanCard({required this.dietPlan, required this.tokens});
   final DietPlan dietPlan;
+  final AppThemeTokens tokens;
 
   @override
   Widget build(BuildContext context) {
-    final onSurface = Theme.of(context).colorScheme.onSurface;
-    final secondary = Theme.of(context).colorScheme.onSurfaceVariant;
+    final totalMacros = dietPlan.proteinG + dietPlan.carbsG + dietPlan.fatsG;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      child: AppTheme.glassmorphicCard(
-        padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Container(
+        padding: const EdgeInsets.all(AppTheme.spacingMedium),
+        decoration: BoxDecoration(
+          color: tokens.panel,
+          borderRadius: BorderRadius.circular(tokens.radiusMd),
+          border: Border.all(color: tokens.borderSubtle, width: 1),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Your Diet Plan',
-                  style: TextStyle(color: secondary, fontSize: 12, fontWeight: FontWeight.w500),
+                Expanded(
+                  child: Text(
+                    'NUTRITION PROTOCOL',
+                    style: TextStyle(
+                      fontFamily: AppTypography.displayFontFamily,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.5,
+                      color: tokens.textPrimary,
+                    ),
+                  ),
                 ),
-                Text(
-                  '${dietPlan.dailyCalories.toInt()} kcal/day',
-                  style: const TextStyle(
-                    color: AppTheme.primaryColor,
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: tokens.card,
+                    borderRadius: BorderRadius.circular(tokens.radiusSm),
+                    border: Border.all(color: tokens.borderSubtle, width: 1),
+                  ),
+                  child: Text(
+                    '${dietPlan.dailyCalories.toInt()} KCAL / DAY',
+                    style: TextStyle(
+                      fontFamily: AppTypography.displayFontFamily,
+                      color: tokens.kineticAccent,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.8,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             Text(
               dietPlan.name,
-              style: TextStyle(color: onSurface, fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontFamily: AppTypography.displayFontFamily,
+                color: tokens.textPrimary,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
             _MacroBar(
-              label: 'Protein',
+              label: 'PROTEIN',
               value: dietPlan.proteinG,
-              total: dietPlan.proteinG + dietPlan.carbsG + dietPlan.fatsG,
-              color: AppTheme.proteinColor,
-              unit: 'g',
+              total: totalMacros,
+              color: tokens.kineticAccent,
+              unit: 'G',
+              tokens: tokens,
             ),
             const SizedBox(height: 8),
             _MacroBar(
-              label: 'Carbs',
+              label: 'CARBS',
               value: dietPlan.carbsG,
-              total: dietPlan.proteinG + dietPlan.carbsG + dietPlan.fatsG,
-              color: AppTheme.carbsColor,
-              unit: 'g',
+              total: totalMacros,
+              color: tokens.cyanAccent,
+              unit: 'G',
+              tokens: tokens,
             ),
             const SizedBox(height: 8),
             _MacroBar(
-              label: 'Fats',
+              label: 'FATS',
               value: dietPlan.fatsG,
-              total: dietPlan.proteinG + dietPlan.carbsG + dietPlan.fatsG,
-              color: AppTheme.fatsColor,
-              unit: 'g',
+              total: totalMacros,
+              color: tokens.violetAccent,
+              unit: 'G',
+              tokens: tokens,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 18),
             Text(
-              'Sample Day',
-              style: TextStyle(color: onSurface, fontSize: 14, fontWeight: FontWeight.bold),
+              'SAMPLE CYCLE MEALS',
+              style: TextStyle(
+                fontFamily: AppTypography.displayFontFamily,
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.0,
+                color: tokens.textMuted,
+              ),
             ),
             const SizedBox(height: 8),
             if (dietPlan.days.isNotEmpty)
-              ...dietPlan.days.first.meals.map((meal) => _MealRow(meal: meal)),
+              ...dietPlan.days.first.meals
+                  .map((meal) => _MealRow(meal: meal, tokens: tokens)),
           ],
         ),
       ),
-    ).animate().fadeIn(delay: 300.ms);
+    ).animate().fadeIn(delay: 200.ms);
   }
 }
 
@@ -420,38 +684,73 @@ class _MacroBar extends StatelessWidget {
     required this.total,
     required this.color,
     required this.unit,
+    required this.tokens,
   });
+
   final String label;
   final double value;
   final double total;
   final Color color;
   final String unit;
+  final AppThemeTokens tokens;
 
   @override
   Widget build(BuildContext context) {
     final fraction = total > 0 ? (value / total).clamp(0.0, 1.0) : 0.0;
-    final secondary = Theme.of(context).colorScheme.onSurfaceVariant;
     return Row(
       children: [
         SizedBox(
-          width: 60,
-          child: Text(label, style: TextStyle(color: secondary, fontSize: 12)),
-        ),
-        Expanded(
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: fraction,
-              backgroundColor: color.withValues(alpha: 0.15),
-              valueColor: AlwaysStoppedAnimation(color),
-              minHeight: 8,
+          width: 58,
+          child: Text(
+            label,
+            style: TextStyle(
+              fontFamily: AppTypography.displayFontFamily,
+              color: tokens.textMuted,
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.5,
             ),
           ),
         ),
-        const SizedBox(width: 8),
-        Text(
-          '${value.toInt()}$unit',
-          style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.bold),
+        Expanded(
+          child: Container(
+            height: 6,
+            decoration: BoxDecoration(
+              color: tokens.card,
+              borderRadius: BorderRadius.circular(3),
+            ),
+            child: FractionallySizedBox(
+              alignment: Alignment.centerLeft,
+              widthFactor: fraction,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(3),
+                  boxShadow: [
+                    BoxShadow(
+                      color: color.withValues(alpha: 0.4),
+                      blurRadius: 4,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        SizedBox(
+          width: 50,
+          child: Text(
+            '${value.toInt()} $unit',
+            textAlign: TextAlign.right,
+            style: TextStyle(
+              fontFamily: AppTypography.displayFontFamily,
+              color: color,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
+          ),
         ),
       ],
     );
@@ -459,19 +758,23 @@ class _MacroBar extends StatelessWidget {
 }
 
 class _MealRow extends StatelessWidget {
-  const _MealRow({required this.meal});
+  const _MealRow({required this.meal, required this.tokens});
   final DietMeal meal;
+  final AppThemeTokens tokens;
 
   @override
   Widget build(BuildContext context) {
-    final onSurface = Theme.of(context).colorScheme.onSurface;
-    final secondary = Theme.of(context).colorScheme.onSurfaceVariant;
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: tokens.card,
+        borderRadius: BorderRadius.circular(tokens.radiusSm),
+        border: Border.all(color: tokens.borderSubtle, width: 1),
+      ),
       child: Row(
         children: [
-          Text(meal.mealType.emoji, style: const TextStyle(fontSize: 18)),
+          Text(meal.mealType.emoji, style: const TextStyle(fontSize: 16)),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -479,11 +782,20 @@ class _MealRow extends StatelessWidget {
               children: [
                 Text(
                   meal.name,
-                  style: TextStyle(color: onSurface, fontSize: 13, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    fontFamily: AppTypography.bodyFontFamily,
+                    color: tokens.textPrimary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 Text(
                   meal.ingredients.take(3).join(', '),
-                  style: TextStyle(color: secondary, fontSize: 11),
+                  style: TextStyle(
+                    fontFamily: AppTypography.bodyFontFamily,
+                    color: tokens.textMuted,
+                    fontSize: 10,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -491,8 +803,14 @@ class _MealRow extends StatelessWidget {
             ),
           ),
           Text(
-            '${meal.calories.toInt()} kcal',
-            style: TextStyle(color: secondary, fontSize: 12),
+            '${meal.calories.toInt()} KCAL',
+            style: TextStyle(
+              fontFamily: AppTypography.displayFontFamily,
+              color: tokens.textSecondary,
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
           ),
         ],
       ),
@@ -503,38 +821,60 @@ class _MealRow extends StatelessWidget {
 // ── Diet Tips ─────────────────────────────────────────────────────────────────
 
 class _DietTipsCard extends StatelessWidget {
-  const _DietTipsCard({required this.tips});
+  const _DietTipsCard({required this.tips, required this.tokens});
   final List<String> tips;
+  final AppThemeTokens tokens;
 
   @override
   Widget build(BuildContext context) {
-    final onSurface = Theme.of(context).colorScheme.onSurface;
-    final secondary = Theme.of(context).colorScheme.onSurfaceVariant;
-
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      child: AppTheme.glassmorphicCard(
-        padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Container(
+        padding: const EdgeInsets.all(AppTheme.spacingMedium),
+        decoration: BoxDecoration(
+          color: tokens.panel,
+          borderRadius: BorderRadius.circular(tokens.radiusMd),
+          border: Border.all(color: tokens.borderSubtle, width: 1),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '💡 Nutrition Tips',
-              style: TextStyle(color: onSurface, fontSize: 16, fontWeight: FontWeight.bold),
+              'OPERATIONAL DIRECTIVES / NUTRITION',
+              style: TextStyle(
+                fontFamily: AppTypography.displayFontFamily,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.0,
+                color: tokens.textMuted,
+              ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             ...tips.map((tip) => Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.only(bottom: 6),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        '•',
-                        style: TextStyle(color: AppTheme.primaryColor, fontSize: 16),
+                      Container(
+                        margin: const EdgeInsets.only(top: 5),
+                        width: 5,
+                        height: 5,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: tokens.kineticAccent,
+                        ),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
-                        child: Text(tip, style: TextStyle(color: secondary, fontSize: 13)),
+                        child: Text(
+                          tip,
+                          style: TextStyle(
+                            fontFamily: AppTypography.bodyFontFamily,
+                            color: tokens.textSecondary,
+                            fontSize: 12,
+                            height: 1.4,
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -542,104 +882,152 @@ class _DietTipsCard extends StatelessWidget {
           ],
         ),
       ),
-    ).animate().fadeIn(delay: 400.ms);
+    ).animate().fadeIn(delay: 250.ms);
   }
 }
 
 // ── Settings Section ──────────────────────────────────────────────────────────
 
 class _SettingsSection extends StatelessWidget {
-  const _SettingsSection({required this.ref});
+  const _SettingsSection({required this.ref, required this.tokens});
   final WidgetRef ref;
+  final AppThemeTokens tokens;
 
   void _showLogoutDialog(BuildContext context) {
     showDialog(
       context: context,
-      barrierDismissible: false, // Prevent accidental dismissal
-      builder: (context) => AlertDialog(
-        icon: const Icon(
-          Icons.logout,
-          size: 48,
-          color: AppTheme.errorColor,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: tokens.panel,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(tokens.radiusMd),
+          side: BorderSide(color: tokens.borderSubtle, width: 1),
         ),
-        title: const Text('Logout'),
-        content: const Text(
-          'Are you sure you want to logout? Your data will be saved and synced when you log back in.',
+        icon: Icon(
+          Icons.logout_rounded,
+          size: 40,
+          color: tokens.error,
+        ),
+        title: Text(
+          'TERMINATE SESSION',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontFamily: AppTypography.displayFontFamily,
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.5,
+            color: tokens.textPrimary,
+          ),
+        ),
+        content: Text(
+          'Confirm session termination. All local encrypted records and cache are safely stored and synced upon reactivation.',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontFamily: AppTypography.bodyFontFamily,
+            fontSize: 13,
+            color: tokens.textSecondary,
+            height: 1.4,
+          ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () async {
-              final rootNavigator = Navigator.of(context, rootNavigator: true);
-              final router = GoRouter.of(context);
-              final scaffoldMessenger = ScaffoldMessenger.of(context);
-
-              rootNavigator.pop(); // Close confirmation dialog
-
-              // Show loading dialog on root navigator
-              bool dialogOpen = true;
-              showDialog(
-                context: context,
-                useRootNavigator: true,
-                barrierDismissible: false,
-                builder: (dialogContext) => const AlertDialog(
-                  content: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      CircularProgressIndicator(),
-                      SizedBox(height: 16),
-                      Text('Logging out...'),
-                    ],
+          Row(
+            children: [
+              Expanded(
+                child: TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: Text(
+                    'CANCEL',
+                    style: TextStyle(
+                      fontFamily: AppTypography.displayFontFamily,
+                      fontWeight: FontWeight.w700,
+                      color: tokens.textMuted,
+                    ),
                   ),
                 ),
-              ).then((_) {
-                dialogOpen = false;
-              });
+              ),
+              Expanded(
+                child: AppButton(
+                  label: 'LOGOUT',
+                  onPressed: () async {
+                    final rootNavigator =
+                        Navigator.of(context, rootNavigator: true);
+                    final router = GoRouter.of(context);
+                    final scaffoldMessenger = ScaffoldMessenger.of(context);
 
-              void dismissLoadingDialog() {
-                if (dialogOpen) {
-                  dialogOpen = false;
-                  rootNavigator.pop();
-                }
-              }
+                    rootNavigator.pop();
 
-              try {
-                // Sign out with 3-second timeout
-                await ref
-                    .read(authNotifierProvider.notifier)
-                    .signOut()
-                    .timeout(const Duration(seconds: 3));
+                    bool dialogOpen = true;
+                    showDialog(
+                      context: context,
+                      useRootNavigator: true,
+                      barrierDismissible: false,
+                      builder: (dialogContext) => AlertDialog(
+                        backgroundColor: tokens.panel,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(tokens.radiusMd),
+                          side: BorderSide(color: tokens.borderSubtle, width: 1),
+                        ),
+                        content: Row(
+                          children: [
+                            CircularProgressIndicator(
+                              color: tokens.kineticAccent,
+                            ),
+                            const SizedBox(width: 18),
+                            Text(
+                              'Terminating session...',
+                              style: TextStyle(
+                                fontFamily: AppTypography.bodyFontFamily,
+                                color: tokens.textPrimary,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ).then((_) {
+                      dialogOpen = false;
+                    });
 
-                dismissLoadingDialog();
-                router.go('/login');
-              } on TimeoutException {
-                dismissLoadingDialog();
-                scaffoldMessenger.showSnackBar(
-                  const SnackBar(
-                    content: Text('Logout is taking longer than expected. Redirecting...'),
-                    backgroundColor: Colors.orange,
-                    duration: Duration(seconds: 3),
-                  ),
-                );
-                router.go('/login');
-              } catch (e) {
-                dismissLoadingDialog();
-                scaffoldMessenger.showSnackBar(
-                  SnackBar(
-                    content: Text('Logout error: ${e.toString()}'),
-                    backgroundColor: Colors.red,
-                    duration: const Duration(seconds: 5),
-                  ),
-                );
-              }
-            },
-            style: FilledButton.styleFrom(
-              backgroundColor: AppTheme.errorColor,
-            ),
-            child: const Text('Logout'),
+                    void dismissLoadingDialog() {
+                      if (dialogOpen) {
+                        dialogOpen = false;
+                        rootNavigator.pop();
+                      }
+                    }
+
+                    try {
+                      await ref
+                          .read(authNotifierProvider.notifier)
+                          .signOut()
+                          .timeout(const Duration(seconds: 3));
+
+                      dismissLoadingDialog();
+                      router.go('/login');
+                    } on TimeoutException {
+                      dismissLoadingDialog();
+                      scaffoldMessenger.showSnackBar(
+                        SnackBar(
+                          content: const Text(
+                              'Logout is taking longer than expected. Redirecting...'),
+                          backgroundColor: tokens.warning,
+                          duration: const Duration(seconds: 3),
+                        ),
+                      );
+                      router.go('/login');
+                    } catch (e) {
+                      dismissLoadingDialog();
+                      scaffoldMessenger.showSnackBar(
+                        SnackBar(
+                          content: Text('Logout error: ${e.toString()}'),
+                          backgroundColor: tokens.error,
+                          duration: const Duration(seconds: 5),
+                        ),
+                      );
+                    }
+                  },
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -647,13 +1035,10 @@ class _SettingsSection extends StatelessWidget {
   }
 
   void _showTermsOfService(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Terms of Service'),
-        content: const SingleChildScrollView(
-          child: Text(
-            '''By using IronFlow, you agree to the following terms:
+    _showDocumentDialog(
+      context,
+      title: 'TERMS OF SERVICE',
+      content: '''By using IronFlow, you agree to the following terms:
 
 1. ACCEPTANCE OF TERMS
 By downloading, installing, or using IronFlow, you agree to be bound by these Terms of Service.
@@ -689,27 +1074,14 @@ For the complete Terms of Service, visit:
 https://ironflow.app/terms
 
 Last Updated: May 13, 2026''',
-            style: TextStyle(fontSize: 14, height: 1.5),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
     );
   }
 
   void _showPrivacyPolicy(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Privacy Policy'),
-        content: const SingleChildScrollView(
-          child: Text(
-            '''IronFlow Privacy Policy
+    _showDocumentDialog(
+      context,
+      title: 'PRIVACY POLICY',
+      content: '''IronFlow Privacy Policy
 
 INFORMATION WE COLLECT
 - Account info: Email, name, password
@@ -755,38 +1127,58 @@ CONTACT US
 Email: privacy@ironflow.app
 Website: https://ironflow.app/privacy
 
-For the complete Privacy Policy, visit:
-https://ironflow.app/privacy
-
 Last Updated: May 13, 2026''',
-            style: TextStyle(fontSize: 14, height: 1.5),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
     );
   }
 
-  void _showAuditDocument(BuildContext context, String title, String content) {
+  void _showDocumentDialog(
+    BuildContext context, {
+    required String title,
+    required String content,
+  }) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(title),
-        content: SingleChildScrollView(
-          child: Text(
-            content,
-            style: const TextStyle(fontSize: 13, height: 1.5),
+      builder: (ctx) => AlertDialog(
+        backgroundColor: tokens.panel,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(tokens.radiusMd),
+          side: BorderSide(color: tokens.borderSubtle, width: 1),
+        ),
+        title: Text(
+          title,
+          style: TextStyle(
+            fontFamily: AppTypography.displayFontFamily,
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.5,
+            color: tokens.textPrimary,
+          ),
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: SingleChildScrollView(
+            child: Text(
+              content,
+              style: TextStyle(
+                fontFamily: AppTypography.bodyFontFamily,
+                fontSize: 12,
+                color: tokens.textSecondary,
+                height: 1.5,
+              ),
+            ),
           ),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(
+              'CLOSE',
+              style: TextStyle(
+                fontFamily: AppTypography.displayFontFamily,
+                fontWeight: FontWeight.w700,
+                color: tokens.kineticAccent,
+              ),
+            ),
           ),
         ],
       ),
@@ -795,160 +1187,196 @@ Last Updated: May 13, 2026''',
 
   @override
   Widget build(BuildContext context) {
-    final onSurface = Theme.of(context).colorScheme.onSurface;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Settings',
-            style: TextStyle(color: onSurface, fontSize: 18, fontWeight: FontWeight.bold),
+            'SYSTEM & PREFERENCES',
+            style: TextStyle(
+              fontFamily: AppTypography.displayFontFamily,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.8,
+              color: tokens.textPrimary,
+            ),
           ),
-          const SizedBox(height: 12),
-          AppTheme.glassmorphicCard(
+          const SizedBox(height: 10),
+          Container(
+            decoration: BoxDecoration(
+              color: tokens.panel,
+              borderRadius: BorderRadius.circular(tokens.radiusMd),
+              border: Border.all(color: tokens.borderSubtle, width: 1),
+            ),
             child: Column(
               children: [
-                // Logout button (RED)
+                // Logout Tile (Red)
                 ListTile(
-                  leading: const Icon(Icons.logout, color: AppTheme.errorColor, size: 20),
-                  title: const Text(
-                    'Logout',
-                    style: TextStyle(color: AppTheme.errorColor, fontSize: 14, fontWeight: FontWeight.w600),
+                  leading: Icon(
+                    Icons.logout_rounded,
+                    color: tokens.error,
+                    size: 20,
                   ),
-                  trailing: const Icon(Icons.arrow_forward_ios, color: AppTheme.errorColor, size: 14),
+                  title: Text(
+                    'TERMINATE SESSION',
+                    style: TextStyle(
+                      fontFamily: AppTypography.displayFontFamily,
+                      color: tokens.error,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  trailing: Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    color: tokens.error,
+                    size: 14,
+                  ),
                   onTap: () => _showLogoutDialog(context),
                   dense: true,
                 ),
-                Divider(
-                  color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
-                  height: 1,
-                ),
+                Divider(color: tokens.borderSubtle, height: 1),
                 if (kDebugMode) ...[
                   _SettingsTile(
                     icon: Icons.bug_report_outlined,
                     label: 'AI Diagnostic Test (Debug Only)',
                     onTap: () => context.push(AppRoutes.aiTest),
+                    tokens: tokens,
                   ),
-                  Divider(
-                    color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
-                    height: 1,
-                  ),
+                  Divider(color: tokens.borderSubtle, height: 1),
                   _SettingsTile(
                     icon: Icons.palette_outlined,
                     label: 'Design System Gallery (Debug Only)',
                     onTap: () => context.push(AppRoutes.designGallery),
+                    tokens: tokens,
                   ),
-                  Divider(
-                    color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
-                    height: 1,
-                  ),
+                  Divider(color: tokens.borderSubtle, height: 1),
                 ],
-                // Theme toggle
+                // Theme Toggle
                 ListTile(
                   leading: Icon(
                     isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
-                    color: AppTheme.primaryColor,
+                    color: tokens.kineticAccent,
                     size: 20,
                   ),
                   title: Text(
-                    isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode',
-                    style: TextStyle(color: onSurface, fontSize: 14),
+                    isDark ? 'LIGHT MODE' : 'DARK MODE',
+                    style: TextStyle(
+                      fontFamily: AppTypography.displayFontFamily,
+                      color: tokens.textPrimary,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.5,
+                    ),
                   ),
                   trailing: Switch(
                     value: isDark,
                     onChanged: (_) {
                       ref.read(themeProvider.notifier).toggleTheme();
                     },
-                    activeThumbColor: AppTheme.primaryColor,
+                    activeColor: tokens.kineticAccent,
                   ),
                   dense: true,
                 ),
-                Divider(
-                  color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
-                  height: 1,
-                ),
+                Divider(color: tokens.borderSubtle, height: 1),
                 _SettingsTile(
-                  icon: Icons.edit,
+                  icon: Icons.edit_rounded,
                   label: 'Edit Profile & Goals',
                   onTap: () => context.go(AppRoutes.onboarding),
+                  tokens: tokens,
                 ),
-                Divider(
-                  color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
-                  height: 1,
-                ),
+                Divider(color: tokens.borderSubtle, height: 1),
                 _SettingsTile(
-                  icon: Icons.history,
+                  icon: Icons.history_rounded,
                   label: 'Workout History',
                   onTap: () => context.go(AppRoutes.workoutHistory),
+                  tokens: tokens,
                 ),
-                Divider(
-                  color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
-                  height: 1,
-                ),
+                Divider(color: tokens.borderSubtle, height: 1),
                 _SettingsTile(
-                  icon: Icons.search,
+                  icon: Icons.search_rounded,
                   label: 'Exercise Catalog',
                   onTap: () => context.go(AppRoutes.workoutCatalog),
+                  tokens: tokens,
                 ),
-                Divider(
-                  color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
-                  height: 1,
-                ),
+                Divider(color: tokens.borderSubtle, height: 1),
                 _SettingsTile(
                   icon: Icons.notifications_outlined,
                   label: 'Reminder Settings',
                   onTap: () => context.go(AppRoutes.reminderSettings),
+                  tokens: tokens,
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 18),
           // Legal Section
           Text(
-            'Legal',
-            style: TextStyle(color: onSurface, fontSize: 18, fontWeight: FontWeight.bold),
+            'LEGAL & COMPLIANCE',
+            style: TextStyle(
+              fontFamily: AppTypography.displayFontFamily,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.8,
+              color: tokens.textPrimary,
+            ),
           ),
-          const SizedBox(height: 12),
-          AppTheme.glassmorphicCard(
+          const SizedBox(height: 10),
+          Container(
+            decoration: BoxDecoration(
+              color: tokens.panel,
+              borderRadius: BorderRadius.circular(tokens.radiusMd),
+              border: Border.all(color: tokens.borderSubtle, width: 1),
+            ),
             child: Column(
               children: [
                 _SettingsTile(
                   icon: Icons.description_outlined,
                   label: 'Terms of Service',
                   onTap: () => _showTermsOfService(context),
+                  tokens: tokens,
                 ),
-                Divider(
-                  color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
-                  height: 1,
-                ),
+                Divider(color: tokens.borderSubtle, height: 1),
                 _SettingsTile(
                   icon: Icons.privacy_tip_outlined,
                   label: 'Privacy Policy',
                   onTap: () => _showPrivacyPolicy(context),
+                  tokens: tokens,
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 20),
-          // Recent Audits & Documentation
+          const SizedBox(height: 18),
+          // Documentation & Audits Section
           Text(
-            'Recent Audits & Documentation',
-            style: TextStyle(color: onSurface, fontSize: 18, fontWeight: FontWeight.bold),
+            'SYSTEM AUDITS & TELEMETRY',
+            style: TextStyle(
+              fontFamily: AppTypography.displayFontFamily,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.8,
+              color: tokens.textPrimary,
+            ),
           ),
-          const SizedBox(height: 12),
-          AppTheme.glassmorphicCard(
+          const SizedBox(height: 10),
+          Container(
+            decoration: BoxDecoration(
+              color: tokens.panel,
+              borderRadius: BorderRadius.circular(tokens.radiusMd),
+              border: Border.all(color: tokens.borderSubtle, width: 1),
+            ),
             child: Column(
               children: [
                 _SettingsTile(
                   icon: Icons.analytics_outlined,
                   label: 'Current State Audit Report',
-                  onTap: () => _showAuditDocument(
+                  onTap: () => _showDocumentDialog(
                     context,
-                    'Current State Audit',
-                    '''CURRENT STATE AUDIT REPORT
+                    title: 'CURRENT STATE AUDIT REPORT',
+                    content: '''CURRENT STATE AUDIT REPORT
 
 This audit provides a comprehensive analysis of IronFlow's current implementation status.
 
@@ -977,18 +1405,16 @@ STATUS: Production Ready ✅
 
 For full report, see: CURRENT_STATE_AUDIT_REPORT.md''',
                   ),
+                  tokens: tokens,
                 ),
-                Divider(
-                  color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
-                  height: 1,
-                ),
+                Divider(color: tokens.borderSubtle, height: 1),
                 _SettingsTile(
                   icon: Icons.assessment_outlined,
                   label: 'Product Audit Report',
-                  onTap: () => _showAuditDocument(
+                  onTap: () => _showDocumentDialog(
                     context,
-                    'Product Audit',
-                    '''BRUTAL PRODUCT AUDIT
+                    title: 'PRODUCT AUDIT REPORT',
+                    content: '''BRUTAL PRODUCT AUDIT
 
 An honest assessment of IronFlow's strengths and areas for improvement.
 
@@ -1017,18 +1443,16 @@ Strong competitor to MyFitnessPal, Fitbod, and Strong.
 
 For full report, see: BRUTAL_PRODUCT_AUDIT.md''',
                   ),
+                  tokens: tokens,
                 ),
-                Divider(
-                  color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
-                  height: 1,
-                ),
+                Divider(color: tokens.borderSubtle, height: 1),
                 _SettingsTile(
-                  icon: Icons.bug_report_outlined,
+                  icon: Icons.smart_toy_outlined,
                   label: 'AI & Notifications Audit',
-                  onTap: () => _showAuditDocument(
+                  onTap: () => _showDocumentDialog(
                     context,
-                    'AI & Notifications Audit',
-                    '''AI AND NOTIFICATIONS AUDIT REPORT
+                    title: 'AI & NOTIFICATIONS AUDIT REPORT',
+                    content: '''AI AND NOTIFICATIONS AUDIT REPORT
 
 Comprehensive audit of AI features and notification system.
 
@@ -1055,18 +1479,16 @@ PERFORMANCE:
 
 For full report, see: AI_AND_NOTIFICATIONS_AUDIT_REPORT.md''',
                   ),
+                  tokens: tokens,
                 ),
-                Divider(
-                  color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
-                  height: 1,
-                ),
+                Divider(color: tokens.borderSubtle, height: 1),
                 _SettingsTile(
                   icon: Icons.rocket_launch_outlined,
                   label: 'Phase 1 Implementation Plan',
-                  onTap: () => _showAuditDocument(
+                  onTap: () => _showDocumentDialog(
                     context,
-                    'Phase 1 Plan',
-                    '''PHASE 1: CRITICAL FEATURES IMPLEMENTATION
+                    title: 'PHASE 1 IMPLEMENTATION PLAN',
+                    content: '''PHASE 1: CRITICAL FEATURES IMPLEMENTATION
 
 Goal: Get IronFlow ready for App Store/Play Store submission
 Timeline: 1-2 weeks
@@ -1094,18 +1516,16 @@ TIMELINE TO APP STORE:
 
 For full plan, see: PHASE_1_IMPLEMENTATION_PLAN.md''',
                   ),
+                  tokens: tokens,
                 ),
-                Divider(
-                  color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
-                  height: 1,
-                ),
+                Divider(color: tokens.borderSubtle, height: 1),
                 _SettingsTile(
                   icon: Icons.check_circle_outline,
                   label: 'Terms Acceptance Implementation',
-                  onTap: () => _showAuditDocument(
+                  onTap: () => _showDocumentDialog(
                     context,
-                    'Terms Acceptance',
-                    '''TERMS ACCEPTANCE IMPLEMENTATION
+                    title: 'TERMS ACCEPTANCE IMPLEMENTATION',
+                    content: '''TERMS ACCEPTANCE IMPLEMENTATION
 
 Status: ✅ COMPLETE & PRODUCTION READY
 
@@ -1136,13 +1556,14 @@ VALIDATION:
 
 For full report, see: TERMS_ACCEPTANCE_IMPLEMENTED.md''',
                   ),
+                  tokens: tokens,
                 ),
               ],
             ),
           ),
         ],
       ),
-    ).animate().fadeIn(delay: 500.ms);
+    ).animate().fadeIn(delay: 300.ms);
   }
 }
 
@@ -1151,20 +1572,32 @@ class _SettingsTile extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.onTap,
+    required this.tokens,
   });
+
   final IconData icon;
   final String label;
   final VoidCallback onTap;
+  final AppThemeTokens tokens;
 
   @override
   Widget build(BuildContext context) {
-    final onSurface = Theme.of(context).colorScheme.onSurface;
-    final secondary = Theme.of(context).colorScheme.onSurfaceVariant;
-
     return ListTile(
-      leading: Icon(icon, color: AppTheme.primaryColor, size: 20),
-      title: Text(label, style: TextStyle(color: onSurface, fontSize: 14)),
-      trailing: Icon(Icons.arrow_forward_ios, color: secondary, size: 14),
+      leading: Icon(icon, color: tokens.kineticAccent, size: 20),
+      title: Text(
+        label,
+        style: TextStyle(
+          fontFamily: AppTypography.bodyFontFamily,
+          color: tokens.textPrimary,
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      trailing: Icon(
+        Icons.arrow_forward_ios_rounded,
+        color: tokens.textMuted,
+        size: 13,
+      ),
       onTap: onTap,
       dense: true,
     );

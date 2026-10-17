@@ -3,62 +3,100 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_theme.dart';
 import '../../../../core/providers/theme_provider.dart';
+import '../../../../core/theme/app_theme_tokens.dart';
+import '../../../../core/theme/app_typography.dart';
 import 'export_settings_screen.dart';
 import 'privacy_settings_screen.dart';
 
-/// Settings screen for app preferences.
-///
-/// Allows users to:
-/// - Toggle dark/light mode
-/// - Manage notification settings
-/// - View app information
+/// Monolithic Sci-Fi Settings screen for app preferences.
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final tokens = AppThemeTokens.of(context);
     final themeMode = ref.watch(themeProvider);
+    final isDark = themeMode == ThemeMode.dark;
 
     return Scaffold(
+      backgroundColor: tokens.canvas,
       appBar: AppBar(
-        title: const Text('Settings'),
+        backgroundColor: tokens.canvas,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'SETTINGS',
+              style: TextStyle(
+                fontFamily: AppTypography.displayFontFamily,
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.5,
+                color: tokens.textPrimary,
+              ),
+            ),
+            Text(
+              'SYSTEM PREFERENCES',
+              style: TextStyle(
+                fontFamily: AppTypography.displayFontFamily,
+                fontSize: 9,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.2,
+                color: tokens.textMuted,
+              ),
+            ),
+          ],
+        ),
       ),
       body: ListView(
-        padding: const EdgeInsets.all(AppTheme.spacingMedium),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 40),
         children: [
           // Theme section
           _SettingsSection(
-            title: 'Appearance',
+            title: 'INTERFACE APPEARANCE',
+            tokens: tokens,
             children: [
-              AppTheme.glassmorphicCard(
-                padding: const EdgeInsets.all(AppTheme.spacingMedium),
+              Container(
+                decoration: BoxDecoration(
+                  color: tokens.panel,
+                  borderRadius: BorderRadius.circular(tokens.radiusMd),
+                  border: Border.all(color: tokens.borderSubtle, width: 1),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Dark Mode',
+                        Text(
+                          'MONOLITHIC DARK THEME',
                           style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                            fontFamily: AppTypography.displayFontFamily,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.5,
+                            color: tokens.textPrimary,
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 3),
                         Text(
-                          themeMode == ThemeMode.dark
-                              ? 'Enabled'
-                              : 'Disabled',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: AppTheme.textSecondary,
+                          isDark
+                              ? 'Active — High-contrast titanium'
+                              : 'Light mode active',
+                          style: TextStyle(
+                            fontFamily: AppTypography.bodyFontFamily,
+                            fontSize: 11,
+                            color: tokens.textMuted,
                           ),
                         ),
                       ],
                     ),
                     Switch(
-                      value: themeMode == ThemeMode.dark,
+                      value: isDark,
+                      activeColor: tokens.kineticAccent,
                       onChanged: (value) {
                         ref
                             .read(themeProvider.notifier)
@@ -70,20 +108,26 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ],
           ),
-          const SizedBox(height: AppTheme.spacingLarge),
+          const SizedBox(height: 20),
 
           // Data Management section
           _SettingsSection(
-            title: 'Data Management',
+            title: 'DATA MANAGEMENT',
+            tokens: tokens,
             children: [
-              AppTheme.glassmorphicCard(
-                padding: const EdgeInsets.all(AppTheme.spacingMedium),
+              Container(
+                decoration: BoxDecoration(
+                  color: tokens.panel,
+                  borderRadius: BorderRadius.circular(tokens.radiusMd),
+                  border: Border.all(color: tokens.borderSubtle, width: 1),
+                ),
                 child: Column(
                   children: [
                     _SettingsTile(
-                      title: 'Export Data',
-                      subtitle: 'Export your fitness data',
-                      icon: Icons.download,
+                      title: 'Export Telemetry Data',
+                      subtitle: 'Backup or extract CSV/JSON datasets',
+                      icon: Icons.download_rounded,
+                      tokens: tokens,
                       onTap: () {
                         Navigator.of(context).push(
                           MaterialPageRoute(
@@ -92,11 +136,12 @@ class SettingsScreen extends ConsumerWidget {
                         );
                       },
                     ),
-                    const Divider(),
+                    Divider(color: tokens.borderSubtle, height: 1),
                     _SettingsTile(
-                      title: 'Privacy Settings',
-                      subtitle: 'Manage your data privacy',
-                      icon: Icons.privacy_tip,
+                      title: 'Privacy & Permissions',
+                      subtitle: 'Manage telemetry logs and account controls',
+                      icon: Icons.privacy_tip_outlined,
+                      tokens: tokens,
                       onTap: () {
                         Navigator.of(context).push(
                           MaterialPageRoute(
@@ -110,30 +155,39 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ],
           ),
-          const SizedBox(height: AppTheme.spacingLarge),
+          const SizedBox(height: 20),
 
           // About section
           _SettingsSection(
-            title: 'About',
+            title: 'CORE APPLICATION SYSTEM',
+            tokens: tokens,
             children: [
-              AppTheme.glassmorphicCard(
+              Container(
+                decoration: BoxDecoration(
+                  color: tokens.panel,
+                  borderRadius: BorderRadius.circular(tokens.radiusMd),
+                  border: Border.all(color: tokens.borderSubtle, width: 1),
+                ),
                 padding: const EdgeInsets.all(AppTheme.spacingMedium),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _SettingItem(
-                      label: 'App Name',
-                      value: 'IronFlow',
+                      label: 'APPLICATION',
+                      value: 'IRONFLOW',
+                      tokens: tokens,
                     ),
-                    const SizedBox(height: AppTheme.spacingMedium),
+                    Divider(color: tokens.borderSubtle, height: 20),
                     _SettingItem(
-                      label: 'Version',
-                      value: '1.0.0',
+                      label: 'ENGINE ARCHITECTURE',
+                      value: 'MONOLITHIC SCI-FI',
+                      tokens: tokens,
                     ),
-                    const SizedBox(height: AppTheme.spacingMedium),
+                    Divider(color: tokens.borderSubtle, height: 20),
                     _SettingItem(
-                      label: 'Build',
-                      value: '1',
+                      label: 'BUILD VERSION',
+                      value: '1.0.0+1',
+                      tokens: tokens,
                     ),
                   ],
                 ),
@@ -149,10 +203,12 @@ class SettingsScreen extends ConsumerWidget {
 class _SettingsSection extends StatelessWidget {
   final String title;
   final List<Widget> children;
+  final AppThemeTokens tokens;
 
   const _SettingsSection({
     required this.title,
     required this.children,
+    required this.tokens,
   });
 
   @override
@@ -160,15 +216,19 @@ class _SettingsSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: AppTheme.textSecondary,
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 8),
+          child: Text(
+            title,
+            style: TextStyle(
+              fontFamily: AppTypography.displayFontFamily,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.0,
+              color: tokens.textMuted,
+            ),
           ),
         ),
-        const SizedBox(height: AppTheme.spacingSmall),
         ...children,
       ],
     );
@@ -180,62 +240,68 @@ class _SettingsTile extends StatelessWidget {
   final String subtitle;
   final IconData icon;
   final VoidCallback onTap;
+  final AppThemeTokens tokens;
 
   const _SettingsTile({
     required this.title,
     required this.subtitle,
     required this.icon,
     required this.onTap,
+    required this.tokens,
   });
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+      borderRadius: BorderRadius.circular(tokens.radiusSm),
       child: Padding(
-        padding: const EdgeInsets.all(AppTheme.spacingSmall),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(AppTheme.spacingSmall),
+              padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
+                color: tokens.card,
+                borderRadius: BorderRadius.circular(tokens.radiusSm),
+                border: Border.all(color: tokens.borderSubtle, width: 1),
               ),
               child: Icon(
                 icon,
-                color: AppTheme.primaryColor,
-                size: 20,
+                color: tokens.kineticAccent,
+                size: 18,
               ),
             ),
-            const SizedBox(width: AppTheme.spacingMedium),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
+                    style: TextStyle(
+                      fontFamily: AppTypography.bodyFontFamily,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: tokens.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppTheme.textSecondary,
+                    style: TextStyle(
+                      fontFamily: AppTypography.bodyFontFamily,
+                      fontSize: 11,
+                      color: tokens.textSecondary,
                     ),
                   ),
                 ],
               ),
             ),
-            const Icon(
-              Icons.arrow_forward_ios,
-              size: 16,
-              color: AppTheme.textSecondary,
+            Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 13,
+              color: tokens.textMuted,
             ),
           ],
         ),
@@ -247,10 +313,12 @@ class _SettingsTile extends StatelessWidget {
 class _SettingItem extends StatelessWidget {
   final String label;
   final String value;
+  final AppThemeTokens tokens;
 
   const _SettingItem({
     required this.label,
     required this.value,
+    required this.tokens,
   });
 
   @override
@@ -260,16 +328,21 @@ class _SettingItem extends StatelessWidget {
       children: [
         Text(
           label,
-          style: const TextStyle(
-            fontSize: 14,
-            color: AppTheme.textSecondary,
+          style: TextStyle(
+            fontFamily: AppTypography.displayFontFamily,
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
+            color: tokens.textMuted,
           ),
         ),
         Text(
           value,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
+          style: TextStyle(
+            fontFamily: AppTypography.displayFontFamily,
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            color: tokens.textPrimary,
           ),
         ),
       ],
