@@ -257,8 +257,10 @@ final routerProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: AppRoutes.progress,
-                builder: (context, state) =>
-                    const body_progress.ProgressScreen(),
+                builder: (context, state) {
+                  final initialTab = state.uri.queryParameters['tab'];
+                  return body_progress.ProgressScreen(initialTab: initialTab);
+                },
               ),
             ],
           ),

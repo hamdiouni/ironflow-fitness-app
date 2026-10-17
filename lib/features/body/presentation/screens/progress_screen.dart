@@ -1,18 +1,15 @@
 import 'dart:io';
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/constants/app_theme.dart';
-import '../../../../core/theme/app_theme_tokens.dart';
-import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/error_handler.dart';
 import '../../../../shared/presentation/components/app_button.dart';
+import '../../../../shared/presentation/services/app_haptics.dart';
 import '../../../../shared/widgets/weight_trend_graph.dart';
 import '../../../ai/domain/entities/insight.dart';
 import '../../../ai/presentation/widgets/ai_entry_button.dart';
@@ -21,10 +18,19 @@ import '../../domain/entities/body_entry.dart';
 import '../../domain/entities/measurement_type.dart';
 import '../../domain/usecases/save_body_entry_use_case.dart';
 import '../providers/body_providers.dart';
+import '../widgets/lifts_volume_tab.dart';
+import '../widgets/progress_photo_comparison.dart';
 
-/// Monolithic Sci-Fi Progress Screen displaying weight, body measurements, and photos.
+/// Monolithic Sci-Fi Progress Screen displaying:
+/// - Tab 0: Lifts & Volume (charts, frequency, volume progression, muscle breakdown merged from Analytics)
+/// - Tab 1: Body Weight & Measurements (trend graph, recent entries, body circumferences)
+/// - Tab 2: Photos (physique photo gallery and before/after comparison slider)
+///
+/// Supports query parameter deep-linking via [initialTab] (e.g. ?tab=lifts, ?tab=weight, ?tab=photos).
 class ProgressScreen extends ConsumerStatefulWidget {
-  const ProgressScreen({super.key});
+  final String? initialTab;
+
+  const ProgressScreen({super.key, this.initialTab});
 
   @override
   ConsumerState<ProgressScreen> createState() => _ProgressScreenState();
@@ -34,14 +40,57 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
+  static int _tabIndexFromParam(String? param) {
+    if (param == null) return 0;
+    switch (param.toLowerCase()) {
+      case 'lifts':
+      case 'volume':
+      case 'analytics':
+        return 0;
+      case 'weight':
+      case 'body':
+      case 'measurements':
+        return 1;
+      case 'photos':
+      case 'photo':
+        return 2;
+      default:
+        return 0;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    final initialIndex = _tabIndexFromParam(widget.initialTab);
+    _tabController = TabController(
+      length: 3,
+      vsync: this,
+      initialIndex: initialIndex,
+    );
+    _tabController.addListener(_onTabChanged);
+  }
+
+  void _onTabChanged() {
+    if (_tabController.indexIsChanging) {
+      AppHaptics.shared.selectionChanged();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant ProgressScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialTab != oldWidget.initialTab) {
+      final newIndex = _tabIndexFromParam(widget.initialTab);
+      if (newIndex != _tabController.index) {
+        _tabController.animateTo(newIndex);
+      }
+    }
   }
 
   @override
   void dispose() {
+    _tabController.removeListener(_onTabChanged);
     _tabController.dispose();
     super.dispose();
   }
@@ -70,7 +119,7 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen>
               ),
             ),
             Text(
-              'BIOMETRIC TELEMETRY',
+              'BIOMETRIC & PERFORMANCE TELEMETRY',
               style: TextStyle(
                 fontFamily: AppTypography.displayFontFamily,
                 fontSize: 9,
@@ -81,29 +130,9 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen>
             ),
           ],
         ),
-        actions: [
-          const AiEntryButton(),
-          Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: Container(
-              decoration: BoxDecoration(
-                color: tokens.panel,
-                borderRadius: BorderRadius.circular(tokens.radiusSm),
-                border: Border.all(color: tokens.borderSubtle, width: 1),
-              ),
-              child: IconButton(
-                onPressed: () => context.push('/analytics'),
-                icon: Icon(
-                  Icons.insights_rounded,
-                  color: tokens.cyanAccent,
-                  size: 20,
-                ),
-                tooltip: 'Performance Analytics',
-                constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
-                padding: EdgeInsets.zero,
-              ),
-            ),
-          ),
+        actions: const [
+          AiEntryButton(),
+          SizedBox(width: 8),
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(48),
@@ -137,8 +166,8 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen>
               ),
               dividerColor: Colors.transparent,
               tabs: const [
-                Tab(text: 'WEIGHT'),
-                Tab(text: 'MEASUREMENTS'),
+                Tab(text: 'LIFTS & VOLUME'),
+                Tab(text: 'BODY WEIGHT'),
                 Tab(text: 'PHOTOS'),
               ],
             ),
@@ -148,8 +177,8 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen>
       body: TabBarView(
         controller: _tabController,
         children: const [
-          _WeightTab(),
-          _MeasurementsTab(),
+          LiftsVolumeTab(),
+          _BodyWeightTab(),
           _PhotosTab(),
         ],
       ),
@@ -158,16 +187,17 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen>
 }
 
 // ---------------------------------------------------------------------------
-// Weight Tab
+// Body Weight Tab (Weight Trend + Logs + Circumference Telemetry)
 // ---------------------------------------------------------------------------
 
-class _WeightTab extends ConsumerWidget {
-  const _WeightTab();
+class _BodyWeightTab extends ConsumerWidget {
+  const _BodyWeightTab();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = AppThemeTokens.of(context);
     final trendAsync = ref.watch(weightTrendProvider);
+    final historyAsync = ref.watch(bodyHistoryProvider);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppTheme.spacingMedium),
@@ -303,7 +333,7 @@ class _WeightTab extends ConsumerWidget {
             error: (_, _) => const SizedBox.shrink(),
           ),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
           AppButton(
             label: 'LOG WEIGHT',
             icon: const Icon(Icons.add_rounded, size: 18),
@@ -311,10 +341,152 @@ class _WeightTab extends ConsumerWidget {
             onPressed: () => _showLogWeightDialog(context, ref),
           ),
           const SizedBox(height: 24),
+
+          // Measurements telemetry
+          historyAsync.when(
+            data: (entries) {
+              final withMeasurements =
+                  entries.where((e) => e.measurements.isNotEmpty).toList();
+
+              if (withMeasurements.isEmpty) {
+                return Container(
+                  padding: const EdgeInsets.all(AppTheme.spacingLarge),
+                  decoration: BoxDecoration(
+                    color: tokens.panel,
+                    borderRadius: BorderRadius.circular(tokens.radiusMd),
+                    border: Border.all(color: tokens.borderSubtle, width: 1),
+                  ),
+                  child: Center(
+                    child: Text(
+                      'No body measurements logged yet.\nCalibrate your dimensions below.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: tokens.textMuted,
+                        fontSize: 13,
+                        fontFamily: AppTypography.bodyFontFamily,
+                      ),
+                    ),
+                  ),
+                );
+              }
+
+              final latest = withMeasurements.first;
+              return Container(
+                padding: const EdgeInsets.all(AppTheme.spacingMedium),
+                decoration: BoxDecoration(
+                  color: tokens.panel,
+                  borderRadius: BorderRadius.circular(tokens.radiusMd),
+                  border: Border.all(color: tokens.borderSubtle, width: 1),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'LATEST TELEMETRY',
+                          style: TextStyle(
+                            fontFamily: AppTypography.displayFontFamily,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.5,
+                            color: tokens.textPrimary,
+                          ),
+                        ),
+                        Text(
+                          DateFormat('MMM d, yyyy').format(latest.date),
+                          style: TextStyle(
+                            fontFamily: AppTypography.displayFontFamily,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: tokens.textMuted,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    ...MeasurementType.values.map((type) {
+                      final value = latest.measurements[type];
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 6),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: tokens.card,
+                          borderRadius: BorderRadius.circular(tokens.radiusSm),
+                          border: Border.all(
+                              color: tokens.borderSubtle, width: 1),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              _label(type).toUpperCase(),
+                              style: TextStyle(
+                                fontFamily: AppTypography.displayFontFamily,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.8,
+                                color: tokens.textMuted,
+                              ),
+                            ),
+                            Text(
+                              value != null
+                                  ? '${value.toStringAsFixed(1)} CM'
+                                  : '—',
+                              style: TextStyle(
+                                fontFamily: AppTypography.displayFontFamily,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: value != null
+                                    ? tokens.kineticAccent
+                                    : tokens.textMuted,
+                                fontFeatures: const [
+                                  FontFeature.tabularFigures()
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+                  ],
+                ),
+              );
+            },
+            loading: () => Center(
+              child: CircularProgressIndicator(
+                color: tokens.kineticAccent,
+                strokeWidth: 2,
+              ),
+            ),
+            error: (e, _) => Text(
+              'Failed to load measurements',
+              style: TextStyle(color: tokens.error),
+            ),
+          ),
+          const SizedBox(height: 16),
+          AppButton(
+            label: 'LOG MEASUREMENTS',
+            variant: AppButtonVariant.secondary,
+            icon: const Icon(Icons.straighten_rounded, size: 18),
+            isFullWidth: true,
+            onPressed: () => _showLogMeasurementsForm(context, ref),
+          ),
+          const SizedBox(height: 24),
         ],
       ),
     );
   }
+
+  String _label(MeasurementType type) => switch (type) {
+        MeasurementType.chest => 'Chest',
+        MeasurementType.waist => 'Waist',
+        MeasurementType.hips => 'Hips',
+        MeasurementType.arms => 'Arms',
+        MeasurementType.legs => 'Legs',
+      };
 
   Future<void> _showLogWeightDialog(BuildContext context, WidgetRef ref) async {
     final tokens = AppThemeTokens.of(context);
@@ -453,220 +625,6 @@ class _WeightTab extends ConsumerWidget {
       controller.dispose();
     }
   }
-}
-
-class _WeightEntryRow extends StatelessWidget {
-  const _WeightEntryRow({required this.point, required this.tokens});
-  final dynamic point;
-  final AppThemeTokens tokens;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        children: [
-          Container(
-            width: 7,
-            height: 7,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: tokens.kineticAccent,
-              boxShadow: [
-                BoxShadow(
-                  color: tokens.kineticAccent.withValues(alpha: 0.6),
-                  blurRadius: 4,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 10),
-          Text(
-            DateFormat('MMM d, yyyy').format(point.date as DateTime),
-            style: TextStyle(
-              fontFamily: AppTypography.bodyFontFamily,
-              fontSize: 13,
-              color: tokens.textSecondary,
-            ),
-          ),
-          const Spacer(),
-          Text(
-            '${(point.weight as double).toStringAsFixed(1)} kg',
-            style: TextStyle(
-              fontFamily: AppTypography.displayFontFamily,
-              color: tokens.textPrimary,
-              fontWeight: FontWeight.w700,
-              fontSize: 14,
-              fontFeatures: const [FontFeature.tabularFigures()],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Measurements Tab
-// ---------------------------------------------------------------------------
-
-class _MeasurementsTab extends ConsumerWidget {
-  const _MeasurementsTab();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final tokens = AppThemeTokens.of(context);
-    final historyAsync = ref.watch(bodyHistoryProvider);
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(AppTheme.spacingMedium),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          historyAsync.when(
-            data: (entries) {
-              final withMeasurements =
-                  entries.where((e) => e.measurements.isNotEmpty).toList();
-
-              if (withMeasurements.isEmpty) {
-                return Container(
-                  padding: const EdgeInsets.all(AppTheme.spacingLarge),
-                  decoration: BoxDecoration(
-                    color: tokens.panel,
-                    borderRadius: BorderRadius.circular(tokens.radiusMd),
-                    border: Border.all(color: tokens.borderSubtle, width: 1),
-                  ),
-                  child: Center(
-                    child: Text(
-                      'No body measurements logged yet.\nCalibrate your dimensions below.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: tokens.textMuted,
-                        fontSize: 13,
-                        fontFamily: AppTypography.bodyFontFamily,
-                      ),
-                    ),
-                  ),
-                );
-              }
-
-              final latest = withMeasurements.first;
-              return Container(
-                padding: const EdgeInsets.all(AppTheme.spacingMedium),
-                decoration: BoxDecoration(
-                  color: tokens.panel,
-                  borderRadius: BorderRadius.circular(tokens.radiusMd),
-                  border: Border.all(color: tokens.borderSubtle, width: 1),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'LATEST TELEMETRY',
-                          style: TextStyle(
-                            fontFamily: AppTypography.displayFontFamily,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.5,
-                            color: tokens.textPrimary,
-                          ),
-                        ),
-                        Text(
-                          DateFormat('MMM d, yyyy').format(latest.date),
-                          style: TextStyle(
-                            fontFamily: AppTypography.displayFontFamily,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                            color: tokens.textMuted,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-                    ...MeasurementType.values.map((type) {
-                      final value = latest.measurements[type];
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 6),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: tokens.card,
-                          borderRadius: BorderRadius.circular(tokens.radiusSm),
-                          border: Border.all(
-                              color: tokens.borderSubtle, width: 1),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              _label(type).toUpperCase(),
-                              style: TextStyle(
-                                fontFamily: AppTypography.displayFontFamily,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 0.8,
-                                color: tokens.textMuted,
-                              ),
-                            ),
-                            Text(
-                              value != null
-                                  ? '${value.toStringAsFixed(1)} CM'
-                                  : '—',
-                              style: TextStyle(
-                                fontFamily: AppTypography.displayFontFamily,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w700,
-                                color: value != null
-                                    ? tokens.kineticAccent
-                                    : tokens.textMuted,
-                                fontFeatures: const [
-                                  FontFeature.tabularFigures()
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }),
-                  ],
-                ),
-              );
-            },
-            loading: () => Center(
-              child: CircularProgressIndicator(
-                color: tokens.kineticAccent,
-                strokeWidth: 2,
-              ),
-            ),
-            error: (e, _) => Text(
-              'Failed to load measurements',
-              style: TextStyle(color: tokens.error),
-            ),
-          ),
-          const SizedBox(height: 20),
-          AppButton(
-            label: 'LOG MEASUREMENTS',
-            variant: AppButtonVariant.secondary,
-            icon: const Icon(Icons.straighten_rounded, size: 18),
-            isFullWidth: true,
-            onPressed: () => _showLogMeasurementsForm(context, ref),
-          ),
-          const SizedBox(height: 24),
-        ],
-      ),
-    );
-  }
-
-  String _label(MeasurementType type) => switch (type) {
-        MeasurementType.chest => 'Chest',
-        MeasurementType.waist => 'Waist',
-        MeasurementType.hips => 'Hips',
-        MeasurementType.arms => 'Arms',
-        MeasurementType.legs => 'Legs',
-      };
 
   Future<void> _showLogMeasurementsForm(
       BuildContext context, WidgetRef ref) async {
@@ -817,8 +775,59 @@ class _MeasurementsTab extends ConsumerWidget {
   }
 }
 
+class _WeightEntryRow extends StatelessWidget {
+  const _WeightEntryRow({required this.point, required this.tokens});
+  final dynamic point;
+  final AppThemeTokens tokens;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Container(
+            width: 7,
+            height: 7,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: tokens.kineticAccent,
+              boxShadow: [
+                BoxShadow(
+                  color: tokens.kineticAccent.withValues(alpha: 0.6),
+                  blurRadius: 4,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          Text(
+            DateFormat('MMM d, yyyy').format(point.date as DateTime),
+            style: TextStyle(
+              fontFamily: AppTypography.bodyFontFamily,
+              fontSize: 13,
+              color: tokens.textSecondary,
+            ),
+          ),
+          const Spacer(),
+          Text(
+            '${(point.weight as double).toStringAsFixed(1)} kg',
+            style: TextStyle(
+              fontFamily: AppTypography.displayFontFamily,
+              color: tokens.textPrimary,
+              fontWeight: FontWeight.w700,
+              fontSize: 14,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 // ---------------------------------------------------------------------------
-// Photos Tab
+// Photos Tab (Gallery + Before/After Comparison Slider)
 // ---------------------------------------------------------------------------
 
 class _PhotosTab extends ConsumerStatefulWidget {
@@ -849,6 +858,73 @@ class _PhotosTabState extends ConsumerState<_PhotosTab> {
     } catch (e, stack) {
       if (mounted) ErrorHandler.handleError(context, e, stack);
     }
+  }
+
+  void _showComparisonSheet(BuildContext context, List<BodyEntry> photoEntries) {
+    if (photoEntries.length < 2) return;
+    final sorted = List<BodyEntry>.from(photoEntries)
+      ..sort((a, b) => a.date.compareTo(b.date));
+    final oldest = sorted.first;
+    final newest = sorted.last;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final tokens = AppThemeTokens.of(ctx);
+        return Container(
+          height: MediaQuery.of(ctx).size.height * 0.8,
+          decoration: BoxDecoration(
+            color: tokens.panel,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(tokens.radiusLg)),
+            border: Border.all(color: tokens.borderSubtle, width: 1),
+          ),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: tokens.borderSubtle,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'BEFORE & AFTER COMPARISON',
+                    style: TextStyle(
+                      fontFamily: AppTypography.displayFontFamily,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: tokens.textPrimary,
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.close, color: tokens.textMuted, size: 20),
+                    onPressed: () => Navigator.of(ctx).pop(),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Expanded(
+                child: ProgressPhotoComparison(
+                  beforeEntry: oldest,
+                  afterEntry: newest,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -904,20 +980,43 @@ class _PhotosTabState extends ConsumerState<_PhotosTab> {
                       ],
                     ),
                   )
-                : GridView.builder(
-                    padding: const EdgeInsets.all(16),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10,
-                      childAspectRatio: 0.75,
-                    ),
-                    itemCount: photoEntries.length,
-                    itemBuilder: (context, index) {
-                      final entry = photoEntries[index];
-                      return _PhotoCard(entry: entry, tokens: tokens);
-                    },
+                : Column(
+                    children: [
+                      if (photoEntries.length >= 2)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                          child: SizedBox(
+                            height: 38,
+                            width: double.infinity,
+                            child: AppButton(
+                              label: 'COMPARE BEFORE & AFTER',
+                              variant: AppButtonVariant.secondary,
+                              icon: const Icon(Icons.compare_rounded, size: 18),
+                              onPressed: () {
+                                AppHaptics.shared.selectionChanged();
+                                _showComparisonSheet(context, photoEntries);
+                              },
+                            ),
+                          ),
+                        ),
+                      Expanded(
+                        child: GridView.builder(
+                          padding: const EdgeInsets.all(16),
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 10,
+                            mainAxisSpacing: 10,
+                            childAspectRatio: 0.75,
+                          ),
+                          itemCount: photoEntries.length,
+                          itemBuilder: (context, index) {
+                            final entry = photoEntries[index];
+                            return _PhotoCard(entry: entry, tokens: tokens);
+                          },
+                        ),
+                      ),
+                    ],
                   ),
             Positioned(
               bottom: 24,
