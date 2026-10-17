@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 /// A utility class that debounces rapid calls to [run].
 ///
 /// Only the last [run] call within [delay] will actually invoke the callback.
-/// This is used in [ExerciseSelectionScreen] to prevent excessive state
+/// This is used in search and filter inputs to prevent excessive state
 /// updates while the user is typing.
 ///
 /// Requirements: 16.5
