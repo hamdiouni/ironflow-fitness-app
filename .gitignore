@@ -61,5 +61,14 @@ app.*.map.json
 .env.*
 !.env.example
 
+# Signing and Keystores
+key.properties
+*.keystore
+*.jks
+
+# Debug symbols
+symbols/
+build/symbols/
+
 # Flutter DevTools
 devtools_options.yaml
