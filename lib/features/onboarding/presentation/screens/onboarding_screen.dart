@@ -1,17 +1,15 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:progression_tracker/core/constants/app_theme.dart';
+import 'package:progression_tracker/core/router/app_router.dart';
+import 'package:progression_tracker/features/onboarding/domain/entities/user_profile.dart';
+import 'package:progression_tracker/features/onboarding/presentation/providers/onboarding_provider.dart';
+import 'package:progression_tracker/shared/presentation/components/app_button.dart';
+import 'package:progression_tracker/shared/presentation/services/app_haptics.dart';
 
-import '../../../../core/constants/app_theme.dart';
-import '../../../../core/router/app_router.dart';
-import '../../../nutrition/domain/usecases/generate_diet_plan_use_case.dart';
-import '../../../nutrition/presentation/providers/diet_plan_providers.dart';
-import '../../../workout/domain/usecases/generate_workout_program_use_case.dart';
-import '../../../workout/presentation/providers/active_program_providers.dart';
-import '../../domain/entities/user_profile.dart';
-import '../providers/onboarding_provider.dart';
-
+/// Monolithic Sci-Fi Guided 5-Step Onboarding Stepper with Mission Specification Review.
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -21,692 +19,1527 @@ class OnboardingScreen extends ConsumerStatefulWidget {
 
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _pageController = PageController();
-  int _currentPage = 0;
+  int _currentStep = 0;
+  static const int _totalSteps = 5;
 
-  // Collected values
+  // Collected parameters
   FitnessGoal? _goal;
-  int _age = 25;
-  double _weight = 75;
-  double _height = 175;
   FitnessLevel _fitnessLevel = FitnessLevel.beginner;
+  int _daysPerWeek = 4;
   EquipmentType _equipment = EquipmentType.gym;
-  int _daysPerWeek = 3;
+
+  int _age = 25;
+  double _weightKg = 75.0;
+  double _heightCm = 175.0;
+  bool _isImperial = false; // KG/CM vs LBS/IN
   BudgetLevel _budget = BudgetLevel.medium;
 
-  void _nextPage() {
-    if (_currentPage < 5) {
-      _pageController.nextPage(
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.easeInOut,
+  bool _isSynthesizing = false;
+  String? _synthesisError;
+
+  @override
+  void initState() {
+    super.initState();
+    _restoreDraft();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _restoreDraft() async {
+    try {
+      final storage = ref.read(userProfileStorageProvider);
+      final draft = await storage.getDraft();
+      if (draft != null && mounted) {
+        setState(() {
+          if (draft['goal'] != null) {
+            _goal = FitnessGoal.values.byName(draft['goal'] as String);
+          }
+          if (draft['fitnessLevel'] != null) {
+            _fitnessLevel = FitnessLevel.values.byName(draft['fitnessLevel'] as String);
+          }
+          if (draft['daysPerWeek'] != null) {
+            _daysPerWeek = draft['daysPerWeek'] as int;
+          }
+          if (draft['equipment'] != null) {
+            _equipment = EquipmentType.values.byName(draft['equipment'] as String);
+          }
+          if (draft['age'] != null) {
+            _age = draft['age'] as int;
+          }
+          if (draft['weightKg'] != null) {
+            _weightKg = (draft['weightKg'] as num).toDouble();
+          }
+          if (draft['heightCm'] != null) {
+            _heightCm = (draft['heightCm'] as num).toDouble();
+          }
+          if (draft['budget'] != null) {
+            _budget = BudgetLevel.values.byName(draft['budget'] as String);
+          }
+          if (draft['isImperial'] != null) {
+            _isImperial = draft['isImperial'] as bool;
+          }
+
+          final savedStep = draft['draft_step'] as int? ?? 0;
+          if (savedStep > 0 && savedStep < _totalSteps) {
+            _currentStep = savedStep;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (_pageController.hasClients) {
+                _pageController.jumpToPage(_currentStep);
+              }
+            });
+          }
+        });
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('⚠️ [Onboarding] Error restoring draft: $e');
+      }
+    }
+  }
+
+  Future<void> _saveDraft() async {
+    try {
+      final storage = ref.read(userProfileStorageProvider);
+      final draftData = <String, dynamic>{
+        'goal': _goal?.name,
+        'fitnessLevel': _fitnessLevel.name,
+        'daysPerWeek': _daysPerWeek,
+        'equipment': _equipment.name,
+        'age': _age,
+        'weightKg': _weightKg,
+        'heightCm': _heightCm,
+        'budget': _budget.name,
+        'isImperial': _isImperial,
+      };
+      await storage.saveDraft(step: _currentStep, data: draftData);
+    } catch (e) {
+      if (kDebugMode) {
+        print('⚠️ [Onboarding] Error saving draft: $e');
+      }
+    }
+  }
+
+  bool get _canProceed {
+    if (_currentStep == 0) return _goal != null;
+    return true;
+  }
+
+  void _nextStep() {
+    if (!_canProceed) return;
+    AppHaptics.shared.buttonPress();
+
+    if (_currentStep < _totalSteps - 1) {
+      final next = _currentStep + 1;
+      _pageController.animateToPage(
+        next,
+        duration: const Duration(milliseconds: 320),
+        curve: Curves.easeInOutCubic,
       );
-      setState(() => _currentPage++);
+      setState(() => _currentStep = next);
+      _saveDraft();
     } else {
-      _finish();
+      _synthesizeAndInitialize();
     }
   }
 
-  void _prevPage() {
-    if (_currentPage > 0) {
-      _pageController.previousPage(
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.easeInOut,
+  void _previousStep() {
+    if (_currentStep > 0) {
+      AppHaptics.shared.selectionChanged();
+      final prev = _currentStep - 1;
+      _pageController.animateToPage(
+        prev,
+        duration: const Duration(milliseconds: 320),
+        curve: Curves.easeInOutCubic,
       );
-      setState(() => _currentPage--);
+      setState(() => _currentStep = prev);
+      _saveDraft();
     }
   }
 
-  Future<void> _finish() async {
-    if (_goal == null) return;
-    
+  Future<void> _synthesizeAndInitialize() async {
+    if (_goal == null || _isSynthesizing) return;
+
+    AppHaptics.shared.buttonPress();
+    setState(() {
+      _isSynthesizing = true;
+      _synthesisError = null;
+    });
+
     final profile = UserProfile(
       goal: _goal!,
       age: _age,
-      weightKg: _weight,
-      heightCm: _height,
+      weightKg: _weightKg,
+      heightCm: _heightCm,
       fitnessLevel: _fitnessLevel,
       equipment: _equipment,
       workoutDaysPerWeek: _daysPerWeek,
       budget: _budget,
     );
 
-    // Show loading dialog
-    if (mounted) {
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const AlertDialog(
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text('Generating your personalized program...'),
-            ],
-          ),
-        ),
-      );
-    }
-
     try {
-      // Save user profile
       await ref.read(onboardingNotifierProvider.notifier).completeOnboarding(profile);
 
-      // Generate and set active program
-      final generateWorkoutUseCase = GenerateWorkoutProgramUseCase();
-      final workoutProgram = generateWorkoutUseCase(userProfile: profile);
-      await ref.read(activeProgramProvider.notifier).setActiveProgram(workoutProgram);
-
-      // Generate and save diet plan
-      final generateDietUseCase = GenerateDietPlanUseCase();
-      final dietPlan = generateDietUseCase(profile);
-      
-      // Get the save diet plan use case from the provider
-      final saveDietUseCase = ref.read(saveDietPlanUseCaseProvider);
-      await saveDietUseCase(dietPlan);
+      // Invalidate queries so navigation sees fresh onboarded state
+      ref.invalidate(isOnboardedProvider);
+      ref.invalidate(userProfileProvider);
 
       if (mounted) {
-        // Close loading dialog
-        Navigator.of(context).pop();
-        
-        // Invalidate providers and navigate
-        ref.invalidate(isOnboardedProvider);
-        ref.invalidate(userProfileProvider);
         context.go(AppRoutes.home);
       }
     } catch (e) {
       if (mounted) {
-        // Close loading dialog
-        Navigator.of(context).pop();
-        
-        // Show error snackbar
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        setState(() {
+          _isSynthesizing = false;
+          _synthesisError = e.toString();
+        });
+        AppHaptics.shared.error();
       }
     }
   }
 
-  bool get _canProceed {
-    if (_currentPage == 0) return _goal != null;
-    return true;
-  }
-
   @override
   Widget build(BuildContext context) {
+    final tokens = AppThemeTokens.of(context);
+
     return Scaffold(
+      backgroundColor: tokens.canvas,
       body: SafeArea(
-        child: Column(
+        child: Stack(
           children: [
-            _ProgressBar(current: _currentPage, total: 6),
-            Expanded(
-              child: PageView(
-                controller: _pageController,
-                physics: const NeverScrollableScrollPhysics(),
-                children: [
-                  _GoalPage(
-                    selected: _goal,
-                    onSelect: (g) => setState(() => _goal = g),
+            Column(
+              children: [
+                _buildHeader(tokens),
+                Expanded(
+                  child: PageView(
+                    controller: _pageController,
+                    physics: const NeverScrollableScrollPhysics(),
+                    onPageChanged: (page) => setState(() => _currentStep = page),
+                    children: [
+                      _buildStep1Goal(tokens),
+                      _buildStep2Experience(tokens),
+                      _buildStep3Protocol(tokens),
+                      _buildStep4Biometrics(tokens),
+                      _buildStep5Review(tokens),
+                    ],
                   ),
-                  _BodyInfoPage(
-                    age: _age,
-                    weight: _weight,
-                    height: _height,
-                    onAgeChanged: (v) => setState(() => _age = v),
-                    onWeightChanged: (v) => setState(() => _weight = v),
-                    onHeightChanged: (v) => setState(() => _height = v),
-                  ),
-                  _FitnessLevelPage(
-                    selected: _fitnessLevel,
-                    onSelect: (l) => setState(() => _fitnessLevel = l),
-                  ),
-                  _EquipmentPage(
-                    selected: _equipment,
-                    onSelect: (e) => setState(() => _equipment = e),
-                  ),
-                  _FrequencyPage(
-                    days: _daysPerWeek,
-                    onChanged: (d) => setState(() => _daysPerWeek = d),
-                  ),
-                  _BudgetPage(
-                    selected: _budget,
-                    onSelect: (b) => setState(() => _budget = b),
-                  ),
-                ],
-              ),
+                ),
+                _buildBottomNavigation(tokens),
+              ],
             ),
-            _NavigationButtons(
-              currentPage: _currentPage,
-              canProceed: _canProceed,
-              onNext: _nextPage,
-              onBack: _prevPage,
-              isLast: _currentPage == 5,
-            ),
+            if (_isSynthesizing) _buildSynthesisOverlay(tokens),
           ],
         ),
       ),
     );
   }
-}
 
-// ─── Progress Bar ────────────────────────────────────────────────────────────
+  // ─── Header & Progress Tracker ───────────────────────────────────────────────
 
-class _ProgressBar extends StatelessWidget {
-  const _ProgressBar({required this.current, required this.total});
-  final int current;
-  final int total;
+  Widget _buildHeader(AppThemeTokens tokens) {
+    final stepNumber = (_currentStep + 1).toString().padLeft(2, '0');
+    final totalSteps = _totalSteps.toString().padLeft(2, '0');
 
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(AppTheme.spacingMedium),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+      decoration: BoxDecoration(
+        color: tokens.panel,
+        border: Border(
+          bottom: BorderSide(color: tokens.borderSubtle, width: 1),
+        ),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Step ${current + 1} of $total',
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  fontSize: 12,
-                ),
+              Row(
+                children: [
+                  Container(
+                    width: 7,
+                    height: 7,
+                    decoration: BoxDecoration(
+                      color: tokens.kineticAccent,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: tokens.kineticAccent.withValues(alpha: 0.6),
+                          blurRadius: 6,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'INITIALIZE // OPERATOR PROFILE',
+                    style: TextStyle(
+                      fontFamily: AppTypography.displayFontFamily,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.2,
+                      color: tokens.textSecondary,
+                    ),
+                  ),
+                ],
               ),
-              Text(
-                '${((current + 1) / total * 100).toInt()}%',
-                style: const TextStyle(
-                  color: AppTheme.primaryColor,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: tokens.card,
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(color: tokens.borderSubtle),
+                ),
+                child: Text(
+                  'STEP $stepNumber // $totalSteps',
+                  style: TextStyle(
+                    fontFamily: AppTypography.displayFontFamily,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.8,
+                    color: tokens.kineticAccent,
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: (current + 1) / total,
-              backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-              valueColor: const AlwaysStoppedAnimation(AppTheme.primaryColor),
-              minHeight: 4,
-            ),
+          const SizedBox(height: 12),
+          // Segmented Progress Bar
+          Row(
+            children: List.generate(_totalSteps, (index) {
+              final isCompleted = index < _currentStep;
+              final isActive = index == _currentStep;
+              return Expanded(
+                child: Container(
+                  height: 3,
+                  margin: EdgeInsets.only(right: index == _totalSteps - 1 ? 0 : 5),
+                  decoration: BoxDecoration(
+                    color: isCompleted
+                        ? tokens.kineticAccent
+                        : isActive
+                            ? tokens.kineticAccent.withValues(alpha: 0.85)
+                            : tokens.borderSubtle,
+                    borderRadius: BorderRadius.circular(1.5),
+                    boxShadow: isActive
+                        ? [
+                            BoxShadow(
+                              color: tokens.kineticAccent.withValues(alpha: 0.5),
+                              blurRadius: 4,
+                            ),
+                          ]
+                        : null,
+                  ),
+                ),
+              );
+            }),
           ),
         ],
       ),
     );
   }
-}
 
-// ─── Navigation Buttons ──────────────────────────────────────────────────────
+  // ─── Step 1: Fitness Goal ───────────────────────────────────────────────────
 
-class _NavigationButtons extends StatelessWidget {
-  const _NavigationButtons({
-    required this.currentPage,
-    required this.canProceed,
-    required this.onNext,
-    required this.onBack,
-    required this.isLast,
-  });
-  final int currentPage;
-  final bool canProceed;
-  final VoidCallback onNext;
-  final VoidCallback onBack;
-  final bool isLast;
+  Widget _buildStep1Goal(AppThemeTokens tokens) {
+    return _StepContentLayout(
+      stepTitle: 'PRIMARY DIRECTIVE',
+      stepDescription: 'Select your core physiological focus for automated calibration.',
+      children: [
+        _buildSelectableCard<FitnessGoal>(
+          tokens: tokens,
+          value: FitnessGoal.gainMuscle,
+          groupValue: _goal,
+          code: 'DIRECTIVE // 01',
+          title: 'HYPERTROPHY // GAIN MUSCLE',
+          subtitle: 'Acquire lean muscle tissue, increase strength output, and maximize structural power.',
+          icon: Icons.fitness_center_rounded,
+          onSelect: (g) {
+            setState(() => _goal = g);
+            _saveDraft();
+          },
+        ),
+        const SizedBox(height: 12),
+        _buildSelectableCard<FitnessGoal>(
+          tokens: tokens,
+          value: FitnessGoal.loseWeight,
+          groupValue: _goal,
+          code: 'DIRECTIVE // 02',
+          title: 'OXIDATION // LOSE WEIGHT',
+          subtitle: 'Accelerate fat oxidation, preserve contractile muscle tissue, and achieve athletic definition.',
+          icon: Icons.local_fire_department_rounded,
+          onSelect: (g) {
+            setState(() => _goal = g);
+            _saveDraft();
+          },
+        ),
+        const SizedBox(height: 12),
+        _buildSelectableCard<FitnessGoal>(
+          tokens: tokens,
+          value: FitnessGoal.maintain,
+          groupValue: _goal,
+          code: 'DIRECTIVE // 03',
+          title: 'EQUILIBRIUM // MAINTAIN',
+          subtitle: 'Sustain peak athletic composition, optimize energy metabolism, and reinforce longevity.',
+          icon: Icons.balance_rounded,
+          onSelect: (g) {
+            setState(() => _goal = g);
+            _saveDraft();
+          },
+        ),
+      ],
+    );
+  }
 
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(AppTheme.spacingMedium),
-      child: Row(
-        children: [
-          if (currentPage > 0)
-            Expanded(
-              child: OutlinedButton(
-                onPressed: onBack,
-                style: OutlinedButton.styleFrom(
-                  side: BorderSide(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+  // ─── Step 2: Experience Level ───────────────────────────────────────────────
+
+  Widget _buildStep2Experience(AppThemeTokens tokens) {
+    return _StepContentLayout(
+      stepTitle: 'OPERATOR TIER',
+      stepDescription: 'State your current lifting experience to adjust progressive overload intensity.',
+      children: [
+        _buildSelectableCard<FitnessLevel>(
+          tokens: tokens,
+          value: FitnessLevel.beginner,
+          groupValue: _fitnessLevel,
+          code: 'TIER // CADET',
+          title: 'BEGINNER (< 1 YEAR)',
+          subtitle: 'Establishing foundational neuromuscular recruitment, motor patterns, and steady recovery.',
+          icon: Icons.shield_outlined,
+          onSelect: (l) {
+            setState(() => _fitnessLevel = l);
+            _saveDraft();
+          },
+        ),
+        const SizedBox(height: 12),
+        _buildSelectableCard<FitnessLevel>(
+          tokens: tokens,
+          value: FitnessLevel.intermediate,
+          groupValue: _fitnessLevel,
+          code: 'TIER // OPERATIVE',
+          title: 'INTERMEDIATE (1–3 YEARS)',
+          subtitle: 'Consistent progressive overload acclimation, compound lift proficiency, and planned volume.',
+          icon: Icons.verified_user_outlined,
+          onSelect: (l) {
+            setState(() => _fitnessLevel = l);
+            _saveDraft();
+          },
+        ),
+        const SizedBox(height: 12),
+        _buildSelectableCard<FitnessLevel>(
+          tokens: tokens,
+          value: FitnessLevel.advanced,
+          groupValue: _fitnessLevel,
+          code: 'TIER // VETERAN',
+          title: 'ADVANCED (3+ YEARS)',
+          subtitle: 'High training density, specialized periodization protocols, and refined auto-regulation.',
+          icon: Icons.military_tech_outlined,
+          onSelect: (l) {
+            setState(() => _fitnessLevel = l);
+            _saveDraft();
+          },
+        ),
+      ],
+    );
+  }
+
+  // ─── Step 3: Protocol Parameters (Frequency & Equipment) ────────────────────
+
+  Widget _buildStep3Protocol(AppThemeTokens tokens) {
+    return _StepContentLayout(
+      stepTitle: 'PROTOCOL PARAMETERS',
+      stepDescription: 'Configure weekly deployment frequency and available training arsenal.',
+      children: [
+        // Frequency Selector
+        _buildContainerBox(
+          tokens: tokens,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'WEEKLY TRAINING FREQUENCY',
+                    style: TextStyle(
+                      fontFamily: AppTypography.displayFontFamily,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.8,
+                      color: tokens.textSecondary,
+                    ),
                   ),
-                  minimumSize: const Size.fromHeight(52),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: tokens.kineticAccent.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(color: tokens.kineticAccent.withValues(alpha: 0.4)),
+                    ),
+                    child: Text(
+                      '$_daysPerWeek DAYS / WEEK',
+                      style: TextStyle(
+                        fontFamily: AppTypography.displayFontFamily,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: tokens.kineticAccent,
+                      ),
+                    ),
                   ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [2, 3, 4, 5, 6].map((days) {
+                  final isSelected = _daysPerWeek == days;
+                  return InkWell(
+                    onTap: () {
+                      AppHaptics.shared.selectionChanged();
+                      setState(() => _daysPerWeek = days);
+                      _saveDraft();
+                    },
+                    borderRadius: BorderRadius.circular(6),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      width: 52,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: isSelected ? tokens.kineticAccent : tokens.canvas,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: isSelected ? tokens.kineticAccent : tokens.borderSubtle,
+                          width: isSelected ? 1.5 : 1,
+                        ),
+                      ),
+                      child: Center(
+                        child: Text(
+                          '$days',
+                          style: TextStyle(
+                            fontFamily: AppTypography.displayFontFamily,
+                            fontSize: 17,
+                            fontWeight: FontWeight.w700,
+                            color: isSelected ? Colors.black : tokens.textPrimary,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                _getFrequencyAdvice(_daysPerWeek),
+                style: TextStyle(
+                  fontFamily: AppTypography.bodyFontFamily,
+                  fontSize: 12,
+                  color: tokens.textMuted,
                 ),
-                child: Text(
-                  'Back',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 16),
+
+        // Equipment Selector
+        Text(
+          'EQUIPMENT ARSENAL',
+          style: TextStyle(
+            fontFamily: AppTypography.displayFontFamily,
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.8,
+            color: tokens.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 8),
+
+        _buildSelectableCard<EquipmentType>(
+          tokens: tokens,
+          value: EquipmentType.gym,
+          groupValue: _equipment,
+          code: 'ARSENAL // FULL',
+          title: 'COMMERCIAL GYM // FULL ARSENAL',
+          subtitle: 'Barbells, calibrated plates, selectorized machines, cable columns, and racks.',
+          icon: Icons.domain_rounded,
+          onSelect: (e) {
+            setState(() => _equipment = e);
+            _saveDraft();
+          },
+        ),
+        const SizedBox(height: 12),
+        _buildSelectableCard<EquipmentType>(
+          tokens: tokens,
+          value: EquipmentType.home,
+          groupValue: _equipment,
+          code: 'ARSENAL // TACTICAL',
+          title: 'TACTICAL OUTPOST // HOME & DUMBBELLS',
+          subtitle: 'Adjustable dumbbells, pull-up bar, resistance loops, and calisthenic bodyweight movements.',
+          icon: Icons.home_repair_service_rounded,
+          onSelect: (e) {
+            setState(() => _equipment = e);
+            _saveDraft();
+          },
+        ),
+      ],
+    );
+  }
+
+  String _getFrequencyAdvice(int days) {
+    switch (days) {
+      case 2:
+        return '2-Day Full Body Matrix. Maximum recovery efficiency.';
+      case 3:
+        return '3-Day Classic Full Body Split. Proven baseline for steady progress.';
+      case 4:
+        return '4-Day Upper / Lower Split. Balanced fatigue and recovery distribution.';
+      case 5:
+        return '5-Day Push / Pull / Legs + Upper / Lower Split. High training stimulus.';
+      case 6:
+        return '6-Day Push / Pull / Legs Hypertrophy Split. High volume commitment.';
+      default:
+        return 'Custom training frequency schedule.';
+    }
+  }
+
+  // ─── Step 4: Biometric Telemetry & Budget ───────────────────────────────────
+
+  Widget _buildStep4Biometrics(AppThemeTokens tokens) {
+    // Conversions
+    final displayWeight = _isImperial
+        ? (_weightKg * 2.20462).round().toDouble()
+        : _weightKg.round().toDouble();
+    final weightUnit = _isImperial ? 'LBS' : 'KG';
+
+    final displayHeight = _isImperial
+        ? (_heightCm / 2.54).round().toDouble()
+        : _heightCm.round().toDouble();
+    final heightUnit = _isImperial ? 'IN' : 'CM';
+
+    final bmi = _weightKg / ((_heightCm / 100) * (_heightCm / 100));
+    final bmr = 10 * _weightKg + 6.25 * _heightCm - 5 * _age + 5;
+    final activityMult = _daysPerWeek <= 2 ? 1.375 : (_daysPerWeek <= 4 ? 1.55 : 1.725);
+    final tdee = bmr * activityMult;
+
+    return _StepContentLayout(
+      stepTitle: 'BIOMETRIC TELEMETRY',
+      stepDescription: 'Input physiological statistics for energy expenditure and macronutrient computation.',
+      children: [
+        // Unit System Switch
+        _buildContainerBox(
+          tokens: tokens,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'MEASUREMENT SYSTEM',
+                style: TextStyle(
+                  fontFamily: AppTypography.displayFontFamily,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.8,
+                  color: tokens.textSecondary,
+                ),
+              ),
+              Row(
+                children: [
+                  _buildUnitChip(tokens, label: 'METRIC (KG/CM)', isSelected: !_isImperial, onTap: () {
+                    AppHaptics.shared.selectionChanged();
+                    setState(() => _isImperial = false);
+                    _saveDraft();
+                  }),
+                  const SizedBox(width: 6),
+                  _buildUnitChip(tokens, label: 'IMPERIAL (LBS/IN)', isSelected: _isImperial, onTap: () {
+                    AppHaptics.shared.selectionChanged();
+                    setState(() => _isImperial = true);
+                    _saveDraft();
+                  }),
+                ],
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 14),
+
+        // Sliders Container
+        _buildContainerBox(
+          tokens: tokens,
+          child: Column(
+            children: [
+              // Age
+              _buildMetricSlider(
+                tokens: tokens,
+                label: 'OPERATOR AGE',
+                valueText: '$_age YRS',
+                value: _age.toDouble(),
+                min: 16,
+                max: 80,
+                divisions: 64,
+                onChanged: (val) {
+                  setState(() => _age = val.toInt());
+                  _saveDraft();
+                },
+              ),
+              Divider(color: tokens.borderSubtle, height: 24),
+              // Weight
+              _buildMetricSlider(
+                tokens: tokens,
+                label: 'BODY MASS',
+                valueText: '${displayWeight.toInt()} $weightUnit',
+                value: displayWeight,
+                min: _isImperial ? 88 : 40,
+                max: _isImperial ? 440 : 200,
+                divisions: _isImperial ? 176 : 160,
+                onChanged: (val) {
+                  setState(() {
+                    if (_isImperial) {
+                      _weightKg = (val / 2.20462);
+                    } else {
+                      _weightKg = val;
+                    }
+                  });
+                  _saveDraft();
+                },
+              ),
+              Divider(color: tokens.borderSubtle, height: 24),
+              // Height
+              _buildMetricSlider(
+                tokens: tokens,
+                label: 'STATURE',
+                valueText: _isImperial
+                    ? '${(displayHeight ~/ 12)}\' ${(displayHeight % 12).toInt()}" ($heightUnit)'
+                    : '${displayHeight.toInt()} $heightUnit',
+                value: displayHeight,
+                min: _isImperial ? 48 : 120,
+                max: _isImperial ? 88 : 225,
+                divisions: _isImperial ? 40 : 105,
+                onChanged: (val) {
+                  setState(() {
+                    if (_isImperial) {
+                      _heightCm = val * 2.54;
+                    } else {
+                      _heightCm = val;
+                    }
+                  });
+                  _saveDraft();
+                },
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 14),
+
+        // Dynamic Telemetry Readout
+        _buildContainerBox(
+          tokens: tokens,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'CALCULATED TELEMETRY METRICS',
+                style: TextStyle(
+                  fontFamily: AppTypography.displayFontFamily,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.0,
+                  color: tokens.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildTelemetryMetric(
+                      tokens,
+                      title: 'BMI INDEX',
+                      value: bmi.toStringAsFixed(1),
+                      status: _getBmiStatus(bmi),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _buildTelemetryMetric(
+                      tokens,
+                      title: 'BASAL METABOLIC',
+                      value: '${bmr.round()}',
+                      status: 'KCAL / DAY',
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _buildTelemetryMetric(
+                      tokens,
+                      title: 'TOTAL EXPENDITURE',
+                      value: '${tdee.round()}',
+                      status: 'KCAL TDEE',
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 14),
+
+        // Food Budget
+        Text(
+          'NUTRITION RESOURCE ALLOCATION',
+          style: TextStyle(
+            fontFamily: AppTypography.displayFontFamily,
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.8,
+            color: tokens.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 8),
+
+        Row(
+          children: BudgetLevel.values.map((b) {
+            final isSelected = _budget == b;
+            return Expanded(
+              child: Padding(
+                padding: EdgeInsets.only(
+                  right: b == BudgetLevel.high ? 0 : 8,
+                ),
+                child: InkWell(
+                  onTap: () {
+                    AppHaptics.shared.selectionChanged();
+                    setState(() => _budget = b);
+                    _saveDraft();
+                  },
+                  borderRadius: BorderRadius.circular(6),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                    decoration: BoxDecoration(
+                      color: isSelected ? tokens.kineticAccent.withValues(alpha: 0.12) : tokens.panel,
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                        color: isSelected ? tokens.kineticAccent : tokens.borderSubtle,
+                        width: isSelected ? 1.5 : 1,
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          b.displayName.toUpperCase(),
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontFamily: AppTypography.displayFontFamily,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.5,
+                            color: isSelected ? tokens.kineticAccent : tokens.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          switch (b) {
+                            BudgetLevel.low => 'Cost Efficient',
+                            BudgetLevel.medium => 'Balanced Variety',
+                            BudgetLevel.high => 'Elite Sourcing',
+                          },
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontFamily: AppTypography.bodyFontFamily,
+                            fontSize: 10,
+                            color: tokens.textMuted,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  String _getBmiStatus(double bmi) {
+    if (bmi < 18.5) return 'UNDERWEIGHT';
+    if (bmi < 25.0) return 'OPTIMAL';
+    if (bmi < 30.0) return 'OVERWEIGHT';
+    return 'OBESE';
+  }
+
+  Widget _buildUnitChip(
+    AppThemeTokens tokens, {
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(4),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: isSelected ? tokens.kineticAccent : tokens.card,
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(
+            color: isSelected ? tokens.kineticAccent : tokens.borderSubtle,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontFamily: AppTypography.displayFontFamily,
+            fontSize: 9,
+            fontWeight: FontWeight.w700,
+            color: isSelected ? Colors.black : tokens.textSecondary,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMetricSlider({
+    required AppThemeTokens tokens,
+    required String label,
+    required String valueText,
+    required double value,
+    required double min,
+    required double max,
+    required int divisions,
+    required ValueChanged<double> onChanged,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontFamily: AppTypography.displayFontFamily,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: tokens.textSecondary,
+              ),
             ),
-          if (currentPage > 0) const SizedBox(width: AppTheme.spacingMedium),
-          Expanded(
-            flex: 2,
-            child: ElevatedButton(
-              onPressed: canProceed ? onNext : null,
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size.fromHeight(52),
-                backgroundColor: canProceed ? AppTheme.primaryColor : AppTheme.textDisabled,
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: tokens.card,
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(color: tokens.borderSubtle),
               ),
               child: Text(
-                isLast ? 'Get Started 🚀' : 'Continue',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
+                valueText,
+                style: TextStyle(
+                  fontFamily: AppTypography.displayFontFamily,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: tokens.kineticAccent,
                 ),
               ),
             ),
+          ],
+        ),
+        SliderTheme(
+          data: SliderThemeData(
+            activeTrackColor: tokens.kineticAccent,
+            inactiveTrackColor: tokens.borderSubtle,
+            thumbColor: tokens.kineticAccent,
+            overlayColor: tokens.kineticAccent.withValues(alpha: 0.15),
+            trackHeight: 3,
+            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
           ),
-        ],
-      ),
+          child: Slider(
+            value: value.clamp(min, max),
+            min: min,
+            max: max,
+            divisions: divisions,
+            onChanged: onChanged,
+          ),
+        ),
+      ],
     );
   }
-}
 
-// ─── Page 1: Goal ────────────────────────────────────────────────────────────
-
-class _GoalPage extends StatelessWidget {
-  const _GoalPage({required this.selected, required this.onSelect});
-  final FitnessGoal? selected;
-  final ValueChanged<FitnessGoal> onSelect;
-
-  @override
-  Widget build(BuildContext context) {
-    return _PageWrapper(
-      title: 'What\'s your goal?',
-      subtitle: 'We\'ll build your personalized plan around this',
-      child: Column(
-        children: FitnessGoal.values.map((goal) {
-          final isSelected = selected == goal;
-          return _SelectionCard(
-            emoji: goal.emoji,
-            title: goal.displayName,
-            subtitle: goal.description,
-            isSelected: isSelected,
-            onTap: () => onSelect(goal),
-          ).animate().fadeIn(delay: (FitnessGoal.values.indexOf(goal) * 100).ms);
-        }).toList(),
+  Widget _buildTelemetryMetric(
+    AppThemeTokens tokens, {
+    required String title,
+    required String value,
+    required String status,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: tokens.card,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: tokens.borderSubtle),
       ),
-    );
-  }
-}
-
-// ─── Page 2: Body Info ───────────────────────────────────────────────────────
-
-class _BodyInfoPage extends StatelessWidget {
-  const _BodyInfoPage({
-    required this.age,
-    required this.weight,
-    required this.height,
-    required this.onAgeChanged,
-    required this.onWeightChanged,
-    required this.onHeightChanged,
-  });
-  final int age;
-  final double weight;
-  final double height;
-  final ValueChanged<int> onAgeChanged;
-  final ValueChanged<double> onWeightChanged;
-  final ValueChanged<double> onHeightChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return _PageWrapper(
-      title: 'Tell us about yourself',
-      subtitle: 'Used to calculate your calorie targets',
-      child: Column(
-        children: [
-          _SliderCard(
-            label: 'Age',
-            value: age.toDouble(),
-            min: 15,
-            max: 80,
-            unit: 'years',
-            divisions: 65,
-            onChanged: (v) => onAgeChanged(v.toInt()),
-          ).animate().fadeIn(delay: 0.ms),
-          const SizedBox(height: AppTheme.spacingMedium),
-          _SliderCard(
-            label: 'Weight',
-            value: weight,
-            min: 40,
-            max: 200,
-            unit: 'kg',
-            divisions: 160,
-            onChanged: onWeightChanged,
-          ).animate().fadeIn(delay: 100.ms),
-          const SizedBox(height: AppTheme.spacingMedium),
-          _SliderCard(
-            label: 'Height',
-            value: height,
-            min: 140,
-            max: 220,
-            unit: 'cm',
-            divisions: 80,
-            onChanged: onHeightChanged,
-          ).animate().fadeIn(delay: 200.ms),
-        ],
-      ),
-    );
-  }
-}
-
-// ─── Page 3: Fitness Level ───────────────────────────────────────────────────
-
-class _FitnessLevelPage extends StatelessWidget {
-  const _FitnessLevelPage({required this.selected, required this.onSelect});
-  final FitnessLevel selected;
-  final ValueChanged<FitnessLevel> onSelect;
-
-  @override
-  Widget build(BuildContext context) {
-    return _PageWrapper(
-      title: 'Your fitness level?',
-      subtitle: 'We\'ll adjust workout intensity accordingly',
-      child: Column(
-        children: FitnessLevel.values.map((level) {
-          return _SelectionCard(
-            emoji: switch (level) {
-              FitnessLevel.beginner => '🌱',
-              FitnessLevel.intermediate => '⚡',
-              FitnessLevel.advanced => '🔥',
-            },
-            title: level.displayName,
-            subtitle: level.description,
-            isSelected: selected == level,
-            onTap: () => onSelect(level),
-          ).animate().fadeIn(delay: (FitnessLevel.values.indexOf(level) * 100).ms);
-        }).toList(),
-      ),
-    );
-  }
-}
-
-// ─── Page 4: Equipment ───────────────────────────────────────────────────────
-
-class _EquipmentPage extends StatelessWidget {
-  const _EquipmentPage({required this.selected, required this.onSelect});
-  final EquipmentType selected;
-  final ValueChanged<EquipmentType> onSelect;
-
-  @override
-  Widget build(BuildContext context) {
-    return _PageWrapper(
-      title: 'What equipment do you have?',
-      subtitle: 'We\'ll only suggest exercises you can do',
-      child: Column(
-        children: EquipmentType.values.map((eq) {
-          return _SelectionCard(
-            emoji: eq == EquipmentType.gym ? '🏋️' : '🏠',
-            title: eq.displayName,
-            subtitle: eq.description,
-            isSelected: selected == eq,
-            onTap: () => onSelect(eq),
-          ).animate().fadeIn(delay: (EquipmentType.values.indexOf(eq) * 100).ms);
-        }).toList(),
-      ),
-    );
-  }
-}
-
-// ─── Page 5: Frequency ───────────────────────────────────────────────────────
-
-class _FrequencyPage extends StatelessWidget {
-  const _FrequencyPage({required this.days, required this.onChanged});
-  final int days;
-  final ValueChanged<int> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return _PageWrapper(
-      title: 'How often will you train?',
-      subtitle: 'We\'ll schedule your workouts accordingly',
-      child: Column(
-        children: [
-          AppTheme.glassmorphicCard(
-            padding: const EdgeInsets.all(AppTheme.spacingLarge),
-            child: Column(
-              children: [
-                Text(
-                  '$days',
-                  style: const TextStyle(
-                    fontSize: 72,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.primaryColor,
-                  ),
-                ),
-                const Text(
-                  'days per week',
-                  style: TextStyle(color: AppTheme.primaryColor, fontSize: 16),
-                ),
-                const SizedBox(height: AppTheme.spacingMedium),
-                Slider(
-                  value: days.toDouble(),
-                  min: 2,
-                  max: 6,
-                  divisions: 4,
-                  activeColor: AppTheme.primaryColor,
-                  onChanged: (v) => onChanged(v.toInt()),
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: const [
-                    Text('2 days', style: TextStyle(color: AppTheme.primaryColor, fontSize: 12)),
-                    Text('6 days', style: TextStyle(color: AppTheme.primaryColor, fontSize: 12)),
-                  ],
-                ),
-              ],
-            ),
-          ).animate().fadeIn(),
-        ],
-      ),
-    );
-  }
-}
-
-// ─── Page 6: Budget ──────────────────────────────────────────────────────────
-
-class _BudgetPage extends StatelessWidget {
-  const _BudgetPage({required this.selected, required this.onSelect});
-  final BudgetLevel selected;
-  final ValueChanged<BudgetLevel> onSelect;
-
-  @override
-  Widget build(BuildContext context) {
-    return _PageWrapper(
-      title: 'Your food budget?',
-      subtitle: 'We\'ll suggest meals that fit your budget',
-      child: Column(
-        children: BudgetLevel.values.map((b) {
-          return _SelectionCard(
-            emoji: switch (b) {
-              BudgetLevel.low => '💰',
-              BudgetLevel.medium => '💳',
-              BudgetLevel.high => '💎',
-            },
-            title: b.displayName,
-            subtitle: b.description,
-            isSelected: selected == b,
-            onTap: () => onSelect(b),
-          ).animate().fadeIn(delay: (BudgetLevel.values.indexOf(b) * 100).ms);
-        }).toList(),
-      ),
-    );
-  }
-}
-
-// ─── Shared Widgets ──────────────────────────────────────────────────────────
-
-class _PageWrapper extends StatelessWidget {
-  const _PageWrapper({
-    required this.title,
-    required this.subtitle,
-    required this.child,
-  });
-  final String title;
-  final String subtitle;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(AppTheme.spacingMedium),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: AppTheme.spacingMedium),
           Text(
             title,
             style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.onSurface,
+              fontFamily: AppTypography.displayFontFamily,
+              fontSize: 8,
+              fontWeight: FontWeight.w600,
+              color: tokens.textMuted,
             ),
-          ).animate().fadeIn().slideX(begin: -0.1),
-          const SizedBox(height: AppTheme.spacingSmall),
+          ),
+          const SizedBox(height: 4),
           Text(
-            subtitle,
+            value,
             style: TextStyle(
-              fontSize: 14,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              fontFamily: AppTypography.displayFontFamily,
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              color: tokens.kineticAccent,
             ),
-          ).animate().fadeIn(delay: 100.ms),
-          const SizedBox(height: AppTheme.spacingXLarge),
-          child,
+          ),
+          const SizedBox(height: 2),
+          Text(
+            status,
+            style: TextStyle(
+              fontFamily: AppTypography.displayFontFamily,
+              fontSize: 8,
+              fontWeight: FontWeight.w700,
+              color: tokens.textSecondary,
+            ),
+          ),
         ],
       ),
     );
   }
-}
 
-class _SelectionCard extends StatelessWidget {
-  const _SelectionCard({
-    required this.emoji,
-    required this.title,
-    required this.subtitle,
-    required this.isSelected,
-    required this.onTap,
-  });
-  final String emoji;
-  final String title;
-  final String subtitle;
-  final bool isSelected;
-  final VoidCallback onTap;
+  // ─── Step 5: Mission Specification Review & Synthesis ───────────────────────
 
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        margin: const EdgeInsets.only(bottom: AppTheme.spacingMedium),
-        padding: const EdgeInsets.all(AppTheme.spacingMedium),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-          color: isSelected
-              ? AppTheme.primaryColor.withValues(alpha: 0.15)
-              : Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-          border: Border.all(
-            color: isSelected ? AppTheme.primaryColor : Colors.white12,
-            width: isSelected ? 2 : 1,
+  Widget _buildStep5Review(AppThemeTokens tokens) {
+    if (_goal == null) {
+      return const Center(child: Text('Please select a goal first'));
+    }
+
+    final tempProfile = UserProfile(
+      goal: _goal!,
+      age: _age,
+      weightKg: _weightKg,
+      heightCm: _heightCm,
+      fitnessLevel: _fitnessLevel,
+      equipment: _equipment,
+      workoutDaysPerWeek: _daysPerWeek,
+      budget: _budget,
+    );
+
+    final dailyCalories = tempProfile.dailyCalorieTarget.round();
+    final surplusOrDeficit = switch (_goal!) {
+      FitnessGoal.gainMuscle => '+300 KCAL SURPLUS',
+      FitnessGoal.loseWeight => '-500 KCAL DEFICIT',
+      FitnessGoal.maintain => 'MAINTENANCE EQUILIBRIUM',
+    };
+
+    return _StepContentLayout(
+      stepTitle: 'MISSION SPECIFICATION',
+      stepDescription: 'Review generated protocol specifications prior to automated system initialization.',
+      children: [
+        // Specification Manifest Container
+        Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: tokens.panel,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: tokens.borderSubtle),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.terminal_rounded, size: 16, color: tokens.kineticAccent),
+                      const SizedBox(width: 8),
+                      Text(
+                        'SPECIFICATION MANIFEST',
+                        style: TextStyle(
+                          fontFamily: AppTypography.displayFontFamily,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1.0,
+                          color: tokens.textPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: tokens.kineticAccent.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(color: tokens.kineticAccent.withValues(alpha: 0.4)),
+                    ),
+                    child: Text(
+                      'READY',
+                      style: TextStyle(
+                        fontFamily: AppTypography.displayFontFamily,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w700,
+                        color: tokens.kineticAccent,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              Divider(color: tokens.borderSubtle, height: 24),
+              _buildReviewRow(
+                tokens,
+                label: 'PRIMARY DIRECTIVE',
+                value: _goal!.displayName.toUpperCase(),
+                code: 'GOAL // ${_goal!.name.toUpperCase()}',
+              ),
+              const SizedBox(height: 12),
+              _buildReviewRow(
+                tokens,
+                label: 'OPERATOR CLASSIFICATION',
+                value: _fitnessLevel.displayName.toUpperCase(),
+                code: 'TIER // ${_fitnessLevel.name.toUpperCase()}',
+              ),
+              const SizedBox(height: 12),
+              _buildReviewRow(
+                tokens,
+                label: 'DEPLOYMENT SCHEDULE',
+                value: '$_daysPerWeek DAYS / WEEK',
+                code: _equipment.displayName.toUpperCase(),
+              ),
+              const SizedBox(height: 12),
+              _buildReviewRow(
+                tokens,
+                label: 'BIOMETRIC SIGNATURE',
+                value: '${_weightKg.toStringAsFixed(1)} KG // ${_heightCm.round()} CM // $_age YRS',
+                code: 'BMI: ${tempProfile.bmi.toStringAsFixed(1)}',
+              ),
+              const SizedBox(height: 12),
+              _buildReviewRow(
+                tokens,
+                label: 'PROJECTED CALORIC TARGET',
+                value: '$dailyCalories KCAL / DAY',
+                code: surplusOrDeficit,
+              ),
+            ],
           ),
         ),
-        child: Row(
+
+        const SizedBox(height: 16),
+
+        // Generated Architecture Preview Card
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: tokens.card,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: tokens.kineticAccent.withValues(alpha: 0.3)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: tokens.kineticAccent.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.auto_awesome_rounded, size: 20, color: tokens.kineticAccent),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'ACTIVE PROTOCOL SYNTHESIS',
+                      style: TextStyle(
+                        fontFamily: AppTypography.displayFontFamily,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.8,
+                        color: tokens.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Personalized $_daysPerWeek-day training split and nutrient-matched diet matrix will be generated and set active immediately.',
+                      style: TextStyle(
+                        fontFamily: AppTypography.bodyFontFamily,
+                        fontSize: 11,
+                        color: tokens.textMuted,
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        if (_synthesisError != null) ...[
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.red.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: Colors.redAccent.withValues(alpha: 0.4)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.error_outline_rounded, color: Colors.redAccent, size: 18),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Initialization failed: $_synthesisError',
+                    style: const TextStyle(color: Colors.redAccent, fontSize: 11),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildReviewRow(
+    AppThemeTokens tokens, {
+    required String label,
+    required String value,
+    required String code,
+  }) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(emoji, style: const TextStyle(fontSize: 32)),
-            const SizedBox(width: AppTheme.spacingMedium),
+            Text(
+              label,
+              style: TextStyle(
+                fontFamily: AppTypography.displayFontFamily,
+                fontSize: 9,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.8,
+                color: tokens.textMuted,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              value,
+              style: TextStyle(
+                fontFamily: AppTypography.displayFontFamily,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: tokens.textPrimary,
+              ),
+            ),
+          ],
+        ),
+        Text(
+          code,
+          style: TextStyle(
+            fontFamily: AppTypography.displayFontFamily,
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+            color: tokens.kineticAccent.withValues(alpha: 0.8),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ─── Bottom Navigation ───────────────────────────────────────────────────────
+
+  Widget _buildBottomNavigation(AppThemeTokens tokens) {
+    final isLastStep = _currentStep == _totalSteps - 1;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: tokens.panel,
+        border: Border(
+          top: BorderSide(color: tokens.borderSubtle, width: 1),
+        ),
+      ),
+      child: Row(
+        children: [
+          if (_currentStep > 0) ...[
+            Expanded(
+              flex: 1,
+              child: AppButton(
+                label: 'BACK',
+                variant: AppButtonVariant.secondary,
+                onPressed: _previousStep,
+              ),
+            ),
+            const SizedBox(width: 12),
+          ],
+          Expanded(
+            flex: 2,
+            child: AppButton(
+              label: isLastStep ? 'INITIALIZE SYSTEM' : 'PROCEED',
+              icon: Icon(
+                isLastStep ? Icons.rocket_launch_rounded : Icons.arrow_forward_rounded,
+                size: 18,
+                color: Colors.black,
+              ),
+              variant: AppButtonVariant.primary,
+              onPressed: _canProceed ? _nextStep : null,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─── Synthesis Overlay ───────────────────────────────────────────────────────
+
+  Widget _buildSynthesisOverlay(AppThemeTokens tokens) {
+    return Container(
+      color: Colors.black.withValues(alpha: 0.85),
+      child: Center(
+        child: Container(
+          width: 300,
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: tokens.panel,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: tokens.kineticAccent.withValues(alpha: 0.5)),
+            boxShadow: [
+              BoxShadow(
+                color: tokens.kineticAccent.withValues(alpha: 0.2),
+                blurRadius: 20,
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: 44,
+                height: 44,
+                child: CircularProgressIndicator(
+                  strokeWidth: 3,
+                  valueColor: AlwaysStoppedAnimation<Color>(tokens.kineticAccent),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'SYNTHESIZING PROTOCOL',
+                style: TextStyle(
+                  fontFamily: AppTypography.displayFontFamily,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.0,
+                  color: tokens.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Calibrating progressive overload and macronutrient distribution...',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: AppTypography.bodyFontFamily,
+                  fontSize: 11,
+                  color: tokens.textMuted,
+                  height: 1.35,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ─── Helpers & Base Components ───────────────────────────────────────────────
+
+  Widget _buildSelectableCard<T>({
+    required AppThemeTokens tokens,
+    required T value,
+    required T? groupValue,
+    required String code,
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required ValueChanged<T> onSelect,
+  }) {
+    final isSelected = value == groupValue;
+
+    return InkWell(
+      onTap: () {
+        AppHaptics.shared.selectionChanged();
+        onSelect(value);
+      },
+      borderRadius: BorderRadius.circular(8),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isSelected ? tokens.kineticAccent.withValues(alpha: 0.1) : tokens.panel,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isSelected ? tokens.kineticAccent : tokens.borderSubtle,
+            width: isSelected ? 1.5 : 1,
+          ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: tokens.kineticAccent.withValues(alpha: 0.15),
+                    blurRadius: 10,
+                  ),
+                ]
+              : null,
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: isSelected ? tokens.kineticAccent : tokens.card,
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(
+                  color: isSelected ? tokens.kineticAccent : tokens.borderSubtle,
+                ),
+              ),
+              child: Icon(
+                icon,
+                size: 20,
+                color: isSelected ? Colors.black : tokens.textSecondary,
+              ),
+            ),
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        code,
+                        style: TextStyle(
+                          fontFamily: AppTypography.displayFontFamily,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.8,
+                          color: isSelected ? tokens.kineticAccent : tokens.textMuted,
+                        ),
+                      ),
+                      if (isSelected)
+                        Icon(
+                          Icons.check_circle_rounded,
+                          size: 16,
+                          color: tokens.kineticAccent,
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
                   Text(
                     title,
                     style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: isSelected
-                          ? AppTheme.primaryColor
-                          : Theme.of(context).colorScheme.onSurface,
+                      fontFamily: AppTypography.displayFontFamily,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: isSelected ? tokens.kineticAccent : tokens.textPrimary,
                     ),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 4),
                   Text(
                     subtitle,
                     style: TextStyle(
-                      fontSize: 12,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontFamily: AppTypography.bodyFontFamily,
+                      fontSize: 11,
+                      color: tokens.textMuted,
+                      height: 1.35,
                     ),
                   ),
                 ],
               ),
             ),
-            if (isSelected)
-              const Icon(Icons.check_circle, color: AppTheme.primaryColor),
           ],
         ),
       ),
     );
   }
+
+  Widget _buildContainerBox({
+    required AppThemeTokens tokens,
+    required Widget child,
+    EdgeInsetsGeometry padding = const EdgeInsets.all(16),
+  }) {
+    return Container(
+      padding: padding,
+      decoration: BoxDecoration(
+        color: tokens.panel,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: tokens.borderSubtle),
+      ),
+      child: child,
+    );
+  }
 }
 
-class _SliderCard extends StatelessWidget {
-  const _SliderCard({
-    required this.label,
-    required this.value,
-    required this.min,
-    required this.max,
-    required this.unit,
-    required this.divisions,
-    required this.onChanged,
+class _StepContentLayout extends StatelessWidget {
+  const _StepContentLayout({
+    required this.stepTitle,
+    required this.stepDescription,
+    required this.children,
   });
-  final String label;
-  final double value;
-  final double min;
-  final double max;
-  final String unit;
-  final int divisions;
-  final ValueChanged<double> onChanged;
+
+  final String stepTitle;
+  final String stepDescription;
+  final List<Widget> children;
 
   @override
   Widget build(BuildContext context) {
-    return AppTheme.glassmorphicCard(
-      padding: const EdgeInsets.all(AppTheme.spacingMedium),
+    final tokens = AppThemeTokens.of(context);
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
-              Text(
-                '${value.toInt()} $unit',
-                style: const TextStyle(
-                  color: AppTheme.primaryColor,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                ),
-              ),
-            ],
+          Text(
+            stepTitle,
+            style: TextStyle(
+              fontFamily: AppTypography.displayFontFamily,
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.4,
+              color: tokens.textPrimary,
+            ),
           ),
-          Slider(
-            value: value,
-            min: min,
-            max: max,
-            divisions: divisions,
-            activeColor: AppTheme.primaryColor,
-            onChanged: onChanged,
+          const SizedBox(height: 4),
+          Text(
+            stepDescription,
+            style: TextStyle(
+              fontFamily: AppTypography.bodyFontFamily,
+              fontSize: 12,
+              color: tokens.textSecondary,
+              height: 1.35,
+            ),
           ),
+          const SizedBox(height: 20),
+          ...children,
         ],
       ),
     );
