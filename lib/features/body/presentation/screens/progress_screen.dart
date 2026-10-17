@@ -1,19 +1,28 @@
 import 'dart:io';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/constants/app_theme.dart';
+import '../../../../core/theme/app_theme_tokens.dart';
+import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/error_handler.dart';
+import '../../../../shared/presentation/components/app_button.dart';
+import '../../../../shared/widgets/weight_trend_graph.dart';
+import '../../../ai/domain/entities/insight.dart';
+import '../../../ai/presentation/widgets/ai_entry_button.dart';
+import '../../../ai/presentation/widgets/contextual_insight_banner.dart';
 import '../../domain/entities/body_entry.dart';
 import '../../domain/entities/measurement_type.dart';
 import '../../domain/usecases/save_body_entry_use_case.dart';
-import '../../../../shared/widgets/weight_trend_graph.dart';
 import '../providers/body_providers.dart';
 
+/// Monolithic Sci-Fi Progress Screen displaying weight, body measurements, and photos.
 class ProgressScreen extends ConsumerStatefulWidget {
   const ProgressScreen({super.key});
 
@@ -39,16 +48,101 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen>
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AppThemeTokens.of(context);
+
     return Scaffold(
+      backgroundColor: tokens.canvas,
       appBar: AppBar(
-        title: const Text('Progress'),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(text: 'Weight'),
-            Tab(text: 'Measurements'),
-            Tab(text: 'Photos'),
+        backgroundColor: tokens.canvas,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'PROGRESS',
+              style: TextStyle(
+                fontFamily: AppTypography.displayFontFamily,
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.5,
+                color: tokens.textPrimary,
+              ),
+            ),
+            Text(
+              'BIOMETRIC TELEMETRY',
+              style: TextStyle(
+                fontFamily: AppTypography.displayFontFamily,
+                fontSize: 9,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.2,
+                color: tokens.textMuted,
+              ),
+            ),
           ],
+        ),
+        actions: [
+          const AiEntryButton(),
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: Container(
+              decoration: BoxDecoration(
+                color: tokens.panel,
+                borderRadius: BorderRadius.circular(tokens.radiusSm),
+                border: Border.all(color: tokens.borderSubtle, width: 1),
+              ),
+              child: IconButton(
+                onPressed: () => context.push('/analytics'),
+                icon: Icon(
+                  Icons.insights_rounded,
+                  color: tokens.cyanAccent,
+                  size: 20,
+                ),
+                tooltip: 'Performance Analytics',
+                constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                padding: EdgeInsets.zero,
+              ),
+            ),
+          ),
+        ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(48),
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: AppTheme.spacingMedium),
+            decoration: BoxDecoration(
+              color: tokens.panel,
+              borderRadius: BorderRadius.circular(tokens.radiusSm),
+              border: Border.all(color: tokens.borderSubtle, width: 1),
+            ),
+            child: TabBar(
+              controller: _tabController,
+              indicatorSize: TabBarIndicatorSize.tab,
+              indicator: BoxDecoration(
+                color: tokens.kineticAccent,
+                borderRadius: BorderRadius.circular(tokens.radiusSm - 1),
+              ),
+              labelColor: Colors.black,
+              unselectedLabelColor: tokens.textMuted,
+              labelStyle: const TextStyle(
+                fontFamily: AppTypography.displayFontFamily,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.8,
+              ),
+              unselectedLabelStyle: const TextStyle(
+                fontFamily: AppTypography.displayFontFamily,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.8,
+              ),
+              dividerColor: Colors.transparent,
+              tabs: const [
+                Tab(text: 'WEIGHT'),
+                Tab(text: 'MEASUREMENTS'),
+                Tab(text: 'PHOTOS'),
+              ],
+            ),
+          ),
         ),
       ),
       body: TabBarView(
@@ -64,7 +158,7 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen>
 }
 
 // ---------------------------------------------------------------------------
-// Weight Tab — FIX: uses weightTrendProvider (non-family) + refresh counter
+// Weight Tab
 // ---------------------------------------------------------------------------
 
 class _WeightTab extends ConsumerWidget {
@@ -72,47 +166,84 @@ class _WeightTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // FIX: watch the non-family provider — it re-runs when bodyRefreshCounterProvider changes
+    final tokens = AppThemeTokens.of(context);
     final trendAsync = ref.watch(weightTrendProvider);
-    final theme = Theme.of(context);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppTheme.spacingMedium),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // Contextual AI Banner
+          const ContextualInsightBanner(context: InsightContext.workout),
+          const SizedBox(height: 14),
+
           // Graph card
           Container(
             decoration: BoxDecoration(
-              color: theme.colorScheme.surface,
-              borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-              border: Border.all(color: theme.dividerColor),
+              color: tokens.panel,
+              borderRadius: BorderRadius.circular(tokens.radiusMd),
+              border: Border.all(color: tokens.borderSubtle, width: 1),
             ),
             padding: const EdgeInsets.all(AppTheme.spacingMedium),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Weight Trend (Last 30 Days)',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'WEIGHT TREND',
+                      style: TextStyle(
+                        fontFamily: AppTypography.displayFontFamily,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.5,
+                        color: tokens.textPrimary,
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: tokens.card,
+                        borderRadius: BorderRadius.circular(tokens.radiusSm),
+                        border:
+                            Border.all(color: tokens.borderSubtle, width: 1),
+                      ),
+                      child: Text(
+                        'LAST 30 DAYS',
+                        style: TextStyle(
+                          fontFamily: AppTypography.displayFontFamily,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.8,
+                          color: tokens.textMuted,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: AppTheme.spacingMedium),
+                const SizedBox(height: 14),
                 trendAsync.when(
                   data: (points) => WeightTrendGraph(dataPoints: points)
                       .animate()
                       .fadeIn(duration: 400.ms),
-                  loading: () => const SizedBox(
+                  loading: () => SizedBox(
                     height: 220,
-                    child: Center(child: CircularProgressIndicator()),
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        color: tokens.kineticAccent,
+                        strokeWidth: 2,
+                      ),
+                    ),
                   ),
                   error: (e, _) => SizedBox(
                     height: 220,
                     child: Center(
                       child: Text(
                         'Failed to load weight data: $e',
-                        style: TextStyle(color: theme.colorScheme.error),
+                        style: TextStyle(color: tokens.error, fontSize: 13),
                       ),
                     ),
                   ),
@@ -120,7 +251,7 @@ class _WeightTab extends ConsumerWidget {
               ],
             ),
           ),
-          const SizedBox(height: AppTheme.spacingMedium),
+          const SizedBox(height: 16),
 
           // Recent entries list
           trendAsync.when(
@@ -130,81 +261,162 @@ class _WeightTab extends ConsumerWidget {
                   padding: const EdgeInsets.symmetric(vertical: 24),
                   child: Center(
                     child: Text(
-                      'No weight entries yet.\nTap "Log Weight" to start.',
+                      'No weight entries logged yet.\nTap "LOG WEIGHT" to start calibration.',
                       textAlign: TextAlign.center,
-                      style: theme.textTheme.bodyMedium,
+                      style: TextStyle(
+                        color: tokens.textMuted,
+                        fontSize: 13,
+                        fontFamily: AppTypography.bodyFontFamily,
+                      ),
                     ),
                   ),
                 );
               }
-              // Show last 5 entries
               final recent = points.reversed.take(5).toList();
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Recent Entries', style: theme.textTheme.titleSmall),
-                  const SizedBox(height: 8),
-                  ...recent.map((p) => _WeightEntryRow(point: p)),
-                ],
+              return Container(
+                decoration: BoxDecoration(
+                  color: tokens.panel,
+                  borderRadius: BorderRadius.circular(tokens.radiusMd),
+                  border: Border.all(color: tokens.borderSubtle, width: 1),
+                ),
+                padding: const EdgeInsets.all(AppTheme.spacingMedium),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'RECENT LOGS',
+                      style: TextStyle(
+                        fontFamily: AppTypography.displayFontFamily,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.8,
+                        color: tokens.textMuted,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    ...recent.map((p) => _WeightEntryRow(point: p, tokens: tokens)),
+                  ],
+                ),
               );
             },
             loading: () => const SizedBox.shrink(),
             error: (_, _) => const SizedBox.shrink(),
           ),
 
-          const SizedBox(height: AppTheme.spacingLarge),
-          ElevatedButton.icon(
+          const SizedBox(height: 20),
+          AppButton(
+            label: 'LOG WEIGHT',
+            icon: const Icon(Icons.add_rounded, size: 18),
+            isFullWidth: true,
             onPressed: () => _showLogWeightDialog(context, ref),
-            icon: const Icon(Icons.add),
-            label: const Text('Log Weight'),
-            style: ElevatedButton.styleFrom(
-              minimumSize: const Size.fromHeight(52),
-            ),
           ),
+          const SizedBox(height: 24),
         ],
       ),
     );
   }
 
   Future<void> _showLogWeightDialog(BuildContext context, WidgetRef ref) async {
+    final tokens = AppThemeTokens.of(context);
     final controller = TextEditingController();
     final formKey = GlobalKey<FormState>();
 
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Log Weight'),
+        backgroundColor: tokens.panel,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(tokens.radiusMd),
+          side: BorderSide(color: tokens.borderSubtle, width: 1),
+        ),
+        title: Text(
+          'LOG WEIGHT',
+          style: TextStyle(
+            fontFamily: AppTypography.displayFontFamily,
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.5,
+            color: tokens.textPrimary,
+          ),
+        ),
         content: Form(
           key: formKey,
-          child: TextFormField(
-            controller: controller,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            autofocus: true,
-            decoration: const InputDecoration(
-              labelText: 'Weight (kg)',
-              hintText: 'e.g. 75.5',
-            ),
-            validator: (v) {
-              final parsed = double.tryParse(v?.trim() ?? '');
-              if (parsed == null || parsed <= 0) {
-                return 'Enter a valid positive weight';
-              }
-              return null;
-            },
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: controller,
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                autofocus: true,
+                style: TextStyle(
+                  fontFamily: AppTypography.displayFontFamily,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: tokens.textPrimary,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
+                decoration: InputDecoration(
+                  labelText: 'Weight (kg)',
+                  labelStyle: TextStyle(
+                    fontFamily: AppTypography.bodyFontFamily,
+                    fontSize: 12,
+                    color: tokens.textMuted,
+                  ),
+                  hintText: 'e.g. 75.5',
+                  hintStyle: TextStyle(
+                    fontFamily: AppTypography.bodyFontFamily,
+                    fontSize: 14,
+                    color: tokens.textMuted.withValues(alpha: 0.5),
+                  ),
+                  filled: true,
+                  fillColor: tokens.card,
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(tokens.radiusSm),
+                    borderSide: BorderSide(color: tokens.borderSubtle, width: 1),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(tokens.radiusSm),
+                    borderSide: BorderSide(color: tokens.borderSubtle, width: 1),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(tokens.radiusSm),
+                    borderSide:
+                        BorderSide(color: tokens.kineticAccent, width: 1.5),
+                  ),
+                ),
+                validator: (v) {
+                  final parsed = double.tryParse(v?.trim() ?? '');
+                  if (parsed == null || parsed <= 0) {
+                    return 'Enter a valid positive weight';
+                  }
+                  return null;
+                },
+              ),
+            ],
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
+            child: Text(
+              'CANCEL',
+              style: TextStyle(
+                fontFamily: AppTypography.displayFontFamily,
+                fontWeight: FontWeight.w700,
+                color: tokens.textMuted,
+              ),
+            ),
           ),
-          ElevatedButton(
+          AppButton(
+            label: 'SAVE',
             onPressed: () {
               if (formKey.currentState!.validate()) {
                 Navigator.of(ctx).pop(true);
               }
             },
-            child: const Text('Save'),
           ),
         ],
       ),
@@ -218,15 +430,13 @@ class _WeightTab extends ConsumerWidget {
         final useCase = SaveBodyEntryUseCase(repository);
         await useCase(entry);
 
-        // FIX: increment the refresh counter — both bodyHistoryProvider and
-        // weightTrendProvider watch this counter and will re-fetch automatically.
         ref.read(bodyRefreshCounterProvider.notifier).state++;
 
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Weight ${weight.toStringAsFixed(1)}kg logged!'),
-              backgroundColor: AppTheme.primaryColor,
+              backgroundColor: tokens.panel,
               behavior: SnackBarBehavior.floating,
               duration: const Duration(seconds: 2),
             ),
@@ -237,46 +447,57 @@ class _WeightTab extends ConsumerWidget {
           ErrorHandler.handleError(context, e, stack);
         }
       } finally {
-        // FIX: Dispose controller after we're done using it
         controller.dispose();
       }
     } else {
-      // FIX: Dispose controller if dialog was cancelled
       controller.dispose();
     }
   }
 }
 
 class _WeightEntryRow extends StatelessWidget {
-  const _WeightEntryRow({required this.point});
+  const _WeightEntryRow({required this.point, required this.tokens});
   final dynamic point;
+  final AppThemeTokens tokens;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
           Container(
-            width: 8,
-            height: 8,
+            width: 7,
+            height: 7,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: AppTheme.primaryColor,
+              color: tokens.kineticAccent,
+              boxShadow: [
+                BoxShadow(
+                  color: tokens.kineticAccent.withValues(alpha: 0.6),
+                  blurRadius: 4,
+                ),
+              ],
             ),
           ),
           const SizedBox(width: 10),
           Text(
             DateFormat('MMM d, yyyy').format(point.date as DateTime),
-            style: theme.textTheme.bodyMedium,
+            style: TextStyle(
+              fontFamily: AppTypography.bodyFontFamily,
+              fontSize: 13,
+              color: tokens.textSecondary,
+            ),
           ),
           const Spacer(),
           Text(
             '${(point.weight as double).toStringAsFixed(1)} kg',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: AppTheme.primaryColor,
-              fontWeight: FontWeight.bold,
+            style: TextStyle(
+              fontFamily: AppTypography.displayFontFamily,
+              color: tokens.textPrimary,
+              fontWeight: FontWeight.w700,
+              fontSize: 14,
+              fontFeatures: const [FontFeature.tabularFigures()],
             ),
           ),
         ],
@@ -294,8 +515,8 @@ class _MeasurementsTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final tokens = AppThemeTokens.of(context);
     final historyAsync = ref.watch(bodyHistoryProvider);
-    final theme = Theme.of(context);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppTheme.spacingMedium),
@@ -311,14 +532,19 @@ class _MeasurementsTab extends ConsumerWidget {
                 return Container(
                   padding: const EdgeInsets.all(AppTheme.spacingLarge),
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.surface,
-                    borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-                    border: Border.all(color: theme.dividerColor),
+                    color: tokens.panel,
+                    borderRadius: BorderRadius.circular(tokens.radiusMd),
+                    border: Border.all(color: tokens.borderSubtle, width: 1),
                   ),
                   child: Center(
                     child: Text(
-                      'No measurements logged yet',
-                      style: theme.textTheme.bodyMedium,
+                      'No body measurements logged yet.\nCalibrate your dimensions below.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: tokens.textMuted,
+                        fontSize: 13,
+                        fontFamily: AppTypography.bodyFontFamily,
+                      ),
                     ),
                   ),
                 );
@@ -328,37 +554,77 @@ class _MeasurementsTab extends ConsumerWidget {
               return Container(
                 padding: const EdgeInsets.all(AppTheme.spacingMedium),
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.surface,
-                  borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-                  border: Border.all(color: theme.dividerColor),
+                  color: tokens.panel,
+                  borderRadius: BorderRadius.circular(tokens.radiusMd),
+                  border: Border.all(color: tokens.borderSubtle, width: 1),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Latest Measurements',
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        )),
-                    const SizedBox(height: AppTheme.spacingMedium),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'LATEST TELEMETRY',
+                          style: TextStyle(
+                            fontFamily: AppTypography.displayFontFamily,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.5,
+                            color: tokens.textPrimary,
+                          ),
+                        ),
+                        Text(
+                          DateFormat('MMM d, yyyy').format(latest.date),
+                          style: TextStyle(
+                            fontFamily: AppTypography.displayFontFamily,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: tokens.textMuted,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
                     ...MeasurementType.values.map((type) {
                       final value = latest.measurements[type];
-                      return Padding(
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 6),
                         padding: const EdgeInsets.symmetric(
-                            vertical: AppTheme.spacingXSmall),
+                            horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: tokens.card,
+                          borderRadius: BorderRadius.circular(tokens.radiusSm),
+                          border: Border.all(
+                              color: tokens.borderSubtle, width: 1),
+                        ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(_label(type),
-                                style: theme.textTheme.bodyMedium),
+                            Text(
+                              _label(type).toUpperCase(),
+                              style: TextStyle(
+                                fontFamily: AppTypography.displayFontFamily,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.8,
+                                color: tokens.textMuted,
+                              ),
+                            ),
                             Text(
                               value != null
-                                  ? '${value.toStringAsFixed(1)} cm'
+                                  ? '${value.toStringAsFixed(1)} CM'
                                   : '—',
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
+                              style: TextStyle(
+                                fontFamily: AppTypography.displayFontFamily,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
                                 color: value != null
-                                    ? AppTheme.primaryColor
-                                    : null,
+                                    ? tokens.kineticAccent
+                                    : tokens.textMuted,
+                                fontFeatures: const [
+                                  FontFeature.tabularFigures()
+                                ],
                               ),
                             ),
                           ],
@@ -369,19 +635,26 @@ class _MeasurementsTab extends ConsumerWidget {
                 ),
               );
             },
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Text('Failed to load measurements',
-                style: TextStyle(color: theme.colorScheme.error)),
-          ),
-          const SizedBox(height: AppTheme.spacingLarge),
-          ElevatedButton.icon(
-            onPressed: () => _showLogMeasurementsForm(context, ref),
-            icon: const Icon(Icons.straighten),
-            label: const Text('Log Measurements'),
-            style: ElevatedButton.styleFrom(
-              minimumSize: const Size.fromHeight(52),
+            loading: () => Center(
+              child: CircularProgressIndicator(
+                color: tokens.kineticAccent,
+                strokeWidth: 2,
+              ),
+            ),
+            error: (e, _) => Text(
+              'Failed to load measurements',
+              style: TextStyle(color: tokens.error),
             ),
           ),
+          const SizedBox(height: 20),
+          AppButton(
+            label: 'LOG MEASUREMENTS',
+            variant: AppButtonVariant.secondary,
+            icon: const Icon(Icons.straighten_rounded, size: 18),
+            isFullWidth: true,
+            onPressed: () => _showLogMeasurementsForm(context, ref),
+          ),
+          const SizedBox(height: 24),
         ],
       ),
     );
@@ -397,6 +670,7 @@ class _MeasurementsTab extends ConsumerWidget {
 
   Future<void> _showLogMeasurementsForm(
       BuildContext context, WidgetRef ref) async {
+    final tokens = AppThemeTokens.of(context);
     final controllers = {
       for (final type in MeasurementType.values)
         type: TextEditingController(),
@@ -406,7 +680,21 @@ class _MeasurementsTab extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Log Measurements'),
+        backgroundColor: tokens.panel,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(tokens.radiusMd),
+          side: BorderSide(color: tokens.borderSubtle, width: 1),
+        ),
+        title: Text(
+          'LOG MEASUREMENTS',
+          style: TextStyle(
+            fontFamily: AppTypography.displayFontFamily,
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.5,
+            color: tokens.textPrimary,
+          ),
+        ),
         content: SingleChildScrollView(
           child: Form(
             key: formKey,
@@ -414,14 +702,43 @@ class _MeasurementsTab extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               children: MeasurementType.values.map((type) {
                 return Padding(
-                  padding:
-                      const EdgeInsets.only(bottom: AppTheme.spacingSmall),
+                  padding: const EdgeInsets.only(bottom: 8),
                   child: TextFormField(
                     controller: controllers[type],
                     keyboardType:
                         const TextInputType.numberWithOptions(decimal: true),
+                    style: TextStyle(
+                      fontFamily: AppTypography.displayFontFamily,
+                      fontSize: 14,
+                      color: tokens.textPrimary,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
                     decoration: InputDecoration(
-                      labelText: '${_label(type)} (cm) — optional',
+                      labelText: '${_label(type)} (cm)',
+                      labelStyle: TextStyle(
+                        fontFamily: AppTypography.bodyFontFamily,
+                        fontSize: 12,
+                        color: tokens.textMuted,
+                      ),
+                      filled: true,
+                      fillColor: tokens.card,
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 10),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(tokens.radiusSm),
+                        borderSide:
+                            BorderSide(color: tokens.borderSubtle, width: 1),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(tokens.radiusSm),
+                        borderSide:
+                            BorderSide(color: tokens.borderSubtle, width: 1),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(tokens.radiusSm),
+                        borderSide:
+                            BorderSide(color: tokens.kineticAccent, width: 1.5),
+                      ),
                     ),
                     validator: (v) {
                       if (v == null || v.isEmpty) return null;
@@ -440,15 +757,22 @@ class _MeasurementsTab extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
+            child: Text(
+              'CANCEL',
+              style: TextStyle(
+                fontFamily: AppTypography.displayFontFamily,
+                fontWeight: FontWeight.w700,
+                color: tokens.textMuted,
+              ),
+            ),
           ),
-          ElevatedButton(
+          AppButton(
+            label: 'SAVE',
             onPressed: () {
               if (formKey.currentState!.validate()) {
                 Navigator.of(ctx).pop(true);
               }
             },
-            child: const Text('Save'),
           ),
         ],
       ),
@@ -477,18 +801,15 @@ class _MeasurementsTab extends ConsumerWidget {
         final useCase = SaveBodyEntryUseCase(repository);
         await useCase(entry);
 
-        // FIX: increment refresh counter
         ref.read(bodyRefreshCounterProvider.notifier).state++;
       } catch (e, stack) {
         if (context.mounted) ErrorHandler.handleError(context, e, stack);
       } finally {
-        // FIX: Dispose all controllers after we're done
         for (final c in controllers.values) {
           c.dispose();
         }
       }
     } else {
-      // FIX: Dispose all controllers if dialog was cancelled
       for (final c in controllers.values) {
         c.dispose();
       }
@@ -524,7 +845,6 @@ class _PhotosTabState extends ConsumerState<_PhotosTab> {
           BodyEntry.create(weight: lastWeight, photoPath: picked.path);
       final repository = ref.read(bodyRepositoryProvider);
       await repository.saveBodyEntry(entry);
-      // FIX: increment refresh counter
       ref.read(bodyRefreshCounterProvider.notifier).state++;
     } catch (e, stack) {
       if (mounted) ErrorHandler.handleError(context, e, stack);
@@ -533,12 +853,19 @@ class _PhotosTabState extends ConsumerState<_PhotosTab> {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AppThemeTokens.of(context);
     final historyAsync = ref.watch(bodyHistoryProvider);
-    final theme = Theme.of(context);
 
     return historyAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text('Error: $e')),
+      loading: () => Center(
+        child: CircularProgressIndicator(
+          color: tokens.kineticAccent,
+          strokeWidth: 2,
+        ),
+      ),
+      error: (e, _) => Center(
+        child: Text('Error: $e', style: TextStyle(color: tokens.error)),
+      ),
       data: (entries) {
         final photoEntries =
             entries.where((e) => e.photoPath != null).toList();
@@ -549,16 +876,31 @@ class _PhotosTabState extends ConsumerState<_PhotosTab> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.photo_camera_outlined,
-                            size: 64,
-                            color: theme.colorScheme.onSurface
-                                .withValues(alpha: 0.2)),
+                        Icon(
+                          Icons.photo_camera_outlined,
+                          size: 56,
+                          color: tokens.textMuted.withValues(alpha: 0.4),
+                        ),
                         const SizedBox(height: 16),
-                        Text('No progress photos yet',
-                            style: theme.textTheme.bodyMedium),
-                        const SizedBox(height: 8),
-                        Text('Tap + to add your first photo',
-                            style: theme.textTheme.bodySmall),
+                        Text(
+                          'NO PROGRESS PHOTOS YET',
+                          style: TextStyle(
+                            fontFamily: AppTypography.displayFontFamily,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.5,
+                            color: tokens.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Tap + below to upload visual physique check-in',
+                          style: TextStyle(
+                            fontFamily: AppTypography.bodyFontFamily,
+                            fontSize: 12,
+                            color: tokens.textMuted,
+                          ),
+                        ),
                       ],
                     ),
                   )
@@ -567,22 +909,25 @@ class _PhotosTabState extends ConsumerState<_PhotosTab> {
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
-                      crossAxisSpacing: 8,
-                      mainAxisSpacing: 8,
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 10,
                       childAspectRatio: 0.75,
                     ),
                     itemCount: photoEntries.length,
                     itemBuilder: (context, index) {
                       final entry = photoEntries[index];
-                      return _PhotoCard(entry: entry);
+                      return _PhotoCard(entry: entry, tokens: tokens);
                     },
                   ),
             Positioned(
               bottom: 24,
               right: 24,
               child: FloatingActionButton(
+                backgroundColor: tokens.kineticAccent,
+                foregroundColor: Colors.black,
+                elevation: 4,
                 onPressed: _pickPhoto,
-                child: const Icon(Icons.add_a_photo),
+                child: const Icon(Icons.add_a_photo_rounded),
               ),
             ),
           ],
@@ -593,17 +938,17 @@ class _PhotosTabState extends ConsumerState<_PhotosTab> {
 }
 
 class _PhotoCard extends StatelessWidget {
-  const _PhotoCard({required this.entry});
+  const _PhotoCard({required this.entry, required this.tokens});
   final BodyEntry entry;
+  final AppThemeTokens tokens;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        color: theme.colorScheme.surface,
-        border: Border.all(color: theme.dividerColor),
+        borderRadius: BorderRadius.circular(tokens.radiusMd),
+        color: tokens.panel,
+        border: Border.all(color: tokens.borderSubtle, width: 1),
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
@@ -614,25 +959,38 @@ class _PhotoCard extends StatelessWidget {
               File(entry.photoPath!),
               fit: BoxFit.cover,
               errorBuilder: (_, _, _) => Container(
-                color: theme.colorScheme.surface,
-                child: Icon(Icons.broken_image,
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.3)),
+                color: tokens.card,
+                child: Icon(
+                  Icons.broken_image_rounded,
+                  color: tokens.textMuted,
+                ),
               ),
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(10),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   DateFormat('MMM d, yyyy').format(entry.date),
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    fontFamily: AppTypography.displayFontFamily,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: tokens.textPrimary,
+                  ),
                 ),
+                const SizedBox(height: 2),
                 Text(
                   '${entry.weight.toStringAsFixed(1)} kg',
-                  style: theme.textTheme.bodySmall,
+                  style: TextStyle(
+                    fontFamily: AppTypography.displayFontFamily,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: tokens.kineticAccent,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
                 ),
               ],
             ),

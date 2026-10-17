@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../core/constants/app_theme.dart';
+import '../../core/theme/app_theme_tokens.dart';
+import '../../core/theme/app_typography.dart';
 import '../../features/nutrition/domain/entities/meal.dart';
 import 'empty_state_widget.dart';
 
@@ -67,23 +69,25 @@ class SwipeableMealCards extends StatelessWidget {
 class _DeleteBackground extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final tokens = AppThemeTokens.of(context);
     return Container(
       margin: const EdgeInsets.symmetric(
         horizontal: AppTheme.spacingMedium,
         vertical: AppTheme.spacingSmall,
       ),
       decoration: BoxDecoration(
-        color: AppTheme.errorColor,
-        borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+        color: tokens.error.withValues(alpha: 0.85),
+        borderRadius: BorderRadius.circular(tokens.radiusMd),
+        border: Border.all(color: tokens.error, width: 1),
       ),
       alignment: Alignment.centerRight,
       padding: const EdgeInsets.only(right: AppTheme.spacingLarge),
-      child: const Icon(Icons.delete_outline, color: Colors.white, size: 28),
+      child: const Icon(Icons.delete_outline_rounded, color: Colors.white, size: 24),
     );
   }
 }
 
-/// A glassmorphism-styled card displaying a single meal's nutritional info.
+/// A monolithic telemetry card displaying a single meal's nutritional info.
 ///
 /// Requirements: 6.6, 13.2
 class MealCard extends StatelessWidget {
@@ -94,84 +98,117 @@ class MealCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final onSurface = Theme.of(context).colorScheme.onSurface;
-    final secondary = Theme.of(context).colorScheme.onSurfaceVariant;
-    final surface = Theme.of(context).colorScheme.surfaceContainerHighest;
+    final tokens = AppThemeTokens.of(context);
 
     return Container(
       margin: const EdgeInsets.symmetric(
         horizontal: AppTheme.spacingMedium,
-        vertical: AppTheme.spacingSmall,
+        vertical: 4,
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(
-            sigmaX: AppTheme.glassBlurSigma,
-            sigmaY: AppTheme.glassBlurSigma,
-          ),
-          child: Container(
-            padding: const EdgeInsets.all(AppTheme.spacingMedium),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
-              color: surface.withValues(alpha: 0.6),
-              border: Border.all(
-                color: onSurface.withValues(alpha: 0.08),
-                width: 1,
+      decoration: BoxDecoration(
+        color: tokens.card,
+        borderRadius: BorderRadius.circular(tokens.radiusMd),
+        border: Border.all(color: tokens.borderSubtle, width: 1),
+      ),
+      padding: const EdgeInsets.all(AppTheme.spacingMedium),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  meal.name,
+                  style: TextStyle(
+                    fontFamily: AppTypography.displayFontFamily,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: -0.2,
+                    color: tokens.textPrimary,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        meal.name,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: onSurface,
+              const SizedBox(width: AppTheme.spacingSmall),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: tokens.panel,
+                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                  border: Border.all(color: tokens.borderSubtle, width: 1),
+                ),
+                child: Text(
+                  '${meal.calories.toStringAsFixed(0)} KCAL',
+                  style: TextStyle(
+                    fontFamily: AppTypography.displayFontFamily,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: tokens.textPrimary,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
+                ),
+              ),
+              if (onSwap != null)
+                Padding(
+                  padding: const EdgeInsets.only(left: 4),
+                  child: PopupMenuButton<String>(
+                    color: tokens.panel,
+                    icon: Icon(Icons.more_vert, color: tokens.textMuted, size: 18),
+                    onSelected: (value) {
+                      if (value == 'swap') {
+                        onSwap!(meal);
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      PopupMenuItem(
+                        value: 'swap',
+                        child: Row(
+                          children: [
+                            Icon(Icons.swap_horiz, size: 18, color: tokens.cyanAccent),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Swap Meal',
+                              style: TextStyle(
+                                fontFamily: AppTypography.bodyFontFamily,
+                                fontSize: 13,
+                                color: tokens.textPrimary,
+                              ),
+                            ),
+                          ],
                         ),
-                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                    const SizedBox(width: AppTheme.spacingSmall),
-                    Text(
-                      '${meal.calories.toStringAsFixed(0)} kcal',
-                      style: TextStyle(fontSize: 14, color: secondary),
-                    ),
-                    if (onSwap != null)
-                      PopupMenuButton<String>(
-                        onSelected: (value) {
-                          if (value == 'swap') {
-                            onSwap!(meal);
-                          }
-                        },
-                        itemBuilder: (context) => [
-                          const PopupMenuItem(
-                            value: 'swap',
-                            child: Text('Swap Meal'),
-                          ),
-                        ],
-                      ),
-                  ],
+                    ],
+                  ),
                 ),
-                const SizedBox(height: AppTheme.spacingSmall),
-                Row(
-                  children: [
-                    _MacroChip(label: 'P', value: meal.protein, color: AppTheme.proteinColor),
-                    const SizedBox(width: AppTheme.spacingSmall),
-                    _MacroChip(label: 'C', value: meal.carbs, color: AppTheme.carbsColor),
-                    const SizedBox(width: AppTheme.spacingSmall),
-                    _MacroChip(label: 'F', value: meal.fats, color: AppTheme.fatsColor),
-                  ],
-                ),
-              ],
-            ),
+            ],
           ),
-        ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              _MacroChip(
+                label: 'PROTEIN',
+                value: meal.protein,
+                color: tokens.protein,
+                tokens: tokens,
+              ),
+              const SizedBox(width: 8),
+              _MacroChip(
+                label: 'CARBS',
+                value: meal.carbs,
+                color: tokens.carbs,
+                tokens: tokens,
+              ),
+              const SizedBox(width: 8),
+              _MacroChip(
+                label: 'FATS',
+                value: meal.fats,
+                color: tokens.fats,
+                tokens: tokens,
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -181,31 +218,54 @@ class _MacroChip extends StatelessWidget {
   final String label;
   final double value;
   final Color color;
+  final AppThemeTokens tokens;
 
   const _MacroChip({
     required this.label,
     required this.value,
     required this.color,
+    required this.tokens,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: AppTheme.spacingSmall,
-        vertical: AppTheme.spacingXSmall,
+        horizontal: 8,
+        vertical: 4,
       ),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
-      ),
-      child: Text(
-        '$label: ${value.toStringAsFixed(0)}g',
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-          color: color,
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(tokens.radiusSm),
+        border: Border.all(
+          color: color.withValues(alpha: 0.35),
+          width: 1,
         ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            '$label ',
+            style: TextStyle(
+              fontFamily: AppTypography.displayFontFamily,
+              fontSize: 9,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.5,
+              color: color,
+            ),
+          ),
+          Text(
+            '${value.toStringAsFixed(0)}g',
+            style: TextStyle(
+              fontFamily: AppTypography.displayFontFamily,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: tokens.textPrimary,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
+          ),
+        ],
       ),
     );
   }

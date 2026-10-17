@@ -1,13 +1,18 @@
+import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_theme.dart';
+import '../../../../core/theme/app_theme_tokens.dart';
+import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/error_handler.dart';
+import '../../../../shared/presentation/components/app_button.dart';
 import '../../../../shared/widgets/macro_wheel_chart.dart';
 import '../../../../shared/widgets/swipeable_meal_cards.dart';
 import '../../../ai/domain/entities/insight.dart';
+import '../../../ai/presentation/widgets/ai_entry_button.dart';
 import '../../../ai/presentation/widgets/contextual_insight_banner.dart';
 import '../../domain/entities/daily_nutrition_summary.dart';
 import '../../domain/entities/diet_plan_state.dart';
@@ -19,12 +24,10 @@ import '../providers/diet_plan_providers.dart';
 import '../providers/nutrition_providers.dart';
 import '../../../onboarding/presentation/providers/onboarding_provider.dart';
 import 'food_search_screen.dart';
-import '../../../ai/presentation/widgets/ai_entry_button.dart';
 
 /// Nutrition screen displaying daily macro summary, meal list, and log meal form.
 ///
-/// Integrates with diet plan to show targets and suggested meals.
-/// Updates the macro wheel within 200ms of any meal change (Requirement 6.6).
+/// Upgraded to the Monolithic Sci-Fi design system (Direction 3).
 ///
 /// **Validates: Requirements 6.1, 6.2, 6.3, 6.5, 6.6, 12.3, 12.4, 18.1, 18.2, 18.3, 18.4, 18.5, 18.6**
 class NutritionScreen extends ConsumerWidget {
@@ -32,24 +35,70 @@ class NutritionScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final tokens = AppThemeTokens.of(context);
     final today = _todayDate();
     final summaryAsync = ref.watch(dailyNutritionSummaryProvider(today));
     final dietPlanAsync = ref.watch(dietPlanProvider);
 
     return Scaffold(
+      backgroundColor: tokens.canvas,
       appBar: AppBar(
-        title: const Text('Nutrition'),
+        backgroundColor: tokens.canvas,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'NUTRITION',
+              style: TextStyle(
+                fontFamily: AppTypography.displayFontFamily,
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.5,
+                color: tokens.textPrimary,
+              ),
+            ),
+            Text(
+              'PROTOCOL & TARGET TELEMETRY',
+              style: TextStyle(
+                fontFamily: AppTypography.displayFontFamily,
+                fontSize: 9,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.2,
+                color: tokens.textMuted,
+              ),
+            ),
+          ],
+        ),
         actions: [
           const AiEntryButton(),
-          IconButton(
-            onPressed: () => context.go('/nutrition/history'),
-            icon: const Icon(Icons.history),
-            tooltip: 'Nutrition History',
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: Container(
+              decoration: BoxDecoration(
+                color: tokens.panel,
+                borderRadius: BorderRadius.circular(tokens.radiusSm),
+                border: Border.all(color: tokens.borderSubtle, width: 1),
+              ),
+              child: IconButton(
+                onPressed: () => context.go('/nutrition/history'),
+                icon: Icon(Icons.history_rounded, color: tokens.textPrimary, size: 20),
+                tooltip: 'Nutrition History',
+                constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                padding: EdgeInsets.zero,
+              ),
+            ),
           ),
         ],
       ),
       body: summaryAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => Center(
+          child: CircularProgressIndicator(
+            color: tokens.kineticAccent,
+            strokeWidth: 2.5,
+          ),
+        ),
         error: (error, stackTrace) => _NutritionErrorState(
           error: error,
           stackTrace: stackTrace,
@@ -65,16 +114,17 @@ class NutritionScreen extends ConsumerWidget {
               if (kDebugMode) {
                 print('📊 [Nutrition] Deleting meal: $mealId');
               }
-              
-              // Delete meal using notifier for instant UI update
-              await ref.read(dailyNutritionSummaryProvider(today).notifier).deleteMeal(mealId);
-              
+              await ref
+                  .read(dailyNutritionSummaryProvider(today).notifier)
+                  .deleteMeal(mealId);
+
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Meal deleted'),
-                    duration: Duration(seconds: 2),
+                  SnackBar(
+                    content: const Text('Meal deleted'),
+                    duration: const Duration(seconds: 2),
                     behavior: SnackBarBehavior.floating,
+                    backgroundColor: tokens.panel,
                   ),
                 );
               }
@@ -93,11 +143,10 @@ class NutritionScreen extends ConsumerWidget {
               if (kDebugMode) {
                 print('📊 [Nutrition] Logging meal: ${meal.name}');
               }
-              
-              // Show loading indicator
+
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
+                  SnackBar(
                     content: Row(
                       children: [
                         SizedBox(
@@ -105,30 +154,33 @@ class NutritionScreen extends ConsumerWidget {
                           height: 16,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(tokens.kineticAccent),
                           ),
                         ),
-                        SizedBox(width: 12),
-                        Text('Adding meal...'),
+                        const SizedBox(width: 12),
+                        const Text('Adding meal...'),
                       ],
                     ),
-                    duration: Duration(seconds: 1),
+                    duration: const Duration(seconds: 1),
                     behavior: SnackBarBehavior.floating,
+                    backgroundColor: tokens.panel,
                   ),
                 );
               }
-              
-              // Add meal using notifier for instant UI update
-              await ref.read(dailyNutritionSummaryProvider(today).notifier).addMeal(meal);
-              
+
+              await ref
+                  .read(dailyNutritionSummaryProvider(today).notifier)
+                  .addMeal(meal);
+
               if (context.mounted) {
                 ScaffoldMessenger.of(context).clearSnackBars();
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Meal added'),
-                    duration: Duration(seconds: 2),
+                  SnackBar(
+                    content: const Text('Meal added successfully'),
+                    duration: const Duration(seconds: 2),
                     behavior: SnackBarBehavior.floating,
-                    backgroundColor: Colors.green,
+                    backgroundColor: tokens.success,
                   ),
                 );
               }
@@ -173,50 +225,51 @@ class _NutritionErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final onSurface = Theme.of(context).colorScheme.onSurface;
-    final secondary = Theme.of(context).colorScheme.onSurfaceVariant;
+    final tokens = AppThemeTokens.of(context);
 
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.error_outline,
-            size: 64,
-            color: Theme.of(context).colorScheme.error.withValues(alpha: 0.5),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Failed to Load Nutrition Data',
-            style: TextStyle(
-              color: onSurface,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.warning_amber_rounded,
+              size: 56,
+              color: tokens.error,
             ),
-          ),
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Text(
+            const SizedBox(height: 16),
+            Text(
+              'TELEMETRY OFFLINE',
+              style: TextStyle(
+                fontFamily: AppTypography.displayFontFamily,
+                color: tokens.textPrimary,
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.5,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
               error.toString(),
-              style: TextStyle(color: secondary, fontSize: 14),
+              style: TextStyle(color: tokens.textSecondary, fontSize: 13),
               textAlign: TextAlign.center,
             ),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton.icon(
-            onPressed: onRetry,
-            icon: const Icon(Icons.refresh),
-            label: const Text('Retry'),
-          ),
-        ],
+            const SizedBox(height: 24),
+            AppButton(
+              label: 'RETRY CONNECTION',
+              icon: const Icon(Icons.refresh_rounded, size: 18),
+              onPressed: onRetry,
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
 // ---------------------------------------------------------------------------
-// Body widget (extracted to keep build method clean)
+// Body widget
 // ---------------------------------------------------------------------------
 
 class _NutritionBody extends StatelessWidget {
@@ -234,30 +287,35 @@ class _NutritionBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AppThemeTokens.of(context);
+
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(vertical: AppTheme.spacingMedium),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Targets section (diet plan or default)
-          // 11.1 & 11.2: Default targets display or diet plan targets display
+          // 1. Contextual AI Banner
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: AppTheme.spacingMedium),
+            child: ContextualInsightBanner(context: InsightContext.nutrition),
+          ),
+          const SizedBox(height: 12),
+
+          // 2. Targets section (diet plan or default)
           dietPlanAsync.when(
             data: (dietPlan) {
               if (dietPlan != null) {
                 return _DietPlanTargetsDisplay(dietPlan: dietPlan);
               } else {
-                return _DefaultTargetsDisplay();
+                return const _DefaultTargetsDisplay();
               }
             },
-            loading: () => _DefaultTargetsDisplay(),
-            error: (error, _) {
-              // Show default targets on diet plan load error
-              return _DefaultTargetsDisplay();
-            },
+            loading: () => const _DefaultTargetsDisplay(),
+            error: (error, _) => const _DefaultTargetsDisplay(),
           ),
-          const SizedBox(height: AppTheme.spacingMedium),
+          const SizedBox(height: 12),
 
-          // 11.3: Macro wheel with current day totals
+          // 3. Macro wheel chart with current day totals
           Padding(
             padding: const EdgeInsets.symmetric(
               horizontal: AppTheme.spacingMedium,
@@ -268,63 +326,98 @@ class _NutritionBody extends StatelessWidget {
               fats: summary.totalFats,
             ),
           ),
-          const SizedBox(height: AppTheme.spacingMedium),
+          const SizedBox(height: 12),
 
-          // 11.4: Remaining macros display with progress bars
+          // 4. Remaining macros display with progress bars
           _RemainingMacrosCard(summary: summary),
-          const SizedBox(height: AppTheme.spacingMedium),
+          const SizedBox(height: 20),
 
-          // AI Insights Banner
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: AppTheme.spacingMedium),
-            child: ContextualInsightBanner(context: InsightContext.nutrition),
-          ),
-          const SizedBox(height: AppTheme.spacingMedium),
-
-          // Logged meals
+          // 5. Logged meals section
           Padding(
             padding: const EdgeInsets.symmetric(
               horizontal: AppTheme.spacingMedium,
             ),
-            child: Text(
-              'Today\'s Meals',
-              style: Theme.of(context).textTheme.titleLarge,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      'TODAY\'S FUEL',
+                      style: TextStyle(
+                        fontFamily: AppTypography.displayFontFamily,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.5,
+                        color: tokens.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: summary.meals.isNotEmpty
+                            ? tokens.kineticAccent.withValues(alpha: 0.12)
+                            : tokens.card,
+                        borderRadius: BorderRadius.circular(tokens.radiusSm),
+                        border: Border.all(
+                          color: summary.meals.isNotEmpty
+                              ? tokens.kineticAccent.withValues(alpha: 0.35)
+                              : tokens.borderSubtle,
+                          width: 1,
+                        ),
+                      ),
+                      child: Text(
+                        '${summary.meals.length} LOGGED',
+                        style: TextStyle(
+                          fontFamily: AppTypography.displayFontFamily,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.5,
+                          color: summary.meals.isNotEmpty
+                              ? tokens.kineticAccent
+                              : tokens.textMuted,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: AppTheme.spacingSmall),
+          const SizedBox(height: 8),
           SwipeableMealCards(
             meals: summary.meals,
             onDelete: onDeleteMeal,
-            // 11.5: Add meal swap functionality
             onSwap: (meal) => _showSwapMealDialog(context, meal),
           ),
-          const SizedBox(height: AppTheme.spacingLarge),
+          const SizedBox(height: 20),
 
-          // Search & Log Food button
+          // 6. Action buttons
           Padding(
             padding: const EdgeInsets.symmetric(
               horizontal: AppTheme.spacingMedium,
             ),
-            child: ElevatedButton.icon(
-              onPressed: () => _openFoodSearch(context),
-              icon: const Icon(Icons.search),
-              label: const Text('Search & Log Food'),
+            child: Column(
+              children: [
+                AppButton(
+                  label: 'SEARCH & LOG FOOD',
+                  icon: const Icon(Icons.search_rounded, size: 18),
+                  isFullWidth: true,
+                  onPressed: () => _openFoodSearch(context),
+                ),
+                const SizedBox(height: 10),
+                AppButton(
+                  label: 'LOG CUSTOM MEAL',
+                  variant: AppButtonVariant.secondary,
+                  icon: const Icon(Icons.add_rounded, size: 18),
+                  isFullWidth: true,
+                  onPressed: () => _showLogMealDialog(context),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: AppTheme.spacingSmall),
-
-          // Log Custom Meal button (manual entry)
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppTheme.spacingMedium,
-            ),
-            child: ElevatedButton.icon(
-              onPressed: () => _showLogMealDialog(context),
-              icon: const Icon(Icons.add),
-              label: const Text('Log Custom Meal'),
-            ),
-          ),
-          const SizedBox(height: AppTheme.spacingLarge),
+          const SizedBox(height: 32),
         ],
       ),
     );
@@ -377,43 +470,88 @@ class _NutritionBody extends StatelessWidget {
     );
   }
 
-  // 11.5: Add meal swap functionality (placeholder)
   void _showSwapMealDialog(BuildContext context, Meal originalMeal) {
+    final tokens = AppThemeTokens.of(context);
     showDialog<void>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Swap Meal'),
+        backgroundColor: tokens.panel,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(tokens.radiusMd),
+          side: BorderSide(color: tokens.borderSubtle, width: 1),
+        ),
+        title: Text(
+          'SWAP MEAL',
+          style: TextStyle(
+            fontFamily: AppTypography.displayFontFamily,
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.5,
+            color: tokens.textPrimary,
+          ),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Original: ${originalMeal.name}'),
+            Text(
+              'Original: ${originalMeal.name}',
+              style: TextStyle(
+                fontFamily: AppTypography.bodyFontFamily,
+                fontSize: 13,
+                color: tokens.textSecondary,
+              ),
+            ),
             const SizedBox(height: 16),
-            const Text('Alternative meals (placeholder):'),
+            Text(
+              'Alternative meals:',
+              style: TextStyle(
+                fontFamily: AppTypography.displayFontFamily,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: tokens.cyanAccent,
+              ),
+            ),
             const SizedBox(height: 8),
-            // Placeholder: Show a simple list of alternatives
-            // In a full implementation, this would filter meals with similar macros
             ListTile(
-              title: const Text('Alternative 1'),
-              subtitle: const Text('Similar macros'),
-              onTap: () {
-                // Call swapDietMealUseCase
-                Navigator.of(context).pop();
-              },
+              contentPadding: EdgeInsets.zero,
+              leading: Icon(Icons.swap_horiz, color: tokens.cyanAccent),
+              title: Text(
+                'Alternative 1',
+                style: TextStyle(color: tokens.textPrimary, fontSize: 13),
+              ),
+              subtitle: Text(
+                'Equi-macro balance match',
+                style: TextStyle(color: tokens.textMuted, fontSize: 11),
+              ),
+              onTap: () => Navigator.of(context).pop(),
             ),
             ListTile(
-              title: const Text('Alternative 2'),
-              subtitle: const Text('Similar macros'),
-              onTap: () {
-                // Call swapDietMealUseCase
-                Navigator.of(context).pop();
-              },
+              contentPadding: EdgeInsets.zero,
+              leading: Icon(Icons.swap_horiz, color: tokens.cyanAccent),
+              title: Text(
+                'Alternative 2',
+                style: TextStyle(color: tokens.textPrimary, fontSize: 13),
+              ),
+              subtitle: Text(
+                'Equi-macro balance match',
+                style: TextStyle(color: tokens.textMuted, fontSize: 11),
+              ),
+              onTap: () => Navigator.of(context).pop(),
             ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+            child: Text(
+              'CANCEL',
+              style: TextStyle(
+                fontFamily: AppTypography.displayFontFamily,
+                fontWeight: FontWeight.w700,
+                color: tokens.textMuted,
+              ),
+            ),
           ),
         ],
       ),
@@ -426,98 +564,437 @@ class _NutritionBody extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _DefaultTargetsDisplay extends ConsumerWidget {
+  const _DefaultTargetsDisplay();
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final onSurface = Theme.of(context).colorScheme.onSurface;
+    final tokens = AppThemeTokens.of(context);
     final userProfileAsync = ref.watch(userProfileProvider);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacingMedium),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Daily Targets',
-            style: TextStyle(
-              color: onSurface,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 12),
-          AppTheme.glassmorphicCard(
-            padding: const EdgeInsets.all(AppTheme.spacingMedium),
-            child: Column(
+      child: Container(
+        decoration: BoxDecoration(
+          color: tokens.panel,
+          borderRadius: BorderRadius.circular(tokens.radiusMd),
+          border: Border.all(color: tokens.borderSubtle, width: 1),
+        ),
+        padding: const EdgeInsets.all(AppTheme.spacingMedium),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _TargetRow(label: 'Calories', value: '2000 kcal'),
-                const SizedBox(height: 12),
-                _TargetRow(label: 'Protein', value: '150g'),
-                const SizedBox(height: 12),
-                _TargetRow(label: 'Carbs', value: '200g'),
-                const SizedBox(height: 12),
-                _TargetRow(label: 'Fats', value: '60g'),
-                // Show BMR if user profile is available
-                userProfileAsync.when(
-                  data: (profile) {
-                    if (profile == null) return const SizedBox.shrink();
-                    return Column(
-                      children: [
-                        const Divider(height: 24),
-                        _TargetRow(
-                          label: 'BMR (at rest)',
-                          value: '${profile.bmr.toInt()} kcal',
-                        ),
-                        const SizedBox(height: 8),
-                        _TargetRow(
-                          label: 'TDEE (with activity)',
-                          value: '${profile.tdee.toInt()} kcal',
-                        ),
-                      ],
-                    );
-                  },
-                  loading: () => const SizedBox.shrink(),
-                  error: (_, _) => const SizedBox.shrink(),
+                Row(
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: tokens.cyanAccent,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: tokens.cyanAccent.withValues(alpha: 0.6),
+                            blurRadius: 4,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'DAILY TARGET PROTOCOL',
+                      style: TextStyle(
+                        fontFamily: AppTypography.displayFontFamily,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.0,
+                        color: tokens.textMuted,
+                      ),
+                    ),
+                  ],
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: tokens.card,
+                    borderRadius: BorderRadius.circular(tokens.radiusSm),
+                    border: Border.all(color: tokens.borderSubtle, width: 1),
+                  ),
+                  child: Text(
+                    'STANDARD',
+                    style: TextStyle(
+                      fontFamily: AppTypography.displayFontFamily,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.8,
+                      color: tokens.textMuted,
+                    ),
+                  ),
                 ),
               ],
             ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: _TargetTelemetryChip(
+                    label: 'CALORIES',
+                    value: '2000',
+                    unit: 'KCAL',
+                    color: tokens.textPrimary,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _TargetTelemetryChip(
+                    label: 'PROTEIN',
+                    value: '150',
+                    unit: 'G',
+                    color: tokens.protein,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _TargetTelemetryChip(
+                    label: 'CARBS',
+                    value: '200',
+                    unit: 'G',
+                    color: tokens.carbs,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _TargetTelemetryChip(
+                    label: 'FATS',
+                    value: '60',
+                    unit: 'G',
+                    color: tokens.fats,
+                  ),
+                ),
+              ],
+            ),
+            userProfileAsync.when(
+              data: (profile) {
+                if (profile == null) return const SizedBox.shrink();
+                return Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: Row(
+                    children: [
+                      _TelemetryPill(
+                        label: 'BMR',
+                        value: '${profile.bmr.toInt()} kcal',
+                      ),
+                      const SizedBox(width: 8),
+                      _TelemetryPill(
+                        label: 'TDEE',
+                        value: '${profile.tdee.toInt()} kcal',
+                      ),
+                    ],
+                  ),
+                );
+              },
+              loading: () => const SizedBox.shrink(),
+              error: (_, _) => const SizedBox.shrink(),
+            ),
+            const SizedBox(height: 14),
+            const _GenerateDietPlanButton(),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Diet Plan Targets Display
+// ---------------------------------------------------------------------------
+
+class _DietPlanTargetsDisplay extends ConsumerWidget {
+  final DietPlanState dietPlan;
+
+  const _DietPlanTargetsDisplay({required this.dietPlan});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tokens = AppThemeTokens.of(context);
+    final userProfileAsync = ref.watch(userProfileProvider);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacingMedium),
+      child: Container(
+        decoration: BoxDecoration(
+          color: tokens.panel,
+          borderRadius: BorderRadius.circular(tokens.radiusMd),
+          border: Border.all(color: tokens.borderSubtle, width: 1),
+        ),
+        padding: const EdgeInsets.all(AppTheme.spacingMedium),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: tokens.kineticAccent,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: tokens.kineticAccent.withValues(alpha: 0.6),
+                            blurRadius: 4,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      dietPlan.plan.name.toUpperCase(),
+                      style: TextStyle(
+                        fontFamily: AppTypography.displayFontFamily,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.8,
+                        color: tokens.textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: tokens.kineticAccent.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(tokens.radiusSm),
+                    border: Border.all(
+                      color: tokens.kineticAccent.withValues(alpha: 0.35),
+                      width: 1,
+                    ),
+                  ),
+                  child: Text(
+                    'ACTIVE PLAN',
+                    style: TextStyle(
+                      fontFamily: AppTypography.displayFontFamily,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.8,
+                      color: tokens.kineticAccent,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: _TargetTelemetryChip(
+                    label: 'CALORIES',
+                    value: '${dietPlan.plan.dailyCalories.toInt()}',
+                    unit: 'KCAL',
+                    color: tokens.textPrimary,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _TargetTelemetryChip(
+                    label: 'PROTEIN',
+                    value: '${dietPlan.plan.proteinG.toInt()}',
+                    unit: 'G',
+                    color: tokens.protein,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _TargetTelemetryChip(
+                    label: 'CARBS',
+                    value: '${dietPlan.plan.carbsG.toInt()}',
+                    unit: 'G',
+                    color: tokens.carbs,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _TargetTelemetryChip(
+                    label: 'FATS',
+                    value: '${dietPlan.plan.fatsG.toInt()}',
+                    unit: 'G',
+                    color: tokens.fats,
+                  ),
+                ),
+              ],
+            ),
+            userProfileAsync.when(
+              data: (profile) {
+                if (profile == null) return const SizedBox.shrink();
+                return Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: Row(
+                    children: [
+                      _TelemetryPill(
+                        label: 'BMR',
+                        value: '${profile.bmr.toInt()} kcal',
+                      ),
+                      const SizedBox(width: 8),
+                      _TelemetryPill(
+                        label: 'TDEE',
+                        value: '${profile.tdee.toInt()} kcal',
+                      ),
+                    ],
+                  ),
+                );
+              },
+              loading: () => const SizedBox.shrink(),
+              error: (_, _) => const SizedBox.shrink(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TargetTelemetryChip extends StatelessWidget {
+  final String label;
+  final String value;
+  final String unit;
+  final Color color;
+
+  const _TargetTelemetryChip({
+    required this.label,
+    required this.value,
+    required this.unit,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = AppThemeTokens.of(context);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+      decoration: BoxDecoration(
+        color: tokens.card,
+        borderRadius: BorderRadius.circular(tokens.radiusSm),
+        border: Border.all(color: tokens.borderSubtle, width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontFamily: AppTypography.displayFontFamily,
+              fontSize: 8,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.5,
+              color: tokens.textMuted,
+            ),
           ),
-          const SizedBox(height: 12),
-          _GenerateDietPlanButton(),
+          const SizedBox(height: 3),
+          Text(
+            value,
+            style: TextStyle(
+              fontFamily: AppTypography.displayFontFamily,
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              color: color,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
+          ),
+          Text(
+            unit,
+            style: TextStyle(
+              fontFamily: AppTypography.displayFontFamily,
+              fontSize: 8,
+              fontWeight: FontWeight.w600,
+              color: tokens.textMuted,
+            ),
+          ),
         ],
       ),
     );
   }
 }
 
+class _TelemetryPill extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _TelemetryPill({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = AppThemeTokens.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: tokens.card,
+        borderRadius: BorderRadius.circular(tokens.radiusSm),
+        border: Border.all(color: tokens.borderSubtle, width: 1),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            '$label: ',
+            style: TextStyle(
+              fontFamily: AppTypography.displayFontFamily,
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              color: tokens.textMuted,
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              fontFamily: AppTypography.displayFontFamily,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: tokens.textPrimary,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Generate Diet Plan Button Widget
+// ---------------------------------------------------------------------------
+
 class _GenerateDietPlanButton extends ConsumerStatefulWidget {
   const _GenerateDietPlanButton();
 
   @override
-  ConsumerState<_GenerateDietPlanButton> createState() => _GenerateDietPlanButtonState();
+  ConsumerState<_GenerateDietPlanButton> createState() =>
+      _GenerateDietPlanButtonState();
 }
 
-class _GenerateDietPlanButtonState extends ConsumerState<_GenerateDietPlanButton> {
+class _GenerateDietPlanButtonState
+    extends ConsumerState<_GenerateDietPlanButton> {
   bool _isLoading = false;
 
   Future<void> _generateDietPlan() async {
     setState(() => _isLoading = true);
     try {
-      // Load user profile
       final userProfile = await ref.read(userProfileProvider.future);
       if (userProfile == null) {
         throw Exception('User profile not found');
       }
 
-      // Generate diet plan
       final generateUseCase = GenerateDietPlanUseCase();
       final dietPlan = generateUseCase(userProfile);
 
-      // Save diet plan
       final saveUseCase = ref.read(saveDietPlanUseCaseProvider);
       await saveUseCase(dietPlan);
 
-      // Refresh provider to show new plan
       ref.invalidate(dietPlanProvider);
 
       if (mounted) {
@@ -536,143 +1013,12 @@ class _GenerateDietPlanButtonState extends ConsumerState<_GenerateDietPlanButton
 
   @override
   Widget build(BuildContext context) {
-    return ElevatedButton.icon(
+    return AppButton(
+      label: _isLoading ? 'CALCULATING PROTOCOL...' : 'GENERATE DIET PLAN',
+      icon: _isLoading ? null : const Icon(Icons.auto_awesome_rounded, size: 18),
+      isLoading: _isLoading,
+      isFullWidth: true,
       onPressed: _isLoading ? null : _generateDietPlan,
-      icon: _isLoading
-          ? const SizedBox(
-              width: 16,
-              height: 16,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            )
-          : const Icon(Icons.add),
-      label: const Text('Generate Diet Plan'),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Diet Plan Targets Display
-// ---------------------------------------------------------------------------
-
-class _DietPlanTargetsDisplay extends ConsumerWidget {
-  final DietPlanState dietPlan;
-
-  const _DietPlanTargetsDisplay({required this.dietPlan});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final onSurface = Theme.of(context).colorScheme.onSurface;
-    final secondary = Theme.of(context).colorScheme.onSurfaceVariant;
-    final userProfileAsync = ref.watch(userProfileProvider);
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacingMedium),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 11.2: Diet plan name with edit button
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                dietPlan.plan.name,
-                style: TextStyle(
-                  color: onSurface,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              IconButton(
-                onPressed: () {},
-                icon: Icon(Icons.edit, color: secondary, size: 20),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          // 11.2: Show daily calories and macro targets
-          AppTheme.glassmorphicCard(
-            padding: const EdgeInsets.all(AppTheme.spacingMedium),
-            child: Column(
-              children: [
-                _TargetRow(
-                  label: 'Calories',
-                  value: '${dietPlan.plan.dailyCalories.toInt()} kcal',
-                ),
-                const SizedBox(height: 12),
-                _TargetRow(
-                  label: 'Protein',
-                  value: '${dietPlan.plan.proteinG.toInt()}g',
-                ),
-                const SizedBox(height: 12),
-                _TargetRow(
-                  label: 'Carbs',
-                  value: '${dietPlan.plan.carbsG.toInt()}g',
-                ),
-                const SizedBox(height: 12),
-                _TargetRow(
-                  label: 'Fats',
-                  value: '${dietPlan.plan.fatsG.toInt()}g',
-                ),
-                // Show BMR if user profile is available
-                userProfileAsync.when(
-                  data: (profile) {
-                    if (profile == null) return const SizedBox.shrink();
-                    return Column(
-                      children: [
-                        const Divider(height: 24),
-                        _TargetRow(
-                          label: 'BMR (at rest)',
-                          value: '${profile.bmr.toInt()} kcal',
-                        ),
-                        const SizedBox(height: 8),
-                        _TargetRow(
-                          label: 'TDEE (with activity)',
-                          value: '${profile.tdee.toInt()} kcal',
-                        ),
-                      ],
-                    );
-                  },
-                  loading: () => const SizedBox.shrink(),
-                  error: (_, _) => const SizedBox.shrink(),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TargetRow extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _TargetRow({
-    required this.label,
-    required this.value,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final secondary = Theme.of(context).colorScheme.onSurfaceVariant;
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: TextStyle(color: secondary, fontSize: 13),
-        ),
-        Text(
-          value,
-          style: const TextStyle(
-            color: AppTheme.primaryColor,
-            fontSize: 13,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ],
     );
   }
 }
@@ -688,42 +1034,79 @@ class _RemainingMacrosCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final proteinRemaining = (summary.target?.macros.protein ?? 0) - summary.totalProtein;
-    final carbsRemaining = (summary.target?.macros.carbs ?? 0) - summary.totalCarbs;
-    final fatsRemaining = (summary.target?.macros.fats ?? 0) - summary.totalFats;
+    final tokens = AppThemeTokens.of(context);
 
-    return AppTheme.glassmorphicCard(
-      margin: const EdgeInsets.symmetric(horizontal: AppTheme.spacingMedium),
-      padding: const EdgeInsets.all(AppTheme.spacingMedium),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Remaining',
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          const SizedBox(height: AppTheme.spacingSmall),
-          // 11.4: Protein progress bar
-          _MacroProgressBar(
-            label: 'Protein',
-            remaining: proteinRemaining,
-            color: AppTheme.proteinColor,
-          ),
-          const SizedBox(height: 12),
-          // 11.4: Carbs progress bar
-          _MacroProgressBar(
-            label: 'Carbs',
-            remaining: carbsRemaining,
-            color: AppTheme.carbsColor,
-          ),
-          const SizedBox(height: 12),
-          // 11.4: Fats progress bar
-          _MacroProgressBar(
-            label: 'Fats',
-            remaining: fatsRemaining,
-            color: AppTheme.fatsColor,
-          ),
-        ],
+    final targetProtein = summary.target?.macros.protein ?? 150;
+    final targetCarbs = summary.target?.macros.carbs ?? 200;
+    final targetFats = summary.target?.macros.fats ?? 60;
+
+    final proteinRemaining = targetProtein - summary.totalProtein;
+    final carbsRemaining = targetCarbs - summary.totalCarbs;
+    final fatsRemaining = targetFats - summary.totalFats;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacingMedium),
+      child: Container(
+        decoration: BoxDecoration(
+          color: tokens.panel,
+          borderRadius: BorderRadius.circular(tokens.radiusMd),
+          border: Border.all(color: tokens.borderSubtle, width: 1),
+        ),
+        padding: const EdgeInsets.all(AppTheme.spacingMedium),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'REMAINING FUEL',
+                  style: TextStyle(
+                    fontFamily: AppTypography.displayFontFamily,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.8,
+                    color: tokens.textMuted,
+                  ),
+                ),
+                Text(
+                  'DAILY BALANCE',
+                  style: TextStyle(
+                    fontFamily: AppTypography.displayFontFamily,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.5,
+                    color: tokens.textMuted,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            _MacroProgressBar(
+              label: 'PROTEIN',
+              remaining: proteinRemaining,
+              target: targetProtein,
+              current: summary.totalProtein,
+              color: tokens.protein,
+            ),
+            const SizedBox(height: 12),
+            _MacroProgressBar(
+              label: 'CARBS',
+              remaining: carbsRemaining,
+              target: targetCarbs,
+              current: summary.totalCarbs,
+              color: tokens.carbs,
+            ),
+            const SizedBox(height: 12),
+            _MacroProgressBar(
+              label: 'FATS',
+              remaining: fatsRemaining,
+              target: targetFats,
+              current: summary.totalFats,
+              color: tokens.fats,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -732,19 +1115,24 @@ class _RemainingMacrosCard extends StatelessWidget {
 class _MacroProgressBar extends StatelessWidget {
   final String label;
   final double remaining;
+  final double target;
+  final double current;
   final Color color;
 
   const _MacroProgressBar({
     required this.label,
     required this.remaining,
+    required this.target,
+    required this.current,
     required this.color,
   });
 
   @override
   Widget build(BuildContext context) {
-    // 11.4: Change color to red when remaining is negative
+    final tokens = AppThemeTokens.of(context);
     final isNegative = remaining < 0;
-    final displayColor = isNegative ? AppTheme.errorColor : color;
+    final displayColor = isNegative ? tokens.error : color;
+    final progress = target > 0 ? (current / target).clamp(0.0, 1.0) : 0.0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -752,31 +1140,55 @@ class _MacroProgressBar extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
+            Row(
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontFamily: AppTypography.displayFontFamily,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.5,
+                    color: tokens.textPrimary,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  '${current.toStringAsFixed(0)} / ${target.toStringAsFixed(0)}g',
+                  style: TextStyle(
+                    fontFamily: AppTypography.bodyFontFamily,
+                    fontSize: 11,
+                    color: tokens.textMuted,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
+                ),
+              ],
             ),
             Text(
-              '${remaining.toStringAsFixed(0)}g',
+              isNegative
+                  ? '+${(-remaining).toStringAsFixed(0)}g OVER'
+                  : '${remaining.toStringAsFixed(0)}g REMAINING',
               style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
+                fontFamily: AppTypography.displayFontFamily,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
                 color: displayColor,
+                fontFeatures: const [FontFeature.tabularFigures()],
               ),
             ),
           ],
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 6),
         ClipRRect(
-          borderRadius: BorderRadius.circular(4),
-          child: LinearProgressIndicator(
-            value: (remaining / 100).clamp(0.0, 1.0),
-            minHeight: 6,
-            backgroundColor: displayColor.withValues(alpha: 0.1),
-            valueColor: AlwaysStoppedAnimation<Color>(displayColor),
+          borderRadius: BorderRadius.circular(tokens.radiusPill),
+          child: Container(
+            height: 6,
+            color: tokens.card,
+            child: LinearProgressIndicator(
+              value: progress,
+              backgroundColor: Colors.transparent,
+              valueColor: AlwaysStoppedAnimation<Color>(displayColor),
+            ),
           ),
         ),
       ],
@@ -867,24 +1279,56 @@ class _LogMealDialogState extends State<_LogMealDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AppThemeTokens.of(context);
+
     return AlertDialog(
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      title: const Text('Log Meal'),
+      backgroundColor: tokens.panel,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(tokens.radiusMd),
+        side: BorderSide(color: tokens.borderSubtle, width: 1),
+      ),
+      title: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: tokens.kineticAccent.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(tokens.radiusSm),
+            ),
+            child: Icon(
+              Icons.restaurant_rounded,
+              color: tokens.kineticAccent,
+              size: 18,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Text(
+            'LOG CUSTOM MEAL',
+            style: TextStyle(
+              fontFamily: AppTypography.displayFontFamily,
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.5,
+              color: tokens.textPrimary,
+            ),
+          ),
+        ],
+      ),
       content: Form(
         key: _formKey,
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _buildField(_nameController, 'Meal name', isText: true),
-              const SizedBox(height: AppTheme.spacingSmall),
-              _buildField(_caloriesController, 'Calories (kcal)'),
-              const SizedBox(height: AppTheme.spacingSmall),
-              _buildField(_proteinController, 'Protein (g)'),
-              const SizedBox(height: AppTheme.spacingSmall),
-              _buildField(_carbsController, 'Carbs (g)'),
-              const SizedBox(height: AppTheme.spacingSmall),
-              _buildField(_fatsController, 'Fats (g)'),
+              _buildField('Meal Name', _nameController, isText: true, tokens: tokens),
+              const SizedBox(height: 10),
+              _buildField('Calories (kcal)', _caloriesController, tokens: tokens),
+              const SizedBox(height: 10),
+              _buildField('Protein (g)', _proteinController, tokens: tokens),
+              const SizedBox(height: 10),
+              _buildField('Carbs (g)', _carbsController, tokens: tokens),
+              const SizedBox(height: 10),
+              _buildField('Fats (g)', _fatsController, tokens: tokens),
             ],
           ),
         ),
@@ -892,31 +1336,62 @@ class _LogMealDialogState extends State<_LogMealDialog> {
       actions: [
         TextButton(
           onPressed: _saving ? null : () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: Text(
+            'CANCEL',
+            style: TextStyle(
+              fontFamily: AppTypography.displayFontFamily,
+              fontWeight: FontWeight.w700,
+              color: tokens.textMuted,
+            ),
+          ),
         ),
-        ElevatedButton(
+        AppButton(
+          label: _saving ? 'SAVING...' : 'SAVE MEAL',
+          isLoading: _saving,
           onPressed: _saving ? null : _save,
-          child: _saving
-              ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Text('Save'),
         ),
       ],
     );
   }
 
   Widget _buildField(
-    TextEditingController controller,
-    String label, {
+    String label,
+    TextEditingController controller, {
     bool isText = false,
+    required AppThemeTokens tokens,
   }) {
     return TextFormField(
       controller: controller,
-      decoration: InputDecoration(labelText: label),
+      style: TextStyle(
+        fontFamily: AppTypography.bodyFontFamily,
+        fontSize: 14,
+        color: tokens.textPrimary,
+        fontFeatures: isText ? null : const [FontFeature.tabularFigures()],
+      ),
       keyboardType: isText ? TextInputType.text : TextInputType.number,
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: TextStyle(
+          fontFamily: AppTypography.bodyFontFamily,
+          fontSize: 12,
+          color: tokens.textMuted,
+        ),
+        filled: true,
+        fillColor: tokens.card,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(tokens.radiusSm),
+          borderSide: BorderSide(color: tokens.borderSubtle, width: 1),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(tokens.radiusSm),
+          borderSide: BorderSide(color: tokens.borderSubtle, width: 1),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(tokens.radiusSm),
+          borderSide: BorderSide(color: tokens.kineticAccent, width: 1.5),
+        ),
+      ),
       validator: (value) {
         if (value == null || value.trim().isEmpty) return 'Required';
         if (!isText) {
