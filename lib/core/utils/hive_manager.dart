@@ -17,6 +17,7 @@ class HiveManager {
   static const String _appSettingsBox = 'app_settings';
   static const String _authSessionBox = 'auth_session';
   static const String _insightCacheBox = 'insight_cache';
+  static const String _userProfileBox = 'user_profile';
 
   /// Initialize Hive
   static Future<void> initialize() async {
@@ -62,6 +63,11 @@ class HiveManager {
       print('📊 [Hive] Opening box: $_authSessionBox...');
       await Hive.openBox(_authSessionBox);
       print('✅ [Hive] Box opened: $_authSessionBox');
+
+      // Open user profile box (dynamic type for profile JSON and onboarded flag)
+      print('📊 [Hive] Opening box: $_userProfileBox...');
+      await Hive.openBox(_userProfileBox);
+      print('✅ [Hive] Box opened: $_userProfileBox');
       
       print('✅ [Hive] All boxes opened successfully');
     } catch (e, stackTrace) {
@@ -188,6 +194,14 @@ class HiveManager {
     print('📊 [Hive] Getting insight cache box...');
     final box = Hive.box<Map>(_insightCacheBox);
     print('✅ [Hive] Insight cache box retrieved (isOpen: ${box.isOpen})');
+    return box;
+  }
+
+  /// Get user profile box
+  static Box getUserProfileBox() {
+    print('📊 [Hive] Getting user profile box...');
+    final box = Hive.box(_userProfileBox);
+    print('✅ [Hive] User profile box retrieved (isOpen: ${box.isOpen})');
     return box;
   }
 
