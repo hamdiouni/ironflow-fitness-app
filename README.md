@@ -41,7 +41,8 @@
 - **📊 Progressive Overload Tracking**: Automatically track your strength gains and get smart progression suggestions
 - **🥗 Comprehensive Nutrition**: Log meals with an extensive food database, track macros, and get AI-generated meal plans
 - **📱 Offline-First**: All core features work without internet connectivity
-- **🎨 Beautiful UI**: Modern, glassmorphic design with smooth animations
+- **⚡ Monolithic Sci-Fi UI**: High-contrast, telemetry-styled design system with dark/light tokens and smooth micro-animations
+- **📳 Tactile Telemetry**: Centralized haptic feedback on sets, countdown timers, macro milestones, and navigation with settings toggle
 - **🔄 Real-time Sync**: Cloud synchronization across all your devices via Firebase
 - **🌍 Multi-language**: Support for English, Spanish, French, German, Japanese, Portuguese, and Chinese
 
@@ -223,6 +224,43 @@ lib/
 
 ---
 
+## 🎨 Monolithic Sci-Fi Design System & Telemetry
+
+IronFlow v1.1.0 introduces a cohesive, high-contrast **Monolithic Sci-Fi** aesthetic built directly into Flutter's `ThemeExtension` architecture.
+
+### Architectural Tokens
+- **`AppThemeTokens`** (`context.tokens`): Light and dark color palettes adhering strictly to WCAG AAA contrast ratios.
+  - Dark Mode: Obsidian Canvas (`0xFF090A0C`), Panel Glass (`0xFF11141A`), Kinetic Cyan (`0xFF00E5FF`), Laser Amber (`0xFFFF9100`), Plasma Green (`0xFF00E676`), Neon Crimson (`0xFFFF1744`).
+  - Light Mode: Architectural Titanium (`0xFFF0F2F5`), Crisp Panels (`0xFFFFFFFF`), High-Contrast Dark Slate text (`0xFF0F172A`).
+- **`AppTypography`**: Two-tiered typography scale:
+  - Display Font: `SpaceGrotesk` for titles, metrics, HUD readouts, and numerical telemetry.
+  - Body Font: `Inter` for long-form workout notes, body descriptions, and guides.
+- **`AppSpacings`**: 4px modular spacing grid (`xs: 4`, `sm: 8`, `md: 12`, `lg: 16`, `xl: 24`, `xxl: 32`).
+
+### Shared Component Library (`lib/shared/presentation/components/`)
+- **`AppCard`**: Panel container with subtle borders and optional kinetic glowing halos (`isGlowing: true`).
+- **`AppButton`**: Tactical buttons supporting primary, secondary, outline, ghost, and danger variants with automatic loading spinners and a guaranteed minimum 48dp touch target.
+- **`AppStatTile`**: Modular HUD metric readout with title, large numerical metric, unit, and delta status badge.
+- **`AppProgress`**: Circular progress rings and segmented progress bars with kinetic gradient fills.
+- **`AppChip`**: Filter and status tags with active highlight states.
+- **`AppStateViews`**: Unified state feedback views for offline mode, sync errors, and empty states.
+- **`AppSectionHeader`**: High-contrast category dividers with uppercase display typography and optional action CTA.
+
+### Interactive Debug Design Gallery
+In debug mode (`kDebugMode`), developers can explore, test, and audit every design token and shared component live:
+- Navigate to **Profile → Settings → Design System Gallery (Debug Only)** or navigate to route `/design-gallery`.
+- Includes live theme switching, component variant showcases, interactive states, and typography stress tests.
+
+### 📳 Tactile Telemetry (`AppHaptics`)
+Haptic feedback is managed centrally through [`AppHaptics`](lib/shared/presentation/services/app_haptics.dart):
+- **Set Logged**: Light impact pulse when completing an exercise set.
+- **Rest Timer Complete**: Medium impact pattern when interval timer counts down to 00:00.
+- **Macro Milestones**: Daily targets (calories, protein, carbs, fats) trigger a single medium impact celebration per calendar day.
+- **Navigation Dock**: Subtle selection clicks when switching between bottom navigation tabs.
+- **Toggleable in Settings**: Users can enable/disable tactile telemetry under **Profile → Settings → Tactile Telemetry**.
+
+---
+
 ## 🚀 Getting Started
 
 ### Prerequisites
@@ -390,13 +428,21 @@ Data Sources (Hive, Firestore, APIs)
 
 ## 🧪 Testing
 
+IronFlow has a comprehensive test suite of **438 automated tests** covering unit, widget, domain logic, and property-based regression suites. All tests pass cleanly with **0 static analysis errors and 0 warnings**.
+
 ### Run all tests
 ```bash
 flutter test
 ```
 
+### Static Analysis
+```bash
+flutter analyze --no-fatal-infos --fatal-warnings
+```
+
 ### Run specific test suite
 ```bash
+flutter test test/shared/
 flutter test test/features/workout/
 ```
 
@@ -426,17 +472,24 @@ The project includes property-based tests for critical features:
 
 ### Android
 
-1. **Build APK**
+1. **Build Release APK (Standard)**
    ```bash
    flutter build apk --release
    ```
 
-2. **Build App Bundle** (for Play Store)
+2. **Build Hardened Release APK (Obfuscated & Symbol-Split)**
    ```bash
-   flutter build appbundle --release
+   flutter build apk --release --obfuscate --split-debug-info=build/symbols
+   ```
+   > [!NOTE]
+   > The `build/symbols` directory containing debugging symbols must be kept safely for Crashlytics stack deobfuscation and should never be committed into source control.
+
+3. **Build App Bundle** (for Google Play Store)
+   ```bash
+   flutter build appbundle --release --obfuscate --split-debug-info=build/symbols
    ```
 
-3. **Configure signing**: Edit `android/app/build.gradle.kts`
+4. **Configure signing**: Configure release keystore in `android/key.properties` and reference in `android/app/build.gradle.kts`.
 
 See [APK_BUILD_GUIDE.md](APK_BUILD_GUIDE.md) for detailed instructions.
 
