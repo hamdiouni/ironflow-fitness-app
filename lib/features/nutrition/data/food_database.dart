@@ -1,16 +1,33 @@
+import '../../onboarding/domain/entities/user_profile.dart' show BudgetLevel;
 import '../domain/entities/food_item.dart';
 import 'foods_list.dart';
+import 'verified_foods_data.dart';
 
+/// Central catalog for food items, prioritizing authoritative USDA FoodData Central
+/// verified records with complete provenance, exact macros/micros, and budget tiers.
 class FoodDatabase {
-  /// Comprehensive food database with 200+ foods
-  /// Each food includes macros per 100g
-  /// All values are per 100g and should be scaled by quantity when logging meals
-  static final List<FoodItem> foods = foodsList;
+  /// Master food catalog. Verified USDA foods are placed first, followed by
+  /// supplementary legacy foods without ID collisions.
+  static final List<FoodItem> foods = _buildCombinedFoods();
+
+  static List<FoodItem> _buildCombinedFoods() {
+    final verifiedIds = verifiedFoodsList.map((f) => f.id).toSet();
+    final verifiedNames =
+        verifiedFoodsList.map((f) => f.name.toLowerCase()).toSet();
+    final uniqueLegacy = foodsList.where((f) {
+      return !verifiedIds.contains(f.id) &&
+          !verifiedNames.contains(f.name.toLowerCase());
+    }).toList();
+    return [...verifiedFoodsList, ...uniqueLegacy];
+  }
+
+  /// Authoritative USDA FoodData Central verified foods only.
+  static List<FoodItem> get verifiedFoods => verifiedFoodsList;
 
   /// Search foods by name (case-insensitive)
   static List<FoodItem> searchByName(String query) {
     if (query.isEmpty) return foods;
-    final lowerQuery = query.toLowerCase();
+    final lowerQuery = query.toLowerCase().trim();
     return foods
         .where((food) => food.name.toLowerCase().contains(lowerQuery))
         .toList();
@@ -21,6 +38,11 @@ class FoodDatabase {
     return foods.where((food) => food.category == category).toList();
   }
 
+  /// Filter foods by budget level (matching onboarding profile)
+  static List<FoodItem> filterByBudget(BudgetLevel budget) {
+    return foods.where((food) => food.budgetTier == budget).toList();
+  }
+
   /// Filter foods by dietary tags
   static List<FoodItem> filterByTags(List<String> tags) {
     if (tags.isEmpty) return foods;
@@ -29,20 +51,28 @@ class FoodDatabase {
         .toList();
   }
 
-  /// Search and filter combined
+  /// Search and filter combined with optional category, budget tier, and tags
   static List<FoodItem> search({
     String? query,
     FoodCategory? category,
+    BudgetLevel? budgetTier,
     List<String>? tags,
   }) {
     var results = foods;
 
-    if (query != null && query.isNotEmpty) {
-      results = searchByName(query);
+    if (query != null && query.trim().isNotEmpty) {
+      final q = query.toLowerCase().trim();
+      results = results
+          .where((food) => food.name.toLowerCase().contains(q))
+          .toList();
     }
 
     if (category != null) {
       results = results.where((food) => food.category == category).toList();
+    }
+
+    if (budgetTier != null) {
+      results = results.where((food) => food.budgetTier == budgetTier).toList();
     }
 
     if (tags != null && tags.isNotEmpty) {
@@ -58,7 +88,7 @@ class FoodDatabase {
   static FoodItem? getFoodById(String id) {
     try {
       return foods.firstWhere((food) => food.id == id);
-    } catch (e) {
+    } catch (_) {
       return null;
     }
   }
@@ -81,7 +111,7 @@ class FoodDatabase {
     return tags.toList()..sort();
   }
 
-  /// Get foods by category
+  /// Get foods grouped by category
   static Map<FoodCategory, List<FoodItem>> getFoodsByCategory() {
     final map = <FoodCategory, List<FoodItem>>{};
     for (final category in getAllCategories()) {
@@ -90,7 +120,7 @@ class FoodDatabase {
     return map;
   }
 
-  /// Get count of foods
+  /// Total count of available foods
   static int get foodCount => foods.length;
 
   /// Get foods for a specific tag

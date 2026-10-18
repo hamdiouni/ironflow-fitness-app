@@ -8,14 +8,29 @@ import '../../domain/usecases/search_food_use_case.dart';
 import '../../../nutrition/presentation/providers/nutrition_providers.dart';
 // import '../../data/datasources/firestore_food_datasource.dart';
 
+import '../../../onboarding/domain/entities/user_profile.dart' show BudgetLevel;
+
 class FoodSearchState {
-  const FoodSearchState({this.query = '', this.category});
+  const FoodSearchState({
+    this.query = '',
+    this.category,
+    this.budgetTier,
+  });
   final String query;
   final FoodCategory? category;
-  FoodSearchState copyWith({String? query, FoodCategory? category, bool clearCategory = false}) {
+  final BudgetLevel? budgetTier;
+
+  FoodSearchState copyWith({
+    String? query,
+    FoodCategory? category,
+    BudgetLevel? budgetTier,
+    bool clearCategory = false,
+    bool clearBudget = false,
+  }) {
     return FoodSearchState(
       query: query ?? this.query,
       category: clearCategory ? null : (category ?? this.category),
+      budgetTier: clearBudget ? null : (budgetTier ?? this.budgetTier),
     );
   }
 }
@@ -26,6 +41,9 @@ class FoodSearchNotifier extends StateNotifier<FoodSearchState> {
   void setCategory(FoodCategory? c) => state = c == null
       ? state.copyWith(clearCategory: true)
       : state.copyWith(category: c);
+  void setBudget(BudgetLevel? b) => state = b == null
+      ? state.copyWith(clearBudget: true)
+      : state.copyWith(budgetTier: b);
 }
 
 final foodSearchProvider = StateNotifierProvider<FoodSearchNotifier, FoodSearchState>(
@@ -34,7 +52,11 @@ final foodSearchProvider = StateNotifierProvider<FoodSearchNotifier, FoodSearchS
 
 final filteredFoodProvider = Provider<List<FoodItem>>((ref) {
   final s = ref.watch(foodSearchProvider);
-  return SearchFoodUseCase()(query: s.query, category: s.category);
+  return SearchFoodUseCase()(
+    query: s.query,
+    category: s.category,
+    budgetTier: s.budgetTier,
+  );
 });
 
 /// Custom Foods StateNotifier for managing user-created foods
