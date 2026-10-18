@@ -104,9 +104,6 @@ dependencies:
   flutter_local_notifications: ^17.1.2
   timezone: ^0.9.4
 
-  # Background Tasks
-  # workmanager: ^0.5.2  # Temporarily disabled - has compatibility issues with Flutter 3.x embedding
-
   # Localization
   intl: 0.20.2
 
