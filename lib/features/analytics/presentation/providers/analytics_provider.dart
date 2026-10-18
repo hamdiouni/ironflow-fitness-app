@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../workout/presentation/providers/workout_providers.dart';
+import '../../../workout/domain/entities/set_entry.dart';
 import '../../../onboarding/presentation/providers/onboarding_provider.dart';
 import '../../../onboarding/domain/entities/user_profile.dart';
 
@@ -52,9 +53,11 @@ final analyticsStatsProvider = FutureProvider<AnalyticsStats>((ref) async {
   
   for (final workout in workoutHistory) {
     for (final exercise in workout.exercises) {
-      totalSets += exercise.sets.length;
       for (final set in exercise.sets) {
-        totalReps += set.reps;
+        if (set.type != SetType.warmup) {
+          totalSets++;
+          totalReps += set.reps;
+        }
       }
     }
   }

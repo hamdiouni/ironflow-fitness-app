@@ -27,17 +27,35 @@ class HiveActiveProgramDataSource {
   static const String boxName = 'active_program';
   static const String key = 'current_active_program';
 
-  Future<Box<Map>> get _box async => await Hive.openBox<Map>(boxName);
+  Future<Box<Map>?> get _box async {
+    try {
+      if (Hive.isBoxOpen(boxName)) {
+        return Hive.box<Map>(boxName);
+      }
+      try {
+        if ((Hive as dynamic).homePath == null) {
+          return null;
+        }
+      } catch (_) {
+        return null;
+      }
+      return await Hive.openBox<Map>(boxName);
+    } catch (_) {
+      return null;
+    }
+  }
 
   /// Save the active program to local storage
   Future<void> saveActiveProgram(ActiveProgramModel program) async {
     final box = await _box;
+    if (box == null) return;
     await box.put(key, program.toJson());
   }
 
   /// Load the active program from local storage
   Future<ActiveProgramModel?> loadActiveProgram() async {
     final box = await _box;
+    if (box == null) return null;
     final json = box.get(key);
     if (json == null) return null;
 
@@ -47,6 +65,7 @@ class HiveActiveProgramDataSource {
   /// Clear the active program from local storage
   Future<void> clearActiveProgram() async {
     final box = await _box;
+    if (box == null) return;
     await box.delete(key);
   }
 }

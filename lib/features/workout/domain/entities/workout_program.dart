@@ -39,6 +39,7 @@ class ProgramExercise {
     required this.sets,
     required this.reps,
     required this.restSeconds,
+    this.targetWeight,
     this.notes,
   });
 
@@ -46,5 +47,25 @@ class ProgramExercise {
   final int sets;
   final String reps; // e.g. "8-12" or "15"
   final int restSeconds;
+  final double? targetWeight;
   final String? notes;
+
+  ProgramExercise copyWith({
+    String? exerciseName,
+    int? sets,
+    String? reps,
+    int? restSeconds,
+    double? targetWeight,
+    String? notes,
+  }) {
+    return ProgramExercise(
+      exerciseName: exerciseName ?? this.exerciseName,
+      sets: sets ?? this.sets,
+      reps: reps ?? this.reps,
+      restSeconds: restSeconds ?? this.restSeconds,
+      targetWeight: targetWeight ?? this.targetWeight,
+      notes: notes ?? this.notes,
+    );
+  }
 }
+

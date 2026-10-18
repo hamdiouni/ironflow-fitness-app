@@ -9,8 +9,11 @@ import '../../../../core/constants/app_theme.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../shared/animations/pr_celebration_animation.dart';
 import '../../../../shared/presentation/services/app_haptics.dart';
+import '../providers/active_program_providers.dart';
 import '../providers/workout_providers.dart';
 import '../widgets/progression_suggestion_card.dart';
+import '../../domain/entities/workout_program.dart';
+import '../../domain/entities/active_program.dart';
 
 /// Displays an animated workout summary after the user finishes a workout.
 ///
@@ -524,17 +527,86 @@ class _ProgressionSuggestionItem extends ConsumerWidget {
         }
         return ProgressionSuggestionCard(
           suggestion: suggestion,
-          onAccept: () {
-            // TODO: Update program with accepted suggestion
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Suggestion accepted for $exerciseName'),
-                duration: const Duration(seconds: 2),
-              ),
-            );
+          onAccept: () async {
+            ActiveProgram? activeProgram;
+            try {
+              activeProgram = ref.read(activeProgramProvider).value;
+            } catch (_) {
+              activeProgram = null;
+            }
+
+            if (activeProgram != null) {
+              final previousProgram = activeProgram;
+              final updatedDays = activeProgram.program.days.map((day) {
+                final updatedExercises = day.exercises.map((ex) {
+                  if (ex.exerciseName.trim().toLowerCase() ==
+                      exerciseName.trim().toLowerCase()) {
+                    return ex.copyWith(
+                      targetWeight: suggestion.suggestedWeight,
+                      reps: suggestion.suggestedReps.toString(),
+                    );
+                  }
+                  return ex;
+                }).toList();
+                return ProgramDay(
+                  dayNumber: day.dayNumber,
+                  name: day.name,
+                  focus: day.focus,
+                  exercises: updatedExercises,
+                  isRestDay: day.isRestDay,
+                );
+              }).toList();
+
+              final updatedProgram = WorkoutProgram(
+                id: activeProgram.program.id,
+                name: activeProgram.program.name,
+                description: activeProgram.program.description,
+                days: updatedDays,
+                durationWeeks: activeProgram.program.durationWeeks,
+                difficulty: activeProgram.program.difficulty,
+              );
+
+              final updatedActiveProgram =
+                  activeProgram.updateProgram(updatedProgram);
+              try {
+                await ref
+                    .read(activeProgramProvider.notifier)
+                    .updateProgram(updatedActiveProgram);
+              } catch (_) {}
+
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).clearSnackBars();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Suggestion accepted for $exerciseName'),
+                    action: SnackBarAction(
+                      label: 'UNDO',
+                      onPressed: () {
+                        try {
+                          ref
+                              .read(activeProgramProvider.notifier)
+                              .updateProgram(previousProgram);
+                        } catch (_) {}
+                      },
+                    ),
+                    duration: const Duration(seconds: 4),
+                  ),
+                );
+              }
+            } else {
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).clearSnackBars();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Suggestion accepted for $exerciseName'),
+                    duration: const Duration(seconds: 2),
+                  ),
+                );
+              }
+            }
           },
           onDismiss: () {
-            // Dismiss suggestion
+            ScaffoldMessenger.of(context).clearSnackBars();
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text('Suggestion dismissed for $exerciseName'),

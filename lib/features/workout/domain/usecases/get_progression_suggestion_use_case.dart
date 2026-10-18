@@ -9,7 +9,10 @@ enum ProgressionSuggestionType {
   deload,
 }
 
-/// Use case for getting progression suggestions based on workout history
+/// Use case for getting progression suggestions based on workout history.
+///
+/// Excludes warm-up sets ([SetType.warmup]) from volume, completion rate, and RPE analysis.
+/// Uses genuine user-entered RPE when available, and never fabricates artificial RPE values (+6/+9).
 class GetProgressionSuggestionUseCase {
   final WorkoutRepository repository;
 
@@ -18,13 +21,13 @@ class GetProgressionSuggestionUseCase {
   /// Get progression suggestion for an exercise
   /// 
   /// Analyzes the last 3 workouts for the given exercise and suggests:
-  /// - Weight increase if user completed all sets easily
-  /// - Maintaining weight if user struggled
-  /// - Adding reps if user completed all sets but not easily
-  /// - Deload if user failed multiple sets
+  /// - Weight increase if user completed all working sets easily (or low RPE)
+  /// - Adding reps if user completed working sets but near fatigue
+  /// - Deload if user failed multiple sets or logged max fatigue (RPE >= 9)
+  /// - Maintaining weight otherwise
   Future<ProgressionSuggestion?> call(String exerciseName) async {
     try {
-      // Get last 3 workouts
+      // Get all workouts
       final allWorkouts = await repository.getAllWorkouts();
       
       // Filter workouts that contain this exercise
@@ -48,54 +51,88 @@ class GetProgressionSuggestionUseCase {
         return null;
       }
 
-      // Analyze performance
+      // Analyze performance on working sets
       final lastExercise = exerciseHistory.first;
       final avgWeight = _calculateAverageWeight(exerciseHistory);
       final completionRate = _calculateCompletionRate(exerciseHistory);
       final rpeAverage = _calculateAverageRPE(exerciseHistory);
 
-      // Generate suggestion based on analysis
-      if (completionRate >= 0.9 && rpeAverage <= 7) {
-        // Easy completion - suggest weight increase
-        final increase = (avgWeight * 0.025).roundToDouble(); // 2.5% increase
-        return ProgressionSuggestion(
-          suggestedWeight: avgWeight + increase,
-          suggestedReps: lastExercise.suggestedReps ?? 8,
-          isStagnant: false,
-          message: 'Great job! Try increasing weight by ${increase.toStringAsFixed(1)}kg',
-        );
-      } else if (completionRate < 0.7 || rpeAverage >= 9) {
-        // Struggled - suggest deload
-        final decrease = (avgWeight * 0.05).roundToDouble(); // 5% decrease
-        return ProgressionSuggestion(
-          suggestedWeight: (avgWeight - decrease).clamp(0.0, double.infinity),
-          suggestedReps: lastExercise.suggestedReps ?? 8,
-          isStagnant: true,
-          message: 'Consider reducing weight by ${decrease.toStringAsFixed(1)}kg to focus on form',
-        );
-      } else if (completionRate >= 0.9 && rpeAverage > 7) {
-        // Completed but challenging - suggest adding reps
-        return ProgressionSuggestion(
-          suggestedWeight: avgWeight,
-          suggestedReps: (lastExercise.suggestedReps ?? 8) + 1,
-          isStagnant: false,
-          message: 'Try adding 1-2 reps next time',
-        );
+      if (avgWeight <= 0) return null;
+
+      // Generate suggestion based on genuine performance
+      if (rpeAverage != null) {
+        // Genuine RPE available
+        if (completionRate >= 0.9 && rpeAverage <= 7.5) {
+          final increase = (avgWeight * 0.025).clamp(1.0, 5.0).roundToDouble();
+          return ProgressionSuggestion(
+            suggestedWeight: avgWeight + increase,
+            suggestedReps: lastExercise.suggestedReps ?? 8,
+            isStagnant: false,
+            message: 'Great intensity control (RPE ${rpeAverage.toStringAsFixed(1)}). Try increasing weight by ${increase.toStringAsFixed(1)}kg',
+          );
+        } else if (completionRate < 0.7 || rpeAverage >= 9.0) {
+          final decrease = (avgWeight * 0.05).clamp(2.5, 10.0).roundToDouble();
+          return ProgressionSuggestion(
+            suggestedWeight: (avgWeight - decrease).clamp(0.0, double.infinity),
+            suggestedReps: lastExercise.suggestedReps ?? 8,
+            isStagnant: true,
+            message: 'High fatigue (RPE ${rpeAverage.toStringAsFixed(1)}). Consider deloading by ${decrease.toStringAsFixed(1)}kg to focus on form',
+          );
+        } else if (completionRate >= 0.9 && rpeAverage > 7.5) {
+          return ProgressionSuggestion(
+            suggestedWeight: avgWeight,
+            suggestedReps: (lastExercise.suggestedReps ?? 8) + 1,
+            isStagnant: false,
+            message: 'Solid effort. Add 1 rep at this weight before bumping load',
+          );
+        } else {
+          return ProgressionSuggestion(
+            suggestedWeight: avgWeight,
+            suggestedReps: lastExercise.suggestedReps ?? 8,
+            isStagnant: false,
+            message: 'Maintain current weight and focus on clean reps',
+          );
+        }
       } else {
-        // Maintain current weight
-        return ProgressionSuggestion(
-          suggestedWeight: avgWeight,
-          suggestedReps: lastExercise.suggestedReps ?? 8,
-          isStagnant: false,
-          message: 'Maintain current weight and focus on form',
-        );
+        // No user RPE provided — rely solely on completion rate of working sets (no fabricated RPE)
+        if (completionRate >= 0.95) {
+          final increase = (avgWeight * 0.025).clamp(1.0, 5.0).roundToDouble();
+          return ProgressionSuggestion(
+            suggestedWeight: avgWeight + increase,
+            suggestedReps: lastExercise.suggestedReps ?? 8,
+            isStagnant: false,
+            message: 'All target sets completed! Try increasing weight by ${increase.toStringAsFixed(1)}kg',
+          );
+        } else if (completionRate < 0.7) {
+          final decrease = (avgWeight * 0.05).clamp(2.5, 10.0).roundToDouble();
+          return ProgressionSuggestion(
+            suggestedWeight: (avgWeight - decrease).clamp(0.0, double.infinity),
+            suggestedReps: lastExercise.suggestedReps ?? 8,
+            isStagnant: true,
+            message: 'Consider reducing weight by ${decrease.toStringAsFixed(1)}kg to consolidate volume',
+          );
+        } else if (completionRate >= 0.85) {
+          return ProgressionSuggestion(
+            suggestedWeight: avgWeight,
+            suggestedReps: (lastExercise.suggestedReps ?? 8) + 1,
+            isStagnant: false,
+            message: 'Try adding 1 rep next session',
+          );
+        } else {
+          return ProgressionSuggestion(
+            suggestedWeight: avgWeight,
+            suggestedReps: lastExercise.suggestedReps ?? 8,
+            isStagnant: false,
+            message: 'Maintain current weight and focus on form',
+          );
+        }
       }
     } catch (e) {
       return null;
     }
   }
 
-  /// Calculate average weight across exercises
+  /// Calculate average weight across working sets (excluding warm-ups)
   double _calculateAverageWeight(List<Exercise> exercises) {
     if (exercises.isEmpty) return 0;
     
@@ -104,6 +141,7 @@ class GetProgressionSuggestionUseCase {
 
     for (final exercise in exercises) {
       for (final set in exercise.sets) {
+        if (set.type == SetType.warmup) continue;
         totalWeight += set.weight;
         count++;
       }
@@ -112,50 +150,39 @@ class GetProgressionSuggestionUseCase {
     return count > 0 ? totalWeight / count : 0;
   }
 
-  /// Calculate completion rate (sets completed / sets planned)
+  /// Calculate completion rate of working sets (completed working sets / planned sets)
   double _calculateCompletionRate(List<Exercise> exercises) {
     if (exercises.isEmpty) return 0;
 
     int totalPlanned = 0;
-    int totalCompleted = 0;
+    int totalWorkingCompleted = 0;
 
     for (final exercise in exercises) {
       totalPlanned += exercise.suggestedSets ?? 3;
-      totalCompleted += exercise.sets.length;
+      totalWorkingCompleted += exercise.sets.where((s) => s.type != SetType.warmup).length;
     }
 
-    return totalPlanned > 0 ? totalCompleted / totalPlanned : 0;
+    return totalPlanned > 0 ? totalWorkingCompleted / totalPlanned : 0;
   }
 
-  /// Calculate average RPE (Rate of Perceived Exertion)
-  /// RPE is estimated based on reps completed vs reps planned
-  double _calculateAverageRPE(List<Exercise> exercises) {
-    if (exercises.isEmpty) return 5;
+  /// Calculate average genuine RPE logged by the user on working sets.
+  /// Returns null if user did not log RPE (never returns fabricated values).
+  double? _calculateAverageRPE(List<Exercise> exercises) {
+    if (exercises.isEmpty) return null;
 
     double totalRPE = 0;
     int count = 0;
 
     for (final exercise in exercises) {
       for (final set in exercise.sets) {
-        // Estimate RPE: if user completed all reps, RPE is lower
-        // If user failed, RPE is higher
-        final repsCompleted = set.reps;
-        final repsPlanned = exercise.suggestedReps ?? 8;
-        
-        if (repsCompleted >= repsPlanned) {
-          totalRPE += 6; // Easy
-        } else if (repsCompleted >= repsPlanned - 2) {
-          totalRPE += 7; // Moderate
-        } else if (repsCompleted >= repsPlanned - 4) {
-          totalRPE += 8; // Hard
-        } else {
-          totalRPE += 9; // Very hard
+        if (set.type == SetType.warmup) continue;
+        if (set.rpe != null && set.rpe! >= 1 && set.rpe! <= 10) {
+          totalRPE += set.rpe!;
+          count++;
         }
-        
-        count++;
       }
     }
 
-    return count > 0 ? totalRPE / count : 5;
+    return count > 0 ? totalRPE / count : null;
   }
 }

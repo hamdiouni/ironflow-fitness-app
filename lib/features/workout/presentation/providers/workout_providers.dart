@@ -349,6 +349,41 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
     }
   }
 
+  /// Updates the [SetType] of an already logged set (for quick-cycling in UI).
+  Future<void> updateSetType(String exerciseId, int setIndex, SetType newType) async {
+    try {
+      final current = state;
+      if (current is! _InProgress) return;
+
+      final workout = current.workout;
+      final startTime = current.startTime;
+
+      final exerciseIndex =
+          workout.exercises.indexWhere((e) => e.id == exerciseId);
+      if (exerciseIndex == -1) return;
+
+      final exercise = workout.exercises[exerciseIndex];
+      if (setIndex < 0 || setIndex >= exercise.sets.length) return;
+
+      final oldSet = exercise.sets[setIndex];
+      final updatedSet = oldSet.copyWith(type: newType);
+      final updatedSets = List<SetEntry>.from(exercise.sets);
+      updatedSets[setIndex] = updatedSet;
+
+      final updatedExercise = exercise.copyWith(sets: updatedSets);
+      final updatedExercises = [
+        for (int i = 0; i < workout.exercises.length; i++)
+          i == exerciseIndex ? updatedExercise : workout.exercises[i],
+      ];
+
+      final updatedWorkout = workout.copyWith(exercises: updatedExercises);
+      state = WorkoutState.inProgress(updatedWorkout, startTime);
+      await _stateManager.saveState(updatedWorkout, startTime);
+    } catch (e) {
+      print('❌ [Workout] Failed to update set type: $e');
+    }
+  }
+
   /// Finalises the workout, persists it, clears the active state, and
   /// transitions to [WorkoutState.completed].
   ///
