@@ -18,6 +18,7 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen> {
   bool _analyticsEnabled = true;
   bool _crashReportingEnabled = true;
   bool _dataSharing = false;
+  bool _aiPersonalizationConsent = false;
   bool _isLoading = true;
 
   @override
@@ -33,6 +34,7 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen> {
       _analyticsEnabled = prefs.getBool('analytics_enabled') ?? true;
       _crashReportingEnabled = prefs.getBool('crash_reporting_enabled') ?? true;
       _dataSharing = prefs.getBool('data_sharing_enabled') ?? false;
+      _aiPersonalizationConsent = prefs.getBool('ai_personalization_consent') ?? false;
       _isLoading = false;
     });
   }
@@ -42,6 +44,7 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen> {
     await prefs.setBool('analytics_enabled', _analyticsEnabled);
     await prefs.setBool('crash_reporting_enabled', _crashReportingEnabled);
     await prefs.setBool('data_sharing_enabled', _dataSharing);
+    await prefs.setBool('ai_personalization_consent', _aiPersonalizationConsent);
   }
 
   Future<void> _showDeleteAccountDialog() async {
@@ -287,6 +290,17 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen> {
             value: _dataSharing,
             onChanged: (value) async {
               setState(() => _dataSharing = value);
+              await _saveSettings();
+            },
+          ),
+          SwitchListTile(
+            title: const Text('AI Personalization Consent'),
+            subtitle: const Text(
+              'Allow AI Coach to access your workout, nutrition, and biometric stats for tailored coaching. Default is disabled for privacy.',
+            ),
+            value: _aiPersonalizationConsent,
+            onChanged: (value) async {
+              setState(() => _aiPersonalizationConsent = value);
               await _saveSettings();
             },
           ),

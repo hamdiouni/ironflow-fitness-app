@@ -9,17 +9,25 @@ class AIChatStorage {
   static const String _boxName = 'ai_chat_history';
   static const String _messagesKey = 'messages';
 
-  Future<Box> get _box async {
-    if (Hive.isBoxOpen(_boxName)) {
-      return Hive.box(_boxName);
+  Future<Box?> get _box async {
+    try {
+      if (Hive.isBoxOpen(_boxName)) {
+        return Hive.box(_boxName);
+      }
+      return await Hive.openBox(_boxName);
+    } catch (e) {
+      if (kDebugMode) {
+        print('⚠️ [AIChatStorage] Hive not initialized or inaccessible: $e');
+      }
+      return null;
     }
-    return Hive.openBox(_boxName);
   }
 
   /// Loads all stored chat messages in chronological order.
   Future<List<ChatMessage>> loadMessages() async {
     try {
       final box = await _box;
+      if (box == null) return [];
       final raw = box.get(_messagesKey);
       if (raw == null) return [];
 
@@ -53,6 +61,7 @@ class AIChatStorage {
   Future<void> saveMessages(List<ChatMessage> messages) async {
     try {
       final box = await _box;
+      if (box == null) return;
       final encodedList = messages.map((m) => jsonEncode(m.toJson())).toList();
       await box.put(_messagesKey, encodedList);
     } catch (e) {
@@ -66,6 +75,7 @@ class AIChatStorage {
   Future<void> clearMessages() async {
     try {
       final box = await _box;
+      if (box == null) return;
       await box.delete(_messagesKey);
     } catch (e) {
       if (kDebugMode) {
@@ -75,6 +85,6 @@ class AIChatStorage {
   }
 }
 
-final aiChatStorageProvider = Provider<AIChatStorage>((ref) {
+final aiChatStorageProvider = Provider<AIChatStorage?>((ref) {
   return AIChatStorage();
 });

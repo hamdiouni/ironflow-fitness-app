@@ -14,6 +14,7 @@ import '../../../onboarding/domain/entities/user_profile.dart';
 import '../../../onboarding/presentation/providers/onboarding_provider.dart';
 import '../../../onboarding/data/user_profile_storage.dart';
 import '../../../ai/data/datasources/gemini_ai_service.dart';
+import '../../../ai/presentation/providers/ai_provider.dart';
 import 'export_settings_screen.dart';
 import 'privacy_settings_screen.dart';
 
@@ -370,6 +371,7 @@ class SettingsScreen extends ConsumerWidget {
     final themeMode = ref.watch(themeProvider);
     final isDark = themeMode == ThemeMode.dark;
     final hapticsEnabled = ref.watch(hapticsEnabledProvider);
+    final aiConsent = ref.watch(aiPersonalizationConsentProvider);
     final profileAsync = ref.watch(userProfileProvider);
     final authState = ref.watch(authNotifierProvider);
     final user = authState.user;
@@ -709,6 +711,64 @@ class SettingsScreen extends ConsumerWidget {
                 ),
                 child: Column(
                   children: [
+                    // AI Personalization Telemetry switch
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: tokens.card,
+                              borderRadius: BorderRadius.circular(tokens.radiusSm),
+                              border: Border.all(color: tokens.borderSubtle, width: 1),
+                            ),
+                            child: Icon(
+                              Icons.psychology_outlined,
+                              color: tokens.kineticAccent,
+                              size: 18,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'AI PERSONALIZATION TELEMETRY',
+                                  style: TextStyle(
+                                    fontFamily: AppTypography.displayFontFamily,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: tokens.textPrimary,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  aiConsent
+                                      ? 'Active · Workout & nutrition telemetry shared'
+                                      : 'Disabled · Privacy-first heuristic guidance',
+                                  style: TextStyle(
+                                    fontFamily: AppTypography.bodyFontFamily,
+                                    fontSize: 11,
+                                    color: tokens.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Switch(
+                            value: aiConsent,
+                            activeThumbColor: tokens.kineticAccent,
+                            onChanged: (val) {
+                              AppHaptics.shared.selectionChanged();
+                              ref.read(aiPersonalizationConsentProvider.notifier).setConsent(val);
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                    Divider(color: tokens.borderSubtle, height: 1),
                     _SettingsTile(
                       title: 'Telemetry & Privacy Controls',
                       subtitle: 'Manage anonymous metrics, crash reports & danger zone',

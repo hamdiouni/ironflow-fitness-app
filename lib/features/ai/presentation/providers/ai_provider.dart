@@ -3,13 +3,17 @@ import 'package:progression_tracker/features/ai/domain/entities/chat_message.dar
 import 'package:progression_tracker/features/ai/domain/services/local_ai_coach.dart';
 import 'package:progression_tracker/features/ai/data/datasources/gemini_ai_service.dart';
 import 'package:progression_tracker/features/ai/data/datasources/ai_chat_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
-// Import existing providers from their respective modules
 import 'package:progression_tracker/features/auth/presentation/providers/auth_provider.dart';
+import 'package:progression_tracker/features/auth/domain/entities/user_profile.dart';
 import 'package:progression_tracker/features/workout/presentation/providers/workout_providers.dart';
+import 'package:progression_tracker/features/workout/domain/entities/entities.dart';
 import 'package:progression_tracker/features/nutrition/presentation/providers/nutrition_providers.dart';
+import 'package:progression_tracker/features/nutrition/domain/entities/entities.dart';
 import 'package:progression_tracker/features/body/presentation/providers/body_providers.dart';
+import 'package:progression_tracker/features/body/domain/entities/body_entry.dart';
 import 'package:progression_tracker/core/providers/analytics_provider.dart';
 
 /// Provider for local AI coach service (fallback)
@@ -21,6 +25,38 @@ final localAICoachProvider = Provider<LocalAICoach>((ref) {
 final geminiAIServiceProvider = Provider<GeminiAIService>((ref) {
   return GeminiAIService();
 });
+
+/// StateNotifier for AI personalization consent (Privacy-first: default is false)
+final aiPersonalizationConsentProvider =
+    StateNotifierProvider<AIPersonalizationConsentNotifier, bool>((ref) {
+  return AIPersonalizationConsentNotifier();
+});
+
+class AIPersonalizationConsentNotifier extends StateNotifier<bool> {
+  static const String key = 'ai_personalization_consent';
+
+  AIPersonalizationConsentNotifier() : super(false) {
+    _loadConsent();
+  }
+
+  Future<void> _loadConsent() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final consent = prefs.getBool(key) ?? false;
+      if (mounted) state = consent;
+    } catch (_) {}
+  }
+
+  Future<void> setConsent(bool consent) async {
+    state = consent;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(key, consent);
+    } catch (_) {}
+  }
+
+  Future<void> toggle() => setConsent(!state);
+}
 
 /// State for AI chat
 class AIChatState {
@@ -114,49 +150,57 @@ class AIChatNotifier extends StateNotifier<AIChatState> {
       print('📝 [AI CHAT] User message: $message');
       print('═══════════════════════════════════════');
       
-      // Gather user data from repositories
-      print('📊 [AI CHAT] Step 1: Gathering user data...');
-      final authRepo = _ref.read(authRepositoryProvider);
-      final workoutRepo = _ref.read(workoutRepositoryProvider);
-      final nutritionRepo = _ref.read(nutritionRepositoryProvider);
-      final bodyRepo = _ref.read(bodyRepositoryProvider);
+      // Gather user data if personalization consent is granted
+      final hasConsent = _ref.read(aiPersonalizationConsentProvider);
+      UserProfile? profile;
+      List<Workout> recentWorkouts = const [];
+      List<DailyNutritionSummary> nutritionHistory = const [];
+      NutritionTargets? nutritionTargets;
+      List<BodyEntry> bodyEntries = const [];
 
-      // Get current user
-      print('👤 [AI CHAT] Step 2: Getting user profile...');
-      final user = await authRepo.getCurrentUser();
-      final profile = user != null ? await authRepo.getUserProfile(user.id) : null;
-      print('✅ [AI CHAT] User profile: ${profile?.name ?? "Guest"}');
+      if (hasConsent) {
+        print('📊 [AI CHAT] Step 1: Personalization consent ENABLED. Gathering user data...');
+        try {
+          final authRepo = _ref.read(authRepositoryProvider);
+          final workoutRepo = _ref.read(workoutRepositoryProvider);
+          final nutritionRepo = _ref.read(nutritionRepositoryProvider);
+          final bodyRepo = _ref.read(bodyRepositoryProvider);
 
-      // Get recent workouts (last 30 days)
-      print('🏋️ [AI CHAT] Step 3: Getting recent workouts...');
-      final thirtyDaysAgo = DateTime.now().subtract(const Duration(days: 30));
-      final recentWorkouts = await workoutRepo.getWorkoutsByDateRange(
-        thirtyDaysAgo,
-        DateTime.now(),
-      );
-      print('✅ [AI CHAT] Found ${recentWorkouts.length} workouts');
+          final user = await authRepo.getCurrentUser();
+          profile = user != null ? await authRepo.getUserProfile(user.id) : null;
+          print('✅ [AI CHAT] User profile: ${profile?.name ?? "Guest"}');
 
-      // Get nutrition history (last 7 days)
-      print('🍎 [AI CHAT] Step 4: Getting nutrition history...');
-      final sevenDaysAgo = DateTime.now().subtract(const Duration(days: 7));
-      final nutritionHistory = await nutritionRepo.getNutritionHistory(
-        sevenDaysAgo,
-        DateTime.now(),
-      );
-      final nutritionTargets = await nutritionRepo.getNutritionTargets();
-      print('✅ [AI CHAT] Found ${nutritionHistory.length} nutrition days');
+          final thirtyDaysAgo = DateTime.now().subtract(const Duration(days: 30));
+          recentWorkouts = await workoutRepo.getWorkoutsByDateRange(
+            thirtyDaysAgo,
+            DateTime.now(),
+          );
+          print('✅ [AI CHAT] Found ${recentWorkouts.length} workouts');
 
-      // Get body entries (last 30 days)
-      print('📏 [AI CHAT] Step 5: Getting body measurements...');
-      final bodyEntries = await bodyRepo.getBodyEntriesByDateRange(
-        thirtyDaysAgo,
-        DateTime.now(),
-      );
-      print('✅ [AI CHAT] Found ${bodyEntries.length} body entries');
+          final sevenDaysAgo = DateTime.now().subtract(const Duration(days: 7));
+          nutritionHistory = await nutritionRepo.getNutritionHistory(
+            sevenDaysAgo,
+            DateTime.now(),
+          );
+          nutritionTargets = await nutritionRepo.getNutritionTargets();
+          print('✅ [AI CHAT] Found ${nutritionHistory.length} nutrition days');
+
+          bodyEntries = await bodyRepo.getBodyEntriesByDateRange(
+            thirtyDaysAgo,
+            DateTime.now(),
+          );
+          print('✅ [AI CHAT] Found ${bodyEntries.length} body entries');
+        } catch (e) {
+          print('⚠️ [AI CHAT] Error gathering user telemetry: $e');
+        }
+      } else {
+        print('🔒 [AI CHAT] Personalization consent DISABLED. Preserving user telemetry privacy.');
+      }
 
       // Build system prompt with user context
-      print('🔧 [AI CHAT] Step 6: Building system prompt...');
+      print('🔧 [AI CHAT] Step 2: Building system prompt...');
       final systemPrompt = _buildSystemPrompt(
+        hasConsent: hasConsent,
         profile: profile,
         recentWorkouts: recentWorkouts,
         nutritionHistory: nutritionHistory,
@@ -274,18 +318,19 @@ class AIChatNotifier extends StateNotifier<AIChatState> {
     }
   }
 
-  /// Build system prompt with user context
+  /// Build system prompt with user context, privacy gating and safety guardrails
   String _buildSystemPrompt({
-    dynamic profile,
-    List<dynamic> recentWorkouts = const [],
-    List<dynamic> nutritionHistory = const [],
-    dynamic nutritionTargets,
-    List<dynamic> bodyEntries = const [],
+    bool hasConsent = false,
+    UserProfile? profile,
+    List<Workout> recentWorkouts = const [],
+    List<DailyNutritionSummary> nutritionHistory = const [],
+    NutritionTargets? nutritionTargets,
+    List<BodyEntry> bodyEntries = const [],
   }) {
     final buffer = StringBuffer();
     
     buffer.writeln('You are an expert fitness coach and nutritionist for IronFlow, a comprehensive fitness tracking app.');
-    buffer.writeln('Your role is to provide detailed, professional, and highly personalized fitness and nutrition guidance.');
+    buffer.writeln('Your role is to provide detailed, professional, and evidence-based fitness and nutrition guidance.');
     buffer.writeln();
     buffer.writeln('RESPONSE FORMATTING (CRITICAL):');
     buffer.writeln('- Use Markdown formatting for ALL responses');
@@ -296,6 +341,13 @@ class AIChatNotifier extends StateNotifier<AIChatState> {
     buffer.writeln('- Use numbered lists (1., 2., 3.) for step-by-step instructions or progression plans');
     buffer.writeln('- Use > for important notes or warnings (e.g., > ⚠️ Important: Always warm up first)');
     buffer.writeln('- Add emojis to make responses more engaging (💪 🏋️ 🥗 📈 ⚡ 🎯 ✅ ⚠️ 💡 🔥)');
+    buffer.writeln();
+    buffer.writeln('SAFETY AND MEDICAL GUARDRAILS (CRITICAL):');
+    buffer.writeln('- You are an AI fitness intelligence core and educational coach, NOT a physician, doctor, or licensed physical therapist.');
+    buffer.writeln('- NEVER provide clinical medical diagnoses or prescribe medications.');
+    buffer.writeln('- If a user inquires about or reports chest pain, acute joint injury, dizziness, numbness, or severe pain, IMMEDIATELY instruct them to cease exercise and seek professional medical evaluation.');
+    buffer.writeln('- Remind users to adhere to proper warmup protocols, progressive overload, and to differentiate between muscular fatigue (good) and joint/ligament strain (stop immediately).');
+    buffer.writeln('- All nutritional targets are general guidelines and not tailored medical diets.');
     buffer.writeln();
     buffer.writeln('RESPONSE GUIDELINES:');
     buffer.writeln('- Provide comprehensive, detailed answers that demonstrate deep expertise');
@@ -308,12 +360,12 @@ class AIChatNotifier extends StateNotifier<AIChatState> {
     buffer.writeln('- For form advice: provide detailed cues and common mistakes to avoid');
     buffer.writeln();
     
-    // Add user profile context
-    if (profile != null) {
+    // Add user profile context only if user gave consent
+    if (hasConsent && profile != null) {
       buffer.writeln('USER PROFILE:');
       buffer.writeln('- Name: ${profile.name ?? "User"}');
       
-      // Handle goals (it's a List<String>?, not a single goal)
+      // Handle goals
       if (profile.goals != null && (profile.goals as List).isNotEmpty) {
         buffer.writeln('- Goals: ${(profile.goals as List).join(", ")}');
       }
@@ -329,21 +381,22 @@ class AIChatNotifier extends StateNotifier<AIChatState> {
       }
       
       buffer.writeln();
+    } else if (!hasConsent) {
+      buffer.writeln('USER PRIVACY TELEMETRY:');
+      buffer.writeln('- Detailed profile, workout and nutrition sharing is disabled for privacy.');
+      buffer.writeln('- Provide general evidence-based training advice and ask clarifying questions if specifics are needed.');
+      buffer.writeln();
     }
     
-    // Add workout context
-    if (recentWorkouts.isNotEmpty) {
+    // Add workout context only if user gave consent
+    if (hasConsent && recentWorkouts.isNotEmpty) {
       buffer.writeln('RECENT ACTIVITY:');
       buffer.writeln('- ${recentWorkouts.length} workouts in last 30 days');
       buffer.writeln();
-    } else {
-      buffer.writeln('RECENT ACTIVITY:');
-      buffer.writeln('- No workouts logged yet (new user)');
-      buffer.writeln();
     }
     
-    // Add nutrition context
-    if (nutritionHistory.isNotEmpty) {
+    // Add nutrition context only if user gave consent
+    if (hasConsent && nutritionHistory.isNotEmpty) {
       buffer.writeln('NUTRITION:');
       buffer.writeln('- Tracking nutrition for ${nutritionHistory.length} days');
       if (nutritionTargets != null) {
@@ -352,8 +405,8 @@ class AIChatNotifier extends StateNotifier<AIChatState> {
       buffer.writeln();
     }
     
-    // Add body tracking context
-    if (bodyEntries.isNotEmpty) {
+    // Add body tracking context only if user gave consent
+    if (hasConsent && bodyEntries.isNotEmpty) {
       buffer.writeln('PROGRESS TRACKING:');
       buffer.writeln('- ${bodyEntries.length} body measurements logged');
       buffer.writeln();
