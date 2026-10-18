@@ -1,6 +1,8 @@
-import 'package:progression_tracker/core/config/app_config.dart';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
+import 'package:progression_tracker/core/config/app_config.dart';
 
 /// Exception thrown when Gemini AI service encounters an error
 class GeminiAIServiceException implements Exception {
@@ -13,44 +15,67 @@ class GeminiAIServiceException implements Exception {
   String toString() => 'GeminiAIServiceException: $message${code != null ? ' (Code: $code)' : ''}';
 }
 
-/// FREE AI Service using Google Gemini API
+/// AI Service with Dual-Routing: Secure Backend Proxy (Production, AI-01)
+/// and Direct Gemini Developer API (Development / Offline Fallback).
 /// 
 /// Benefits:
-/// - Completely FREE (60 requests/min)
-/// - No credit card required
-/// - High quality responses
-/// - Easy to set up
-/// 
-/// Get your free API key: https://makersuite.google.com/app/apikey
+/// - Client-side token protection via serverless proxy
+/// - Per-user rate limiting (30 requests/day quota)
+/// - Firebase Auth JWT authentication
+/// - Direct API fallback for local development
 class GeminiAIService {
   static const String _baseUrl = 'https://generativelanguage.googleapis.com/v1beta';
-  static const String _model = 'gemini-1.5-flash'; // High-speed, generous free-tier model
+  static const String _model = 'gemini-1.5-flash'; // High-speed, generous tier model
   static const int _timeoutSeconds = 30;
 
   final String _apiKey;
+  final String _proxyUrl;
+  final Future<String?> Function()? _authTokenProvider;
   final http.Client _httpClient;
 
   GeminiAIService({
     String? apiKey,
+    String? proxyUrl,
+    Future<String?> Function()? authTokenProvider,
     http.Client? httpClient,
   })  : _apiKey = apiKey ?? AppConfig.getGeminiApiKey(),
+        _proxyUrl = proxyUrl ?? AppConfig.getAiProxyUrl(),
+        _authTokenProvider = authTokenProvider,
         _httpClient = httpClient ?? http.Client();
 
-  /// Whether a Gemini API key is configured
-  bool get isConfigured => _apiKey.isNotEmpty;
+  /// Whether a Gemini API key or proxy is configured
+  bool get isConfigured => _proxyUrl.isNotEmpty || _apiKey.isNotEmpty;
 
-  /// Validates that API key is configured
+  /// Whether requests are routed through a secure backend proxy (AI-01)
+  bool get usesProxy => _proxyUrl.isNotEmpty;
+
+  /// The active proxy URL
+  String get proxyUrl => _proxyUrl;
+
+  /// Validates that service is configured
   void validateConfiguration() {
-    if (_apiKey.isEmpty) {
+    if (!isConfigured) {
       throw GeminiAIServiceException(
-        message: 'Gemini API key not configured. Provide it via env.json or --dart-define=GEMINI_API_KEY=...\n'
+        message: 'Gemini AI service not configured. Provide an AI_PROXY_URL or GEMINI_API_KEY via env.json or --dart-define.\n'
             'Get your free key at: https://makersuite.google.com/app/apikey',
         code: 'MISSING_API_KEY',
       );
     }
   }
 
-  /// Sends a message to Gemini and returns the response
+  Future<String?> _getAuthToken() async {
+    if (_authTokenProvider != null) {
+      try {
+        return await _authTokenProvider!();
+      } catch (_) {}
+    }
+    try {
+      return await FirebaseAuth.instance.currentUser?.getIdToken();
+    } catch (_) {}
+    return null;
+  }
+
+  /// Sends a message to Gemini (via Proxy or Direct API) and returns the response
   /// 
   /// [messages] - List of message objects with 'role' and 'content'
   /// [systemPrompt] - Optional system prompt to set AI behavior
@@ -60,25 +85,12 @@ class GeminiAIService {
     List<Map<String, String>> messages, {
     String? systemPrompt,
     double temperature = 0.7,
-    int maxTokens = 8000, // Increased from 2000 to 8000
+    int maxTokens = 8000,
   }) async {
-    print('═══════════════════════════════════════');
-    print('🔧 [GEMINI SERVICE] Starting API call');
-    print('═══════════════════════════════════════');
-    
-    try {
-      print('🔑 [GEMINI SERVICE] Validating API key...');
-      validateConfiguration();
-      print('✅ [GEMINI SERVICE] API key validated');
-    } catch (e) {
-      print('❌ [GEMINI SERVICE ERROR] API key validation failed: $e');
-      rethrow;
-    }
+    validateConfiguration();
 
     // Convert messages to Gemini format
-    print('🔄 [GEMINI SERVICE] Converting messages to Gemini format...');
     final geminiMessages = _convertToGeminiFormat(messages, systemPrompt);
-    print('✅ [GEMINI SERVICE] Converted ${geminiMessages.length} messages');
 
     final requestBody = {
       'contents': geminiMessages,
@@ -108,23 +120,43 @@ class GeminiAIService {
       ],
     };
 
-    print('📦 [GEMINI SERVICE] Request body prepared');
-    print('🌐 [GEMINI SERVICE] API URL: $_baseUrl/models/$_model:generateContent');
+    final Uri targetUri;
+    final Map<String, String> headers = {
+      'Content-Type': 'application/json',
+    };
+
+    if (usesProxy) {
+      final cleanProxy = _proxyUrl.trim();
+      targetUri = Uri.parse(cleanProxy.endsWith('/generate')
+          ? cleanProxy
+          : cleanProxy.endsWith('/')
+              ? '${cleanProxy}generate'
+              : '$cleanProxy/generate');
+
+      final token = await _getAuthToken();
+      if (token != null && token.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $token';
+      }
+      if (kDebugMode) {
+        debugPrint('🔒 [GEMINI SERVICE] Routing request via secure proxy: $targetUri');
+      }
+    } else {
+      targetUri = Uri.parse('$_baseUrl/models/$_model:generateContent?key=$_apiKey');
+      if (kDebugMode) {
+        debugPrint('🌐 [GEMINI SERVICE] Routing request directly to Google Gemini API');
+      }
+    }
 
     try {
-      print('📡 [GEMINI SERVICE] Sending HTTP POST request...');
       final response = await _httpClient
           .post(
-            Uri.parse('$_baseUrl/models/$_model:generateContent?key=$_apiKey'),
-            headers: {
-              'Content-Type': 'application/json',
-            },
+            targetUri,
+            headers: headers,
             body: jsonEncode(requestBody),
           )
           .timeout(
-            Duration(seconds: _timeoutSeconds),
+            const Duration(seconds: _timeoutSeconds),
             onTimeout: () {
-              print('⏰ [GEMINI SERVICE ERROR] Request timeout after $_timeoutSeconds seconds');
               throw GeminiAIServiceException(
                 message: 'Request timeout after $_timeoutSeconds seconds',
                 code: 'TIMEOUT',
@@ -132,18 +164,12 @@ class GeminiAIService {
             },
           );
 
-      print('📨 [GEMINI SERVICE] Response received');
-      print('📊 [GEMINI SERVICE] Status code: ${response.statusCode}');
-      print('📏 [GEMINI SERVICE] Response length: ${response.body.length} bytes');
-
       if (response.statusCode == 200) {
-        print('✅ [GEMINI SERVICE] Success! Parsing response...');
         final data = jsonDecode(response.body) as Map<String, dynamic>;
         
         // Extract response text
         final candidates = data['candidates'] as List<dynamic>?;
         if (candidates == null || candidates.isEmpty) {
-          print('❌ [GEMINI SERVICE ERROR] No response candidates');
           throw GeminiAIServiceException(
             message: 'No response candidates returned from API',
             code: 'EMPTY_RESPONSE',
@@ -152,7 +178,6 @@ class GeminiAIService {
 
         final content = candidates[0]['content'] as Map<String, dynamic>?;
         if (content == null) {
-          print('❌ [GEMINI SERVICE ERROR] No content in response');
           throw GeminiAIServiceException(
             message: 'No content in response',
             code: 'MISSING_CONTENT',
@@ -161,7 +186,6 @@ class GeminiAIService {
 
         final parts = content['parts'] as List<dynamic>?;
         if (parts == null || parts.isEmpty) {
-          print('❌ [GEMINI SERVICE ERROR] No parts in content');
           throw GeminiAIServiceException(
             message: 'No parts in content',
             code: 'MISSING_PARTS',
@@ -170,79 +194,55 @@ class GeminiAIService {
 
         final text = parts[0]['text'] as String?;
         if (text == null) {
-          print('❌ [GEMINI SERVICE ERROR] No text in response');
           throw GeminiAIServiceException(
             message: 'No text in response',
             code: 'MISSING_TEXT',
           );
         }
 
-        print('═══════════════════════════════════════');
-        print('🎉 [GEMINI SERVICE] Success!');
-        print('📝 [GEMINI SERVICE] Response text length: ${text.length} chars');
-        print('💬 [GEMINI SERVICE] Preview: ${text.substring(0, text.length > 100 ? 100 : text.length)}...');
-        print('═══════════════════════════════════════');
-        
         return text;
-      } else if (response.statusCode == 400) {
-        final errorData = jsonDecode(response.body) as Map<String, dynamic>;
-        final errorMessage = errorData['error']?['message'] as String? ?? 'Invalid request';
-        print('❌ [GEMINI SERVICE ERROR] 400 Bad Request: $errorMessage');
-        print('📄 [GEMINI SERVICE ERROR] Full response: ${response.body}');
-        throw GeminiAIServiceException(
-          message: errorMessage,
-          code: 'INVALID_REQUEST',
-        );
-      } else if (response.statusCode == 403) {
-        print('❌ [GEMINI SERVICE ERROR] 403 Forbidden - Invalid API key');
-        print('🔑 [GEMINI SERVICE ERROR] API key used: ${_apiKey.substring(0, 20)}...');
-        throw GeminiAIServiceException(
-          message: 'Invalid API key or API not enabled.\n'
-              'Get your free key at: https://makersuite.google.com/app/apikey',
-          code: 'INVALID_API_KEY',
-        );
       } else if (response.statusCode == 429) {
-        print('❌ [GEMINI SERVICE ERROR] 429 Rate Limit Exceeded');
-        print('⏰ [GEMINI SERVICE ERROR] Free tier: 60 requests/min');
         throw GeminiAIServiceException(
-          message: 'Rate limit exceeded. Free tier: 60 requests/min.\n'
-              'Wait a moment and try again.',
-          code: 'RATE_LIMIT',
+          message: 'AI request limit reached. Daily token quota resets at midnight UTC.',
+          code: 'RATE_LIMIT_EXCEEDED',
         );
-      } else if (response.statusCode == 500) {
-        print('❌ [GEMINI SERVICE ERROR] 500 Internal Server Error');
+      } else if (response.statusCode == 401 || response.statusCode == 403) {
         throw GeminiAIServiceException(
-          message: 'Gemini service error. Please try again later.',
-          code: 'SERVICE_ERROR',
+          message: 'AI proxy authorization failed. Please check your credentials.',
+          code: 'UNAUTHORIZED',
         );
       } else {
-        final errorData = jsonDecode(response.body) as Map<String, dynamic>;
-        final errorMessage = errorData['error']?['message'] as String? ?? 'Unknown error';
-        print('❌ [GEMINI SERVICE ERROR] HTTP ${response.statusCode}: $errorMessage');
-        print('📄 [GEMINI SERVICE ERROR] Full response: ${response.body}');
+        String errorMessage = 'API request failed with status: ${response.statusCode}';
+        String? errorCode;
+
+        try {
+          final errorData = jsonDecode(response.body) as Map<String, dynamic>;
+          final error = errorData['error'] as Map<String, dynamic>?;
+          if (error != null) {
+            errorMessage = error['message'] as String? ?? errorMessage;
+            errorCode = error['status'] as String?;
+          }
+        } catch (_) {}
+
         throw GeminiAIServiceException(
           message: errorMessage,
-          code: 'HTTP_ERROR_${response.statusCode}',
+          code: errorCode ?? 'HTTP_${response.statusCode}',
         );
       }
     } on GeminiAIServiceException {
       rethrow;
-    } catch (e, stackTrace) {
-      print('═══════════════════════════════════════');
-      print('❌❌❌ [GEMINI SERVICE FATAL ERROR] ❌❌❌');
-      print('🔴 [GEMINI SERVICE ERROR] Error type: ${e.runtimeType}');
-      print('🔴 [GEMINI SERVICE ERROR] Error message: $e');
-      print('🔴 [GEMINI SERVICE ERROR] Stack trace:');
-      print(stackTrace.toString().split('\n').take(15).join('\n'));
-      print('═══════════════════════════════════════');
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ [GEMINI SERVICE ERROR] Unexpected exception: $e');
+      }
       throw GeminiAIServiceException(
-        message: 'Unexpected error: $e',
-        code: 'UNKNOWN_ERROR',
+        message: 'Failed to communicate with AI service: $e',
+        code: 'NETWORK_ERROR',
       );
     }
   }
 
-  /// Converts OpenAI-style messages to Gemini format
+  /// Converts messages array to Gemini API format
   List<Map<String, dynamic>> _convertToGeminiFormat(
     List<Map<String, String>> messages,
     String? systemPrompt,
@@ -271,7 +271,6 @@ class GeminiAIService {
       final content = message['content'];
 
       if (role == 'system') {
-        // Add system messages as user messages
         geminiMessages.add({
           'role': 'user',
           'parts': [
@@ -305,17 +304,12 @@ class GeminiAIService {
   }
 
   /// Sends a message and streams the response
-  /// 
-  /// Note: Gemini streaming requires different endpoint
-  /// For now, this returns the full response as a single chunk
   Stream<String> streamMessage(
     List<Map<String, String>> messages, {
     String? systemPrompt,
     double temperature = 0.7,
-    int maxTokens = 8000, // Increased from 2000 to 8000
+    int maxTokens = 8000,
   }) async* {
-    // For simplicity, return full response as single chunk
-    // TODO: Implement proper streaming with streamGenerateContent endpoint
     final response = await sendMessage(
       messages,
       systemPrompt: systemPrompt,
