@@ -90,5 +90,49 @@ void main() {
       expect(loggedFood!.id, equals('usda_chicken_breast_raw'));
       expect(loggedGrams, greaterThan(0));
     });
+
+    testWidgets('shows budget alternatives strip and switches to alternative food',
+        (tester) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      FoodItem? loggedFood;
+      double? loggedGrams;
+
+      await tester.pumpWidget(
+        buildTestableWidget(
+          onFoodLogged: (food, grams) {
+            loggedFood = food;
+            loggedGrams = grams;
+          },
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Tap on a food
+      final chickenFinder = find.text('Chicken Breast (Raw)');
+      await tester.tap(chickenFinder);
+      await tester.pumpAndSettle();
+
+      // Verify that the alternatives section or title renders
+      final altStripFinder = find.text('SMART BUDGET-ALIGNED ALTERNATIVES');
+      expect(altStripFinder, findsWidgets);
+
+      // Tap SWITCH TO THIS FOOD
+      final switchBtn = find.text('SWITCH TO THIS FOOD');
+      expect(switchBtn, findsWidgets);
+      await tester.tap(switchBtn.first);
+      await tester.pumpAndSettle();
+
+      // Tap log
+      final confirmBtnFinder = find.textContaining('LOG');
+      await tester.tap(confirmBtnFinder.last);
+      await tester.pumpAndSettle();
+
+      expect(loggedFood, isNotNull);
+      expect(loggedFood!.id, isNot(equals('usda_chicken_breast_raw')));
+      expect(loggedGrams, greaterThan(0));
+    });
   });
 }
