@@ -20,6 +20,25 @@ class ExportSettingsScreen extends ConsumerStatefulWidget {
 class _ExportSettingsScreenState extends ConsumerState<ExportSettingsScreen> {
   bool _isProcessing = false;
   String? _statusMessage;
+  bool _hasUndoSnapshot = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkUndoAvailability();
+  }
+
+  Future<void> _checkUndoAvailability() async {
+    try {
+      final restoreUseCase = ref.read(restoreDataUseCaseProvider);
+      final hasUndo = await restoreUseCase.hasUndoSnapshot();
+      if (mounted) {
+        setState(() {
+          _hasUndoSnapshot = hasUndo;
+        });
+      }
+    } catch (_) {}
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -140,6 +159,17 @@ class _ExportSettingsScreenState extends ConsumerState<ExportSettingsScreen> {
                   tokens: tokens,
                   onTap: _isProcessing ? null : () => _showRestoreModal(context),
                 ),
+                if (_hasUndoSnapshot) ...[
+                  Divider(color: tokens.borderSubtle, height: 1),
+                  _ActionTile(
+                    title: 'Undo Last Restore',
+                    subtitle: 'Roll back database to state captured before the most recent restore',
+                    icon: Icons.undo_rounded,
+                    accentColor: tokens.warning,
+                    tokens: tokens,
+                    onTap: _isProcessing ? null : () => _confirmAndUndoRestore(),
+                  ),
+                ],
               ],
             ),
           ),
@@ -511,6 +541,7 @@ class _ExportSettingsScreenState extends ConsumerState<ExportSettingsScreen> {
                 _showError('Restoration error: $e');
               } finally {
                 _endOp();
+                await _checkUndoAvailability();
               }
             }
 
@@ -797,6 +828,75 @@ class _ExportSettingsScreenState extends ConsumerState<ExportSettingsScreen> {
       }
     } catch (e) {
       _showError('Failed to share file: $e');
+    }
+  }
+
+  Future<void> _confirmAndUndoRestore() async {
+    final tokens = AppThemeTokens.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: tokens.panel,
+        title: Text(
+          'REVERT RESTORE OPERATION',
+          style: TextStyle(
+            fontFamily: AppTypography.displayFontFamily,
+            color: tokens.warning,
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        content: Text(
+          'This will revert all database changes and restore the system state captured immediately before your last restore.\n\nAre you sure you want to proceed?',
+          style: TextStyle(
+            fontFamily: AppTypography.bodyFontFamily,
+            color: tokens.textPrimary,
+            fontSize: 13,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(
+              'CANCEL',
+              style: TextStyle(color: tokens.textMuted),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: tokens.warning,
+              foregroundColor: Colors.black,
+            ),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('CONFIRM ROLLBACK'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    _startOp('Rolling back database to pre-restore snapshot...');
+    try {
+      final restoreUseCase = ref.read(restoreDataUseCaseProvider);
+      final result = await restoreUseCase.undoRestore();
+      if (result.success) {
+        await _checkUndoAvailability();
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Successfully rolled back to pre-restore snapshot'),
+            backgroundColor: tokens.kineticAccent,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      } else {
+        _showError('Rollback failed: ${result.message}');
+      }
+    } catch (e) {
+      _showError('Rollback error: $e');
+    } finally {
+      _endOp();
     }
   }
 
