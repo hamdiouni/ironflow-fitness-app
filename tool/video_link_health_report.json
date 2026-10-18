@@ -1,0 +1,776 @@
+{
+  "timestamp": "2026-10-18T18:27:26.633958",
+  "totalExercises": 150,
+  "totalUniqueVideoIds": 71,
+  "counts": {
+    "available": 41,
+    "notFoundOrPrivate": 30,
+    "embeddingDisabled": 0,
+    "networkErrors": 0
+  },
+  "results": [
+    {
+      "id": "rT7DgCr-3pg",
+      "status": "available",
+      "statusCode": 200,
+      "title": "How To: Barbell Bench Press",
+      "author": "ScottHermanFitness",
+      "exercises": [
+        "Bench Press",
+        "bench press"
+      ]
+    },
+    {
+      "id": "jx4JNyYvv8A",
+      "status": "not_found_or_private",
+      "statusCode": 404,
+      "exercises": [
+        "Incline Bench Press"
+      ]
+    },
+    {
+      "id": "LbfXVmjLLKE",
+      "status": "not_found_or_private",
+      "statusCode": 404,
+      "exercises": [
+        "Decline Bench Press"
+      ]
+    },
+    {
+      "id": "eozdVDA5x5c",
+      "status": "not_found_or_private",
+      "statusCode": 404,
+      "exercises": [
+        "Dumbbell Fly"
+      ]
+    },
+    {
+      "id": "f4bBZFXcuEo",
+      "status": "not_found_or_private",
+      "statusCode": 404,
+      "exercises": [
+        "Cable Crossover"
+      ]
+    },
+    {
+      "id": "IODxDxX7oi4",
+      "status": "available",
+      "statusCode": 200,
+      "title": "The Perfect Push Up | Do it right!",
+      "author": "Calisthenicmovement",
+      "exercises": [
+        "Push-Up",
+        "push-up"
+      ]
+    },
+    {
+      "id": "z8wbzjMxsQE",
+      "status": "not_found_or_private",
+      "statusCode": 404,
+      "exercises": [
+        "Chest Dip"
+      ]
+    },
+    {
+      "id": "ryQcBaAr-QI",
+      "status": "not_found_or_private",
+      "statusCode": 404,
+      "exercises": [
+        "Pec Deck"
+      ]
+    },
+    {
+      "id": "r4MzxtBKyNE",
+      "status": "available",
+      "statusCode": 200,
+      "title": "How To Perfect Your Deadlift | Form Check | Men's Health",
+      "author": "Men's Health",
+      "exercises": [
+        "Deadlift"
+      ]
+    },
+    {
+      "id": "Syt3A25LV0M",
+      "status": "not_found_or_private",
+      "statusCode": 404,
+      "exercises": [
+        "Barbell Row"
+      ]
+    },
+    {
+      "id": "eGo4IYlbE5g",
+      "status": "available",
+      "statusCode": 200,
+      "title": "The Perfect Pull Up  - Do it right!",
+      "author": "Calisthenicmovement",
+      "exercises": [
+        "Pull-Up",
+        "pull-up"
+      ]
+    },
+    {
+      "id": "CAwf7n6Luuc",
+      "status": "available",
+      "statusCode": 200,
+      "title": "How To: Lat Pulldown | 3 GOLDEN RULES",
+      "author": "ScottHermanFitness",
+      "exercises": [
+        "Lat Pulldown",
+        "lat pulldown"
+      ]
+    },
+    {
+      "id": "GZbfZ033f74",
+      "status": "available",
+      "statusCode": 200,
+      "title": "How To: Seated Low Row (LF Cable)",
+      "author": "ScottHermanFitness",
+      "exercises": [
+        "Seated Cable Row",
+        "seated cable row"
+      ]
+    },
+    {
+      "id": "pYcpY20QaFM",
+      "status": "not_found_or_private",
+      "statusCode": 404,
+      "exercises": [
+        "Dumbbell Row"
+      ]
+    },
+    {
+      "id": "6EYYUiIKV9I",
+      "status": "not_found_or_private",
+      "statusCode": 404,
+      "exercises": [
+        "T-Bar Row"
+      ]
+    },
+    {
+      "id": "eIuIGqZB8iw",
+      "status": "not_found_or_private",
+      "statusCode": 404,
+      "exercises": [
+        "Face Pull"
+      ]
+    },
+    {
+      "id": "A94wNF2HkWA",
+      "status": "not_found_or_private",
+      "statusCode": 404,
+      "exercises": [
+        "Squat"
+      ]
+    },
+    {
+      "id": "JCXUZjGWroM",
+      "status": "not_found_or_private",
+      "statusCode": 404,
+      "exercises": [
+        "Romanian Deadlift"
+      ]
+    },
+    {
+      "id": "IZxyjW7MIAI",
+      "status": "not_found_or_private",
+      "statusCode": 404,
+      "exercises": [
+        "Leg Press"
+      ]
+    },
+    {
+      "id": "JL7NZ8q7Ry0",
+      "status": "not_found_or_private",
+      "statusCode": 404,
+      "exercises": [
+        "Leg Curl"
+      ]
+    },
+    {
+      "id": "Eo9a46qP8PY",
+      "status": "not_found_or_private",
+      "statusCode": 404,
+      "exercises": [
+        "Leg Extension"
+      ]
+    },
+    {
+      "id": "D6R1V_QyIEE",
+      "status": "not_found_or_private",
+      "statusCode": 404,
+      "exercises": [
+        "Lunges"
+      ]
+    },
+    {
+      "id": "2IcnqA1dInI",
+      "status": "not_found_or_private",
+      "statusCode": 404,
+      "exercises": [
+        "Bulgarian Split Squat"
+      ]
+    },
+    {
+      "id": "j3QcABbD_qQ",
+      "status": "not_found_or_private",
+      "statusCode": 404,
+      "exercises": [
+        "Calf Raise"
+      ]
+    },
+    {
+      "id": "6uc033-msKY",
+      "status": "not_found_or_private",
+      "statusCode": 404,
+      "exercises": [
+        "Hack Squat"
+      ]
+    },
+    {
+      "id": "pmLXQUcVXJ0",
+      "status": "not_found_or_private",
+      "statusCode": 404,
+      "exercises": [
+        "Sumo Deadlift"
+      ]
+    },
+    {
+      "id": "dQw4w9WgXcQ",
+      "status": "available",
+      "statusCode": 200,
+      "title": "Rick Astley - Never Gonna Give You Up (Official Video) (4K Remaster)",
+      "author": "Rick Astley",
+      "exercises": [
+        "Overhead Press",
+        "Dumbbell Shoulder Press",
+        "Lateral Raise",
+        "Front Raise",
+        "Reverse Fly",
+        "Arnold Press",
+        "Barbell Curl",
+        "Dumbbell Curl",
+        "Hammer Curl",
+        "Preacher Curl",
+        "Tricep Pushdown",
+        "Skull Crusher",
+        "Overhead Tricep Extension",
+        "Close Grip Bench Press",
+        "Crunch",
+        "Plank",
+        "Leg Raise",
+        "Cable Crunch",
+        "Russian Twist",
+        "Running",
+        "Cycling",
+        "Rowing Machine",
+        "Jump Rope",
+        "Stair Climber",
+        "Hip Thrust",
+        "Glute Bridge",
+        "Cable Kickback",
+        "Donkey Kick",
+        "Step Up",
+        "Machine Chest Press",
+        "Smith Machine Bench Press",
+        "Assisted Pull-Up",
+        "Chin-Up",
+        "Machine Row",
+        "Goblet Squat",
+        "Sissy Squat",
+        "Pendulum Squat",
+        "Leg Abduction",
+        "Leg Adduction",
+        "Machine Shoulder Press",
+        "Shrug",
+        "Dumbbell Shrug",
+        "Cable Curl",
+        "Machine Curl",
+        "Dips",
+        "Assisted Dips",
+        "Hanging Leg Raise",
+        "Ab Wheel Rollout",
+        "Decline Sit-Up",
+        "Elliptical Machine",
+        "Treadmill",
+        "Burpees",
+        "Mountain Climbers",
+        "Leg Press (Glute Focus)",
+        "Smith Machine Squat",
+        "Banded Glute Bridge",
+        "Kettlebell Swing",
+        "Battle Ropes",
+        "Sled Push",
+        "Sled Pull",
+        "Box Jump",
+        "Tire Flip",
+        "Farmer Carry",
+        "Landmine Press",
+        "Landmine Row",
+        "Trap Bar Deadlift",
+        "Resistance Band Chest Press",
+        "Plate-Loaded Chest Press",
+        "Dumbbell Squeeze Press",
+        "Isometric Chest Hold",
+        "Incline Dumbbell Fly",
+        "Seal Row",
+        "Inverted Row",
+        "Pendulum Row",
+        "Reverse Grip Lat Pulldown",
+        "V-Squat",
+        "Pike Push-Up",
+        "Upright Row",
+        "Elliptical",
+        "Swimming",
+        "Smith Machine Hip Thrust",
+        "Banded Hip Thrust",
+        "Glute Kickback",
+        "Cable Pull-Through",
+        "Single-Leg Hip Thrust",
+        "Burpee",
+        "Mountain Climber",
+        "Medicine Ball Slam",
+        "Dumbbell Snatch",
+        "Dumbbell Clean",
+        "Barbell Snatch",
+        "Barbell Clean",
+        "Barbell Jerk",
+        "Power Clean",
+        "Front Squat",
+        "Back Squat",
+        "Incline Treadmill Walk",
+        "Sled Drag",
+        "Prowler Push",
+        "Reverse Sled Drag",
+        "Sled Leg Press",
+        "Rope Climb",
+        "Wall Ball",
+        "Sled Sprint"
+      ]
+    },
+    {
+      "id": "ultWZbUMPL8",
+      "status": "available",
+      "statusCode": 200,
+      "title": "The Back Squat",
+      "author": "CrossFit",
+      "exercises": [
+        "squat"
+      ]
+    },
+    {
+      "id": "op9kVnSso6Q",
+      "status": "available",
+      "statusCode": 200,
+      "title": "The Deadlift: CrossFit Foundational Movement",
+      "author": "CrossFit",
+      "exercises": [
+        "deadlift"
+      ]
+    },
+    {
+      "id": "F3QY5vMz_6I",
+      "status": "available",
+      "statusCode": 200,
+      "title": "How to Perform Overhead Press - Proper Technique & Form",
+      "author": "Buff Dudes",
+      "exercises": [
+        "overhead press"
+      ]
+    },
+    {
+      "id": "9efgcAjQe7E",
+      "status": "available",
+      "statusCode": 200,
+      "title": "How To: Barbell Bent-Over Row",
+      "author": "ScottHermanFitness",
+      "exercises": [
+        "barbell row"
+      ]
+    },
+    {
+      "id": "2z8JmcrW-As",
+      "status": "available",
+      "statusCode": 200,
+      "title": "The Perfect Dip  - Do it right",
+      "author": "Calisthenicmovement",
+      "exercises": [
+        "dip",
+        "chest dip"
+      ]
+    },
+    {
+      "id": "DbFgADa2PL8",
+      "status": "available",
+      "statusCode": 200,
+      "title": "How To: Barbell Incline Chest Press",
+      "author": "ScottHermanFitness",
+      "exercises": [
+        "incline bench press"
+      ]
+    },
+    {
+      "id": "JCXUYuzwNrM",
+      "status": "available",
+      "statusCode": 200,
+      "title": "How To: Romanian Deadlift (Barbell)",
+      "author": "ScottHermanFitness",
+      "exercises": [
+        "romanian deadlift"
+      ]
+    },
+    {
+      "id": "IZxyjW7MPJQ",
+      "status": "available",
+      "statusCode": 200,
+      "title": "How To: Seated Leg Press (Cybex)",
+      "author": "ScottHermanFitness",
+      "exercises": [
+        "leg press"
+      ]
+    },
+    {
+      "id": "QOVaHwm-Q6U",
+      "status": "available",
+      "statusCode": 200,
+      "title": "Bowflex® How-To | Lunges for Beginners",
+      "author": "BowFlex",
+      "exercises": [
+        "lunges"
+      ]
+    },
+    {
+      "id": "ykJmrZ5v0Oo",
+      "status": "available",
+      "statusCode": 200,
+      "title": "How to Do a Dumbbell Biceps Curl | Arm Workout",
+      "author": "Howcast",
+      "exercises": [
+        "bicep curl",
+        "barbell curl",
+        "dumbbell curl"
+      ]
+    },
+    {
+      "id": "vB5OHsJ3EME",
+      "status": "available",
+      "statusCode": 200,
+      "title": "How To: Rope Push-Down",
+      "author": "ScottHermanFitness",
+      "exercises": [
+        "tricep pushdown"
+      ]
+    },
+    {
+      "id": "XPPfnSEATJA",
+      "status": "available",
+      "statusCode": 200,
+      "title": "How to do a Dumbbell Lateral Raise",
+      "author": "National Academy of Sports Medicine (NASM)",
+      "exercises": [
+        "lateral raise"
+      ]
+    },
+    {
+      "id": "rep-qVOkqgk",
+      "status": "available",
+      "statusCode": 200,
+      "title": "How To: Face Pull",
+      "author": "ScottHermanFitness",
+      "exercises": [
+        "face pull"
+      ]
+    },
+    {
+      "id": "brFHyOtTwH4",
+      "status": "available",
+      "statusCode": 200,
+      "title": "What Is Perfect Running Form? | Run Technique Tips For All Runners",
+      "author": "Global Triathlon Network",
+      "exercises": [
+        "running"
+      ]
+    },
+    {
+      "id": "mmq5zGIFqoI",
+      "status": "not_found_or_private",
+      "statusCode": 404,
+      "exercises": [
+        "cycling"
+      ]
+    },
+    {
+      "id": "ASdvSXt_IIo",
+      "status": "not_found_or_private",
+      "statusCode": 404,
+      "exercises": [
+        "plank"
+      ]
+    },
+    {
+      "id": "Xyd_fa5zoEU",
+      "status": "available",
+      "statusCode": 200,
+      "title": "How to Do Crunches",
+      "author": "LIVESTRONG",
+      "exercises": [
+        "crunch",
+        "cable crunch"
+      ]
+    },
+    {
+      "id": "JB2oyawG9KI",
+      "status": "available",
+      "statusCode": 200,
+      "title": "How to Do Leg Raises",
+      "author": "LIVESTRONG",
+      "exercises": [
+        "leg raise"
+      ]
+    },
+    {
+      "id": "SEdqd1n0cvg",
+      "status": "available",
+      "statusCode": 200,
+      "title": "How To: Hip Thrust",
+      "author": "ScottHermanFitness",
+      "exercises": [
+        "hip thrust",
+        "hip thrust barbell"
+      ]
+    },
+    {
+      "id": "OUgsJ8-Vi0E",
+      "status": "available",
+      "statusCode": 200,
+      "title": "How to Perform the Perfect Glute Bridge",
+      "author": "Airrosti Rehab Centers",
+      "exercises": [
+        "glute bridge"
+      ]
+    },
+    {
+      "id": "6TSP1TRMUzs",
+      "status": "available",
+      "statusCode": 200,
+      "title": "How To:  Dumbbell Bent-Over Row",
+      "author": "ScottHermanFitness",
+      "exercises": [
+        "dumbbell row"
+      ]
+    },
+    {
+      "id": "zC3nLlEvin4",
+      "status": "available",
+      "statusCode": 200,
+      "title": "How To: Dumbbell Hammer Curl",
+      "author": "ScottHermanFitness",
+      "exercises": [
+        "hammer curl"
+      ]
+    },
+    {
+      "id": "NIKnFMKHHKA",
+      "status": "not_found_or_private",
+      "statusCode": 404,
+      "exercises": [
+        "skull crusher"
+      ]
+    },
+    {
+      "id": "gwLzBJYoWlI",
+      "status": "available",
+      "statusCode": 200,
+      "title": "How to Do Calf Raises",
+      "author": "LIVESTRONG",
+      "exercises": [
+        "calf raise"
+      ]
+    },
+    {
+      "id": "EdtPAT0oCqQ",
+      "status": "not_found_or_private",
+      "statusCode": 404,
+      "exercises": [
+        "hack squat"
+      ]
+    },
+    {
+      "id": "vEAuMFNFHFQ",
+      "status": "not_found_or_private",
+      "statusCode": 404,
+      "exercises": [
+        "bulgarian split squat"
+      ]
+    },
+    {
+      "id": "ELOCsoDSmrg",
+      "status": "available",
+      "statusCode": 200,
+      "title": "How To: Seated Leg Curl (Cybex)",
+      "author": "ScottHermanFitness",
+      "exercises": [
+        "leg curl"
+      ]
+    },
+    {
+      "id": "YyvSfVjQeL0",
+      "status": "available",
+      "statusCode": 200,
+      "title": "How To: Leg Extension (Cybex)",
+      "author": "ScottHermanFitness",
+      "exercises": [
+        "leg extension"
+      ]
+    },
+    {
+      "id": "taI4XduLpTk",
+      "status": "available",
+      "statusCode": 200,
+      "title": "How to Do Cable Crossovers",
+      "author": "LIVESTRONG",
+      "exercises": [
+        "cable crossover"
+      ]
+    },
+    {
+      "id": "Z57CtFmRMxA",
+      "status": "available",
+      "statusCode": 200,
+      "title": "How to Do Chest Fly Exercises on a Machine",
+      "author": "LIVESTRONG",
+      "exercises": [
+        "pec deck"
+      ]
+    },
+    {
+      "id": "eozdVDA78K0",
+      "status": "available",
+      "statusCode": 200,
+      "title": "How To: Dumbbell Flys On A Flat Bench",
+      "author": "ScottHermanFitness",
+      "exercises": [
+        "dumbbell fly"
+      ]
+    },
+    {
+      "id": "6Z15_WdXmVw",
+      "status": "available",
+      "statusCode": 200,
+      "title": "Arnold Press - Shoulder Exercise - Proper Form Tutorial",
+      "author": "Buff Dudes",
+      "exercises": [
+        "arnold press"
+      ]
+    },
+    {
+      "id": "hRJ6tR5-if0",
+      "status": "available",
+      "statusCode": 200,
+      "title": "Dumbbell Front Raise",
+      "author": "Renaissance Periodization",
+      "exercises": [
+        "front raise"
+      ]
+    },
+    {
+      "id": "ttvAXjsOTME",
+      "status": "not_found_or_private",
+      "statusCode": 404,
+      "exercises": [
+        "reverse fly"
+      ]
+    },
+    {
+      "id": "qEwKCR5JCog",
+      "status": "available",
+      "statusCode": 200,
+      "title": "How To: Dumbbell Shoulder Press",
+      "author": "ScottHermanFitness",
+      "exercises": [
+        "dumbbell shoulder press"
+      ]
+    },
+    {
+      "id": "nRiJVZDpdL0",
+      "status": "available",
+      "statusCode": 200,
+      "title": "How to Do Triceps Dumbbell Extensions",
+      "author": "LIVESTRONG",
+      "exercises": [
+        "overhead tricep extension"
+      ]
+    },
+    {
+      "id": "nEF0bv2FW7s",
+      "status": "not_found_or_private",
+      "statusCode": 404,
+      "exercises": [
+        "close grip bench press"
+      ]
+    },
+    {
+      "id": "fIWP-FRFNU0",
+      "status": "available",
+      "statusCode": 200,
+      "title": "Preacher Curls | How To Perform It Correctly",
+      "author": "KAGED ",
+      "exercises": [
+        "preacher curl"
+      ]
+    },
+    {
+      "id": "j3Igk5nyZE4",
+      "status": "available",
+      "statusCode": 200,
+      "title": "How To: T-Bar Row",
+      "author": "ScottHermanFitness",
+      "exercises": [
+        "t-bar row"
+      ]
+    },
+    {
+      "id": "WIs_-s4XTFU",
+      "status": "not_found_or_private",
+      "statusCode": 404,
+      "exercises": [
+        "sumo deadlift"
+      ]
+    },
+    {
+      "id": "wkD8rjkodUI",
+      "status": "available",
+      "statusCode": 200,
+      "title": "How to Do a Russian Twist | Ab Workout",
+      "author": "Howcast",
+      "exercises": [
+        "russian twist"
+      ]
+    },
+    {
+      "id": "u3zgHI8QnqE",
+      "status": "available",
+      "statusCode": 200,
+      "title": "How To Jump Rope | The Right Way | Well+Good",
+      "author": "Well+Good",
+      "exercises": [
+        "jump rope"
+      ]
+    },
+    {
+      "id": "H0r_D6OhGDs",
+      "status": "not_found_or_private",
+      "statusCode": 404,
+      "exercises": [
+        "rowing machine"
+      ]
+    },
+    {
+      "id": "Iy_72HDnCdY",
+      "status": "not_found_or_private",
+      "statusCode": 404,
+      "exercises": [
+        "stair climber"
+      ]
+    }
+  ]
+}
