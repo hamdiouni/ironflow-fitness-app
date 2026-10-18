@@ -11,6 +11,7 @@ class AppConfig {
   static const String _envOpenAiKey = String.fromEnvironment('OPENAI_API_KEY');
   static const String _envGeminiKey = String.fromEnvironment('GEMINI_API_KEY');
   static const String _envNvidiaKey = String.fromEnvironment('NVIDIA_API_KEY');
+  static const String _envAiProxyUrl = String.fromEnvironment('AI_PROXY_URL');
 
   /// Retrieves OpenAI API Key from `--dart-define` or local dotenv.
   static String getOpenAIApiKey() {
@@ -39,6 +40,15 @@ class AppConfig {
     return '';
   }
 
+  /// Retrieves AI Backend Proxy URL from `--dart-define` or local dotenv (AI-01).
+  static String getAiProxyUrl() {
+    if (_envAiProxyUrl.isNotEmpty) return _envAiProxyUrl;
+    if (dotenv.isInitialized) {
+      return dotenv.env['AI_PROXY_URL'] ?? '';
+    }
+    return '';
+  }
+
   /// Whether OpenAI is configured with a non-empty key.
   static bool get hasOpenAI => getOpenAIApiKey().isNotEmpty;
 
@@ -47,4 +57,7 @@ class AppConfig {
 
   /// Whether NVIDIA is configured with a non-empty key.
   static bool get hasNvidia => getNvidiaApiKey().isNotEmpty;
+
+  /// Whether a secure AI backend proxy URL is configured.
+  static bool get hasAiProxy => getAiProxyUrl().isNotEmpty;
 }

@@ -1,0 +1,16 @@
+name = "ironflow-ai-proxy"
+main = "worker.js"
+compatibility_date = "2024-04-01"
+
+# Environment variables
+[vars]
+FIREBASE_PROJECT_ID = "ironflow-app"
+
+# Secret variables (set via: npx wrangler secret put GEMINI_API_KEY)
+# GEMINI_API_KEY = "..."
+
+# KV namespace for per-user rate limiting (30 requests/day per UID)
+# Bind after creating via: npx wrangler kv:namespace create RATE_LIMIT_KV
+# [[kv_namespaces]]
+# binding = "RATE_LIMIT_KV"
+# id = "your-kv-namespace-id"
