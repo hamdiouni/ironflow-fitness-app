@@ -48,7 +48,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     if (!mounted) return;
 
     final authState = ref.read(authNotifierProvider);
-    final isOnboarded = UserProfileStorage().isOnboardedSync();
+    final userId = authState.user?.id;
+    final isOnboarded = UserProfileStorage().isOnboardedSync(userId: userId);
 
     if (!authState.isAuthenticated) {
       context.go(AppRoutes.login);

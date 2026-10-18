@@ -48,11 +48,11 @@ class OnboardingNotifier extends StateNotifier<AsyncValue<void>> {
   final GenerateDietPlanUseCase _generateDietPlanUseCase;
   final SaveDietPlanUseCase _saveDietPlanUseCase;
 
-  Future<void> completeOnboarding(UserProfile profile) async {
+  Future<void> completeOnboarding(UserProfile profile, {String? userId}) async {
     state = const AsyncValue.loading();
     try {
       // 1. Save profile
-      await _storage.saveProfile(profile);
+      await _storage.saveProfile(profile, userId: userId);
 
       // 2. Generate and set active program
       final program = _generateProgramUseCase(userProfile: profile);
@@ -63,7 +63,7 @@ class OnboardingNotifier extends StateNotifier<AsyncValue<void>> {
       await _saveDietPlanUseCase(dietPlan);
 
       // 4. Mark onboarded
-      await _storage.markOnboarded();
+      await _storage.markOnboarded(userId: userId);
 
       state = const AsyncValue.data(null);
     } catch (e, s) {

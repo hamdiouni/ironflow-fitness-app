@@ -87,7 +87,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Read auth state directly here (not watched in provider)
       final authState = ref.read(authNotifierProvider);
       final isAuthenticated = authState.isAuthenticated;
-      final isOnboarded = UserProfileStorage().isOnboardedSync();
+      final userId = authState.user?.id;
+      final isOnboarded = UserProfileStorage().isOnboardedSync(userId: userId);
 
       final loc = state.matchedLocation;
       final isAuthRoute = loc == AppRoutes.login ||
@@ -99,6 +100,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         print('🔍 [Router] Redirect check:');
         print('  - Location: $loc');
         print('  - Authenticated: $isAuthenticated');
+        print('  - UserId: $userId');
         print('  - Onboarded: $isOnboarded');
         print('  - Is auth route: $isAuthRoute');
         print('  - Is onboarding: $isOnboarding');
@@ -116,16 +118,21 @@ final routerProvider = Provider<GoRouter>((ref) {
         return AppRoutes.login;
       }
 
-      // Case 2: Authenticated user accessing auth routes (/splash, /login, /signup)
-      if (isAuthRoute) {
-        if (!isOnboarded) {
+      // Case 2: Authenticated user who has NOT completed onboarding
+      if (!isOnboarded) {
+        if (!isOnboarding) {
           if (kDebugMode) {
-            print('📊 [Router] Authenticated on auth route, needs onboarding -> /onboarding');
+            print('📊 [Router] Authenticated user needs onboarding -> /onboarding');
           }
           return AppRoutes.onboarding;
         }
+        return null;
+      }
+
+      // Case 3: Authenticated AND onboarded user accessing auth or onboarding routes
+      if (isAuthRoute || isOnboarding) {
         if (kDebugMode) {
-          print('⚠️ [Router] Already authenticated and onboarded, redirecting away from auth route to /home');
+          print('⚠️ [Router] Already authenticated and onboarded, redirecting to /home');
         }
         return AppRoutes.home;
       }
