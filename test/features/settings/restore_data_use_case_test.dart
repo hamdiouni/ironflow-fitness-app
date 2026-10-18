@@ -201,6 +201,15 @@ class InMemoryAuthRepository implements AuthRepository {
   @override
   Future<User> signUpWithEmail({required String email, required String password}) async =>
       throw UnimplementedError();
+
+  @override
+  Future<void> reauthenticateWithPassword(String password) async {}
+
+  @override
+  Future<void> reauthenticateWithGoogle() async {}
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 void main() {

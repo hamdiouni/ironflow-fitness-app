@@ -139,6 +139,16 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<void> reauthenticateWithPassword(String password) async {
+    await _authDataSource.reauthenticateWithPassword(password);
+  }
+
+  @override
+  Future<void> reauthenticateWithGoogle() async {
+    await _authDataSource.reauthenticateWithGoogle();
+  }
+
+  @override
   Future<void> resetPassword(String email) async {
     await _authDataSource.resetPassword(email);
   }
