@@ -22,6 +22,7 @@ class SetEntry with _$SetEntry {
     required int reps,
     required double weight,
     int? rpe,
+    @Default(SetType.normal) SetType type,
     required DateTime timestamp,
   }) = _SetEntry;
 
@@ -30,6 +31,7 @@ class SetEntry with _$SetEntry {
     required int reps,
     required double weight,
     int? rpe,
+    SetType type = SetType.normal,
   }) {
     if (!Validators.isValidReps(reps)) {
       throw InvalidRepsException();
@@ -46,6 +48,7 @@ class SetEntry with _$SetEntry {
       reps: reps,
       weight: weight,
       rpe: rpe,
+      type: type,
       timestamp: DateTime.now(),
     );
   }
@@ -70,6 +73,13 @@ enum SetType {
         SetType.warmup => 'W',
         SetType.drop => 'D',
         SetType.failure => 'F',
+      };
+
+  SetType get next => switch (this) {
+        SetType.normal => SetType.warmup,
+        SetType.warmup => SetType.drop,
+        SetType.drop => SetType.failure,
+        SetType.failure => SetType.normal,
       };
 }
 

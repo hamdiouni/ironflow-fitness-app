@@ -11,6 +11,7 @@ class SetEntryModel with _$SetEntryModel {
     required int reps,
     required double weight,
     int? rpe,
+    @Default('normal') String type,
     required String timestamp,
   }) = _SetEntryModel;
 
@@ -23,6 +24,7 @@ class SetEntryModel with _$SetEntryModel {
       reps: set.reps,
       weight: set.weight,
       rpe: set.rpe,
+      type: set.type.name,
       timestamp: set.timestamp.toIso8601String(),
     );
   }
@@ -35,6 +37,10 @@ extension SetEntryModelX on SetEntryModel {
       reps: reps,
       weight: weight,
       rpe: rpe,
+      type: SetType.values.firstWhere(
+        (t) => t.name.toLowerCase() == type.toLowerCase(),
+        orElse: () => SetType.normal,
+      ),
       timestamp: DateTime.parse(timestamp),
     );
   }
