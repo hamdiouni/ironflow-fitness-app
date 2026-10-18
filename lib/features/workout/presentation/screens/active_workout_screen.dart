@@ -25,6 +25,7 @@ import '../widgets/plate_calculator_sheet.dart';
 import '../../../ai/presentation/widgets/quick_feedback_bottom_sheet.dart';
 import '../../../ai/presentation/providers/global_ai_provider.dart';
 import '../../../../shared/presentation/services/app_haptics.dart';
+import '../../domain/usecases/calculate_workout_volume_use_case.dart';
 
 class ActiveWorkoutScreen extends ConsumerStatefulWidget {
   final ActiveProgram? activeProgram;
@@ -194,7 +195,8 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                         programExercise: programExercise,
                         isAnimating: _animatingExerciseId == exercise.id,
                         onAnimationComplete: () { if (mounted) setState(() => _animatingExerciseId = null); },
-                        onLogSet: (reps, weight) => _logSet(exercise, reps, weight),
+                        onLogSet: (reps, weight, [type = SetType.normal, rpe]) => _logSet(exercise, reps, weight, type, rpe),
+                        onUpdateSetType: (setIndex, newType) => ref.read(workoutNotifierProvider.notifier).updateSetType(exercise.id, setIndex, newType),
                       );
                     },
                   )
@@ -208,8 +210,13 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
 
   Widget _buildCompletedView(BuildContext context, Workout workout) {
     print('📊 [WorkoutUI] Building completed view');
-    final totalSets = workout.exercises.fold<int>(0, (s, e) => s + e.sets.length);
-    print('🔍 [WorkoutUI] Total sets: $totalSets, Total volume: ${workout.totalVolume}, Duration: ${workout.duration}');
+    final totalWorkingSets = workout.exercises.fold<int>(
+      0,
+      (s, e) => s + e.sets.where((set) => set.type != SetType.warmup).length,
+    );
+    final volumeUseCase = CalculateWorkoutVolumeUseCase();
+    final totalWorkingVolume = volumeUseCase(workout);
+    print('🔍 [WorkoutUI] Total working sets: $totalWorkingSets, Working volume: $totalWorkingVolume, Duration: ${workout.duration}');
     
     // Watch quick feedback state to show bottom sheet
     final quickFeedback = ref.watch(globalAIProvider.select((state) => state.quickFeedback));
@@ -225,10 +232,11 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
         
         print('📊 [WorkoutUI] Navigating to workout summary...');
         context.go(AppRoutes.workoutSummary, extra: <String, dynamic>{
-          'totalSets': totalSets,
-          'totalVolume': workout.totalVolume,
+          'totalSets': totalWorkingSets,
+          'totalVolume': totalWorkingVolume,
           'duration': workout.duration,
           'prCount': _prCount,
+          'exerciseNames': workout.exercises.map((e) => e.name).toList(),
         });
         print('✅ [WorkoutUI] Navigation to summary completed');
         
@@ -279,12 +287,12 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     }
   }
 
-  Future<void> _logSet(Exercise exercise, int reps, double weight) async {
+  Future<void> _logSet(Exercise exercise, int reps, double weight, [SetType type = SetType.normal, int? rpe]) async {
     try {
       print('📊 [WorkoutUI] Logging set for exercise: ${exercise.name}');
-      print('🔍 [WorkoutUI] Reps: $reps, Weight: ${weight}kg');
+      print('🔍 [WorkoutUI] Reps: $reps, Weight: ${weight}kg, Type: ${type.name}, RPE: $rpe');
       
-      final set = SetEntry.create(reps: reps, weight: weight);
+      final set = SetEntry.create(reps: reps, weight: weight, type: type, rpe: rpe);
       final isPR = await ref.read(workoutNotifierProvider.notifier).logSetForExercise(exercise.id, set);
       
       print('✅ [WorkoutUI] Set logged successfully');
@@ -654,12 +662,14 @@ class _ExerciseCard extends ConsumerStatefulWidget {
     required this.isAnimating,
     required this.onAnimationComplete,
     required this.onLogSet,
+    required this.onUpdateSetType,
     this.programExercise,
   });
   final Exercise exercise;
   final bool isAnimating;
   final VoidCallback onAnimationComplete;
-  final Future<void> Function(int reps, double weight) onLogSet;
+  final Future<void> Function(int reps, double weight, [SetType type, int? rpe]) onLogSet;
+  final Future<void> Function(int setIndex, SetType newType) onUpdateSetType;
   final ProgramExercise? programExercise;
   @override
   ConsumerState<_ExerciseCard> createState() => _ExerciseCardState();
@@ -668,15 +678,32 @@ class _ExerciseCard extends ConsumerStatefulWidget {
 class _ExerciseCardState extends ConsumerState<_ExerciseCard> {
   final _repsController = TextEditingController(text: '8');
   final _weightController = TextEditingController(text: '0');
+  final _rpeController = TextEditingController();
+  bool _isRirMode = false;
   bool _isLogging = false;
   bool _showVideo = false;
   SetType _selectedSetType = SetType.normal;
-  final Map<int, SetType> _setTypes = {};
+
+  @override
+  void initState() {
+    super.initState();
+    final prog = widget.programExercise;
+    if (prog != null) {
+      if (prog.targetWeight != null && prog.targetWeight! > 0) {
+        _weightController.text = prog.targetWeight!.toStringAsFixed(1);
+      }
+      final parsedReps = int.tryParse(prog.reps);
+      if (parsedReps != null && parsedReps > 0) {
+        _repsController.text = parsedReps.toString();
+      }
+    }
+  }
 
   @override
   void dispose() {
     _repsController.dispose();
     _weightController.dispose();
+    _rpeController.dispose();
     super.dispose();
   }
 
@@ -756,7 +783,10 @@ class _ExerciseCardState extends ConsumerState<_ExerciseCard> {
                       // Display program exercise suggestion if available
                       if (widget.programExercise != null) ...[
                         Text(
-                          'Target: ${widget.programExercise!.sets} × ${widget.programExercise!.reps}',
+                          widget.programExercise!.targetWeight != null &&
+                                  widget.programExercise!.targetWeight! > 0
+                              ? 'Target: ${widget.programExercise!.targetWeight!.toStringAsFixed(1)}kg · ${widget.programExercise!.sets} × ${widget.programExercise!.reps}'
+                              : 'Target: ${widget.programExercise!.sets} × ${widget.programExercise!.reps}',
                           style: TextStyle(
                             color: allSuggestedSetsCompleted ? tokens.kineticAccent : tokens.cyanAccent,
                             fontSize: 12,
@@ -800,57 +830,71 @@ class _ExerciseCardState extends ConsumerState<_ExerciseCard> {
                 runSpacing: 6,
                 children: widget.exercise.sets.asMap().entries.map((e) {
                   final setIndex = e.key;
+                  final set = e.value;
                   final setNumber = setIndex + 1;
                   final isSuggestedSetCompleted = widget.programExercise != null && setNumber <= widget.programExercise!.sets;
-                  final setType = _setTypes[setIndex] ?? SetType.normal;
+                  final setType = set.type;
                   final typeColor = switch (setType) {
                     SetType.warmup => tokens.cyanAccent,
                     SetType.normal => isSuggestedSetCompleted ? tokens.kineticAccent : tokens.textSecondary,
                     SetType.drop => tokens.warning,
                     SetType.failure => tokens.error,
                   };
+                  final rpeText = set.rpe != null
+                      ? (_isRirMode ? ' • ${10 - set.rpe!} RIR' : ' • @${set.rpe} RPE')
+                      : '';
                   
-                  return Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: tokens.panel,
+                  return Tooltip(
+                    message: 'Tap to cycle set type (${setType.label})',
+                    child: InkWell(
                       borderRadius: BorderRadius.circular(tokens.radiusSm),
-                      border: Border.all(
-                        color: typeColor.withValues(alpha: 0.4),
-                        width: 1,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                          margin: const EdgeInsets.only(right: 5),
-                          decoration: BoxDecoration(
-                            color: typeColor.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(2),
+                      onTap: () async {
+                        await AppHaptics.shared.selectionChanged();
+                        await widget.onUpdateSetType(setIndex, setType.next);
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: tokens.panel,
+                          borderRadius: BorderRadius.circular(tokens.radiusSm),
+                          border: Border.all(
+                            color: typeColor.withValues(alpha: 0.5),
+                            width: 1,
                           ),
-                          child: Text(
-                            setType.shortCode,
-                            style: TextStyle(
-                              color: typeColor,
-                              fontSize: 9,
-                              fontWeight: FontWeight.w900,
-                              fontFamily: AppTypography.displayFontFamily,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                              margin: const EdgeInsets.only(right: 5),
+                              decoration: BoxDecoration(
+                                color: typeColor.withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                              child: Text(
+                                setType.shortCode,
+                                style: TextStyle(
+                                  color: typeColor,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w900,
+                                  fontFamily: AppTypography.displayFontFamily,
+                                ),
+                              ),
                             ),
-                          ),
+                            Text(
+                              'SET $setNumber: ${set.weight}KG × ${set.reps}$rpeText',
+                              style: TextStyle(
+                                color: typeColor,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                fontFamily: AppTypography.fontFamilyHeadings,
+                                fontFeatures: const [FontFeature.tabularFigures()],
+                              ),
+                            ),
+                          ],
                         ),
-                        Text(
-                          'SET $setNumber: ${e.value.weight}KG × ${e.value.reps}',
-                          style: TextStyle(
-                            color: typeColor,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            fontFamily: AppTypography.fontFamilyHeadings,
-                            fontFeatures: const [FontFeature.tabularFigures()],
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   );
                 }).toList(),
@@ -907,12 +951,59 @@ class _ExerciseCardState extends ConsumerState<_ExerciseCard> {
             ),
             const SizedBox(height: 10),
 
-            // ── Inputs Row (Reps, Weight, Plate Calc, Log Set) ─────────
+            // ── Inputs Row (Reps, Weight, RPE/RIR, Plate Calc, Log Set) ─────────
             Row(
               children: [
-                Expanded(child: _NumberField(controller: _repsController, label: 'REPS', tokens: tokens)),
-                const SizedBox(width: 8),
-                Expanded(child: _NumberField(controller: _weightController, label: 'WEIGHT (KG)', isDecimal: true, tokens: tokens)),
+                Expanded(flex: 5, child: _NumberField(controller: _repsController, label: 'REPS', tokens: tokens)),
+                const SizedBox(width: 6),
+                Expanded(flex: 6, child: _NumberField(controller: _weightController, label: 'WEIGHT (KG)', isDecimal: true, tokens: tokens)),
+                const SizedBox(width: 6),
+                Expanded(
+                  flex: 5,
+                  child: Stack(
+                    alignment: Alignment.centerRight,
+                    children: [
+                      _NumberField(
+                        controller: _rpeController,
+                        label: _isRirMode ? 'RIR' : 'RPE',
+                        tokens: tokens,
+                      ),
+                      Positioned(
+                        right: 4,
+                        child: InkWell(
+                          onTap: () {
+                            AppHaptics.shared.selectionChanged();
+                            setState(() {
+                              _isRirMode = !_isRirMode;
+                              final val = int.tryParse(_rpeController.text.trim());
+                              if (val != null) {
+                                final converted = (10 - val).clamp(0, 10);
+                                _rpeController.text = converted.toString();
+                              }
+                            });
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: tokens.cyanAccent.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(3),
+                              border: Border.all(color: tokens.cyanAccent.withValues(alpha: 0.4), width: 0.8),
+                            ),
+                            child: Text(
+                              _isRirMode ? 'RIR' : 'RPE',
+                              style: TextStyle(
+                                fontSize: 8,
+                                fontWeight: FontWeight.w900,
+                                color: tokens.cyanAccent,
+                                fontFamily: AppTypography.displayFontFamily,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
                 const SizedBox(width: 4),
                 IconButton(
                   tooltip: 'Plate Calculator',
@@ -932,7 +1023,7 @@ class _ExerciseCardState extends ConsumerState<_ExerciseCard> {
                     );
                   },
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(width: 4),
                 SizedBox(
                   height: 48,
                   child: AppButton(
@@ -963,12 +1054,32 @@ class _ExerciseCardState extends ConsumerState<_ExerciseCard> {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enter valid reps and weight')));
       return;
     }
-    final nextIndex = widget.exercise.sets.length;
-    _setTypes[nextIndex] = _selectedSetType;
+
+    int? parsedRpe;
+    final rpeText = _rpeController.text.trim();
+    if (rpeText.isNotEmpty) {
+      final val = int.tryParse(rpeText);
+      if (val != null) {
+        if (_isRirMode) {
+          if (val >= 0 && val <= 9) {
+            parsedRpe = 10 - val;
+          }
+        } else {
+          if (val >= 1 && val <= 10) {
+            parsedRpe = val;
+          }
+        }
+      }
+    }
+
     setState(() => _isLogging = true);
-    try { await widget.onLogSet(reps, weight); }
-    catch (e, s) { if (mounted) ErrorHandler.handleError(context, e, s); }
-    finally { if (mounted) setState(() => _isLogging = false); }
+    try {
+      await widget.onLogSet(reps, weight, _selectedSetType, parsedRpe);
+    } catch (e, s) {
+      if (mounted) ErrorHandler.handleError(context, e, s);
+    } finally {
+      if (mounted) setState(() => _isLogging = false);
+    }
   }
 }
 

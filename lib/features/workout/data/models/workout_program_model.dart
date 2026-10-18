@@ -89,6 +89,7 @@ class ProgramExerciseModel with _$ProgramExerciseModel {
     required int sets,
     required String reps,
     required int restSeconds,
+    double? targetWeight,
     String? notes,
   }) = _ProgramExerciseModel;
   
@@ -101,6 +102,7 @@ class ProgramExerciseModel with _$ProgramExerciseModel {
       sets: entity.sets,
       reps: entity.reps,
       restSeconds: entity.restSeconds,
+      targetWeight: entity.targetWeight,
       notes: entity.notes,
     );
   }
@@ -113,6 +115,7 @@ extension ProgramExerciseModelX on ProgramExerciseModel {
       sets: sets,
       reps: reps,
       restSeconds: restSeconds,
+      targetWeight: targetWeight,
       notes: notes,
     );
   }
