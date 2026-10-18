@@ -1,12 +1,53 @@
+import 'exercise_database.dart';
+
 /// Maps exercise names to YouTube video IDs for demo previews.
 /// These are short, publicly available exercise tutorial videos.
 class ExerciseVideoMap {
   ExerciseVideoMap._();
 
+  static String _normalize(String s) =>
+      s.toLowerCase().trim().replaceAll('-', ' ').replaceAll('_', ' ');
+
   /// Returns the YouTube video ID for the given exercise name.
   /// Returns null if no video is mapped for this exercise.
   static String? getVideoId(String exerciseName) {
-    return _videoIds[exerciseName.toLowerCase()];
+    final rawKey = exerciseName.toLowerCase().trim();
+    if (_videoIds.containsKey(rawKey)) {
+      return _videoIds[rawKey];
+    }
+
+    final normKey = _normalize(exerciseName);
+    for (final entry in _videoIds.entries) {
+      if (_normalize(entry.key) == normKey) {
+        return entry.value;
+      }
+    }
+
+    // Check common equipment/exercise aliases
+    final aliased = _aliases[normKey];
+    if (aliased != null && _videoIds.containsKey(aliased)) {
+      return _videoIds[aliased];
+    }
+
+    // Check exercise definition animationUrl in database
+    final def = ExerciseDatabase.getByName(exerciseName);
+    if (def != null &&
+        def.animationUrl.isNotEmpty &&
+        def.animationUrl.contains('youtube.com')) {
+      final uri = Uri.tryParse(def.animationUrl);
+      if (uri != null) {
+        final segments = uri.pathSegments;
+        final embedIdx = segments.indexOf('embed');
+        if (embedIdx != -1 && embedIdx + 1 < segments.length) {
+          final id = segments[embedIdx + 1];
+          if (id.isNotEmpty && id != 'dQw4w9WgXcQ') {
+            return id;
+          }
+        }
+      }
+    }
+
+    return null;
   }
 
   /// Returns all available exercise names that have video mappings.
@@ -15,29 +56,62 @@ class ExerciseVideoMap {
   }
 
   /// Returns a YouTube thumbnail URL for the given exercise name.
-  /// Falls back to a generic fitness image if not found.
+  /// Falls back to exercise database image or generic fitness image if not found.
   static String thumbnailUrl(String exerciseName) {
-    final id = _videoIds[exerciseName.toLowerCase()];
-    if (id == null) return _fallbackImage;
-    return 'https://img.youtube.com/vi/$id/mqdefault.jpg';
+    final id = getVideoId(exerciseName);
+    if (id != null) {
+      return 'https://img.youtube.com/vi/$id/mqdefault.jpg';
+    }
+    final def = ExerciseDatabase.getByName(exerciseName);
+    if (def != null && def.imageUrl.isNotEmpty) {
+      return def.imageUrl;
+    }
+    return _fallbackImage;
   }
 
   /// Returns a YouTube watch URL for the given exercise name.
   static String? watchUrl(String exerciseName) {
-    final id = _videoIds[exerciseName.toLowerCase()];
+    final id = getVideoId(exerciseName);
     if (id == null) return null;
     return 'https://www.youtube.com/watch?v=$id';
   }
 
   /// Returns a YouTube video URL for embedding/streaming the given exercise name.
   static String? videoUrl(String exerciseName) {
-    final id = _videoIds[exerciseName.toLowerCase()];
+    final id = getVideoId(exerciseName);
     if (id == null) return null;
     return 'https://www.youtube.com/embed/$id';
   }
 
   static const String _fallbackImage =
       'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400';
+
+  static const Map<String, String> _aliases = {
+    'barbell bench press': 'bench press',
+    'flat bench press': 'bench press',
+    'barbell flat bench press': 'bench press',
+    'barbell squat': 'squat',
+    'back squat': 'squat',
+    'barbell back squat': 'squat',
+    'conventional deadlift': 'deadlift',
+    'barbell deadlift': 'deadlift',
+    'overhead barbell press': 'overhead press',
+    'military press': 'overhead press',
+    'standing overhead press': 'overhead press',
+    'chin up': 'pull-up',
+    'chin-up': 'pull-up',
+    'pullup': 'pull-up',
+    'pushup': 'push-up',
+    'cable row': 'seated cable row',
+    'seated row': 'seated cable row',
+    'dumbbell bicep curl': 'bicep curl',
+    'cable pushdown': 'tricep pushdown',
+    'cable tricep pushdown': 'tricep pushdown',
+    'lying leg curl': 'leg curl',
+    'hamstring curl': 'leg curl',
+    'standing calf raise': 'calf raise',
+    'barbell hip thrust': 'hip thrust',
+  };
 
   static const Map<String, String> _videoIds = {
     'bench press': 'rT7DgCr-3pg',

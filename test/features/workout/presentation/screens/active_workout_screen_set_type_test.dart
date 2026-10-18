@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:progression_tracker/core/constants/app_theme.dart';
-import 'package:progression_tracker/core/router/app_router.dart';
 import 'package:progression_tracker/features/ai/presentation/providers/global_ai_provider.dart';
 import 'package:progression_tracker/features/ai/presentation/providers/global_ai_state.dart';
 import 'package:progression_tracker/features/workout/domain/entities/entities.dart';

@@ -1858,5 +1858,47 @@ class ExerciseDatabase {
       primaryMuscles: [MuscleGroup.cardio, MuscleGroup.legs, MuscleGroup.fullBody],
     ),
   ];
+
+  /// Find exercise definition by ID
+  static ExerciseDefinition? getById(String id) {
+    try {
+      return all.firstWhere((e) => e.id == id);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Find exercise definition by name (case-insensitive)
+  static ExerciseDefinition? getByName(String name) {
+    final lower = name.toLowerCase().trim();
+    try {
+      return all.firstWhere((e) => e.name.toLowerCase().trim() == lower);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Filter exercises by muscle group (primary or secondary)
+  static List<ExerciseDefinition> getByMuscleGroup(MuscleGroup group) {
+    return all
+        .where((e) => e.muscleGroup == group || e.primaryMuscles.contains(group))
+        .toList();
+  }
+
+  /// Filter exercises by equipment
+  static List<ExerciseDefinition> getByEquipment(Equipment equipment) {
+    return all.where((e) => e.equipment == equipment).toList();
+  }
+
+  /// Search exercises by name, muscle, or sub-muscle
+  static List<ExerciseDefinition> search(String query) {
+    if (query.trim().isEmpty) return all;
+    final q = query.toLowerCase().trim();
+    return all.where((e) =>
+      e.name.toLowerCase().contains(q) ||
+      e.subMuscle.toLowerCase().contains(q) ||
+      e.muscleGroup.name.toLowerCase().contains(q)
+    ).toList();
+  }
 }
 
