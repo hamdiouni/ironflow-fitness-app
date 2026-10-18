@@ -90,5 +90,20 @@ void main() {
       expect(restored, isNull);
       expect(manager.hasSavedState, isFalse); // Corrupted state cleared
     });
+
+    test('saveRestTimer, getRestTimer, and clearRestTimer work as expected', () async {
+      expect(manager.getRestTimer(), isNull);
+
+      final target = DateTime(2026, 10, 18, 20, 0, 0);
+      await manager.saveRestTimer(target, 90);
+
+      final restored = manager.getRestTimer();
+      expect(restored, isNotNull);
+      expect(restored!.targetEndTime, target);
+      expect(restored.totalSeconds, 90);
+
+      await manager.clearRestTimer();
+      expect(manager.getRestTimer(), isNull);
+    });
   });
 }
