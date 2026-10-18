@@ -94,6 +94,7 @@ class RestoreDataUseCase {
   final BodyRepository _bodyRepository;
   final AuthRepository _authRepository;
   final FirebaseStorage? _storage;
+  final Directory? _privateDocumentsDir;
 
   RestoreDataUseCase(
     this._workoutRepository,
@@ -101,7 +102,9 @@ class RestoreDataUseCase {
     this._bodyRepository,
     this._authRepository, [
     FirebaseStorage? storage,
-  ]) : _storage = storage;
+    Directory? privateDocumentsDir,
+  ])  : _storage = storage,
+        _privateDocumentsDir = privateDocumentsDir;
 
   /// Restores data from a cloud backup.
   Future<RestoreResult> restoreFromCloudBackup(
@@ -113,7 +116,7 @@ class RestoreDataUseCase {
       return RestoreResult.failure('Cloud storage is not configured for restore');
     }
     try {
-      final directory = await getApplicationDocumentsDirectory();
+      final directory = _privateDocumentsDir ?? await getApplicationDocumentsDirectory();
       final localFile = File('${directory.path}/temp_restore_${DateTime.now().millisecondsSinceEpoch}.json');
       
       await storage.ref(backupRecord.cloudPath).writeToFile(localFile);
@@ -211,13 +214,170 @@ class RestoreDataUseCase {
     return RestoreResult.success({});
   }
 
-  /// Performs safe data restore.
-  /// First parses everything in memory. Only clears existing data and saves
-  /// when parsing has succeeded.
+  /// Directory where safety snapshots are securely stored in app-private storage.
+  Future<Directory> getSafetySnapshotDirectory() async {
+    Directory baseDir;
+    if (_privateDocumentsDir != null) {
+      baseDir = _privateDocumentsDir!;
+    } else {
+      try {
+        baseDir = await getApplicationDocumentsDirectory();
+      } catch (_) {
+        baseDir = Directory.systemTemp;
+      }
+    }
+    final snapshotDir = Directory('${baseDir.path}/safety_snapshots');
+    if (!await snapshotDir.exists()) {
+      await snapshotDir.create(recursive: true);
+    }
+    return snapshotDir;
+  }
+
+  /// Captures a complete snapshot of the current state before restore.
+  Future<File> createSafetySnapshot() async {
+    final snapshotDir = await getSafetySnapshotDirectory();
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final file = File('${snapshotDir.path}/safety_snapshot_$timestamp.json');
+
+    final snapshotData = await _captureCurrentStateSnapshot();
+    await file.writeAsString(const JsonEncoder.withIndent('  ').convert(snapshotData));
+
+    // Prune old snapshots (keep max 3)
+    await _pruneOldSnapshots();
+    return file;
+  }
+
+  /// Gathers all existing data into a snapshot payload.
+  Future<Map<String, dynamic>> _captureCurrentStateSnapshot() async {
+    UserProfile? userProfile;
+    try {
+      final currentUser = await _authRepository.getCurrentUser();
+      if (currentUser != null) {
+        userProfile = await _authRepository.getUserProfile(currentUser.id);
+      }
+    } catch (_) {}
+    final workouts = await _workoutRepository.getAllWorkouts();
+    
+    // Gather nutrition
+    final meals = <Meal>[];
+    try {
+      final history = await _nutritionRepository.getNutritionHistory(
+        DateTime.fromMillisecondsSinceEpoch(0),
+        DateTime.now().add(const Duration(days: 365)),
+      );
+      for (final day in history) {
+        meals.addAll(day.meals);
+      }
+    } catch (_) {}
+
+    final bodyEntries = await _bodyRepository.getAllBodyEntries();
+
+    return {
+      'export_info': {
+        'export_date': DateTime.now().toIso8601String(),
+        'export_version': '1.0',
+        'app_version': '1.2.0',
+        'export_type': 'safety_snapshot',
+      },
+      'user_profile': userProfile?.toJson(),
+      'workouts': workouts.map((w) => _workoutToMap(w)).toList(),
+      'nutrition_logs': [
+        {
+          'date': DateTime.now().toIso8601String(),
+          'meals': meals.map((m) => _mealToMap(m)).toList(),
+        }
+      ],
+      'body_measurements': bodyEntries.map((b) => _bodyEntryToMap(b)).toList(),
+    };
+  }
+
+  /// Prunes old snapshots to retain at most 3 snapshots in app-private storage.
+  Future<void> _pruneOldSnapshots() async {
+    try {
+      final snapshotDir = await getSafetySnapshotDirectory();
+      final files = snapshotDir
+          .listSync()
+          .whereType<File>()
+          .where((f) => f.path.contains('safety_snapshot_') && f.path.endsWith('.json'))
+          .toList();
+
+      files.sort((a, b) => b.lastModifiedSync().compareTo(a.lastModifiedSync()));
+      if (files.length > 3) {
+        for (int i = 3; i < files.length; i++) {
+          await files[i].delete();
+        }
+      }
+    } catch (_) {}
+  }
+
+  /// Returns the most recent safety snapshot file, if one exists.
+  Future<File?> getLatestSnapshot() async {
+    try {
+      final snapshotDir = await getSafetySnapshotDirectory();
+      if (!await snapshotDir.exists()) return null;
+      final files = snapshotDir
+          .listSync()
+          .whereType<File>()
+          .where((f) => f.path.contains('safety_snapshot_') && f.path.endsWith('.json'))
+          .toList();
+      if (files.isEmpty) return null;
+      files.sort((a, b) => b.lastModifiedSync().compareTo(a.lastModifiedSync()));
+      return files.first;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Checks if an undo snapshot is available for restoration.
+  Future<bool> hasUndoSnapshot() async {
+    final latest = await getLatestSnapshot();
+    return latest != null;
+  }
+
+  /// Undoes the last restore operation by applying the most recent safety snapshot.
+  Future<RestoreResult> undoRestore() async {
+    final snapshotFile = await getLatestSnapshot();
+    if (snapshotFile == null) {
+      return RestoreResult.failure('No safety snapshot available to undo restore');
+    }
+
+    try {
+      final jsonContent = await snapshotFile.readAsString();
+      final decoded = jsonDecode(jsonContent);
+      if (decoded is! Map<String, dynamic>) {
+        return RestoreResult.failure('Safety snapshot file is invalid');
+      }
+
+      // Restore without creating a new snapshot to prevent recursion
+      final result = await _performRestore(decoded, true, isRollback: true);
+      if (result.success) {
+        await snapshotFile.delete();
+      }
+      return result;
+    } catch (e) {
+      return RestoreResult.failure('Failed to undo restore: $e');
+    }
+  }
+
+  /// Deletes all safety snapshot files. Used in account/data deletion (REL-01).
+  Future<void> clearAllSnapshots() async {
+    try {
+      final snapshotDir = await getSafetySnapshotDirectory();
+      if (await snapshotDir.exists()) {
+        final files = snapshotDir.listSync().whereType<File>().toList();
+        for (final file in files) {
+          await file.delete();
+        }
+      }
+    } catch (_) {}
+  }
+
+  /// Performs safe data restore with automated snapshot and rollback protection.
   Future<RestoreResult> _performRestore(
     Map<String, dynamic> backupData,
-    bool overwriteExisting,
-  ) async {
+    bool overwriteExisting, {
+    bool isRollback = false,
+  }) async {
     final restoredCounts = <String, int>{};
     final errors = <String>[];
 
@@ -316,7 +476,17 @@ class RestoreDataUseCase {
       return RestoreResult.failure('Restore failed', errors);
     }
 
-    // --- PHASE 2: ATOMIC/SAFE WRITE ---
+    // --- PHASE 2: SAFETY SNAPSHOT (REL-03) ---
+    File? safetySnapshotFile;
+    if (!isRollback) {
+      try {
+        safetySnapshotFile = await createSafetySnapshot();
+      } catch (e) {
+        return RestoreResult.failure('Failed to create safety snapshot before restore: $e');
+      }
+    }
+
+    // --- PHASE 3: WRITE WITH ROLLBACK PROTECTION ---
     try {
       if (overwriteExisting) {
         await _clearExistingData();
@@ -366,8 +536,29 @@ class RestoreDataUseCase {
         return RestoreResult.failure('Restore failed', errors);
       }
     } catch (e) {
+      // ON ANY FAILURE: ROLLBACK FROM SAFETY SNAPSHOT
+      if (!isRollback && safetySnapshotFile != null) {
+        await _rollbackFromSnapshot(safetySnapshotFile);
+        return RestoreResult.failure(
+          'Restore operation write failed: $e. Previous data was safely rolled back from safety snapshot.',
+          [e.toString()],
+        );
+      }
       return RestoreResult.failure('Restore operation write failed: $e');
     }
+  }
+
+  /// Automatically rolls back state using the safety snapshot file.
+  Future<void> _rollbackFromSnapshot(File snapshotFile) async {
+    try {
+      if (!await snapshotFile.exists()) return;
+      final content = await snapshotFile.readAsString();
+      final decoded = jsonDecode(content);
+      if (decoded is! Map<String, dynamic>) return;
+
+      await _clearExistingData();
+      await _performRestore(decoded, false, isRollback: true);
+    } catch (_) {}
   }
 
   Workout _parseWorkout(Map<String, dynamic> data) {
@@ -584,4 +775,63 @@ class RestoreDataUseCase {
       return BackupPreview.invalid('Corrupt or unreadable JSON: $e');
     }
   }
+
+  Map<String, dynamic> _workoutToMap(Workout w) => {
+    'id': w.id,
+    'date': w.date.toIso8601String(),
+    'duration_minutes': w.duration.inMinutes,
+    'total_volume': w.totalVolume,
+    'calories_burned': w.caloriesBurned,
+    'exercises': w.exercises.map((e) => {
+      'id': e.id,
+      'name': e.name,
+      'type': e.type.name,
+      'sets': e.sets.map((s) => {
+        'id': s.id,
+        'reps': s.reps,
+        'weight': s.weight,
+        'rpe': s.rpe,
+        'timestamp': s.timestamp.toIso8601String(),
+      }).toList(),
+    }).toList(),
+  };
+
+  Map<String, dynamic> _mealToMap(Meal m) => {
+    'id': m.id,
+    'name': m.name,
+    'timestamp': m.timestamp.toIso8601String(),
+    'macros': {
+      'calories': m.macros.calories,
+      'protein': m.macros.protein,
+      'carbs': m.macros.carbs,
+      'fats': m.macros.fats,
+    },
+    'micros': {
+      'fiber': m.micros.fiber,
+      'sugar': m.micros.sugar,
+      'sodium': m.micros.sodium,
+      'potassium': m.micros.potassium,
+    },
+    'vitamins': {
+      'vitaminA': m.vitamins.vitaminA,
+      'vitaminB': m.vitamins.vitaminB,
+      'vitaminC': m.vitamins.vitaminC,
+      'vitaminD': m.vitamins.vitaminD,
+      'vitaminE': m.vitamins.vitaminE,
+    },
+    'minerals': {
+      'calcium': m.minerals.calcium,
+      'iron': m.minerals.iron,
+      'magnesium': m.minerals.magnesium,
+      'zinc': m.minerals.zinc,
+    },
+  };
+
+  Map<String, dynamic> _bodyEntryToMap(BodyEntry b) => {
+    'id': b.id,
+    'date': b.date.toIso8601String(),
+    'weight': b.weight,
+    'measurements': b.measurements.map((k, v) => MapEntry(k.name, v)),
+    'photo_path': b.photoPath,
+  };
 }
