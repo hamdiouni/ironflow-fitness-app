@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 import 'package:progression_tracker/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:progression_tracker/features/auth/data/datasources/auth_session_storage.dart';
+import 'package:progression_tracker/features/onboarding/data/user_profile_storage.dart';
 import 'package:progression_tracker/core/router/app_router.dart';
 
 /// **Validates: Requirements 3.1, 3.2, 3.3, 3.4**
@@ -31,14 +32,17 @@ void main() {
     tempDir = Directory.systemTemp.createTempSync('hive_auth_preservation_');
     Hive.init(tempDir.path);
     await Hive.openBox('auth_session');
+    await Hive.openBox('user_profile');
   });
 
   setUp(() async {
     await AuthSessionStorage().clearSession();
+    await UserProfileStorage().resetOnboarding();
   });
 
   tearDown(() async {
     await AuthSessionStorage().clearSession();
+    await UserProfileStorage().resetOnboarding();
   });
 
   tearDownAll(() async {
@@ -338,6 +342,7 @@ void main() {
               email: 'demo@ironflow.com',
               password: 'password123',
             );
+            await UserProfileStorage().markOnboarded();
           });
         } catch (e) {
           print('⚠️ Skipping test: Sign-in failed - $e');
