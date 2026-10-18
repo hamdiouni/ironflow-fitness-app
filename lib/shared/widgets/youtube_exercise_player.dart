@@ -1,21 +1,28 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
+
+import '../../core/theme/app_theme_tokens.dart';
+import '../../core/theme/app_typography.dart';
 import '../../features/workout/data/exercise_video_map.dart';
 
-/// A robust YouTube-based exercise video player with fallback handling.
+/// A robust YouTube-based exercise video player with Sci-Fi HUD fallback handling.
 ///
 /// Features:
 /// - YouTube video playback using youtube_player_iframe
-/// - Automatic fallback to image if video unavailable
-/// - Loading states and error handling
+/// - Automatic fallback to cached thumbnail image if video unavailable or offline
+/// - Direct deep-link launching into external YouTube app / browser with clipboard copy fallback
+/// - Loading states and error handling with retry capability
 /// - Play/pause, mute/unmute, fullscreen controls
 /// - Lazy loading (only loads when visible)
 /// - Proper disposal to prevent memory leaks
 ///
 /// Architecture:
 /// - Primary: YouTube video via youtubeVideoId
-/// - Fallback: Exercise thumbnail image
-/// - Error handling: Never crashes, always shows UI
+/// - Fallback: Exercise cached thumbnail image with HUD controls
+/// - Error handling: Never crashes, always shows interactive UI
 class YouTubeExercisePlayer extends StatefulWidget {
   final String exerciseName;
   final double height;
@@ -62,7 +69,7 @@ class _YouTubeExercisePlayerState extends State<YouTubeExercisePlayer> {
         _logInfo('No video ID found for: ${widget.exerciseName}');
         setState(() {
           _hasError = true;
-          _errorMessage = 'Video not available for this exercise';
+          _errorMessage = 'DEMO VIDEO NOT AVAILABLE';
           _isLoading = false;
         });
         return;
@@ -73,8 +80,8 @@ class _YouTubeExercisePlayerState extends State<YouTubeExercisePlayer> {
       // Initialize YouTube player controller with basic params
       _controller = YoutubePlayerController.fromVideoId(
         videoId: _videoId!,
-        autoPlay: false,
-        params: YoutubePlayerParams(
+        autoPlay: widget.autoPlay,
+        params: const YoutubePlayerParams(
           mute: true,
           showControls: true,
           showFullscreenButton: true,
@@ -89,18 +96,19 @@ class _YouTubeExercisePlayerState extends State<YouTubeExercisePlayer> {
       // Add comprehensive error handling
       _controller!.listen((event) {
         _logInfo('Player event: ${event.playerState}');
-        
+
         if (event.hasError) {
           _logError('Player error detected', event.error);
-          
+
           // Distinguish between different error types
           String errorMsg = 'Video playback error';
-          if (event.error.toString().contains('152')) {
-            errorMsg = 'Video unavailable (region-blocked or removed)';
-          } else if (event.error.toString().contains('150')) {
-            errorMsg = 'Video playback disabled by owner';
+          final errStr = event.error.toString();
+          if (errStr.contains('152') || errStr.contains('100')) {
+            errorMsg = 'Video unavailable (private or removed)';
+          } else if (errStr.contains('150') || errStr.contains('101')) {
+            errorMsg = 'In-app playback disabled by owner';
           }
-          
+
           setState(() {
             _hasError = true;
             _errorMessage = errorMsg;
@@ -108,7 +116,7 @@ class _YouTubeExercisePlayerState extends State<YouTubeExercisePlayer> {
           });
           return;
         }
-        
+
         if (event.playerState == PlayerState.playing && _isLoading) {
           setState(() {
             _isLoading = false;
@@ -116,7 +124,7 @@ class _YouTubeExercisePlayerState extends State<YouTubeExercisePlayer> {
           widget.onReady?.call();
           _logInfo('Video ready and playing');
         }
-        
+
         if (event.playerState == PlayerState.ended) {
           _logInfo('Video ended');
         }
@@ -162,8 +170,7 @@ class _YouTubeExercisePlayerState extends State<YouTubeExercisePlayer> {
   }
 
   void _logError(String message, dynamic error) {
-    debugPrint('[YouTubeExercisePlayer] ERROR: $message');
-    debugPrint('[YouTubeExercisePlayer] Error details: $error');
+    debugPrint('[YouTubeExercisePlayer] ERROR: $message ($error)');
   }
 
   @override
@@ -174,14 +181,17 @@ class _YouTubeExercisePlayerState extends State<YouTubeExercisePlayer> {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+
     return Container(
       height: widget.height,
       decoration: BoxDecoration(
-        color: Colors.black,
-        borderRadius: BorderRadius.circular(12),
+        color: tokens.canvas,
+        borderRadius: BorderRadius.circular(tokens.radiusMd),
+        border: Border.all(color: tokens.borderSubtle, width: 1),
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(tokens.radiusMd),
         child: _buildContent(context),
       ),
     );
@@ -189,7 +199,7 @@ class _YouTubeExercisePlayerState extends State<YouTubeExercisePlayer> {
 
   Widget _buildContent(BuildContext context) {
     if (_isLoading) {
-      return _buildLoadingState();
+      return _buildLoadingState(context);
     }
 
     if (_hasError || _controller == null) {
@@ -199,20 +209,27 @@ class _YouTubeExercisePlayerState extends State<YouTubeExercisePlayer> {
     return _buildVideoPlayer(context);
   }
 
-  Widget _buildLoadingState() {
+  Widget _buildLoadingState(BuildContext context) {
+    final tokens = context.tokens;
     return Container(
-      color: Colors.black87,
-      child: const Center(
+      color: tokens.canvas,
+      child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              valueColor: AlwaysStoppedAnimation<Color>(tokens.kineticAccent),
+              strokeWidth: 2,
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 12),
             Text(
-              'Loading video...',
-              style: TextStyle(color: Colors.white70),
+              'INITIALIZING TELEMETRY STREAM...',
+              style: TextStyle(
+                fontFamily: AppTypography.displayFontFamily,
+                color: tokens.textMuted,
+                fontSize: 10,
+                letterSpacing: 1.1,
+              ),
             ),
           ],
         ),
@@ -221,98 +238,119 @@ class _YouTubeExercisePlayerState extends State<YouTubeExercisePlayer> {
   }
 
   Widget _buildFallbackState(BuildContext context) {
+    final tokens = context.tokens;
     final thumbnailUrl = ExerciseVideoMap.thumbnailUrl(widget.exerciseName);
+    final watchUrl = ExerciseVideoMap.watchUrl(widget.exerciseName);
 
     return Stack(
       fit: StackFit.expand,
       children: [
-        // Fallback image
-        Image.network(
-          thumbnailUrl,
+        // Cached Thumbnail
+        CachedNetworkImage(
+          imageUrl: thumbnailUrl,
           fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            return Container(
-              color: Colors.grey[900],
-              child: const Icon(
-                Icons.fitness_center,
-                size: 64,
-                color: Colors.white38,
+          placeholder: (context, url) => Container(
+            color: tokens.panel,
+            child: Center(
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(tokens.kineticAccent),
               ),
-            );
-          },
+            ),
+          ),
+          errorWidget: (context, url, error) => Container(
+            color: tokens.panel,
+            child: Center(
+              child: Icon(
+                Icons.fitness_center_rounded,
+                size: 48,
+                color: tokens.textMuted.withValues(alpha: 0.3),
+              ),
+            ),
+          ),
         ),
-        // Overlay with error message and retry button
+        // Monolithic HUD overlay
         Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                Colors.black.withValues(alpha: 0.3),
-                Colors.black.withValues(alpha: 0.7),
+                Colors.black.withValues(alpha: 0.35),
+                Colors.black.withValues(alpha: 0.85),
               ],
             ),
           ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(
-                  Icons.videocam_off,
-                  size: 48,
-                  color: Colors.white70,
+                Icon(
+                  Icons.videocam_off_rounded,
+                  size: 32,
+                  color: tokens.textMuted,
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 Text(
-                  _errorMessage ?? 'Video not available',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
+                  _errorMessage ?? 'DEMO VIDEO NOT AVAILABLE',
+                  style: TextStyle(
+                    fontFamily: AppTypography.displayFontFamily,
+                    color: tokens.textPrimary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.5,
                   ),
                   textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  alignment: WrapAlignment.center,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    ElevatedButton.icon(
+                    OutlinedButton.icon(
                       onPressed: _retry,
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Retry'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: Colors.black87,
+                      icon: const Icon(Icons.refresh_rounded, size: 14),
+                      label: const Text('RETRY'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: tokens.textPrimary,
+                        side: BorderSide(color: tokens.borderSubtle),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        textStyle: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.5,
+                        ),
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        final watchUrl = ExerciseVideoMap.watchUrl(widget.exerciseName);
-                        if (watchUrl != null) {
-                          // Try to open in browser/YouTube app
-                          _logInfo('Opening YouTube URL: $watchUrl');
-                          // Note: url_launcher is commented out in pubspec, so this is a placeholder
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Video URL: $watchUrl'),
-                              action: SnackBarAction(
-                                label: 'Copy',
-                                onPressed: () {
-                                  // Copy URL to clipboard
-                                },
-                              ),
-                            ),
-                          );
-                        }
-                      },
-                      icon: const Icon(Icons.open_in_new),
-                      label: const Text('YouTube'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        foregroundColor: Colors.white,
+                    if (watchUrl != null) ...[
+                      ElevatedButton.icon(
+                        onPressed: () => _openExternalYouTube(watchUrl),
+                        icon: const Icon(Icons.open_in_new_rounded, size: 14),
+                        label: const Text('YOUTUBE'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFF0000),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          textStyle: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
                       ),
-                    ),
+                      IconButton(
+                        tooltip: 'Copy video link',
+                        icon: Icon(Icons.copy_rounded, size: 16, color: tokens.textMuted),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                        onPressed: () => _copyVideoUrl(watchUrl),
+                      ),
+                    ],
                   ],
                 ),
               ],
@@ -321,6 +359,39 @@ class _YouTubeExercisePlayerState extends State<YouTubeExercisePlayer> {
         ),
       ],
     );
+  }
+
+  Future<void> _openExternalYouTube(String watchUrl) async {
+    _logInfo('Opening YouTube URL: $watchUrl');
+    final uri = Uri.parse(watchUrl);
+    bool launched = false;
+    try {
+      if (await canLaunchUrl(uri)) {
+        launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+    } catch (e) {
+      _logError('Failed to launch URL', e);
+    }
+    if (!launched && mounted) {
+      await _copyVideoUrl(watchUrl);
+    }
+  }
+
+  Future<void> _copyVideoUrl(String watchUrl) async {
+    await Clipboard.setData(ClipboardData(text: watchUrl));
+    if (mounted) {
+      final tokens = context.tokens;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Video URL copied to clipboard: $watchUrl',
+            style: TextStyle(color: tokens.textPrimary, fontSize: 12),
+          ),
+          backgroundColor: tokens.panel,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
   }
 
   Widget _buildVideoPlayer(BuildContext context) {
@@ -345,25 +416,25 @@ class _YouTubeExercisePlayerState extends State<YouTubeExercisePlayer> {
   Widget _buildControls(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.6),
+        color: Colors.black.withValues(alpha: 0.65),
         borderRadius: BorderRadius.circular(8),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           // Mute/Unmute button
           IconButton(
             icon: Icon(
-              _isMuted ? Icons.volume_off : Icons.volume_up,
+              _isMuted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
               color: Colors.white,
-              size: 20,
+              size: 18,
             ),
             onPressed: _toggleMute,
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(
-              minWidth: 32,
-              minHeight: 32,
+              minWidth: 28,
+              minHeight: 28,
             ),
           ),
         ],

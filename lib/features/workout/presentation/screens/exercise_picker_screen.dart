@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../data/exercise_database.dart';
@@ -183,29 +184,39 @@ class _ExercisePickerTile extends StatelessWidget {
     return ListTile(
       leading: ClipRRect(
         borderRadius: BorderRadius.circular(8),
-        child: Image.network(
-          exercise.imageUrl,
+        child: CachedNetworkImage(
+          imageUrl: exercise.imageUrl,
           width: 56,
           height: 56,
           fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            return Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                color: exercise.muscleGroup.color.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(8),
+          placeholder: (context, url) => Container(
+            width: 56,
+            height: 56,
+            color: exercise.muscleGroup.color.withValues(alpha: 0.1),
+            child: const Center(
+              child: SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
               ),
-              child: Icon(
-                Icons.fitness_center,
-                color: exercise.muscleGroup.color,
-              ),
-            );
-          },
+            ),
+          ),
+          errorWidget: (context, url, error) => Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: exercise.muscleGroup.color.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              Icons.fitness_center,
+              color: exercise.muscleGroup.color,
+            ),
+          ),
         ),
       ),
       title: Text(exercise.name),
-      subtitle: Text(exercise.muscleGroup.displayName),
+      subtitle: Text('${exercise.muscleGroup.displayName} • ${exercise.equipment.displayName}'),
       trailing: Icon(
         Icons.arrow_forward_ios,
         size: 16,
