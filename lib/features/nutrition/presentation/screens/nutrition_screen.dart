@@ -434,6 +434,7 @@ class _NutritionBody extends StatelessWidget {
       builder: (_) => FoodSearchScreen(
         onFoodLogged: (FoodItem food, double grams) {
           final macros = food.macrosForGrams(grams);
+          final micros = food.microsForGrams(grams);
           final meal = Meal.create(
             name: '${food.name} (${grams.toInt()}g)',
             macros: MealMacros(
@@ -443,21 +444,21 @@ class _NutritionBody extends StatelessWidget {
               fats: macros.fat,
             ),
             micros: MealMicros(
-              fiber: 0,
-              sugar: 0,
-              sodium: 0,
-              potassium: 0,
+              fiber: micros?.fiberGrams ?? 0,
+              sugar: micros?.sugarGrams ?? 0,
+              sodium: micros?.sodiumMg ?? 0,
+              potassium: micros?.potassiumMg ?? 0,
             ),
             vitamins: MealVitamins(
               vitaminA: 0,
               vitaminB: 0,
               vitaminC: 0,
-              vitaminD: 0,
+              vitaminD: micros?.vitaminDMcg ?? 0,
               vitaminE: 0,
             ),
             minerals: MealMinerals(
-              calcium: 0,
-              iron: 0,
+              calcium: micros?.calciumMg ?? 0,
+              iron: micros?.ironMg ?? 0,
               magnesium: 0,
               zinc: 0,
             ),
