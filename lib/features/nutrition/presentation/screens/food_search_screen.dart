@@ -4,12 +4,22 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:uuid/uuid.dart';
+
+import '../../../../core/theme/app_theme_tokens.dart';
+import '../../../../core/theme/app_typography.dart';
+import '../../../../shared/presentation/components/app_button.dart';
+import '../../../../shared/presentation/services/app_haptics.dart';
+import '../../../onboarding/domain/entities/user_profile.dart' show BudgetLevel;
+import '../../../onboarding/presentation/providers/onboarding_provider.dart';
 import '../../domain/entities/food_item.dart';
 import '../../domain/entities/food_item_full.dart';
 import '../providers/food_providers.dart';
 
-/// Screen for searching and selecting food items from the preloaded database.
-/// When a food is tapped, shows a quantity input sheet with animated macro preview.
+/// Screen for searching and selecting food items from the authoritative USDA-verified database.
+///
+/// Upgraded to the Monolithic Sci-Fi design system with portion sizing,
+/// factual descriptions, verifiable provenance, budget filtering, and
+/// true micronutrient telemetry (flagging missing values as "No data").
 class FoodSearchScreen extends ConsumerStatefulWidget {
   const FoodSearchScreen({super.key, required this.onFoodLogged});
   final void Function(FoodItem food, double grams) onFoodLogged;
@@ -27,12 +37,13 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
     super.dispose();
   }
 
-  void _showQuantitySheet(FoodItem food) {
+  void _showFoodDetailSheet(FoodItem food) {
+    AppHaptics.shared.selectionChanged();
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => _QuantitySheet(
+      builder: (_) => _FoodDetailAndQuantitySheet(
         food: food,
         onConfirm: (grams) {
           Navigator.pop(context);
@@ -43,15 +54,15 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
   }
 
   void _showCreateCustomFoodDialog() {
+    AppHaptics.shared.buttonPress();
     showDialog(
       context: context,
       builder: (_) => _CreateCustomFoodDialog(
         onFoodCreated: (food) {
-          // Food is already added to the list via the notifier
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Custom food "${food.name}" created!'),
-              backgroundColor: Colors.green,
+              content: Text('Custom fuel entry "${food.name}" logged!'),
+              backgroundColor: const Color(0xFF00E676),
               duration: const Duration(seconds: 2),
               behavior: SnackBarBehavior.floating,
             ),
@@ -63,46 +74,106 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AppThemeTokens.of(context);
     final foods = ref.watch(filteredFoodProvider);
     final search = ref.watch(foodSearchProvider);
+    final profileAsync = ref.watch(userProfileProvider);
+    final userBudget = profileAsync.valueOrNull?.budget;
 
     return Scaffold(
+      backgroundColor: tokens.canvas,
       appBar: AppBar(
-        title: const Text('Food Search'),
+        backgroundColor: tokens.canvas,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: tokens.textPrimary, size: 20),
+          onPressed: () => Navigator.of(context).pop(),
+          tooltip: 'Back to Nutrition',
+        ),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'FUEL DATABASE',
+              style: TextStyle(
+                fontFamily: AppTypography.displayFontFamily,
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.5,
+                color: tokens.textPrimary,
+              ),
+            ),
+            Text(
+              'VERIFIED NUTRITION TELEMETRY',
+              style: TextStyle(
+                fontFamily: AppTypography.displayFontFamily,
+                fontSize: 9,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.2,
+                color: tokens.cyanAccent,
+              ),
+            ),
+          ],
+        ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.add_circle_outline),
-            onPressed: _showCreateCustomFoodDialog,
-            tooltip: 'Create Custom Food',
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: Container(
+              decoration: BoxDecoration(
+                color: tokens.panel,
+                borderRadius: BorderRadius.circular(tokens.radiusSm),
+                border: Border.all(color: tokens.borderSubtle, width: 1),
+              ),
+              child: IconButton(
+                icon: Icon(Icons.add_circle_outline_rounded, color: tokens.cyanAccent, size: 20),
+                onPressed: _showCreateCustomFoodDialog,
+                tooltip: 'Create Custom Food',
+                constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                padding: EdgeInsets.zero,
+              ),
+            ),
           ),
         ],
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(56),
+          preferredSize: const Size.fromHeight(64),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-            child: TextField(
-              controller: _searchController,
-              autofocus: true,
-              onChanged: (v) => ref.read(foodSearchProvider.notifier).setQuery(v),
-              decoration: InputDecoration(
-                hintText: 'Search 85+ foods...',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: search.query.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          _searchController.clear();
-                          ref.read(foodSearchProvider.notifier).setQuery('');
-                        },
-                      )
-                    : null,
-                filled: true,
-                fillColor: Colors.white.withOpacity(0.08),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            child: Container(
+              height: 48,
+              decoration: BoxDecoration(
+                color: tokens.panel,
+                borderRadius: BorderRadius.circular(tokens.radiusMd),
+                border: Border.all(
+                  color: search.query.isNotEmpty ? tokens.cyanAccent : tokens.borderSubtle,
+                  width: 1,
                 ),
-                contentPadding: const EdgeInsets.symmetric(vertical: 0),
+              ),
+              child: TextField(
+                controller: _searchController,
+                autofocus: false,
+                style: TextStyle(color: tokens.textPrimary, fontSize: 14),
+                onChanged: (v) => ref.read(foodSearchProvider.notifier).setQuery(v),
+                decoration: InputDecoration(
+                  hintText: 'Search 80+ USDA verified fitness staples...',
+                  hintStyle: TextStyle(
+                    color: tokens.textMuted,
+                    fontSize: 13,
+                    fontFamily: AppTypography.bodyFontFamily,
+                  ),
+                  prefixIcon: Icon(Icons.search_rounded, color: tokens.cyanAccent, size: 20),
+                  suffixIcon: search.query.isNotEmpty
+                      ? IconButton(
+                          icon: Icon(Icons.close_rounded, color: tokens.textMuted, size: 18),
+                          onPressed: () {
+                            _searchController.clear();
+                            ref.read(foodSearchProvider.notifier).setQuery('');
+                          },
+                        )
+                      : null,
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                ),
               ),
             ),
           ),
@@ -110,50 +181,177 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
       ),
       body: Column(
         children: [
-          // Category filter
+          // Category filter strip
           SizedBox(
-            height: 48,
+            height: 38,
             child: ListView(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16),
               children: [
-                _CategoryChip(
-                  label: 'All',
+                _SciFiPill(
+                  label: 'ALL CATEGORIES',
                   selected: search.category == null,
-                  onTap: () => ref.read(foodSearchProvider.notifier).setCategory(null),
+                  onTap: () {
+                    AppHaptics.shared.selectionChanged();
+                    ref.read(foodSearchProvider.notifier).setCategory(null);
+                  },
                 ),
-                ...FoodCategory.values.map((c) => _CategoryChip(
-                  label: c.displayName,
-                  selected: search.category == c,
-                  onTap: () => ref.read(foodSearchProvider.notifier).setCategory(
-                    search.category == c ? null : c,
-                  ),
-                )),
+                ...FoodCategory.values.map((c) => _SciFiPill(
+                      label: c.displayName.toUpperCase(),
+                      selected: search.category == c,
+                      onTap: () {
+                        AppHaptics.shared.selectionChanged();
+                        ref.read(foodSearchProvider.notifier).setCategory(
+                              search.category == c ? null : c,
+                            );
+                      },
+                    )),
               ],
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: Row(children: [
-              Text('${foods.length} items',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white54)),
-            ]),
-          ),
-          Expanded(
-            child: ListView.builder(
+          const SizedBox(height: 8),
+
+          // Budget tier filter strip
+          SizedBox(
+            height: 34,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: foods.length,
-              itemBuilder: (context, index) {
-                final food = foods[index];
-                return _FoodListTile(
-                  food: food,
-                  onTap: () => _showQuantitySheet(food),
-                ).animate().fadeIn(
-                  delay: Duration(milliseconds: index * 20),
-                  duration: const Duration(milliseconds: 150),
-                );
-              },
+              children: [
+                _BudgetPill(
+                  label: 'ALL BUDGETS',
+                  selected: search.budgetTier == null,
+                  onTap: () {
+                    AppHaptics.shared.selectionChanged();
+                    ref.read(foodSearchProvider.notifier).setBudget(null);
+                  },
+                ),
+                _BudgetPill(
+                  label: 'BUDGET \$',
+                  tier: BudgetLevel.low,
+                  isProfileMatch: userBudget == BudgetLevel.low,
+                  selected: search.budgetTier == BudgetLevel.low,
+                  onTap: () {
+                    AppHaptics.shared.selectionChanged();
+                    ref.read(foodSearchProvider.notifier).setBudget(
+                          search.budgetTier == BudgetLevel.low ? null : BudgetLevel.low,
+                        );
+                  },
+                ),
+                _BudgetPill(
+                  label: 'MODERATE \$\$',
+                  tier: BudgetLevel.medium,
+                  isProfileMatch: userBudget == BudgetLevel.medium,
+                  selected: search.budgetTier == BudgetLevel.medium,
+                  onTap: () {
+                    AppHaptics.shared.selectionChanged();
+                    ref.read(foodSearchProvider.notifier).setBudget(
+                          search.budgetTier == BudgetLevel.medium ? null : BudgetLevel.medium,
+                        );
+                  },
+                ),
+                _BudgetPill(
+                  label: 'PREMIUM \$\$\$',
+                  tier: BudgetLevel.high,
+                  isProfileMatch: userBudget == BudgetLevel.high,
+                  selected: search.budgetTier == BudgetLevel.high,
+                  onTap: () {
+                    AppHaptics.shared.selectionChanged();
+                    ref.read(foodSearchProvider.notifier).setBudget(
+                          search.budgetTier == BudgetLevel.high ? null : BudgetLevel.high,
+                        );
+                  },
+                ),
+              ],
             ),
+          ),
+
+          // Count and telemetry summary row
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: tokens.cyanAccent,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: tokens.cyanAccent.withValues(alpha: 0.5),
+                            blurRadius: 4,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '${foods.length} VERIFIED STAPLES AVAILABLE',
+                      style: TextStyle(
+                        fontFamily: AppTypography.displayFontFamily,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.8,
+                        color: tokens.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+                if (userBudget != null && search.budgetTier == null)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: tokens.cyanAccent.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(
+                        color: tokens.cyanAccent.withValues(alpha: 0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: Text(
+                      'PROFILE: ${userBudget.name.toUpperCase()}',
+                      style: TextStyle(
+                        fontFamily: AppTypography.displayFontFamily,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w700,
+                        color: tokens.cyanAccent,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+
+          // Food Items List
+          Expanded(
+            child: foods.isEmpty
+                ? _EmptySearchState(
+                    query: search.query,
+                    onReset: () {
+                      _searchController.clear();
+                      ref.read(foodSearchProvider.notifier).setQuery('');
+                      ref.read(foodSearchProvider.notifier).setCategory(null);
+                      ref.read(foodSearchProvider.notifier).setBudget(null);
+                    },
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    itemCount: foods.length,
+                    itemBuilder: (context, index) {
+                      final food = foods[index];
+                      return _FoodListTile(
+                        food: food,
+                        onTap: () => _showFoodDetailSheet(food),
+                      ).animate().fadeIn(
+                            delay: Duration(milliseconds: (index % 15) * 15),
+                            duration: const Duration(milliseconds: 150),
+                          );
+                    },
+                  ),
           ),
         ],
       ),
@@ -161,105 +359,1269 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
   }
 }
 
-class _CategoryChip extends StatelessWidget {
-  const _CategoryChip({required this.label, required this.selected, required this.onTap});
+// ─────────────────────────────────────────────────────────────────────────────
+// FILTER PILLS
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _SciFiPill extends StatelessWidget {
+  const _SciFiPill({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
   final String label;
   final bool selected;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AppThemeTokens.of(context);
+
     return Padding(
-      padding: const EdgeInsets.only(right: 8),
+      padding: const EdgeInsets.only(right: 6),
       child: GestureDetector(
         onTap: onTap,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
           decoration: BoxDecoration(
-            color: selected ? Theme.of(context).colorScheme.primary : Colors.white.withOpacity(0.08),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: selected ? Theme.of(context).colorScheme.primary : Colors.white24),
+            color: selected ? tokens.cyanAccent.withValues(alpha: 0.15) : tokens.panel,
+            borderRadius: BorderRadius.circular(tokens.radiusSm),
+            border: Border.all(
+              color: selected ? tokens.cyanAccent : tokens.borderSubtle,
+              width: selected ? 1.5 : 1,
+            ),
           ),
-          child: Text(label,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
-              color: selected ? Colors.black : Colors.white70,
-            )),
+          child: Center(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontFamily: AppTypography.displayFontFamily,
+                fontSize: 10,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                letterSpacing: 0.6,
+                color: selected ? tokens.cyanAccent : tokens.textSecondary,
+              ),
+            ),
+          ),
         ),
       ),
     );
   }
 }
 
+class _BudgetPill extends StatelessWidget {
+  const _BudgetPill({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+    this.tier,
+    this.isProfileMatch = false,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  final BudgetLevel? tier;
+  final bool isProfileMatch;
+
+  Color _tierColor(AppThemeTokens tokens) {
+    switch (tier) {
+      case BudgetLevel.low:
+        return const Color(0xFF00E676);
+      case BudgetLevel.medium:
+        return tokens.cyanAccent;
+      case BudgetLevel.high:
+        return const Color(0xFFFFB300);
+      case null:
+        return tokens.textSecondary;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = AppThemeTokens.of(context);
+    final color = _tierColor(tokens);
+
+    return Padding(
+      padding: const EdgeInsets.only(right: 6),
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: selected ? color.withValues(alpha: 0.15) : tokens.panel.withValues(alpha: 0.6),
+            borderRadius: BorderRadius.circular(tokens.radiusSm),
+            border: Border.all(
+              color: selected
+                  ? color
+                  : (isProfileMatch ? color.withValues(alpha: 0.4) : tokens.borderSubtle),
+              width: selected ? 1.5 : 1,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (isProfileMatch && !selected) ...[
+                Icon(Icons.star_rounded, size: 11, color: color),
+                const SizedBox(width: 4),
+              ],
+              Text(
+                label,
+                style: TextStyle(
+                  fontFamily: AppTypography.displayFontFamily,
+                  fontSize: 9.5,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                  letterSpacing: 0.5,
+                  color: selected ? color : tokens.textMuted,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FOOD LIST TILE
+// ─────────────────────────────────────────────────────────────────────────────
+
 class _FoodListTile extends StatelessWidget {
   const _FoodListTile({required this.food, required this.onTap});
   final FoodItem food;
   final VoidCallback onTap;
 
+  IconData _categoryIcon(FoodCategory cat) {
+    switch (cat) {
+      case FoodCategory.protein:
+        return Icons.fitness_center_rounded;
+      case FoodCategory.carbs:
+        return Icons.grain_rounded;
+      case FoodCategory.fats:
+        return Icons.opacity_rounded;
+      case FoodCategory.vegetables:
+        return Icons.eco_rounded;
+      case FoodCategory.fruits:
+        return Icons.apple_rounded;
+      case FoodCategory.dairy:
+        return Icons.egg_alt_rounded;
+      case FoodCategory.snacks:
+        return Icons.cookie_rounded;
+      case FoodCategory.beverages:
+        return Icons.local_cafe_rounded;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final tokens = AppThemeTokens.of(context);
+    final isUsda = food.id.startsWith('usda_') || food.fdcId != null;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
+        margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.06),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white12),
+          color: tokens.panel,
+          borderRadius: BorderRadius.circular(tokens.radiusMd),
+          border: Border.all(color: tokens.borderSubtle, width: 1),
         ),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: CachedNetworkImage(
-                imageUrl: food.imageUrl,
-                width: 52,
-                height: 52,
-                fit: BoxFit.cover,
-                placeholder: (_, _) => Container(
-                  width: 52, height: 52,
-                  color: Colors.white.withOpacity(0.05),
-                  child: const Icon(Icons.restaurant, color: Colors.white24),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Food Image / Icon container
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                  child: CachedNetworkImage(
+                    imageUrl: food.imageUrl,
+                    width: 58,
+                    height: 58,
+                    fit: BoxFit.cover,
+                    placeholder: (_, _) => Container(
+                      width: 58,
+                      height: 58,
+                      color: tokens.card,
+                      child: Icon(_categoryIcon(food.category), color: tokens.cyanAccent, size: 24),
+                    ),
+                    errorWidget: (_, _, _) => Container(
+                      width: 58,
+                      height: 58,
+                      color: tokens.card,
+                      child: Icon(_categoryIcon(food.category), color: tokens.cyanAccent, size: 24),
+                    ),
+                  ),
                 ),
-                errorWidget: (_, _, _) => Container(
-                  width: 52, height: 52,
-                  color: Colors.white.withOpacity(0.05),
-                  child: const Icon(Icons.restaurant, color: Colors.white24),
+                const SizedBox(width: 12),
+
+                // Name, Provenance badges, and serving info
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Badges row
+                      Row(
+                        children: [
+                          if (isUsda)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                              margin: const EdgeInsets.only(right: 6),
+                              decoration: BoxDecoration(
+                                color: tokens.cyanAccent.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(3),
+                                border: Border.all(
+                                  color: tokens.cyanAccent.withValues(alpha: 0.4),
+                                  width: 0.8,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.verified_rounded, size: 9, color: tokens.cyanAccent),
+                                  const SizedBox(width: 3),
+                                  Text(
+                                    'USDA ${food.fdcId != null ? "#${food.fdcId}" : "VERIFIED"}',
+                                    style: TextStyle(
+                                      fontFamily: AppTypography.displayFontFamily,
+                                      fontSize: 8.5,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 0.4,
+                                      color: tokens.cyanAccent,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          _buildBudgetBadge(tokens, food.budgetTier),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+
+                      // Food Name
+                      Text(
+                        food.name,
+                        style: TextStyle(
+                          fontFamily: AppTypography.displayFontFamily,
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -0.2,
+                          color: tokens.textPrimary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+
+                      // Serving description
+                      Text(
+                        food.servingDescription.isNotEmpty
+                            ? food.servingDescription
+                            : '${food.servingWeightGrams.toInt()}g per standard serving',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: tokens.textSecondary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
                 ),
-              ),
+
+                // Calories header badge
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      '${food.caloriesPer100g.toInt()}',
+                      style: TextStyle(
+                        fontFamily: AppTypography.displayFontFamily,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.5,
+                        color: tokens.textPrimary,
+                      ),
+                    ),
+                    Text(
+                      'KCAL / 100G',
+                      style: TextStyle(
+                        fontFamily: AppTypography.displayFontFamily,
+                        fontSize: 8,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.6,
+                        color: tokens.textMuted,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            const SizedBox(height: 10),
+
+            // Telemetry Macro Chips Row
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: tokens.card.withValues(alpha: 0.6),
+                borderRadius: BorderRadius.circular(tokens.radiusSm),
+                border: Border.all(color: tokens.borderSubtle.withValues(alpha: 0.5), width: 1),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(food.name,
-                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                  const SizedBox(height: 4),
-                  Text('per 100g',
-                    style: TextStyle(fontSize: 11, color: Colors.white54)),
-                  const SizedBox(height: 4),
+                  _MacroTelemetryChip(
+                    label: 'PROTEIN',
+                    value: '${food.proteinPer100g.toStringAsFixed(1)}g',
+                    color: tokens.protein,
+                  ),
+                  _MacroTelemetryChip(
+                    label: 'CARBS',
+                    value: '${food.carbsPer100g.toStringAsFixed(1)}g',
+                    color: tokens.carbs,
+                  ),
+                  _MacroTelemetryChip(
+                    label: 'FATS',
+                    value: '${food.fatPer100g.toStringAsFixed(1)}g',
+                    color: tokens.fats,
+                  ),
                   Row(
                     children: [
-                      _MacroChip('P', food.proteinPer100g, const Color(0xFF4FC3F7)),
-                      const SizedBox(width: 6),
-                      _MacroChip('C', food.carbsPer100g, const Color(0xFFFFB74D)),
-                      const SizedBox(width: 6),
-                      _MacroChip('F', food.fatPer100g, const Color(0xFFF06292)),
+                      Text(
+                        'CONFIGURE',
+                        style: TextStyle(
+                          fontFamily: AppTypography.displayFontFamily,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.8,
+                          color: tokens.cyanAccent,
+                        ),
+                      ),
+                      const SizedBox(width: 2),
+                      Icon(Icons.chevron_right_rounded, size: 14, color: tokens.cyanAccent),
                     ],
                   ),
                 ],
               ),
             ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBudgetBadge(AppThemeTokens tokens, BudgetLevel tier) {
+    Color color;
+    String label;
+    switch (tier) {
+      case BudgetLevel.low:
+        color = const Color(0xFF00E676);
+        label = 'BUDGET \$';
+        break;
+      case BudgetLevel.medium:
+        color = tokens.cyanAccent;
+        label = 'MODERATE \$\$';
+        break;
+      case BudgetLevel.high:
+        color = const Color(0xFFFFB300);
+        label = 'PREMIUM \$\$\$';
+        break;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(3),
+        border: Border.all(color: color.withValues(alpha: 0.35), width: 0.8),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontFamily: AppTypography.displayFontFamily,
+          fontSize: 8.5,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.4,
+          color: color,
+        ),
+      ),
+    );
+  }
+}
+
+class _MacroTelemetryChip extends StatelessWidget {
+  const _MacroTelemetryChip({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  final String label;
+  final String value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = AppThemeTokens.of(context);
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 5,
+          height: 5,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 5),
+        Text(
+          '$label: ',
+          style: TextStyle(
+            fontFamily: AppTypography.displayFontFamily,
+            fontSize: 9.5,
+            fontWeight: FontWeight.w600,
+            color: tokens.textMuted,
+          ),
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            fontFamily: AppTypography.displayFontFamily,
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+            color: color,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FOOD DETAIL & QUANTITY SHEET (PORTION ENGINE + MICRONUTRIENT MATRIX)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _FoodDetailAndQuantitySheet extends StatefulWidget {
+  const _FoodDetailAndQuantitySheet({
+    required this.food,
+    required this.onConfirm,
+  });
+
+  final FoodItem food;
+  final void Function(double grams) onConfirm;
+
+  @override
+  State<_FoodDetailAndQuantitySheet> createState() =>
+      _FoodDetailAndQuantitySheetState();
+}
+
+class _FoodDetailAndQuantitySheetState
+    extends State<_FoodDetailAndQuantitySheet> {
+  bool _isServingMode = true;
+  double _servings = 1.0;
+  double _grams = 100.0;
+  late final TextEditingController _gramsController;
+
+  @override
+  void initState() {
+    super.initState();
+    _grams = widget.food.servingWeightGrams;
+    _gramsController = TextEditingController(text: _grams.toInt().toString());
+  }
+
+  @override
+  void dispose() {
+    _gramsController.dispose();
+    super.dispose();
+  }
+
+  void _setServings(double s) {
+    AppHaptics.shared.selectionChanged();
+    setState(() {
+      _servings = s;
+      _grams = (s * widget.food.servingWeightGrams).roundToDouble();
+      _gramsController.text = _grams.toInt().toString();
+    });
+  }
+
+  void _setGrams(double g) {
+    AppHaptics.shared.selectionChanged();
+    setState(() {
+      _grams = g;
+      _servings = widget.food.servingWeightGrams > 0
+          ? double.parse((g / widget.food.servingWeightGrams).toStringAsFixed(2))
+          : 1.0;
+      _gramsController.text = g.toInt().toString();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = AppThemeTokens.of(context);
+    final isUsda = widget.food.id.startsWith('usda_') || widget.food.fdcId != null;
+    final macros = widget.food.macrosForGrams(_grams);
+    final micros = widget.food.microsForGrams(_grams);
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.88,
+      minChildSize: 0.5,
+      maxChildSize: 0.95,
+      builder: (context, scrollController) {
+        return Container(
+          decoration: BoxDecoration(
+            color: tokens.canvas,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            border: Border.all(color: tokens.borderGlow.withValues(alpha: 0.4), width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: tokens.cyanAccent.withValues(alpha: 0.08),
+                blurRadius: 30,
+                spreadRadius: 2,
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              // Sheet Handle
+              Padding(
+                padding: const EdgeInsets.only(top: 12, bottom: 8),
+                child: Center(
+                  child: Container(
+                    width: 44,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: tokens.borderSubtle,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+              ),
+
+              // Scrollable Sheet Content
+              Expanded(
+                child: ListView(
+                  controller: scrollController,
+                  padding: const EdgeInsets.fromLTRB(20, 6, 20, 30),
+                  children: [
+                    // Header title & badges
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(tokens.radiusSm),
+                          child: CachedNetworkImage(
+                            imageUrl: widget.food.imageUrl,
+                            width: 60,
+                            height: 60,
+                            fit: BoxFit.cover,
+                            placeholder: (_, _) => Container(
+                              width: 60,
+                              height: 60,
+                              color: tokens.panel,
+                              child: Icon(Icons.restaurant_rounded, color: tokens.cyanAccent),
+                            ),
+                            errorWidget: (_, _, _) => Container(
+                              width: 60,
+                              height: 60,
+                              color: tokens.panel,
+                              child: Icon(Icons.restaurant_rounded, color: tokens.cyanAccent),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  if (isUsda)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      margin: const EdgeInsets.only(right: 6),
+                                      decoration: BoxDecoration(
+                                        color: tokens.cyanAccent.withValues(alpha: 0.15),
+                                        borderRadius: BorderRadius.circular(4),
+                                        border: Border.all(
+                                          color: tokens.cyanAccent.withValues(alpha: 0.5),
+                                          width: 1,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        'USDA FDC #${widget.food.fdcId ?? "VERIFIED"}',
+                                        style: TextStyle(
+                                          fontFamily: AppTypography.displayFontFamily,
+                                          fontSize: 9,
+                                          fontWeight: FontWeight.w700,
+                                          letterSpacing: 0.5,
+                                          color: tokens.cyanAccent,
+                                        ),
+                                      ),
+                                    ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: tokens.panel,
+                                      borderRadius: BorderRadius.circular(4),
+                                      border: Border.all(color: tokens.borderSubtle, width: 1),
+                                    ),
+                                    child: Text(
+                                      widget.food.category.displayName.toUpperCase(),
+                                      style: TextStyle(
+                                        fontFamily: AppTypography.displayFontFamily,
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.w700,
+                                        color: tokens.textSecondary,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                widget.food.name,
+                                style: TextStyle(
+                                  fontFamily: AppTypography.displayFontFamily,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: -0.4,
+                                  color: tokens.textPrimary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Factual Scientific Description Card
+                    if (widget.food.description.isNotEmpty) ...[
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: tokens.panel,
+                          borderRadius: BorderRadius.circular(tokens.radiusSm),
+                          border: Border.all(color: tokens.borderSubtle, width: 1),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.info_outline_rounded, size: 14, color: tokens.cyanAccent),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'SCIENTIFIC PROFILE & BIOAVAILABILITY',
+                                  style: TextStyle(
+                                    fontFamily: AppTypography.displayFontFamily,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.8,
+                                    color: tokens.cyanAccent,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              widget.food.description,
+                              style: TextStyle(
+                                fontSize: 12,
+                                height: 1.45,
+                                color: tokens.textSecondary,
+                              ),
+                            ),
+                            if (widget.food.source.isNotEmpty) ...[
+                              const SizedBox(height: 6),
+                              Text(
+                                'Data Provenance: ${widget.food.source}',
+                                style: TextStyle(
+                                  fontFamily: AppTypography.displayFontFamily,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w600,
+                                  color: tokens.textMuted,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                    ],
+
+                    // Portion Control Engine (Mode toggle: By Serving / By Grams)
+                    Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              AppHaptics.shared.selectionChanged();
+                              setState(() => _isServingMode = true);
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 9),
+                              decoration: BoxDecoration(
+                                color: _isServingMode
+                                    ? tokens.cyanAccent.withValues(alpha: 0.15)
+                                    : tokens.panel,
+                                borderRadius: BorderRadius.circular(tokens.radiusSm),
+                                border: Border.all(
+                                  color: _isServingMode ? tokens.cyanAccent : tokens.borderSubtle,
+                                  width: _isServingMode ? 1.5 : 1,
+                                ),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  'BY STANDARD SERVING',
+                                  style: TextStyle(
+                                    fontFamily: AppTypography.displayFontFamily,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.6,
+                                    color: _isServingMode ? tokens.cyanAccent : tokens.textMuted,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              AppHaptics.shared.selectionChanged();
+                              setState(() => _isServingMode = false);
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 9),
+                              decoration: BoxDecoration(
+                                color: !_isServingMode
+                                    ? tokens.cyanAccent.withValues(alpha: 0.15)
+                                    : tokens.panel,
+                                borderRadius: BorderRadius.circular(tokens.radiusSm),
+                                border: Border.all(
+                                  color: !_isServingMode ? tokens.cyanAccent : tokens.borderSubtle,
+                                  width: !_isServingMode ? 1.5 : 1,
+                                ),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  'CUSTOM GRAM WEIGHT',
+                                  style: TextStyle(
+                                    fontFamily: AppTypography.displayFontFamily,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.6,
+                                    color: !_isServingMode ? tokens.cyanAccent : tokens.textMuted,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Portion Selectors
+                    if (_isServingMode) ...[
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: tokens.panel,
+                          borderRadius: BorderRadius.circular(tokens.radiusSm),
+                          border: Border.all(color: tokens.borderSubtle, width: 1),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'PORTION DEFINITION',
+                                  style: TextStyle(
+                                    fontFamily: AppTypography.displayFontFamily,
+                                    fontSize: 9.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: tokens.textSecondary,
+                                    letterSpacing: 0.6,
+                                  ),
+                                ),
+                                Text(
+                                  '${_grams.toInt()}g total',
+                                  style: TextStyle(
+                                    fontFamily: AppTypography.displayFontFamily,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    color: tokens.cyanAccent,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              widget.food.servingDescription,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: tokens.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [0.5, 1.0, 1.5, 2.0, 3.0].map((s) {
+                                final isSelected = (_servings - s).abs() < 0.05;
+                                return GestureDetector(
+                                  onTap: () => _setServings(s),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                    decoration: BoxDecoration(
+                                      color: isSelected
+                                          ? tokens.cyanAccent
+                                          : tokens.card,
+                                      borderRadius: BorderRadius.circular(tokens.radiusSm),
+                                      border: Border.all(
+                                        color: isSelected ? tokens.cyanAccent : tokens.borderSubtle,
+                                        width: 1,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      '${s}x',
+                                      style: TextStyle(
+                                        fontFamily: AppTypography.displayFontFamily,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                        color: isSelected ? Colors.black : tokens.textPrimary,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ] else ...[
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Container(
+                              height: 52,
+                              decoration: BoxDecoration(
+                                color: tokens.panel,
+                                borderRadius: BorderRadius.circular(tokens.radiusSm),
+                                border: Border.all(color: tokens.borderSubtle, width: 1),
+                              ),
+                              child: TextField(
+                                controller: _gramsController,
+                                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                style: TextStyle(
+                                  fontFamily: AppTypography.displayFontFamily,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: tokens.textPrimary,
+                                ),
+                                decoration: InputDecoration(
+                                  labelText: 'WEIGHT IN GRAMS',
+                                  labelStyle: TextStyle(
+                                    fontFamily: AppTypography.displayFontFamily,
+                                    fontSize: 10,
+                                    color: tokens.textMuted,
+                                    letterSpacing: 0.6,
+                                  ),
+                                  suffixText: 'g',
+                                  suffixStyle: TextStyle(
+                                    fontFamily: AppTypography.displayFontFamily,
+                                    fontWeight: FontWeight.w700,
+                                    color: tokens.cyanAccent,
+                                  ),
+                                  border: InputBorder.none,
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                ),
+                                onChanged: (v) {
+                                  final parsed = double.tryParse(v);
+                                  if (parsed != null && parsed > 0) {
+                                    setState(() {
+                                      _grams = parsed;
+                                      _servings = widget.food.servingWeightGrams > 0
+                                          ? double.parse(
+                                              (parsed / widget.food.servingWeightGrams)
+                                                  .toStringAsFixed(2))
+                                          : 1.0;
+                                    });
+                                  }
+                                },
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          ...[50.0, 100.0, 150.0, 200.0].map((g) {
+                            final isSel = (_grams - g).abs() < 1.0;
+                            return Padding(
+                              padding: const EdgeInsets.only(left: 4),
+                              child: GestureDetector(
+                                onTap: () => _setGrams(g),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
+                                  decoration: BoxDecoration(
+                                    color: isSel ? tokens.cyanAccent : tokens.panel,
+                                    borderRadius: BorderRadius.circular(tokens.radiusSm),
+                                    border: Border.all(
+                                      color: isSel ? tokens.cyanAccent : tokens.borderSubtle,
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    '${g.toInt()}g',
+                                    style: TextStyle(
+                                      fontFamily: AppTypography.displayFontFamily,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w700,
+                                      color: isSel ? Colors.black : tokens.textSecondary,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          }),
+                        ],
+                      ),
+                    ],
+                    const SizedBox(height: 20),
+
+                    // Scaled Macro Telemetry Gauges (Live)
+                    Text(
+                      'SCALED PROTOCOL MACROS (${_grams.toInt()}G)',
+                      style: TextStyle(
+                        fontFamily: AppTypography.displayFontFamily,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.8,
+                        color: tokens.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        _MacroGaugeCard(
+                          title: 'CALORIES',
+                          value: '${macros.calories.toStringAsFixed(0)}',
+                          unit: 'kcal',
+                          color: const Color(0xFFFFD54F),
+                        ),
+                        const SizedBox(width: 8),
+                        _MacroGaugeCard(
+                          title: 'PROTEIN',
+                          value: macros.protein.toStringAsFixed(1),
+                          unit: 'g',
+                          color: tokens.protein,
+                        ),
+                        const SizedBox(width: 8),
+                        _MacroGaugeCard(
+                          title: 'CARBS',
+                          value: macros.carbs.toStringAsFixed(1),
+                          unit: 'g',
+                          color: tokens.carbs,
+                        ),
+                        const SizedBox(width: 8),
+                        _MacroGaugeCard(
+                          title: 'FATS',
+                          value: macros.fat.toStringAsFixed(1),
+                          unit: 'g',
+                          color: tokens.fats,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 22),
+
+                    // Authoritative Micronutrient Matrix
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: tokens.panel,
+                        borderRadius: BorderRadius.circular(tokens.radiusSm),
+                        border: Border.all(color: tokens.borderSubtle, width: 1),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'EXACT MICRONUTRIENT TELEMETRY',
+                                style: TextStyle(
+                                  fontFamily: AppTypography.displayFontFamily,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.8,
+                                  color: tokens.cyanAccent,
+                                ),
+                              ),
+                              Text(
+                                'USDA AUTHORITATIVE',
+                                style: TextStyle(
+                                  fontFamily: AppTypography.displayFontFamily,
+                                  fontSize: 8.5,
+                                  fontWeight: FontWeight.w600,
+                                  color: tokens.textMuted,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Missing measurements are explicitly flagged as "-- No data" rather than fake zeros.',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: tokens.textMuted,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          _buildMicrosGrid(tokens, micros),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 26),
+
+                    // Log Action Button
+                    AppButton(
+                      label: 'LOG ${_grams.toInt()}G (${macros.calories.toInt()} KCAL)',
+                      icon: const Icon(Icons.check_circle_rounded, size: 20),
+                      isFullWidth: true,
+                      onPressed: () {
+                        AppHaptics.shared.buttonPress();
+                        widget.onConfirm(_grams);
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildMicrosGrid(AppThemeTokens tokens, FoodMicros? micros) {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: _MicroRow(
+                label: 'Dietary Fiber',
+                amount: micros?.fiberGrams,
+                unit: 'g',
+                tokens: tokens,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _MicroRow(
+                label: 'Total Sugars',
+                amount: micros?.sugarGrams,
+                unit: 'g',
+                tokens: tokens,
+              ),
+            ),
+          ],
+        ),
+        const Divider(height: 14, color: Colors.white10),
+        Row(
+          children: [
+            Expanded(
+              child: _MicroRow(
+                label: 'Sodium',
+                amount: micros?.sodiumMg,
+                unit: 'mg',
+                tokens: tokens,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _MicroRow(
+                label: 'Potassium',
+                amount: micros?.potassiumMg,
+                unit: 'mg',
+                tokens: tokens,
+              ),
+            ),
+          ],
+        ),
+        const Divider(height: 14, color: Colors.white10),
+        Row(
+          children: [
+            Expanded(
+              child: _MicroRow(
+                label: 'Calcium',
+                amount: micros?.calciumMg,
+                unit: 'mg',
+                tokens: tokens,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _MicroRow(
+                label: 'Iron',
+                amount: micros?.ironMg,
+                unit: 'mg',
+                decimals: 2,
+                tokens: tokens,
+              ),
+            ),
+          ],
+        ),
+        const Divider(height: 14, color: Colors.white10),
+        Row(
+          children: [
+            Expanded(
+              child: _MicroRow(
+                label: 'Vitamin D',
+                amount: micros?.vitaminDMcg,
+                unit: 'mcg',
+                decimals: 1,
+                tokens: tokens,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _MicroRow(
+                label: 'Saturated Fat',
+                amount: micros?.saturatedFatGrams,
+                unit: 'g',
+                decimals: 1,
+                tokens: tokens,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _MicroRow extends StatelessWidget {
+  const _MicroRow({
+    required this.label,
+    required this.amount,
+    required this.unit,
+    required this.tokens,
+    this.decimals = 0,
+  });
+
+  final String label;
+  final double? amount;
+  final String unit;
+  final AppThemeTokens tokens;
+  final int decimals;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasData = amount != null;
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            color: tokens.textSecondary,
+          ),
+        ),
+        Text(
+          hasData
+              ? '${decimals == 0 ? amount!.toStringAsFixed(0) : amount!.toStringAsFixed(decimals)} $unit'
+              : '-- No data',
+          style: TextStyle(
+            fontFamily: AppTypography.displayFontFamily,
+            fontSize: 10.5,
+            fontWeight: hasData ? FontWeight.w700 : FontWeight.w500,
+            color: hasData ? tokens.textPrimary : tokens.textMuted,
+            letterSpacing: 0.3,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _MacroGaugeCard extends StatelessWidget {
+  const _MacroGaugeCard({
+    required this.title,
+    required this.value,
+    required this.unit,
+    required this.color,
+  });
+
+  final String title;
+  final String value;
+  final String unit;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = AppThemeTokens.of(context);
+
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+        decoration: BoxDecoration(
+          color: tokens.panel,
+          borderRadius: BorderRadius.circular(tokens.radiusSm),
+          border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
+        ),
+        child: Column(
+          children: [
+            Text(
+              title,
+              style: TextStyle(
+                fontFamily: AppTypography.displayFontFamily,
+                fontSize: 8.5,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.6,
+                color: tokens.textMuted,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
               children: [
-                Text('${food.caloriesPer100g.toInt()}',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                Text('kcal', style: TextStyle(fontSize: 10, color: Colors.white54)),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontFamily: AppTypography.displayFontFamily,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.5,
+                    color: color,
+                  ),
+                ),
+                const SizedBox(width: 2),
+                Text(
+                  unit,
+                  style: TextStyle(
+                    fontFamily: AppTypography.displayFontFamily,
+                    fontSize: 8.5,
+                    fontWeight: FontWeight.w600,
+                    color: color.withValues(alpha: 0.8),
+                  ),
+                ),
               ],
             ),
           ],
@@ -269,225 +1631,90 @@ class _FoodListTile extends StatelessWidget {
   }
 }
 
-class _MacroChip extends StatelessWidget {
-  const _MacroChip(this.label, this.value, this.color);
-  final String label;
-  final double value;
-  final Color color;
+// ─────────────────────────────────────────────────────────────────────────────
+// EMPTY SEARCH STATE
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _EmptySearchState extends StatelessWidget {
+  const _EmptySearchState({required this.query, required this.onReset});
+  final String query;
+  final VoidCallback onReset;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Text('$label ${value.toStringAsFixed(1)}g',
-        style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w500)),
-    );
-  }
-}
+    final tokens = AppThemeTokens.of(context);
 
-/// Bottom sheet for entering quantity with animated macro preview.
-class _QuantitySheet extends StatefulWidget {
-  const _QuantitySheet({required this.food, required this.onConfirm});
-  final FoodItem food;
-  final void Function(double grams) onConfirm;
-
-  @override
-  State<_QuantitySheet> createState() => _QuantitySheetState();
-}
-
-class _QuantitySheetState extends State<_QuantitySheet> {
-  double _grams = 100;
-  final _controller = TextEditingController(text: '100');
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final macros = widget.food.macrosForGrams(_grams);
-
-    return Container(
-      padding: EdgeInsets.only(
-        left: 24, right: 24, top: 24,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
-      ),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1A1A2E),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border.all(color: Colors.white12),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: CachedNetworkImage(
-                  imageUrl: widget.food.imageUrl,
-                  width: 48, height: 48, fit: BoxFit.cover,
-                  errorWidget: (_, _, _) => Container(
-                    width: 48, height: 48,
-                    color: Colors.white.withOpacity(0.05),
-                    child: const Icon(Icons.restaurant, color: Colors.white24),
-                  ),
-                ),
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: tokens.panel,
+                shape: BoxShape.circle,
+                border: Border.all(color: tokens.borderSubtle, width: 1),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(widget.food.name,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                    Text(widget.food.category.displayName,
-                      style: TextStyle(fontSize: 12, color: Colors.white54)),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          // Quantity input
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _controller,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: InputDecoration(
-                    labelText: 'Grams',
-                    suffixText: 'g',
-                    filled: true,
-                    fillColor: Colors.white.withOpacity(0.06),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                  onChanged: (v) {
-                    final parsed = double.tryParse(v);
-                    if (parsed != null && parsed > 0) {
-                      setState(() => _grams = parsed);
-                    }
-                  },
-                ),
-              ),
-              const SizedBox(width: 12),
-              // Quick amount buttons
-              ...([50.0, 100.0, 150.0, 200.0]).map((g) => Padding(
-                padding: const EdgeInsets.only(left: 6),
-                child: GestureDetector(
-                  onTap: () {
-                    setState(() => _grams = g);
-                    _controller.text = g.toInt().toString();
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: _grams == g
-                          ? Theme.of(context).colorScheme.primary.withOpacity(0.2)
-                          : Colors.white.withOpacity(0.06),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: _grams == g
-                            ? Theme.of(context).colorScheme.primary
-                            : Colors.white12,
-                      ),
-                    ),
-                    child: Text('${g.toInt()}g',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: _grams == g
-                            ? Theme.of(context).colorScheme.primary
-                            : Colors.white54,
-                      )),
-                  ),
-                ),
-              )),
-            ],
-          ),
-          const SizedBox(height: 20),
-          // Animated macro display
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 200),
-            child: _MacroRow(macros: macros, key: ValueKey(_grams)),
-          ),
-          const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () => widget.onConfirm(_grams),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              child: Text('Add ${_grams.toInt()}g of ${widget.food.name}'),
+              child: Icon(Icons.search_off_rounded, size: 36, color: tokens.textMuted),
             ),
-          ),
-        ],
+            const SizedBox(height: 16),
+            Text(
+              'NO FOODS FOUND',
+              style: TextStyle(
+                fontFamily: AppTypography.displayFontFamily,
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.6,
+                color: tokens.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              query.isNotEmpty
+                  ? 'No verified food matches "$query" under the active category/budget filter.'
+                  : 'No verified items found with active filter selections.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 12, color: tokens.textSecondary, height: 1.4),
+            ),
+            const SizedBox(height: 16),
+            TextButton.icon(
+              onPressed: onReset,
+              icon: Icon(Icons.refresh_rounded, size: 16, color: tokens.cyanAccent),
+              label: Text(
+                'RESET FILTERS',
+                style: TextStyle(
+                  fontFamily: AppTypography.displayFontFamily,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.8,
+                  color: tokens.cyanAccent,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
-class _MacroRow extends StatelessWidget {
-  const _MacroRow({required this.macros, super.key});
-  final FoodMacros macros;
+// ─────────────────────────────────────────────────────────────────────────────
+// CUSTOM FOOD DIALOG
+// ─────────────────────────────────────────────────────────────────────────────
 
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceAround,
-      children: [
-        _MacroStat('Calories', macros.calories.toStringAsFixed(0), 'kcal', const Color(0xFFFFD54F)),
-        _MacroStat('Protein', macros.protein.toStringAsFixed(1), 'g', const Color(0xFF4FC3F7)),
-        _MacroStat('Carbs', macros.carbs.toStringAsFixed(1), 'g', const Color(0xFFFFB74D)),
-        _MacroStat('Fat', macros.fat.toStringAsFixed(1), 'g', const Color(0xFFF06292)),
-      ],
-    ).animate().fadeIn(duration: const Duration(milliseconds: 150)).scale(begin: const Offset(0.95, 0.95));
-  }
-}
-
-class _MacroStat extends StatelessWidget {
-  const _MacroStat(this.label, this.value, this.unit, this.color);
-  final String label;
-  final String value;
-  final String unit;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(value,
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color)),
-        Text(unit, style: TextStyle(fontSize: 10, color: color.withOpacity(0.7))),
-        const SizedBox(height: 2),
-        Text(label, style: const TextStyle(fontSize: 11, color: Colors.white54)),
-      ],
-    );
-  }
-}
-
-/// Dialog for creating custom food with validation
 class _CreateCustomFoodDialog extends ConsumerStatefulWidget {
   const _CreateCustomFoodDialog({required this.onFoodCreated});
   final void Function(FoodItemFull food) onFoodCreated;
 
   @override
-  ConsumerState<_CreateCustomFoodDialog> createState() => _CreateCustomFoodDialogState();
+  ConsumerState<_CreateCustomFoodDialog> createState() =>
+      _CreateCustomFoodDialogState();
 }
 
-class _CreateCustomFoodDialogState extends ConsumerState<_CreateCustomFoodDialog> {
+class _CreateCustomFoodDialogState
+    extends ConsumerState<_CreateCustomFoodDialog> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _caloriesController = TextEditingController();
@@ -509,264 +1736,264 @@ class _CreateCustomFoodDialogState extends ConsumerState<_CreateCustomFoodDialog
 
   String? _validateRequired(String? value, String fieldName) {
     if (value == null || value.trim().isEmpty) {
-      return '$fieldName is required';
+      return '$fieldName required';
     }
     return null;
   }
 
   String? _validateNumber(String? value, String fieldName) {
     if (value == null || value.trim().isEmpty) {
-      return '$fieldName is required';
+      return '$fieldName required';
     }
     final number = double.tryParse(value);
-    if (number == null) {
-      return 'Enter a valid number';
-    }
-    if (number < 0) {
-      return '$fieldName cannot be negative';
-    }
+    if (number == null) return 'Invalid number';
+    if (number < 0) return 'Cannot be negative';
     return null;
   }
 
   Future<void> _saveCustomFood() async {
     if (!_formKey.currentState!.validate()) return;
-
+    AppHaptics.shared.buttonPress();
     setState(() => _isSaving = true);
 
     try {
-      // Create custom food entity
       final customFood = FoodItemFull(
         id: 'custom_${const Uuid().v4()}',
         name: _nameController.text.trim(),
         category: _selectedCategory.displayName.toLowerCase(),
+        imageUrl: '',
         macros: MacrosPer100g(
           calories: double.parse(_caloriesController.text),
           protein: double.parse(_proteinController.text),
           carbs: double.parse(_carbsController.text),
           fats: double.parse(_fatController.text),
         ),
-        micros: MicrosPer100g(
+        micros: const MicrosPer100g(
           fiber: 0,
           sugar: 0,
           sodium: 0,
           potassium: 0,
         ),
-        vitamins: VitaminsPer100g(
+        vitamins: const VitaminsPer100g(
           vitaminA: 0,
           vitaminB: 0,
           vitaminC: 0,
           vitaminD: 0,
           vitaminE: 0,
         ),
-        minerals: MineralsPer100g(
+        minerals: const MineralsPer100g(
           calcium: 0,
           iron: 0,
           magnesium: 0,
           zinc: 0,
         ),
-        imageUrl: '',
-        dietaryTags: [],
       );
 
-      // Add to custom foods via notifier (instant UI update)
       await ref.read(customFoodsProvider.notifier).addCustomFood(customFood);
 
       if (mounted) {
+        Navigator.pop(context);
         widget.onFoodCreated(customFood);
-        Navigator.of(context).pop();
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to create custom food: $e'),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
+            content: Text('Failed to save fuel: $e'),
+            backgroundColor: Colors.redAccent,
           ),
         );
       }
     } finally {
-      if (mounted) {
-        setState(() => _isSaving = false);
-      }
+      if (mounted) setState(() => _isSaving = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      backgroundColor: const Color(0xFF1A1A2E),
-      title: const Text('Create Custom Food'),
-      content: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
+    final tokens = AppThemeTokens.of(context);
+
+    return Dialog(
+      backgroundColor: tokens.canvas,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(tokens.radiusMd),
+        side: BorderSide(color: tokens.borderGlow.withValues(alpha: 0.5), width: 1.5),
+      ),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Form(
+          key: _formKey,
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Name field
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'NEW FUEL ENTRY',
+                    style: TextStyle(
+                      fontFamily: AppTypography.displayFontFamily,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -0.2,
+                      color: tokens.textPrimary,
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.close_rounded, color: tokens.textMuted, size: 20),
+                    onPressed: () => Navigator.pop(context),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Define nutritional values per 100 grams.',
+                style: TextStyle(fontSize: 11, color: tokens.textSecondary),
+              ),
+              const SizedBox(height: 16),
+
+              // Name
               TextFormField(
                 controller: _nameController,
-                decoration: InputDecoration(
-                  labelText: 'Food Name',
-                  hintText: 'e.g., Homemade Protein Shake',
-                  filled: true,
-                  fillColor: Colors.white.withOpacity(0.06),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-                textCapitalization: TextCapitalization.words,
-                validator: (v) => _validateRequired(v, 'Food name'),
+                style: TextStyle(color: tokens.textPrimary, fontSize: 13),
+                decoration: _dialogInputDecoration(tokens, 'Food Name', 'e.g. Homemade Protein Bar'),
+                validator: (v) => _validateRequired(v, 'Name'),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
 
-              // Category dropdown
+              // Category selector
               DropdownButtonFormField<FoodCategory>(
-                initialValue: _selectedCategory,
-                decoration: InputDecoration(
-                  labelText: 'Category',
-                  filled: true,
-                  fillColor: Colors.white.withOpacity(0.06),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-                items: FoodCategory.values.map((category) {
+                value: _selectedCategory,
+                dropdownColor: tokens.panel,
+                style: TextStyle(color: tokens.textPrimary, fontSize: 13),
+                decoration: _dialogInputDecoration(tokens, 'Category', ''),
+                items: FoodCategory.values.map((c) {
                   return DropdownMenuItem(
-                    value: category,
-                    child: Text(category.displayName),
+                    value: c,
+                    child: Text(c.displayName),
                   );
                 }).toList(),
-                onChanged: (value) {
-                  if (value != null) {
-                    setState(() => _selectedCategory = value);
-                  }
+                onChanged: (v) {
+                  if (v != null) setState(() => _selectedCategory = v);
                 },
-              ),
-              const SizedBox(height: 16),
-
-              // Macros section
-              const Text(
-                'Macros (per 100g)',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white70,
-                ),
               ),
               const SizedBox(height: 12),
 
               // Calories
               TextFormField(
                 controller: _caloriesController,
-                decoration: InputDecoration(
-                  labelText: 'Calories',
-                  suffixText: 'kcal',
-                  filled: true,
-                  fillColor: Colors.white.withOpacity(0.06),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
-                ],
+                style: TextStyle(color: tokens.textPrimary, fontSize: 13),
+                decoration: _dialogInputDecoration(tokens, 'Calories per 100g', 'kcal'),
                 validator: (v) => _validateNumber(v, 'Calories'),
               ),
               const SizedBox(height: 12),
 
-              // Protein
-              TextFormField(
-                controller: _proteinController,
-                decoration: InputDecoration(
-                  labelText: 'Protein',
-                  suffixText: 'g',
-                  filled: true,
-                  fillColor: Colors.white.withOpacity(0.06),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
+              // Macros row
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _proteinController,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      style: TextStyle(color: tokens.protein, fontSize: 13, fontWeight: FontWeight.w700),
+                      decoration: _dialogInputDecoration(tokens, 'Protein (g)', 'g'),
+                      validator: (v) => _validateNumber(v, 'Protein'),
+                    ),
                   ),
-                ),
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _carbsController,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      style: TextStyle(color: tokens.carbs, fontSize: 13, fontWeight: FontWeight.w700),
+                      decoration: _dialogInputDecoration(tokens, 'Carbs (g)', 'g'),
+                      validator: (v) => _validateNumber(v, 'Carbs'),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _fatController,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      style: TextStyle(color: tokens.fats, fontSize: 13, fontWeight: FontWeight.w700),
+                      decoration: _dialogInputDecoration(tokens, 'Fat (g)', 'g'),
+                      validator: (v) => _validateNumber(v, 'Fat'),
+                    ),
+                  ),
                 ],
-                validator: (v) => _validateNumber(v, 'Protein'),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 22),
 
-              // Carbs
-              TextFormField(
-                controller: _carbsController,
-                decoration: InputDecoration(
-                  labelText: 'Carbs',
-                  suffixText: 'g',
-                  filled: true,
-                  fillColor: Colors.white.withOpacity(0.06),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
+              // Action buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text(
+                        'CANCEL',
+                        style: TextStyle(
+                          fontFamily: AppTypography.displayFontFamily,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: tokens.textMuted,
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
-                ],
-                validator: (v) => _validateNumber(v, 'Carbs'),
-              ),
-              const SizedBox(height: 12),
-
-              // Fat
-              TextFormField(
-                controller: _fatController,
-                decoration: InputDecoration(
-                  labelText: 'Fat',
-                  suffixText: 'g',
-                  filled: true,
-                  fillColor: Colors.white.withOpacity(0.06),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
+                  const SizedBox(width: 10),
+                  Expanded(
+                    flex: 2,
+                    child: AppButton(
+                      label: _isSaving ? 'SAVING...' : 'SAVE FUEL',
+                      icon: const Icon(Icons.check_rounded, size: 18),
+                      onPressed: _isSaving ? null : _saveCustomFood,
+                    ),
                   ),
-                ),
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
                 ],
-                validator: (v) => _validateNumber(v, 'Fat'),
               ),
             ],
           ),
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: _isSaving ? null : () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
-        ),
-        ElevatedButton(
-          onPressed: _isSaving ? null : _saveCustomFood,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Theme.of(context).colorScheme.primary,
-          ),
-          child: _isSaving
-              ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  ),
-                )
-              : const Text('Create'),
-        ),
-      ],
+    );
+  }
+
+  InputDecoration _dialogInputDecoration(AppThemeTokens tokens, String label, String hint) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle: TextStyle(
+        fontFamily: AppTypography.displayFontFamily,
+        fontSize: 10,
+        color: tokens.textMuted,
+        letterSpacing: 0.5,
+      ),
+      hintText: hint,
+      hintStyle: TextStyle(color: tokens.textMuted.withValues(alpha: 0.5), fontSize: 12),
+      filled: true,
+      fillColor: tokens.panel,
+      isDense: true,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(tokens.radiusSm),
+        borderSide: BorderSide(color: tokens.borderSubtle, width: 1),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(tokens.radiusSm),
+        borderSide: BorderSide(color: tokens.cyanAccent, width: 1.5),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(tokens.radiusSm),
+        borderSide: BorderSide(color: tokens.error, width: 1),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(tokens.radiusSm),
+        borderSide: BorderSide(color: tokens.error, width: 1.5),
+      ),
     );
   }
 }
