@@ -14,6 +14,7 @@ import 'core/router/app_router.dart';
 import 'core/utils/hive_manager.dart';
 import 'features/workout/presentation/managers/workout_state_manager.dart';
 import 'features/workout/presentation/providers/workout_providers.dart';
+import 'features/workout/presentation/providers/rest_timer_provider.dart';
 import 'features/notifications/domain/services/notification_service.dart';
 import 'features/settings/domain/usecases/delete_account_use_case.dart';
 import 'features/ai/presentation/providers/global_ai_provider.dart';
@@ -140,9 +141,22 @@ class _AppWithStateRestoreState extends ConsumerState<_AppWithStateRestore>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    // Attempt to restore a previously active workout session.
+    // Attempt to restore a previously active workout session and rest timer.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(workoutNotifierProvider.notifier).restoreState();
+      ref.read(restTimerProvider.notifier).sync();
+
+      NotificationService().setOnNotificationTap((payload) {
+        if (payload == 'rest_timer') {
+          ref.read(routerProvider).go(AppRoutes.workoutActive);
+        }
+      });
+
+      NotificationService().getLaunchNotificationPayload().then((payload) {
+        if (payload == 'rest_timer') {
+          ref.read(routerProvider).go(AppRoutes.workoutActive);
+        }
+      });
       
       // Initialize Global AI Provider
       ref.read(globalAIProvider.notifier).init().catchError((e) {
@@ -166,6 +180,8 @@ class _AppWithStateRestoreState extends ConsumerState<_AppWithStateRestore>
       // Invalidate workout history so it re-fetches when the app comes back
       // to the foreground (e.g. after syncing data in another app).
       ref.read(workoutRefreshCounterProvider.notifier).state++;
+      // Sync rest timer from absolute timestamp (TRN-02)
+      ref.read(restTimerProvider.notifier).sync();
     }
   }
 

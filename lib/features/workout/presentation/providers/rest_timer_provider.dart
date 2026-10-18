@@ -1,7 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/services/rest_timer_service.dart';
 import '../../../../core/providers/analytics_provider.dart';
 import '../../../../shared/presentation/services/app_haptics.dart';
+import '../../../notifications/presentation/providers/notification_providers.dart';
+import 'workout_providers.dart';
 
 /// State for rest timer
 class RestTimerState {
@@ -10,6 +13,7 @@ class RestTimerState {
   final bool isRunning;
   final bool isPaused;
   final bool isComplete;
+  final DateTime? targetEndTime;
 
   RestTimerState({
     this.remainingSeconds = 0,
@@ -17,6 +21,7 @@ class RestTimerState {
     this.isRunning = false,
     this.isPaused = false,
     this.isComplete = false,
+    this.targetEndTime,
   });
 
   RestTimerState copyWith({
@@ -25,6 +30,8 @@ class RestTimerState {
     bool? isRunning,
     bool? isPaused,
     bool? isComplete,
+    DateTime? targetEndTime,
+    bool clearTargetEndTime = false,
   }) {
     return RestTimerState(
       remainingSeconds: remainingSeconds ?? this.remainingSeconds,
@@ -32,6 +39,8 @@ class RestTimerState {
       isRunning: isRunning ?? this.isRunning,
       isPaused: isPaused ?? this.isPaused,
       isComplete: isComplete ?? this.isComplete,
+      targetEndTime:
+          clearTargetEndTime ? null : (targetEndTime ?? this.targetEndTime),
     );
   }
 
@@ -51,7 +60,12 @@ class RestTimerState {
 
 /// Provider for rest timer service
 final restTimerServiceProvider = Provider<RestTimerService>((ref) {
-  final service = RestTimerService();
+  final notificationService = ref.watch(notificationServiceProvider);
+  final stateManager = ref.watch(workoutStateManagerProvider);
+  final service = RestTimerService(
+    notificationService: notificationService,
+    stateManager: stateManager,
+  );
   ref.onDispose(() => service.dispose());
   return service;
 });
@@ -76,6 +90,7 @@ class RestTimerNotifier extends StateNotifier<RestTimerState> {
       isRunning: true,
       isPaused: false,
       isComplete: false,
+      targetEndTime: _service.targetEndTime,
     );
     
     // Track rest timer started
@@ -83,7 +98,9 @@ class RestTimerNotifier extends StateNotifier<RestTimerState> {
       final analytics = _ref.read(analyticsServiceProvider);
       analytics.logRestTimerStarted(durationSeconds: durationSeconds);
     } catch (e) {
-      print('⚠️ [Analytics] Failed to log rest timer started: $e');
+      if (kDebugMode) {
+        debugPrint('⚠️ [Analytics] Failed to log rest timer started: $e');
+      }
     }
   }
 
@@ -99,6 +116,7 @@ class RestTimerNotifier extends StateNotifier<RestTimerState> {
     state = state.copyWith(
       isRunning: false,
       isPaused: true,
+      clearTargetEndTime: true,
     );
   }
 
@@ -108,6 +126,7 @@ class RestTimerNotifier extends StateNotifier<RestTimerState> {
     state = state.copyWith(
       isRunning: true,
       isPaused: false,
+      targetEndTime: _service.targetEndTime,
     );
   }
 
@@ -116,7 +135,8 @@ class RestTimerNotifier extends StateNotifier<RestTimerState> {
     _service.addTime(seconds);
     state = state.copyWith(
       remainingSeconds: _service.remainingSeconds,
-      totalSeconds: state.totalSeconds + seconds,
+      totalSeconds: _service.totalSeconds,
+      targetEndTime: _service.targetEndTime,
     );
   }
 
@@ -130,14 +150,31 @@ class RestTimerNotifier extends StateNotifier<RestTimerState> {
       final analytics = _ref.read(analyticsServiceProvider);
       analytics.logRestTimerSkipped(remainingSeconds: remainingSeconds);
     } catch (e) {
-      print('⚠️ [Analytics] Failed to log rest timer skipped: $e');
+      if (kDebugMode) {
+        debugPrint('⚠️ [Analytics] Failed to log rest timer skipped: $e');
+      }
     }
+  }
+
+  /// Recomputes remaining seconds from absolute target timestamp (TRN-02)
+  void sync() {
+    _service.sync();
+    state = state.copyWith(
+      remainingSeconds: _service.remainingSeconds,
+      totalSeconds: _service.totalSeconds,
+      isRunning: _service.isRunning,
+      isPaused: _service.isPaused,
+      targetEndTime: _service.targetEndTime,
+      clearTargetEndTime: _service.targetEndTime == null,
+    );
   }
 
   /// Handle tick callback
   void _onTick(int remainingSeconds) {
     state = state.copyWith(
       remainingSeconds: remainingSeconds,
+      targetEndTime: _service.targetEndTime,
+      isRunning: _service.isRunning,
     );
   }
 
@@ -150,6 +187,7 @@ class RestTimerNotifier extends StateNotifier<RestTimerState> {
       isRunning: false,
       isPaused: false,
       isComplete: true,
+      clearTargetEndTime: true,
     );
     
     // Trigger haptic feedback for rest timer completion
@@ -160,7 +198,9 @@ class RestTimerNotifier extends StateNotifier<RestTimerState> {
       final analytics = _ref.read(analyticsServiceProvider);
       analytics.logRestTimerCompleted(durationSeconds: durationSeconds);
     } catch (e) {
-      print('⚠️ [Analytics] Failed to log rest timer completed: $e');
+      if (kDebugMode) {
+        debugPrint('⚠️ [Analytics] Failed to log rest timer completed: $e');
+      }
     }
   }
 }
