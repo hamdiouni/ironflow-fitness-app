@@ -18,6 +18,7 @@ import '../../domain/entities/food_item.dart';
 import '../../domain/entities/meal.dart';
 import '../../domain/exceptions/diet_plan_exceptions.dart';
 import '../../domain/usecases/generate_diet_plan_use_case.dart';
+import '../../domain/usecases/get_budget_food_alternatives_use_case.dart';
 import '../providers/diet_plan_providers.dart';
 import '../providers/nutrition_providers.dart';
 import '../../../onboarding/presentation/providers/onboarding_provider.dart';
@@ -478,90 +479,334 @@ class _NutritionBody extends StatelessWidget {
   }
 
   void _showSwapMealDialog(BuildContext context, Meal originalMeal) {
-    final tokens = AppThemeTokens.of(context);
     showDialog<void>(
       context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: tokens.panel,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(tokens.radiusMd),
-          side: BorderSide(color: tokens.borderSubtle, width: 1),
-        ),
-        title: Text(
-          'SWAP MEAL',
-          style: TextStyle(
-            fontFamily: AppTypography.displayFontFamily,
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.5,
-            color: tokens.textPrimary,
+      builder: (_) => _SwapMealDialog(
+        originalMeal: originalMeal,
+        onDeleteMeal: onDeleteMeal,
+        onLogMeal: onLogMeal,
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Smart Budget-Aware Meal Swap Dialog
+// ---------------------------------------------------------------------------
+
+class _SwapMealDialog extends ConsumerWidget {
+  const _SwapMealDialog({
+    required this.originalMeal,
+    required this.onDeleteMeal,
+    required this.onLogMeal,
+  });
+
+  final Meal originalMeal;
+  final Future<void> Function(String mealId) onDeleteMeal;
+  final Future<void> Function(Meal meal) onLogMeal;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tokens = AppThemeTokens.of(context);
+    final profileAsync = ref.watch(userProfileProvider);
+    final userBudget = profileAsync.valueOrNull?.budget;
+
+    final alternatives = const GetBudgetFoodAlternativesUseCase().getAlternativesForMeal(
+      originalMeal,
+      preferredBudget: userBudget,
+      limit: 4,
+    );
+
+    return AlertDialog(
+      backgroundColor: tokens.canvas,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(tokens.radiusMd),
+        side: BorderSide(color: tokens.borderGlow.withValues(alpha: 0.5), width: 1.5),
+      ),
+      title: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.swap_horiz_rounded, color: tokens.cyanAccent, size: 22),
+              const SizedBox(width: 8),
+              Text(
+                'SMART MEAL SWAP',
+                style: TextStyle(
+                  fontFamily: AppTypography.displayFontFamily,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.2,
+                  color: tokens.textPrimary,
+                ),
+              ),
+            ],
           ),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Original: ${originalMeal.name}',
-              style: TextStyle(
-                fontFamily: AppTypography.bodyFontFamily,
-                fontSize: 13,
-                color: tokens.textSecondary,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Alternative meals:',
-              style: TextStyle(
-                fontFamily: AppTypography.displayFontFamily,
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: tokens.cyanAccent,
-              ),
-            ),
-            const SizedBox(height: 8),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: Icon(Icons.swap_horiz, color: tokens.cyanAccent),
-              title: Text(
-                'Alternative 1',
-                style: TextStyle(color: tokens.textPrimary, fontSize: 13),
-              ),
-              subtitle: Text(
-                'Equi-macro balance match',
-                style: TextStyle(color: tokens.textMuted, fontSize: 11),
-              ),
-              onTap: () => Navigator.of(context).pop(),
-            ),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: Icon(Icons.swap_horiz, color: tokens.cyanAccent),
-              title: Text(
-                'Alternative 2',
-                style: TextStyle(color: tokens.textPrimary, fontSize: 13),
-              ),
-              subtitle: Text(
-                'Equi-macro balance match',
-                style: TextStyle(color: tokens.textMuted, fontSize: 11),
-              ),
-              onTap: () => Navigator.of(context).pop(),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(
-              'CANCEL',
-              style: TextStyle(
-                fontFamily: AppTypography.displayFontFamily,
-                fontWeight: FontWeight.w700,
-                color: tokens.textMuted,
-              ),
+          const SizedBox(height: 4),
+          Text(
+            'BUDGET-OPTIMIZED EQUI-MACRO ALTERNATIVES',
+            style: TextStyle(
+              fontFamily: AppTypography.displayFontFamily,
+              fontSize: 9,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.0,
+              color: tokens.cyanAccent,
             ),
           ),
         ],
       ),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Original meal card
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: tokens.panel,
+                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                  border: Border.all(color: tokens.borderSubtle, width: 1),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'CURRENT LOGGED MEAL',
+                      style: TextStyle(
+                        fontFamily: AppTypography.displayFontFamily,
+                        fontSize: 8.5,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.6,
+                        color: tokens.textMuted,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      originalMeal.name,
+                      style: TextStyle(
+                        fontFamily: AppTypography.displayFontFamily,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: tokens.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Text(
+                          '${originalMeal.macros.calories.toInt()} kcal  •  ${originalMeal.macros.protein.toStringAsFixed(1)}g P  •  ${originalMeal.macros.carbs.toStringAsFixed(1)}g C  •  ${originalMeal.macros.fats.toStringAsFixed(1)}g F',
+                          style: TextStyle(
+                            fontFamily: AppTypography.displayFontFamily,
+                            fontSize: 10,
+                            color: tokens.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+
+              Text(
+                'RECOMMENDED ALTERNATIVES',
+                style: TextStyle(
+                  fontFamily: AppTypography.displayFontFamily,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.8,
+                  color: tokens.cyanAccent,
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              if (alternatives.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Text(
+                    'No direct equi-macro alternatives found. Try logging from the full Fuel catalog.',
+                    style: TextStyle(fontSize: 12, color: tokens.textSecondary),
+                  ),
+                )
+              else
+                ...alternatives.map((alt) {
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: tokens.panel,
+                      borderRadius: BorderRadius.circular(tokens.radiusSm),
+                      border: Border.all(
+                        color: alt.savingsBadge.contains('SAVE')
+                            ? const Color(0xFF00E676).withValues(alpha: 0.4)
+                            : tokens.borderSubtle,
+                        width: 1,
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                alt.food.name,
+                                style: TextStyle(
+                                  fontFamily: AppTypography.displayFontFamily,
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: tokens.textPrimary,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: alt.savingsBadge.contains('SAVE')
+                                    ? const Color(0xFF00E676).withValues(alpha: 0.15)
+                                    : tokens.cyanAccent.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(3),
+                              ),
+                              child: Text(
+                                alt.savingsBadge,
+                                style: TextStyle(
+                                  fontFamily: AppTypography.displayFontFamily,
+                                  fontSize: 8.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: alt.savingsBadge.contains('SAVE')
+                                      ? const Color(0xFF00E676)
+                                      : tokens.cyanAccent,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          'Portion: ${alt.scaledGrams.toInt()}g (${alt.scaledServings}x serving)',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: tokens.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          alt.rationale,
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: tokens.textMuted,
+                            height: 1.3,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              '${alt.scaledMacros.calories.toInt()} kcal • ${alt.scaledMacros.protein.toStringAsFixed(1)}g P',
+                              style: TextStyle(
+                                fontFamily: AppTypography.displayFontFamily,
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w600,
+                                color: tokens.textSecondary,
+                              ),
+                            ),
+                            GestureDetector(
+                              onTap: () async {
+                                AppHaptics.shared.buttonPress();
+                                final messenger = ScaffoldMessenger.of(context);
+                                Navigator.of(context).pop();
+
+                                // Delete original
+                                await onDeleteMeal(originalMeal.id);
+
+                                // Log replacement
+                                final replacement = Meal.create(
+                                  name: '${alt.food.name} (${alt.scaledGrams.toInt()}g)',
+                                  macros: MealMacros(
+                                    calories: alt.scaledMacros.calories,
+                                    protein: alt.scaledMacros.protein,
+                                    carbs: alt.scaledMacros.carbs,
+                                    fats: alt.scaledMacros.fat,
+                                  ),
+                                  micros: MealMicros(
+                                    fiber: alt.scaledMicros?.fiberGrams ?? 0,
+                                    sugar: alt.scaledMicros?.sugarGrams ?? 0,
+                                    sodium: alt.scaledMicros?.sodiumMg ?? 0,
+                                    potassium: alt.scaledMicros?.potassiumMg ?? 0,
+                                  ),
+                                  vitamins: MealVitamins(
+                                    vitaminA: 0,
+                                    vitaminB: 0,
+                                    vitaminC: 0,
+                                    vitaminD: alt.scaledMicros?.vitaminDMcg ?? 0,
+                                    vitaminE: 0,
+                                  ),
+                                  minerals: MealMinerals(
+                                    calcium: alt.scaledMicros?.calciumMg ?? 0,
+                                    iron: alt.scaledMicros?.ironMg ?? 0,
+                                    magnesium: 0,
+                                    zinc: 0,
+                                  ),
+                                );
+                                await onLogMeal(replacement);
+
+                                messenger.showSnackBar(
+                                  SnackBar(
+                                    content: Text('Swapped to ${alt.food.name}!'),
+                                    backgroundColor: tokens.panel,
+                                    duration: const Duration(seconds: 2),
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: tokens.cyanAccent,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: const Text(
+                                  'SWAP',
+                                  style: TextStyle(
+                                    fontFamily: 'SpaceGrotesk',
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.black,
+                                    letterSpacing: 0.6,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(
+            'CANCEL',
+            style: TextStyle(
+              fontFamily: AppTypography.displayFontFamily,
+              fontWeight: FontWeight.w700,
+              color: tokens.textMuted,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

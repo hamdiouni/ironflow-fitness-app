@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -13,6 +12,7 @@ import '../../../onboarding/domain/entities/user_profile.dart' show BudgetLevel;
 import '../../../onboarding/presentation/providers/onboarding_provider.dart';
 import '../../domain/entities/food_item.dart';
 import '../../domain/entities/food_item_full.dart';
+import '../../domain/usecases/get_budget_food_alternatives_use_case.dart';
 import '../providers/food_providers.dart';
 
 /// Screen for searching and selecting food items from the authoritative USDA-verified database.
@@ -45,9 +45,9 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
       backgroundColor: Colors.transparent,
       builder: (_) => _FoodDetailAndQuantitySheet(
         food: food,
-        onConfirm: (grams) {
+        onConfirm: (selectedFood, grams) {
           Navigator.pop(context);
-          widget.onFoodLogged(food, grams);
+          widget.onFoodLogged(selectedFood, grams);
         },
       ),
     );
@@ -809,31 +809,33 @@ class _MacroTelemetryChip extends StatelessWidget {
 // FOOD DETAIL & QUANTITY SHEET (PORTION ENGINE + MICRONUTRIENT MATRIX)
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _FoodDetailAndQuantitySheet extends StatefulWidget {
+class _FoodDetailAndQuantitySheet extends ConsumerStatefulWidget {
   const _FoodDetailAndQuantitySheet({
     required this.food,
     required this.onConfirm,
   });
 
   final FoodItem food;
-  final void Function(double grams) onConfirm;
+  final void Function(FoodItem food, double grams) onConfirm;
 
   @override
-  State<_FoodDetailAndQuantitySheet> createState() =>
+  ConsumerState<_FoodDetailAndQuantitySheet> createState() =>
       _FoodDetailAndQuantitySheetState();
 }
 
 class _FoodDetailAndQuantitySheetState
-    extends State<_FoodDetailAndQuantitySheet> {
+    extends ConsumerState<_FoodDetailAndQuantitySheet> {
   bool _isServingMode = true;
   double _servings = 1.0;
   double _grams = 100.0;
+  late FoodItem _currentFood;
   late final TextEditingController _gramsController;
 
   @override
   void initState() {
     super.initState();
-    _grams = widget.food.servingWeightGrams;
+    _currentFood = widget.food;
+    _grams = _currentFood.servingWeightGrams;
     _gramsController = TextEditingController(text: _grams.toInt().toString());
   }
 
@@ -847,7 +849,7 @@ class _FoodDetailAndQuantitySheetState
     AppHaptics.shared.selectionChanged();
     setState(() {
       _servings = s;
-      _grams = (s * widget.food.servingWeightGrams).roundToDouble();
+      _grams = (s * _currentFood.servingWeightGrams).roundToDouble();
       _gramsController.text = _grams.toInt().toString();
     });
   }
@@ -856,8 +858,8 @@ class _FoodDetailAndQuantitySheetState
     AppHaptics.shared.selectionChanged();
     setState(() {
       _grams = g;
-      _servings = widget.food.servingWeightGrams > 0
-          ? double.parse((g / widget.food.servingWeightGrams).toStringAsFixed(2))
+      _servings = _currentFood.servingWeightGrams > 0
+          ? double.parse((g / _currentFood.servingWeightGrams).toStringAsFixed(2))
           : 1.0;
       _gramsController.text = g.toInt().toString();
     });
@@ -866,9 +868,18 @@ class _FoodDetailAndQuantitySheetState
   @override
   Widget build(BuildContext context) {
     final tokens = AppThemeTokens.of(context);
-    final isUsda = widget.food.id.startsWith('usda_') || widget.food.fdcId != null;
-    final macros = widget.food.macrosForGrams(_grams);
-    final micros = widget.food.microsForGrams(_grams);
+    final isUsda = _currentFood.id.startsWith('usda_') || _currentFood.fdcId != null;
+    final macros = _currentFood.macrosForGrams(_grams);
+    final micros = _currentFood.microsForGrams(_grams);
+
+    final profileAsync = ref.watch(userProfileProvider);
+    final userBudget = profileAsync.value?.budget ?? BudgetLevel.low;
+
+    final alternatives = const GetBudgetFoodAlternativesUseCase().getAlternativesForFood(
+      _currentFood,
+      preferredBudget: userBudget,
+      limit: 2,
+    );
 
     return DraggableScrollableSheet(
       initialChildSize: 0.88,
@@ -918,7 +929,7 @@ class _FoodDetailAndQuantitySheetState
                         ClipRRect(
                           borderRadius: BorderRadius.circular(tokens.radiusSm),
                           child: CachedNetworkImage(
-                            imageUrl: widget.food.imageUrl,
+                            imageUrl: _currentFood.imageUrl,
                             width: 60,
                             height: 60,
                             fit: BoxFit.cover,
@@ -956,7 +967,7 @@ class _FoodDetailAndQuantitySheetState
                                         ),
                                       ),
                                       child: Text(
-                                        'USDA FDC #${widget.food.fdcId ?? "VERIFIED"}',
+                                        'USDA FDC #${_currentFood.fdcId ?? "VERIFIED"}',
                                         style: TextStyle(
                                           fontFamily: AppTypography.displayFontFamily,
                                           fontSize: 9,
@@ -974,7 +985,7 @@ class _FoodDetailAndQuantitySheetState
                                       border: Border.all(color: tokens.borderSubtle, width: 1),
                                     ),
                                     child: Text(
-                                      widget.food.category.displayName.toUpperCase(),
+                                      _currentFood.category.displayName.toUpperCase(),
                                       style: TextStyle(
                                         fontFamily: AppTypography.displayFontFamily,
                                         fontSize: 9,
@@ -987,7 +998,7 @@ class _FoodDetailAndQuantitySheetState
                               ),
                               const SizedBox(height: 6),
                               Text(
-                                widget.food.name,
+                                _currentFood.name,
                                 style: TextStyle(
                                   fontFamily: AppTypography.displayFontFamily,
                                   fontSize: 18,
@@ -1004,7 +1015,7 @@ class _FoodDetailAndQuantitySheetState
                     const SizedBox(height: 16),
 
                     // Factual Scientific Description Card
-                    if (widget.food.description.isNotEmpty) ...[
+                    if (_currentFood.description.isNotEmpty) ...[
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
@@ -1033,17 +1044,17 @@ class _FoodDetailAndQuantitySheetState
                             ),
                             const SizedBox(height: 6),
                             Text(
-                              widget.food.description,
+                              _currentFood.description,
                               style: TextStyle(
                                 fontSize: 12,
                                 height: 1.45,
                                 color: tokens.textSecondary,
                               ),
                             ),
-                            if (widget.food.source.isNotEmpty) ...[
+                            if (_currentFood.source.isNotEmpty) ...[
                               const SizedBox(height: 6),
                               Text(
-                                'Data Provenance: ${widget.food.source}',
+                                'Data Provenance: ${_currentFood.source}',
                                 style: TextStyle(
                                   fontFamily: AppTypography.displayFontFamily,
                                   fontSize: 9,
@@ -1170,7 +1181,7 @@ class _FoodDetailAndQuantitySheetState
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              widget.food.servingDescription,
+                              _currentFood.servingDescription,
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
@@ -1254,9 +1265,9 @@ class _FoodDetailAndQuantitySheetState
                                   if (parsed != null && parsed > 0) {
                                     setState(() {
                                       _grams = parsed;
-                                      _servings = widget.food.servingWeightGrams > 0
+                                      _servings = _currentFood.servingWeightGrams > 0
                                           ? double.parse(
-                                              (parsed / widget.food.servingWeightGrams)
+                                              (parsed / _currentFood.servingWeightGrams)
                                                   .toStringAsFixed(2))
                                           : 1.0;
                                     });
@@ -1316,7 +1327,7 @@ class _FoodDetailAndQuantitySheetState
                       children: [
                         _MacroGaugeCard(
                           title: 'CALORIES',
-                          value: '${macros.calories.toStringAsFixed(0)}',
+                          value: macros.calories.toStringAsFixed(0),
                           unit: 'kcal',
                           color: const Color(0xFFFFD54F),
                         ),
@@ -1393,6 +1404,24 @@ class _FoodDetailAndQuantitySheetState
                         ],
                       ),
                     ),
+
+                    // Smart Budget Alternatives
+                    if (alternatives.isNotEmpty) ...[
+                      const SizedBox(height: 20),
+                      _BudgetAlternativesSheetSection(
+                        alternatives: alternatives,
+                        tokens: tokens,
+                        onSelectAlternative: (alt) {
+                          AppHaptics.shared.selectionChanged();
+                          setState(() {
+                            _currentFood = alt.food;
+                            _grams = alt.scaledGrams;
+                            _servings = alt.scaledServings;
+                            _gramsController.text = _grams.toInt().toString();
+                          });
+                        },
+                      ),
+                    ],
                     const SizedBox(height: 26),
 
                     // Log Action Button
@@ -1402,7 +1431,7 @@ class _FoodDetailAndQuantitySheetState
                       isFullWidth: true,
                       onPressed: () {
                         AppHaptics.shared.buttonPress();
-                        widget.onConfirm(_grams);
+                        widget.onConfirm(_currentFood, _grams);
                       },
                     ),
                   ],
@@ -1555,6 +1584,173 @@ class _MicroRow extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _BudgetAlternativesSheetSection extends StatelessWidget {
+  const _BudgetAlternativesSheetSection({
+    required this.alternatives,
+    required this.tokens,
+    required this.onSelectAlternative,
+  });
+
+  final List<BudgetFoodAlternative> alternatives;
+  final AppThemeTokens tokens;
+  final void Function(BudgetFoodAlternative) onSelectAlternative;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: tokens.panel,
+        borderRadius: BorderRadius.circular(tokens.radiusSm),
+        border: Border.all(
+          color: const Color(0xFF00E676).withValues(alpha: 0.35),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.swap_horiz_rounded, size: 16, color: const Color(0xFF00E676)),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'SMART BUDGET-ALIGNED ALTERNATIVES',
+                  style: TextStyle(
+                    fontFamily: AppTypography.displayFontFamily,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.8,
+                    color: const Color(0xFF00E676),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Equi-macro swaps aligned with your budget protocol with verified nutritional provenance.',
+            style: TextStyle(
+              fontSize: 10.5,
+              color: tokens.textMuted,
+            ),
+          ),
+          const SizedBox(height: 12),
+          ...alternatives.map((alt) {
+            return Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: tokens.card,
+                borderRadius: BorderRadius.circular(tokens.radiusSm),
+                border: Border.all(color: tokens.borderSubtle, width: 1),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          alt.food.name,
+                          style: TextStyle(
+                            fontFamily: AppTypography.displayFontFamily,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: tokens.textPrimary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: alt.savingsBadge.contains('SAVE')
+                              ? const Color(0xFF00E676).withValues(alpha: 0.15)
+                              : tokens.cyanAccent.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                        child: Text(
+                          alt.savingsBadge,
+                          style: TextStyle(
+                            fontFamily: AppTypography.displayFontFamily,
+                            fontSize: 8.5,
+                            fontWeight: FontWeight.w700,
+                            color: alt.savingsBadge.contains('SAVE')
+                                ? const Color(0xFF00E676)
+                                : tokens.cyanAccent,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Portion: ${alt.scaledGrams.toInt()}g (${alt.scaledServings}x) • ${alt.scaledMacros.calories.toInt()} kcal • ${alt.scaledMacros.protein.toStringAsFixed(1)}g P',
+                    style: TextStyle(
+                      fontFamily: AppTypography.displayFontFamily,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: tokens.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    alt.rationale,
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: tokens.textMuted,
+                      height: 1.3,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: GestureDetector(
+                      onTap: () => onSelectAlternative(alt),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: tokens.cyanAccent.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(
+                            color: tokens.cyanAccent.withValues(alpha: 0.6),
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.check_rounded, size: 12, color: tokens.cyanAccent),
+                            const SizedBox(width: 4),
+                            Text(
+                              'SWITCH TO THIS FOOD',
+                              style: TextStyle(
+                                fontFamily: AppTypography.displayFontFamily,
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w700,
+                                color: tokens.cyanAccent,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
     );
   }
 }
