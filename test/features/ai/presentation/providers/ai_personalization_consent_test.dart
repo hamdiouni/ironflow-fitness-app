@@ -3,8 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:progression_tracker/features/ai/presentation/providers/ai_provider.dart';
 import 'package:progression_tracker/features/ai/data/datasources/ai_chat_storage.dart';
-import 'package:progression_tracker/features/auth/domain/entities/user_profile.dart';
-import 'package:progression_tracker/features/workout/domain/entities/workout.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
