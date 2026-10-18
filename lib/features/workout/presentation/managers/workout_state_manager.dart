@@ -13,6 +13,8 @@ class WorkoutStateManager {
   static const String _boxName = 'active_workout_state';
   static const String _workoutKey = 'current_workout';
   static const String _startTimeKey = 'start_time';
+  static const String _restTimerEndTimeKey = 'rest_timer_end_time';
+  static const String _restTimerTotalSecondsKey = 'rest_timer_total_seconds';
 
   Box<dynamic>? _box;
 
@@ -64,9 +66,37 @@ class WorkoutStateManager {
     return _openBox.containsKey(_workoutKey);
   }
 
+  /// Persists the rest timer target end timestamp and total duration (TRN-02)
+  Future<void> saveRestTimer(DateTime targetEndTime, int totalSeconds) async {
+    if (_box == null || !_box!.isOpen) return;
+    await _openBox.put(_restTimerEndTimeKey, targetEndTime.toIso8601String());
+    await _openBox.put(_restTimerTotalSecondsKey, totalSeconds);
+  }
+
+  /// Returns the persisted rest timer target end time and total duration, or null
+  ({DateTime targetEndTime, int totalSeconds})? getRestTimer() {
+    if (_box == null || !_box!.isOpen) return null;
+    final timeStr = _openBox.get(_restTimerEndTimeKey) as String?;
+    final total = _openBox.get(_restTimerTotalSecondsKey) as int?;
+    if (timeStr == null || total == null) return null;
+    try {
+      return (targetEndTime: DateTime.parse(timeStr), totalSeconds: total);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Clears persisted rest timer state
+  Future<void> clearRestTimer() async {
+    if (_box == null || !_box!.isOpen) return;
+    await _openBox.delete(_restTimerEndTimeKey);
+    await _openBox.delete(_restTimerTotalSecondsKey);
+  }
+
   /// Removes the persisted workout state (call after workout completion).
   Future<void> clearState() async {
     await _openBox.delete(_workoutKey);
     await _openBox.delete(_startTimeKey);
+    await clearRestTimer();
   }
 }

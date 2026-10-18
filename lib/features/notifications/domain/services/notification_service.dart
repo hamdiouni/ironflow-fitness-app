@@ -23,6 +23,7 @@ class NotificationService {
   static const int lunchReminderId = 3;
   static const int dinnerReminderId = 4;
   static const int streakReminderId = 5;
+  static const int restTimerNotificationId = 99;
 
   /// Initialize notification service
   Future<void> initialize({
@@ -89,6 +90,27 @@ class NotificationService {
       }
       rethrow;
     }
+  }
+
+  /// Sets or updates the notification tap callback
+  void setOnNotificationTap(Function(String?) onNotificationTap) {
+    _onNotificationTap = onNotificationTap;
+  }
+
+  /// Returns payload if the application was launched by tapping a notification
+  Future<String?> getLaunchNotificationPayload() async {
+    if (kIsWeb || !_initialized) return null;
+    try {
+      final details = await _notifications.getNotificationAppLaunchDetails();
+      if (details != null && details.didNotificationLaunchApp) {
+        return details.notificationResponse?.payload;
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('⚠️ [Notifications] Failed to get launch details: $e');
+      }
+    }
+    return null;
   }
 
   /// Request notification permissions
@@ -534,6 +556,68 @@ class NotificationService {
     } catch (e) {
       if (kDebugMode) {
         print('❌ [Notifications] Failed to cancel streak reminder: $e');
+      }
+    }
+  }
+
+  /// Schedule rest timer completion notification using inexact timing (TRN-02)
+  Future<void> scheduleRestTimer(DateTime targetEndTime) async {
+    if (kIsWeb || !_initialized) return;
+
+    try {
+      final scheduledDate = tz.TZDateTime.from(targetEndTime, tz.local);
+      if (scheduledDate.isBefore(tz.TZDateTime.now(tz.local))) return;
+
+      await _notifications.zonedSchedule(
+        restTimerNotificationId,
+        '⏱️ Rest Complete!',
+        'Time to crush your next set!',
+        scheduledDate,
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'rest_timer',
+            'Rest Timer',
+            channelDescription: 'Alerts when rest interval between sets completes',
+            importance: Importance.high,
+            priority: Priority.high,
+            icon: '@mipmap/ic_launcher',
+            playSound: true,
+            enableVibration: true,
+          ),
+          iOS: DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+          ),
+        ),
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+        payload: 'rest_timer',
+      );
+
+      if (kDebugMode) {
+        print('✓ [Notifications] Inexact rest timer scheduled for $targetEndTime');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ [Notifications] Failed to schedule rest timer: $e');
+      }
+    }
+  }
+
+  /// Cancel rest timer notification
+  Future<void> cancelRestTimer() async {
+    if (kIsWeb || !_initialized) return;
+
+    try {
+      await _notifications.cancel(restTimerNotificationId);
+      if (kDebugMode) {
+        print('✓ [Notifications] Rest timer notification cancelled');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ [Notifications] Failed to cancel rest timer: $e');
       }
     }
   }
