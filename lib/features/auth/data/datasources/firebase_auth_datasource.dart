@@ -26,6 +26,10 @@ abstract class FirebaseAuthDataSource {
 
   Future<void> deleteAccount();
 
+  Future<void> reauthenticateWithPassword(String password);
+
+  Future<void> reauthenticateWithGoogle();
+
   Future<void> resetPassword(String email);
 }
 
@@ -186,8 +190,41 @@ class FirebaseAuthDataSourceImpl implements FirebaseAuthDataSource {
   Future<void> deleteAccount() async {
     try {
       await _firebaseAuth.currentUser?.delete();
+    } on firebase_auth.FirebaseAuthException catch (e) {
+      throw _handleAuthException(e);
     } catch (e) {
       throw Exception('Delete account error: $e');
+    }
+  }
+
+  @override
+  Future<void> reauthenticateWithPassword(String password) async {
+    try {
+      final user = _firebaseAuth.currentUser;
+      if (user == null || user.email == null) {
+        throw Exception('No authenticated user session found');
+      }
+      final credential = firebase_auth.EmailAuthProvider.credential(
+        email: user.email!,
+        password: password,
+      );
+      await user.reauthenticateWithCredential(credential);
+    } on firebase_auth.FirebaseAuthException catch (e) {
+      throw _handleAuthException(e);
+    }
+  }
+
+  @override
+  Future<void> reauthenticateWithGoogle() async {
+    try {
+      final user = _firebaseAuth.currentUser;
+      if (user == null) {
+        throw Exception('No authenticated user session found');
+      }
+      final provider = firebase_auth.GoogleAuthProvider();
+      await user.reauthenticateWithProvider(provider);
+    } on firebase_auth.FirebaseAuthException catch (e) {
+      throw _handleAuthException(e);
     }
   }
 
