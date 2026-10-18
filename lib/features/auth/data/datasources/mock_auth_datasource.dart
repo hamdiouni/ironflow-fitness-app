@@ -28,6 +28,10 @@ abstract class MockAuthDataSource {
 
   Future<void> deleteAccount();
 
+  Future<void> reauthenticateWithPassword(String password);
+
+  Future<void> reauthenticateWithGoogle();
+
   Future<void> resetPassword(String email);
 }
 
@@ -218,6 +222,28 @@ class MockAuthDataSourceImpl implements MockAuthDataSource {
     if (user != null) {
       _users.remove(user.email);
       await _sessionStorage.clearSession();
+    }
+  }
+
+  @override
+  Future<void> reauthenticateWithPassword(String password) async {
+    await Future.delayed(const Duration(milliseconds: 250));
+    final user = await getCurrentUser();
+    if (user == null) {
+      throw Exception('No authenticated user found.');
+    }
+    final stored = _users[user.email];
+    if (stored != null && stored != password) {
+      throw Exception('Wrong password provided for that user.');
+    }
+  }
+
+  @override
+  Future<void> reauthenticateWithGoogle() async {
+    await Future.delayed(const Duration(milliseconds: 250));
+    final user = await getCurrentUser();
+    if (user == null) {
+      throw Exception('No authenticated user found.');
     }
   }
 

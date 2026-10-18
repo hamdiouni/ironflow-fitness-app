@@ -33,6 +33,12 @@ abstract class AuthRepository {
   /// Delete user account
   Future<void> deleteAccount();
 
+  /// Re-authenticate user with email and password
+  Future<void> reauthenticateWithPassword(String password);
+
+  /// Re-authenticate user with Google provider
+  Future<void> reauthenticateWithGoogle();
+
   /// Reset password
   Future<void> resetPassword(String email);
 

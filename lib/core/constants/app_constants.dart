@@ -63,6 +63,10 @@ class AppConstants {
   static const int minRPE = 1;
   static const int maxRPE = 10;
 
+  // Legal & Compliance URLs
+  static const String privacyPolicyUrl = 'https://ironflow.app/privacy';
+  static const String accountDeletionUrl = 'https://ironflow.app/delete-account';
+
   // Private constructor to prevent instantiation
   AppConstants._();
 }
