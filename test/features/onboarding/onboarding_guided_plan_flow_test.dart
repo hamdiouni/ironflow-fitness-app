@@ -172,6 +172,28 @@ void main() {
       expect(fakeDietRepo.savedPlan, isNotNull);
     });
 
+    test('OnboardingNotifier.completeOnboarding with includeDietPlan: false skips saving the diet plan (Outcome 3)', () async {
+      final fakeStorage = FakeUserProfileStorage();
+      final fakeActiveProgramRepo = FakeActiveProgramRepository();
+      final fakeDietRepo = FakeDietPlanRepository();
+
+      final notifier = OnboardingNotifier(
+        fakeStorage,
+        GenerateWorkoutProgramUseCase(),
+        SetActiveProgramUseCase(fakeActiveProgramRepo),
+        GenerateDietPlanUseCase(),
+        SaveDietPlanUseCase(fakeDietRepo),
+      );
+
+      await notifier.completeOnboarding(
+        baseProfile,
+        includeDietPlan: false,
+      );
+
+      expect(fakeStorage.isUserOnboarded, isTrue);
+      expect(fakeDietRepo.savedPlan, isNull);
+    });
+
     test('WorkoutProgram.daysPerWeek getter correctly calculates active non-rest training days', () {
       final prog = WorkoutProgram(
         id: 'test_p',

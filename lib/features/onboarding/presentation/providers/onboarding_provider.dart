@@ -7,6 +7,7 @@ import '../../../workout/presentation/providers/active_program_providers.dart';
 import '../../../workout/presentation/providers/workout_providers.dart';
 import '../../../workout/domain/entities/workout_program.dart';
 import '../../../workout/domain/splits/entities/split.dart';
+import '../../../nutrition/domain/entities/diet_plan.dart';
 import '../../../nutrition/domain/usecases/generate_diet_plan_use_case.dart';
 import '../../../nutrition/domain/usecases/save_diet_plan_use_case.dart';
 import '../../../nutrition/presentation/providers/diet_plan_providers.dart';
@@ -55,6 +56,8 @@ class OnboardingNotifier extends StateNotifier<AsyncValue<void>> {
     String? userId,
     WorkoutProgram? customProgram,
     Split? chosenSplit,
+    bool includeDietPlan = true,
+    DietPlan? customDietPlan,
   }) async {
     state = const AsyncValue.loading();
     try {
@@ -77,9 +80,11 @@ class OnboardingNotifier extends StateNotifier<AsyncValue<void>> {
       // 3. Set active program
       await _setActiveProgramUseCase(program);
 
-      // 4. Generate and save diet plan
-      final dietPlan = _generateDietPlanUseCase(effectiveProfile);
-      await _saveDietPlanUseCase(dietPlan);
+      // 4. Optionally generate and save diet plan
+      if (includeDietPlan) {
+        final dietPlan = customDietPlan ?? _generateDietPlanUseCase(effectiveProfile);
+        await _saveDietPlanUseCase(dietPlan);
+      }
 
       // 5. Mark onboarded
       await _storage.markOnboarded(userId: userId);
