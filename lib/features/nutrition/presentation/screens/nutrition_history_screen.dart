@@ -1,11 +1,8 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/constants/app_theme.dart';
-import '../../../../core/theme/app_theme_tokens.dart';
-import '../../../../core/theme/app_typography.dart';
 import '../../../../shared/presentation/components/app_button.dart';
 import '../../domain/entities/daily_nutrition_summary.dart';
 import '../providers/paginated_nutrition_provider.dart';

@@ -1,3 +1,4 @@
+import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -79,7 +80,7 @@ class DeleteAccountUseCase {
           errorStr.contains('sensitive-operation');
 
       if (kDebugMode) {
-        print('❌ [DeleteAccountUseCase] Re-authentication failed: $e');
+        AppLogger.debug('❌ [DeleteAccountUseCase] Re-authentication failed: $e');
       }
       return DeleteAccountResult.failure(
         'Authentication verification failed: ${e.toString().replaceAll('Exception: ', '')}',
@@ -92,7 +93,7 @@ class DeleteAccountUseCase {
       await _remoteDataPurger.purgeRemoteUserData(userId);
     } catch (e) {
       if (kDebugMode) {
-        print('❌ [DeleteAccountUseCase] Remote purge failed: $e');
+        AppLogger.debug('❌ [DeleteAccountUseCase] Remote purge failed: $e');
       }
       return DeleteAccountResult.failure(
         'Failed to purge cloud records. Account deletion aborted to protect data integrity: $e',
@@ -108,7 +109,7 @@ class DeleteAccountUseCase {
           errorStr.contains('recent-login');
 
       if (kDebugMode) {
-        print('❌ [DeleteAccountUseCase] Auth account deletion failed: $e');
+        AppLogger.debug('❌ [DeleteAccountUseCase] Auth account deletion failed: $e');
       }
       return DeleteAccountResult.failure(
         'Failed to delete authentication user: $e',
@@ -122,7 +123,7 @@ class DeleteAccountUseCase {
       await prefs.setString(pendingWipeKey, userId);
     } catch (e) {
       if (kDebugMode) {
-        print('⚠️ [DeleteAccountUseCase] Could not persist pending wipe marker: $e');
+        AppLogger.debug('⚠️ [DeleteAccountUseCase] Could not persist pending wipe marker: $e');
       }
     }
 
@@ -131,7 +132,7 @@ class DeleteAccountUseCase {
       await _localDataWiper.wipeAllUserData(userId, keepAuthSession: false);
     } catch (e) {
       if (kDebugMode) {
-        print('⚠️ [DeleteAccountUseCase] Local wipe encountered error: $e');
+        AppLogger.debug('⚠️ [DeleteAccountUseCase] Local wipe encountered error: $e');
       }
       // Marker remains persisted so next app launch will retry and complete the wipe.
       return DeleteAccountResult.failure(
@@ -161,18 +162,18 @@ class DeleteAccountUseCase {
       final pendingUserId = prefs.getString(pendingWipeKey);
       if (pendingUserId != null && pendingUserId.isNotEmpty) {
         if (kDebugMode) {
-          print('🔄 [DeleteAccountUseCase] Found pending wipe marker for: $pendingUserId. Finishing wipe...');
+          AppLogger.debug('🔄 [DeleteAccountUseCase] Found pending wipe marker for: $pendingUserId. Finishing wipe...');
         }
         final actualWiper = wiper ?? LocalDataWiper();
         await actualWiper.wipeAllUserData(pendingUserId, keepAuthSession: false);
         await prefs.remove(pendingWipeKey);
         if (kDebugMode) {
-          print('✅ [DeleteAccountUseCase] Pending wipe completed successfully.');
+          AppLogger.debug('✅ [DeleteAccountUseCase] Pending wipe completed successfully.');
         }
       }
     } catch (e) {
       if (kDebugMode) {
-        print('⚠️ [DeleteAccountUseCase] Error executing pending wipe: $e');
+        AppLogger.debug('⚠️ [DeleteAccountUseCase] Error executing pending wipe: $e');
       }
     }
   }

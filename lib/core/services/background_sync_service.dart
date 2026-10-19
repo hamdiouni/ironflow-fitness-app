@@ -1,3 +1,4 @@
+import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:workmanager/workmanager.dart';
 import 'package:flutter/foundation.dart';
 
@@ -18,15 +19,14 @@ class BackgroundSyncService {
     try {
       await Workmanager().initialize(
         callbackDispatcher,
-        isInDebugMode: kDebugMode,
       );
       
       if (kDebugMode) {
-        print('BackgroundSyncService initialized');
+        AppLogger.debug('BackgroundSyncService initialized');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('Error initializing BackgroundSyncService: $e');
+        AppLogger.debug('Error initializing BackgroundSyncService: $e');
       }
     }
   }
@@ -50,11 +50,11 @@ class BackgroundSyncService {
       );
       
       if (kDebugMode) {
-        print('Periodic background sync registered');
+        AppLogger.debug('Periodic background sync registered');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('Error registering periodic sync: $e');
+        AppLogger.debug('Error registering periodic sync: $e');
       }
     }
   }
@@ -75,11 +75,11 @@ class BackgroundSyncService {
       );
       
       if (kDebugMode) {
-        print('One-time background sync registered');
+        AppLogger.debug('One-time background sync registered');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('Error registering one-time sync: $e');
+        AppLogger.debug('Error registering one-time sync: $e');
       }
     }
   }
@@ -92,11 +92,11 @@ class BackgroundSyncService {
       await Workmanager().cancelByTag(_syncTaskTag);
       
       if (kDebugMode) {
-        print('All background sync tasks cancelled');
+        AppLogger.debug('All background sync tasks cancelled');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('Error cancelling background sync: $e');
+        AppLogger.debug('Error cancelling background sync: $e');
       }
     }
   }
@@ -107,11 +107,11 @@ class BackgroundSyncService {
       await Workmanager().cancelByUniqueName(_syncTaskName);
       
       if (kDebugMode) {
-        print('Periodic background sync cancelled');
+        AppLogger.debug('Periodic background sync cancelled');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('Error cancelling periodic sync: $e');
+        AppLogger.debug('Error cancelling periodic sync: $e');
       }
     }
   }
@@ -125,7 +125,7 @@ void callbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {
     try {
       if (kDebugMode) {
-        print('Background sync task started: $task');
+        AppLogger.debug('Background sync task started: $task');
       }
 
       // Perform sync operations here
@@ -135,13 +135,13 @@ void callbackDispatcher() {
       await _performBackgroundSync();
 
       if (kDebugMode) {
-        print('Background sync task completed successfully');
+        AppLogger.debug('Background sync task completed successfully');
       }
 
       return Future.value(true);
     } catch (e) {
       if (kDebugMode) {
-        print('Background sync task failed: $e');
+        AppLogger.debug('Background sync task failed: $e');
       }
       return Future.value(false);
     }
@@ -163,7 +163,7 @@ Future<void> _performBackgroundSync() async {
     // TODO: Update sync status
     
     if (kDebugMode) {
-      print('Performing background sync...');
+      AppLogger.debug('Performing background sync...');
     }
 
     // Placeholder for actual sync logic
@@ -177,11 +177,11 @@ Future<void> _performBackgroundSync() async {
     await Future.delayed(const Duration(seconds: 2)); // Simulate sync work
 
     if (kDebugMode) {
-      print('Background sync completed');
+      AppLogger.debug('Background sync completed');
     }
   } catch (e) {
     if (kDebugMode) {
-      print('Error during background sync: $e');
+      AppLogger.debug('Error during background sync: $e');
     }
     rethrow;
   }
@@ -236,7 +236,7 @@ class BackgroundSyncManager {
       _status = BackgroundSyncStatus.error;
       _lastError = e.toString();
       if (kDebugMode) {
-        print('Error during immediate sync: $e');
+        AppLogger.debug('Error during immediate sync: $e');
       }
     }
   }

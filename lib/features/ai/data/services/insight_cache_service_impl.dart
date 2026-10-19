@@ -1,3 +1,4 @@
+import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:hive/hive.dart';
 import '../../domain/entities/insight.dart';
 import '../../domain/entities/insight_cache.dart';
@@ -53,20 +54,20 @@ class InsightCacheServiceImpl implements InsightCacheService {
   @override
   Future<void> init() async {
     try {
-      print('📊 [InsightCache] Initializing insight cache service...');
+      AppLogger.debug('📊 [InsightCache] Initializing insight cache service...');
       
       if (_box?.isOpen == true) {
-        print('✅ [InsightCache] Box already open');
+        AppLogger.debug('✅ [InsightCache] Box already open');
         return;
       }
       
       _box = await Hive.openBox<Map>(boxName);
       
-      print('✅ [InsightCache] Insight cache service initialized successfully');
-      print('🔍 [InsightCache] Box opened: $boxName (isOpen: ${_box!.isOpen})');
+      AppLogger.debug('✅ [InsightCache] Insight cache service initialized successfully');
+      AppLogger.debug('🔍 [InsightCache] Box opened: $boxName (isOpen: ${_box!.isOpen})');
     } catch (e, stackTrace) {
-      print('❌ [InsightCache] Failed to initialize insight cache service: $e');
-      print('🔍 [InsightCache] Stack trace: $stackTrace');
+      AppLogger.debug('❌ [InsightCache] Failed to initialize insight cache service: $e');
+      AppLogger.debug('🔍 [InsightCache] Stack trace: $stackTrace');
       throw Exception('Failed to initialize insight cache service: $e');
     }
   }
@@ -74,10 +75,10 @@ class InsightCacheServiceImpl implements InsightCacheService {
   @override
   Future<InsightCache?> getCachedInsights(InsightContext context) async {
     try {
-      print('📊 [InsightCache] Getting cached insights for context: ${context.name}');
+      AppLogger.debug('📊 [InsightCache] Getting cached insights for context: ${context.name}');
       
       if (_box?.isOpen != true) {
-        print('⚠️ [InsightCache] Box not open, initializing...');
+        AppLogger.debug('⚠️ [InsightCache] Box not open, initializing...');
         await init();
       }
       
@@ -85,21 +86,21 @@ class InsightCacheServiceImpl implements InsightCacheService {
       final cachedData = _box!.get(key);
       
       if (cachedData == null) {
-        print('🔍 [InsightCache] No cache found for context: ${context.name}');
+        AppLogger.debug('🔍 [InsightCache] No cache found for context: ${context.name}');
         return null;
       }
       
-      print('🔍 [InsightCache] Deserializing cached data...');
+      AppLogger.debug('🔍 [InsightCache] Deserializing cached data...');
       final cacheModel = InsightCacheModel.fromJson(_deepCast(cachedData));
       final cache = cacheModel.toDomain();
       
-      print('✅ [InsightCache] Cached insights retrieved successfully');
-      print('🔍 [InsightCache] Context: ${context.name}, Insights: ${cache.insights.length}, Cached at: ${cache.cachedAt}');
+      AppLogger.debug('✅ [InsightCache] Cached insights retrieved successfully');
+      AppLogger.debug('🔍 [InsightCache] Context: ${context.name}, Insights: ${cache.insights.length}, Cached at: ${cache.cachedAt}');
       
       return cache;
     } catch (e, stackTrace) {
-      print('❌ [InsightCache] Failed to get cached insights for context ${context.name}: $e');
-      print('🔍 [InsightCache] Stack trace: $stackTrace');
+      AppLogger.debug('❌ [InsightCache] Failed to get cached insights for context ${context.name}: $e');
+      AppLogger.debug('🔍 [InsightCache] Stack trace: $stackTrace');
       // Return null on cache read failures (graceful degradation)
       return null;
     }
@@ -108,11 +109,11 @@ class InsightCacheServiceImpl implements InsightCacheService {
   @override
   Future<void> cacheInsights(InsightCache cache) async {
     try {
-      print('📊 [InsightCache] Caching insights for context: ${cache.context.name}');
-      print('🔍 [InsightCache] Insights count: ${cache.insights.length}');
+      AppLogger.debug('📊 [InsightCache] Caching insights for context: ${cache.context.name}');
+      AppLogger.debug('🔍 [InsightCache] Insights count: ${cache.insights.length}');
       
       if (_box?.isOpen != true) {
-        print('⚠️ [InsightCache] Box not open, initializing...');
+        AppLogger.debug('⚠️ [InsightCache] Box not open, initializing...');
         await init();
       }
       
@@ -121,11 +122,11 @@ class InsightCacheServiceImpl implements InsightCacheService {
       
       await _box!.put(key, cacheModel.toJson());
       
-      print('✅ [InsightCache] Insights cached successfully');
-      print('🔍 [InsightCache] Context: ${cache.context.name}, Cached at: ${cache.cachedAt}');
+      AppLogger.debug('✅ [InsightCache] Insights cached successfully');
+      AppLogger.debug('🔍 [InsightCache] Context: ${cache.context.name}, Cached at: ${cache.cachedAt}');
     } catch (e, stackTrace) {
-      print('❌ [InsightCache] Failed to cache insights for context ${cache.context.name}: $e');
-      print('🔍 [InsightCache] Stack trace: $stackTrace');
+      AppLogger.debug('❌ [InsightCache] Failed to cache insights for context ${cache.context.name}: $e');
+      AppLogger.debug('🔍 [InsightCache] Stack trace: $stackTrace');
       // Don't rethrow - log error but don't fail the operation
     }
   }
@@ -133,21 +134,21 @@ class InsightCacheServiceImpl implements InsightCacheService {
   @override
   Future<void> invalidateCache(InsightContext context) async {
     try {
-      print('📊 [InsightCache] Invalidating cache for context: ${context.name}');
+      AppLogger.debug('📊 [InsightCache] Invalidating cache for context: ${context.name}');
       
       if (_box?.isOpen != true) {
-        print('⚠️ [InsightCache] Box not open, initializing...');
+        AppLogger.debug('⚠️ [InsightCache] Box not open, initializing...');
         await init();
       }
       
       final key = _getContextKey(context);
       await _box!.delete(key);
       
-      print('✅ [InsightCache] Cache invalidated successfully');
-      print('🔍 [InsightCache] Context: ${context.name}');
+      AppLogger.debug('✅ [InsightCache] Cache invalidated successfully');
+      AppLogger.debug('🔍 [InsightCache] Context: ${context.name}');
     } catch (e, stackTrace) {
-      print('❌ [InsightCache] Failed to invalidate cache for context ${context.name}: $e');
-      print('🔍 [InsightCache] Stack trace: $stackTrace');
+      AppLogger.debug('❌ [InsightCache] Failed to invalidate cache for context ${context.name}: $e');
+      AppLogger.debug('🔍 [InsightCache] Stack trace: $stackTrace');
       // Don't rethrow - log error but don't fail the operation
     }
   }
@@ -155,19 +156,19 @@ class InsightCacheServiceImpl implements InsightCacheService {
   @override
   Future<void> clearAll() async {
     try {
-      print('📊 [InsightCache] Clearing all cached insights...');
+      AppLogger.debug('📊 [InsightCache] Clearing all cached insights...');
       
       if (_box?.isOpen != true) {
-        print('⚠️ [InsightCache] Box not open, initializing...');
+        AppLogger.debug('⚠️ [InsightCache] Box not open, initializing...');
         await init();
       }
       
       await _box!.clear();
       
-      print('✅ [InsightCache] All cached insights cleared successfully');
+      AppLogger.debug('✅ [InsightCache] All cached insights cleared successfully');
     } catch (e, stackTrace) {
-      print('❌ [InsightCache] Failed to clear all cached insights: $e');
-      print('🔍 [InsightCache] Stack trace: $stackTrace');
+      AppLogger.debug('❌ [InsightCache] Failed to clear all cached insights: $e');
+      AppLogger.debug('🔍 [InsightCache] Stack trace: $stackTrace');
       // Don't rethrow - log error but don't fail the operation
     }
   }
@@ -179,13 +180,13 @@ class InsightCacheServiceImpl implements InsightCacheService {
       final cacheAge = now.difference(cache.cachedAt);
       final isStale = cacheAge >= cacheTTL;
       
-      print('🔍 [InsightCache] Cache staleness check for context: ${cache.context.name}');
-      print('🔍 [InsightCache] Cache age: ${cacheAge.inMinutes} minutes, TTL: ${cacheTTL.inMinutes} minutes, Is stale: $isStale');
+      AppLogger.debug('🔍 [InsightCache] Cache staleness check for context: ${cache.context.name}');
+      AppLogger.debug('🔍 [InsightCache] Cache age: ${cacheAge.inMinutes} minutes, TTL: ${cacheTTL.inMinutes} minutes, Is stale: $isStale');
       
       return isStale;
     } catch (e, stackTrace) {
-      print('❌ [InsightCache] Failed to check cache staleness: $e');
-      print('🔍 [InsightCache] Stack trace: $stackTrace');
+      AppLogger.debug('❌ [InsightCache] Failed to check cache staleness: $e');
+      AppLogger.debug('🔍 [InsightCache] Stack trace: $stackTrace');
       // Return true (stale) on error to force regeneration
       return true;
     }

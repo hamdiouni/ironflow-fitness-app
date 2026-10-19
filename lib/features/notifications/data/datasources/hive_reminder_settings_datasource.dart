@@ -1,3 +1,4 @@
+import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../../domain/entities/reminder_settings.dart';
 import '../../../../core/utils/hive_manager.dart';
@@ -22,8 +23,8 @@ class HiveReminderSettingsDatasource {
       final jsonMap = _deepConvertMap(data);
       return ReminderSettings.fromJson(jsonMap);
     } catch (e, stackTrace) {
-      print('❌ [ReminderSettings] Error loading settings: $e');
-      print('🔍 [ReminderSettings] Stack trace: $stackTrace');
+      AppLogger.debug('❌ [ReminderSettings] Error loading settings: $e');
+      AppLogger.debug('🔍 [ReminderSettings] Stack trace: $stackTrace');
       return null;
     }
   }
@@ -49,9 +50,9 @@ class HiveReminderSettingsDatasource {
     try {
       final box = _getBox();
       await box.put(_settingsKey, settings.toJson());
-      print('✅ [ReminderSettings] Settings saved');
+      AppLogger.debug('✅ [ReminderSettings] Settings saved');
     } catch (e) {
-      print('❌ [ReminderSettings] Error saving settings: $e');
+      AppLogger.debug('❌ [ReminderSettings] Error saving settings: $e');
       rethrow;
     }
   }
@@ -61,9 +62,9 @@ class HiveReminderSettingsDatasource {
     try {
       final box = _getBox();
       await box.delete(_settingsKey);
-      print('✅ [ReminderSettings] Settings cleared');
+      AppLogger.debug('✅ [ReminderSettings] Settings cleared');
     } catch (e) {
-      print('❌ [ReminderSettings] Error clearing settings: $e');
+      AppLogger.debug('❌ [ReminderSettings] Error clearing settings: $e');
       rethrow;
     }
   }

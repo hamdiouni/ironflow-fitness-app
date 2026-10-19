@@ -1,3 +1,4 @@
+import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:progression_tracker/features/auth/domain/entities/user.dart';
@@ -106,7 +107,7 @@ class MockAuthDataSourceImpl implements MockAuthDataSource {
   @override
   Future<User> signInWithGoogle() async {
     if (kDebugMode) {
-      print('📊 [Auth] Starting Google Sign-In...');
+      AppLogger.debug('📊 [Auth] Starting Google Sign-In...');
     }
 
     try {
@@ -134,20 +135,20 @@ class MockAuthDataSourceImpl implements MockAuthDataSource {
       if (googleUser == null) {
         // User cancelled the sign-in
         if (kDebugMode) {
-          print('⚠️ [Auth] User cancelled Google Sign-In');
+          AppLogger.debug('⚠️ [Auth] User cancelled Google Sign-In');
         }
         throw Exception('Sign in cancelled');
       }
 
       if (kDebugMode) {
-        print('✅ [Auth] Google account selected: ${googleUser.email}');
+        AppLogger.debug('✅ [Auth] Google account selected: ${googleUser.email}');
       }
 
       // Get authentication details
       await googleUser.authentication;
       
       if (kDebugMode) {
-        print('✅ [Auth] Got authentication tokens');
+        AppLogger.debug('✅ [Auth] Got authentication tokens');
       }
 
       // Create user from Google account
@@ -164,15 +165,15 @@ class MockAuthDataSourceImpl implements MockAuthDataSource {
       await _sessionStorage.saveSession(user);
       
       if (kDebugMode) {
-        print('✅ [Auth] Google Sign-In successful');
-        print('🔍 [Auth] User: ${user.displayName}');
+        AppLogger.debug('✅ [Auth] Google Sign-In successful');
+        AppLogger.debug('🔍 [Auth] User: ${user.displayName}');
       }
 
       return user;
     } on Exception catch (e) {
       if (kDebugMode) {
-        print('❌ [Auth] Google Sign-In failed: $e');
-        print('🔍 [Auth] Stack trace: ${StackTrace.current}');
+        AppLogger.debug('❌ [Auth] Google Sign-In failed: $e');
+        AppLogger.debug('🔍 [Auth] Stack trace: ${StackTrace.current}');
       }
       
       // Provide helpful error messages based on the error
@@ -254,6 +255,6 @@ class MockAuthDataSourceImpl implements MockAuthDataSource {
       throw Exception('No user found for that email.');
     }
     // In a real app, this would send an email
-    print('Password reset email sent to $email (mock)');
+    AppLogger.debug('Password reset email sent to $email (mock)');
   }
 }

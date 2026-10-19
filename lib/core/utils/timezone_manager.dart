@@ -1,3 +1,4 @@
+import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 
@@ -30,7 +31,7 @@ class TimezoneManager {
       }
       return getCurrentTimezoneOffset();
     } catch (e) {
-      print('Error loading timezone: $e');
+      AppLogger.debug('Error loading timezone: $e');
       return getCurrentTimezoneOffset();
     }
   }
@@ -43,7 +44,7 @@ class TimezoneManager {
           : await Hive.openBox<String>(_boxName);
       await box.put(_timezoneKey, offsetHours.toString());
     } catch (e) {
-      print('Error saving timezone: $e');
+      AppLogger.debug('Error saving timezone: $e');
     }
   }
 

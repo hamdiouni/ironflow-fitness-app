@@ -1,3 +1,4 @@
+import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/reminder_settings.dart';
 import '../../domain/repositories/reminder_settings_repository.dart';
@@ -113,7 +114,7 @@ class ReminderSettingsNotifier extends StateNotifier<AsyncValue<ReminderSettings
       final hasExactAlarmPermission = await _notificationService.requestExactAlarmPermission();
       
       if (!hasExactAlarmPermission) {
-        print('⚠️ [Notifications] Exact alarm permission not granted - notifications may not be reliable');
+        AppLogger.debug('⚠️ [Notifications] Exact alarm permission not granted - notifications may not be reliable');
         // Continue anyway - some notifications might still work
       }
     }

@@ -1,3 +1,4 @@
+import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:hive/hive.dart';
 
 import '../../domain/entities/notification_settings.dart';
@@ -33,7 +34,7 @@ class HiveNotificationSettingsDataSource {
       final box = Hive.box<Map>(_boxName);
       await box.put(_settingsKey, settings.toJson());
     } catch (e) {
-      print('Error saving notification settings: $e');
+      AppLogger.debug('Error saving notification settings: $e');
     }
   }
 
@@ -43,7 +44,7 @@ class HiveNotificationSettingsDataSource {
       final box = Hive.box<Map>(_boxName);
       await box.delete(_settingsKey);
     } catch (e) {
-      print('Error clearing notification settings: $e');
+      AppLogger.debug('Error clearing notification settings: $e');
     }
   }
 }

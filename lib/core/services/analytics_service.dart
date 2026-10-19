@@ -1,3 +1,4 @@
+import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/foundation.dart';
 
@@ -394,11 +395,11 @@ class AnalyticsService {
         parameters: nonNullParameters,
       );
       if (kDebugMode) {
-        print('📊 Analytics: $name ${parameters ?? ""}');
+        AppLogger.debug('📊 Analytics: $name ${parameters ?? ""}');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('⚠️ Analytics error: $e');
+        AppLogger.debug('⚠️ Analytics error: $e');
       }
     }
   }

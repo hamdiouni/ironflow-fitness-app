@@ -1,3 +1,4 @@
+import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 // Firebase - DISABLED
@@ -71,19 +72,19 @@ class CustomFoodsNotifier extends StateNotifier<AsyncValue<List<FoodItemFull>>> 
   Future<void> _loadCustomFoods() async {
     try {
       if (kDebugMode) {
-        print('📊 [CustomFoods] Loading custom foods...');
+        AppLogger.debug('📊 [CustomFoods] Loading custom foods...');
       }
       
       final foods = await _repository.getCustomFoods();
       
       if (kDebugMode) {
-        print('✅ [CustomFoods] Loaded ${foods.length} custom foods');
+        AppLogger.debug('✅ [CustomFoods] Loaded ${foods.length} custom foods');
       }
       
       state = AsyncValue.data(foods);
     } catch (e, stackTrace) {
       if (kDebugMode) {
-        print('❌ [CustomFoods] Failed to load custom foods: $e');
+        AppLogger.debug('❌ [CustomFoods] Failed to load custom foods: $e');
       }
       state = AsyncValue.error(e, stackTrace);
     }
@@ -93,14 +94,14 @@ class CustomFoodsNotifier extends StateNotifier<AsyncValue<List<FoodItemFull>>> 
   Future<void> addCustomFood(FoodItemFull food) async {
     try {
       if (kDebugMode) {
-        print('📊 [CustomFoods] Adding custom food: ${food.name}');
+        AppLogger.debug('📊 [CustomFoods] Adding custom food: ${food.name}');
       }
       
       // Save to repository
       await _repository.saveCustomFood(food);
       
       if (kDebugMode) {
-        print('✅ [CustomFoods] Custom food saved to repository');
+        AppLogger.debug('✅ [CustomFoods] Custom food saved to repository');
       }
       
       // Update state immediately
@@ -108,15 +109,15 @@ class CustomFoodsNotifier extends StateNotifier<AsyncValue<List<FoodItemFull>>> 
         final updatedFoods = [...currentFoods, food];
         
         if (kDebugMode) {
-          print('✅ [CustomFoods] State updated with new food');
-          print('🔍 [CustomFoods] Total custom foods: ${updatedFoods.length}');
+          AppLogger.debug('✅ [CustomFoods] State updated with new food');
+          AppLogger.debug('🔍 [CustomFoods] Total custom foods: ${updatedFoods.length}');
         }
         
         state = AsyncValue.data(updatedFoods);
       });
     } catch (e, stackTrace) {
       if (kDebugMode) {
-        print('❌ [CustomFoods] Failed to add custom food: $e');
+        AppLogger.debug('❌ [CustomFoods] Failed to add custom food: $e');
       }
       state = AsyncValue.error(e, stackTrace);
     }
@@ -126,14 +127,14 @@ class CustomFoodsNotifier extends StateNotifier<AsyncValue<List<FoodItemFull>>> 
   Future<void> deleteCustomFood(String id) async {
     try {
       if (kDebugMode) {
-        print('📊 [CustomFoods] Deleting custom food: $id');
+        AppLogger.debug('📊 [CustomFoods] Deleting custom food: $id');
       }
       
       // Delete from repository
       await _repository.deleteCustomFood(id);
       
       if (kDebugMode) {
-        print('✅ [CustomFoods] Custom food deleted from repository');
+        AppLogger.debug('✅ [CustomFoods] Custom food deleted from repository');
       }
       
       // Update state immediately
@@ -141,15 +142,15 @@ class CustomFoodsNotifier extends StateNotifier<AsyncValue<List<FoodItemFull>>> 
         final updatedFoods = currentFoods.where((f) => f.id != id).toList();
         
         if (kDebugMode) {
-          print('✅ [CustomFoods] State updated after deletion');
-          print('🔍 [CustomFoods] Remaining custom foods: ${updatedFoods.length}');
+          AppLogger.debug('✅ [CustomFoods] State updated after deletion');
+          AppLogger.debug('🔍 [CustomFoods] Remaining custom foods: ${updatedFoods.length}');
         }
         
         state = AsyncValue.data(updatedFoods);
       });
     } catch (e, stackTrace) {
       if (kDebugMode) {
-        print('❌ [CustomFoods] Failed to delete custom food: $e');
+        AppLogger.debug('❌ [CustomFoods] Failed to delete custom food: $e');
       }
       state = AsyncValue.error(e, stackTrace);
     }

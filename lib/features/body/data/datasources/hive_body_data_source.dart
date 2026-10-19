@@ -1,3 +1,4 @@
+import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:hive/hive.dart';
 import '../models/body_entry_model.dart';
 
@@ -29,35 +30,35 @@ class HiveBodyDataSource {
 
   Future<void> saveBodyEntry(BodyEntryModel entry) async {
     try {
-      print('📊 [BodyData] Saving body measurement...');
-      print('🔍 [BodyData] Entry ID: ${entry.id}, Weight: ${entry.weight}kg');
+      AppLogger.debug('📊 [BodyData] Saving body measurement...');
+      AppLogger.debug('🔍 [BodyData] Entry ID: ${entry.id}, Weight: ${entry.weight}kg');
       
       if (!_box.isOpen) {
-        print('⚠️ [BodyData] Body entries box is not open');
+        AppLogger.debug('⚠️ [BodyData] Body entries box is not open');
         throw Exception('Body entries box not open');
       }
       
       await _box.put(entry.id, entry.toJson());
       
-      print('✅ [BodyData] Body measurement saved successfully');
-      print('🔍 [BodyData] Weight: ${entry.weight}kg, Date: ${entry.date}, Measurements: ${entry.measurements.length}');
+      AppLogger.debug('✅ [BodyData] Body measurement saved successfully');
+      AppLogger.debug('🔍 [BodyData] Weight: ${entry.weight}kg, Date: ${entry.date}, Measurements: ${entry.measurements.length}');
     } catch (e, stackTrace) {
-      print('❌ [BodyData] Failed to save body measurement: $e');
-      print('🔍 [BodyData] Stack trace: $stackTrace');
+      AppLogger.debug('❌ [BodyData] Failed to save body measurement: $e');
+      AppLogger.debug('🔍 [BodyData] Stack trace: $stackTrace');
       rethrow;
     }
   }
 
   Future<List<BodyEntryModel>> getAllBodyEntries() async {
     try {
-      print('📊 [BodyData] Retrieving all body measurements...');
+      AppLogger.debug('📊 [BodyData] Retrieving all body measurements...');
       
       if (!_box.isOpen) {
-        print('⚠️ [BodyData] Body entries box is not open');
+        AppLogger.debug('⚠️ [BodyData] Body entries box is not open');
         throw Exception('Body entries box not open');
       }
       
-      print('🔍 [BodyData] Box contains ${_box.length} entries');
+      AppLogger.debug('🔍 [BodyData] Box contains ${_box.length} entries');
       
       final entries = _box.values
           .map((json) => BodyEntryModel.fromJson(_deepCast(json)))
@@ -66,33 +67,33 @@ class HiveBodyDataSource {
       // Sort by date descending
       entries.sort((a, b) => b.date.compareTo(a.date));
       
-      print('✅ [BodyData] Retrieved ${entries.length} body measurements');
-      print('🔍 [BodyData] Sorted by date descending');
+      AppLogger.debug('✅ [BodyData] Retrieved ${entries.length} body measurements');
+      AppLogger.debug('🔍 [BodyData] Sorted by date descending');
       
       return entries;
     } catch (e, stackTrace) {
-      print('❌ [BodyData] Failed to retrieve body measurements: $e');
-      print('🔍 [BodyData] Stack trace: $stackTrace');
+      AppLogger.debug('❌ [BodyData] Failed to retrieve body measurements: $e');
+      AppLogger.debug('🔍 [BodyData] Stack trace: $stackTrace');
       rethrow;
     }
   }
 
   Future<void> deleteBodyEntry(String id) async {
     try {
-      print('📊 [BodyData] Deleting body measurement...');
-      print('🔍 [BodyData] Entry ID: $id');
+      AppLogger.debug('📊 [BodyData] Deleting body measurement...');
+      AppLogger.debug('🔍 [BodyData] Entry ID: $id');
       
       if (!_box.isOpen) {
-        print('⚠️ [BodyData] Body entries box is not open');
+        AppLogger.debug('⚠️ [BodyData] Body entries box is not open');
         throw Exception('Body entries box not open');
       }
       
       await _box.delete(id);
       
-      print('✅ [BodyData] Body measurement deleted successfully');
+      AppLogger.debug('✅ [BodyData] Body measurement deleted successfully');
     } catch (e, stackTrace) {
-      print('❌ [BodyData] Failed to delete body measurement: $e');
-      print('🔍 [BodyData] Stack trace: $stackTrace');
+      AppLogger.debug('❌ [BodyData] Failed to delete body measurement: $e');
+      AppLogger.debug('🔍 [BodyData] Stack trace: $stackTrace');
       rethrow;
     }
   }

@@ -1,3 +1,4 @@
+import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'dart:async';
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
@@ -34,7 +35,7 @@ class NotificationService {
     // Notifications not supported on Web
     if (kIsWeb) {
       if (kDebugMode) {
-        print('⚠️ [Notifications] Not supported on Web platform');
+        AppLogger.debug('⚠️ [Notifications] Not supported on Web platform');
       }
       _initialized = true;
       return;
@@ -47,11 +48,11 @@ class NotificationService {
       tz.initializeTimeZones();
       
       if (kDebugMode) {
-        print('✓ [Notifications] Timezone initialized');
+        AppLogger.debug('✓ [Notifications] Timezone initialized');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('⚠️ [Notifications] Timezone initialization failed: $e');
+        AppLogger.debug('⚠️ [Notifications] Timezone initialization failed: $e');
       }
     }
 
@@ -82,11 +83,11 @@ class NotificationService {
       _initialized = true;
       
       if (kDebugMode) {
-        print('✓ [Notifications] Service initialized successfully');
+        AppLogger.debug('✓ [Notifications] Service initialized successfully');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('❌ [Notifications] Initialization failed: $e');
+        AppLogger.debug('❌ [Notifications] Initialization failed: $e');
       }
       rethrow;
     }
@@ -107,7 +108,7 @@ class NotificationService {
       }
     } catch (e) {
       if (kDebugMode) {
-        print('⚠️ [Notifications] Failed to get launch details: $e');
+        AppLogger.debug('⚠️ [Notifications] Failed to get launch details: $e');
       }
     }
     return null;
@@ -118,14 +119,14 @@ class NotificationService {
     // Not supported on Web
     if (kIsWeb) {
       if (kDebugMode) {
-        print('⚠️ [Notifications] Permissions not needed on Web');
+        AppLogger.debug('⚠️ [Notifications] Permissions not needed on Web');
       }
       return false;
     }
 
     if (!_initialized) {
       if (kDebugMode) {
-        print('⚠️ [Notifications] Service not initialized. Call initialize() first.');
+        AppLogger.debug('⚠️ [Notifications] Service not initialized. Call initialize() first.');
       }
       return false;
     }
@@ -138,7 +139,7 @@ class NotificationService {
       if (androidPlugin != null) {
         final granted = await androidPlugin.requestNotificationsPermission();
         if (kDebugMode) {
-          print('✓ [Notifications] Android permissions: ${granted ?? false}');
+          AppLogger.debug('✓ [Notifications] Android permissions: ${granted ?? false}');
         }
         return granted ?? false;
       }
@@ -154,7 +155,7 @@ class NotificationService {
           sound: true,
         );
         if (kDebugMode) {
-          print('✓ [Notifications] iOS permissions: ${granted ?? false}');
+          AppLogger.debug('✓ [Notifications] iOS permissions: ${granted ?? false}');
         }
         return granted ?? false;
       }
@@ -162,7 +163,7 @@ class NotificationService {
       return true;
     } catch (e) {
       if (kDebugMode) {
-        print('❌ [Notifications] Permission request failed: $e');
+        AppLogger.debug('❌ [Notifications] Permission request failed: $e');
       }
       return false;
     }
@@ -185,12 +186,12 @@ class NotificationService {
           final canScheduleExactAlarms = await androidPlugin.canScheduleExactNotifications();
           
           if (kDebugMode) {
-            print('📊 [Notifications] Can schedule exact alarms: $canScheduleExactAlarms');
+            AppLogger.debug('📊 [Notifications] Can schedule exact alarms: $canScheduleExactAlarms');
           }
           
           if (canScheduleExactAlarms == null || !canScheduleExactAlarms) {
             if (kDebugMode) {
-              print('⚠️ [Notifications] Requesting exact alarm permission...');
+              AppLogger.debug('⚠️ [Notifications] Requesting exact alarm permission...');
             }
             
             // Request permission by opening settings
@@ -200,7 +201,7 @@ class NotificationService {
             final granted = await androidPlugin.canScheduleExactNotifications();
             
             if (kDebugMode) {
-              print('✓ [Notifications] Exact alarm permission granted: ${granted ?? false}');
+              AppLogger.debug('✓ [Notifications] Exact alarm permission granted: ${granted ?? false}');
             }
             
             return granted ?? false;
@@ -213,7 +214,7 @@ class NotificationService {
       return true;
     } catch (e) {
       if (kDebugMode) {
-        print('❌ [Notifications] Failed to request exact alarm permission: $e');
+        AppLogger.debug('❌ [Notifications] Failed to request exact alarm permission: $e');
       }
       return false;
     }
@@ -224,14 +225,14 @@ class NotificationService {
     // Not supported on Web
     if (kIsWeb) {
       if (kDebugMode) {
-        print('⚠️ [Notifications] Scheduling not supported on Web');
+        AppLogger.debug('⚠️ [Notifications] Scheduling not supported on Web');
       }
       return;
     }
 
     if (!_initialized) {
       if (kDebugMode) {
-        print('⚠️ [Notifications] Service not initialized');
+        AppLogger.debug('⚠️ [Notifications] Service not initialized');
       }
       return;
     }
@@ -272,11 +273,11 @@ class NotificationService {
       );
       
       if (kDebugMode) {
-        print('✓ [Notifications] Workout reminder scheduled for ${time.hour}:${time.minute}');
+        AppLogger.debug('✓ [Notifications] Workout reminder scheduled for ${time.hour}:${time.minute}');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('❌ [Notifications] Failed to schedule workout reminder: $e');
+        AppLogger.debug('❌ [Notifications] Failed to schedule workout reminder: $e');
       }
     }
   }
@@ -291,14 +292,14 @@ class NotificationService {
     // Not supported on Web
     if (kIsWeb) {
       if (kDebugMode) {
-        print('⚠️ [Notifications] Scheduling not supported on Web');
+        AppLogger.debug('⚠️ [Notifications] Scheduling not supported on Web');
       }
       return;
     }
 
     if (!_initialized) {
       if (kDebugMode) {
-        print('⚠️ [Notifications] Service not initialized');
+        AppLogger.debug('⚠️ [Notifications] Service not initialized');
       }
       return;
     }
@@ -394,11 +395,11 @@ class NotificationService {
       );
       
       if (kDebugMode) {
-        print('✓ [Notifications] Meal reminders scheduled');
+        AppLogger.debug('✓ [Notifications] Meal reminders scheduled');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('❌ [Notifications] Failed to schedule meal reminders: $e');
+        AppLogger.debug('❌ [Notifications] Failed to schedule meal reminders: $e');
       }
     }
   }
@@ -408,14 +409,14 @@ class NotificationService {
     // Not supported on Web
     if (kIsWeb) {
       if (kDebugMode) {
-        print('⚠️ [Notifications] Scheduling not supported on Web');
+        AppLogger.debug('⚠️ [Notifications] Scheduling not supported on Web');
       }
       return;
     }
 
     if (!_initialized) {
       if (kDebugMode) {
-        print('⚠️ [Notifications] Service not initialized');
+        AppLogger.debug('⚠️ [Notifications] Service not initialized');
       }
       return;
     }
@@ -456,11 +457,11 @@ class NotificationService {
       );
       
       if (kDebugMode) {
-        print('✓ [Notifications] Streak reminder scheduled for ${time.hour}:${time.minute}');
+        AppLogger.debug('✓ [Notifications] Streak reminder scheduled for ${time.hour}:${time.minute}');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('❌ [Notifications] Failed to schedule streak reminder: $e');
+        AppLogger.debug('❌ [Notifications] Failed to schedule streak reminder: $e');
       }
     }
   }
@@ -475,14 +476,14 @@ class NotificationService {
     // Not supported on Web
     if (kIsWeb) {
       if (kDebugMode) {
-        print('⚠️ [Notifications] Show notification not supported on Web');
+        AppLogger.debug('⚠️ [Notifications] Show notification not supported on Web');
       }
       return;
     }
 
     if (!_initialized) {
       if (kDebugMode) {
-        print('⚠️ [Notifications] Service not initialized');
+        AppLogger.debug('⚠️ [Notifications] Service not initialized');
       }
       return;
     }
@@ -511,7 +512,7 @@ class NotificationService {
       );
     } catch (e) {
       if (kDebugMode) {
-        print('❌ [Notifications] Failed to show notification: $e');
+        AppLogger.debug('❌ [Notifications] Failed to show notification: $e');
       }
     }
   }
@@ -525,7 +526,7 @@ class NotificationService {
       await _notifications.cancel(workoutReminderId);
     } catch (e) {
       if (kDebugMode) {
-        print('❌ [Notifications] Failed to cancel workout reminder: $e');
+        AppLogger.debug('❌ [Notifications] Failed to cancel workout reminder: $e');
       }
     }
   }
@@ -541,7 +542,7 @@ class NotificationService {
       await _notifications.cancel(dinnerReminderId);
     } catch (e) {
       if (kDebugMode) {
-        print('❌ [Notifications] Failed to cancel meal reminders: $e');
+        AppLogger.debug('❌ [Notifications] Failed to cancel meal reminders: $e');
       }
     }
   }
@@ -555,7 +556,7 @@ class NotificationService {
       await _notifications.cancel(streakReminderId);
     } catch (e) {
       if (kDebugMode) {
-        print('❌ [Notifications] Failed to cancel streak reminder: $e');
+        AppLogger.debug('❌ [Notifications] Failed to cancel streak reminder: $e');
       }
     }
   }
@@ -597,11 +598,11 @@ class NotificationService {
       );
 
       if (kDebugMode) {
-        print('✓ [Notifications] Inexact rest timer scheduled for $targetEndTime');
+        AppLogger.debug('✓ [Notifications] Inexact rest timer scheduled for $targetEndTime');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('❌ [Notifications] Failed to schedule rest timer: $e');
+        AppLogger.debug('❌ [Notifications] Failed to schedule rest timer: $e');
       }
     }
   }
@@ -613,11 +614,11 @@ class NotificationService {
     try {
       await _notifications.cancel(restTimerNotificationId);
       if (kDebugMode) {
-        print('✓ [Notifications] Rest timer notification cancelled');
+        AppLogger.debug('✓ [Notifications] Rest timer notification cancelled');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('❌ [Notifications] Failed to cancel rest timer: $e');
+        AppLogger.debug('❌ [Notifications] Failed to cancel rest timer: $e');
       }
     }
   }
@@ -631,7 +632,7 @@ class NotificationService {
       await _notifications.cancelAll();
     } catch (e) {
       if (kDebugMode) {
-        print('❌ [Notifications] Failed to cancel all notifications: $e');
+        AppLogger.debug('❌ [Notifications] Failed to cancel all notifications: $e');
       }
     }
   }
@@ -653,7 +654,7 @@ class NotificationService {
       return true; // Assume enabled on other platforms
     } catch (e) {
       if (kDebugMode) {
-        print('❌ [Notifications] Failed to check notification status: $e');
+        AppLogger.debug('❌ [Notifications] Failed to check notification status: $e');
       }
       return false;
     }

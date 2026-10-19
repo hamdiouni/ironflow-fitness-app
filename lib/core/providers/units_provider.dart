@@ -1,3 +1,4 @@
+import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 
@@ -33,7 +34,7 @@ class UnitsNotifier extends StateNotifier<UnitsSystem> {
       final units = unitsStr == 'imperial' ? UnitsSystem.imperial : UnitsSystem.metric;
       state = units;
     } catch (e) {
-      print('Error loading units: $e');
+      AppLogger.debug('Error loading units: $e');
       state = UnitsSystem.metric;
     }
   }
@@ -47,7 +48,7 @@ class UnitsNotifier extends StateNotifier<UnitsSystem> {
       final unitsStr = units == UnitsSystem.imperial ? 'imperial' : 'metric';
       await box.put(_unitsKey, unitsStr);
     } catch (e) {
-      print('Error saving units: $e');
+      AppLogger.debug('Error saving units: $e');
     }
   }
 

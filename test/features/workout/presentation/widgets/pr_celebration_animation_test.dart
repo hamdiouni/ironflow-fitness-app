@@ -122,11 +122,11 @@ void main() {
         routes: [
           GoRoute(
             path: '/home',
-            builder: (_, __) => const Scaffold(body: Text('Home')),
+            builder: (context, state) => const Scaffold(body: Text('Home')),
           ),
           GoRoute(
             path: '/summary',
-            builder: (_, __) => const WorkoutSummaryScreen(
+            builder: (context, state) => const WorkoutSummaryScreen(
               totalSets: 12,
               totalVolume: 5000,
               duration: Duration(minutes: 45),
@@ -175,11 +175,11 @@ void main() {
         routes: [
           GoRoute(
             path: '/home',
-            builder: (_, __) => const Scaffold(body: Text('Home')),
+            builder: (context, state) => const Scaffold(body: Text('Home')),
           ),
           GoRoute(
             path: '/summary',
-            builder: (_, __) => const WorkoutSummaryScreen(
+            builder: (context, state) => const WorkoutSummaryScreen(
               totalSets: 8,
               totalVolume: 3200,
               duration: Duration(minutes: 30),

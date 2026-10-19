@@ -1,3 +1,4 @@
+import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 
 /// Voice Persona for fitness coaching
@@ -65,15 +66,15 @@ class TtsService {
 
       // Set up error handler
       _flutterTts.setErrorHandler((msg) {
-        print('🔴 [TTS ERROR] $msg');
+        AppLogger.debug('🔴 [TTS ERROR] $msg');
         _isSpeaking = false;
         _isPaused = false;
       });
 
       _isInitialized = true;
-      print('✅ [TTS] Service initialized successfully');
+      AppLogger.debug('✅ [TTS] Service initialized successfully');
     } catch (e) {
-      print('❌ [TTS ERROR] Failed to initialize: $e');
+      AppLogger.debug('❌ [TTS ERROR] Failed to initialize: $e');
     }
   }
 
@@ -90,14 +91,14 @@ class TtsService {
       // Clean text for better speech
       final cleanText = _cleanTextForSpeech(text);
 
-      print('🔊 [TTS] Speaking: ${cleanText.substring(0, cleanText.length > 50 ? 50 : cleanText.length)}...');
+      AppLogger.debug('🔊 [TTS] Speaking: ${cleanText.substring(0, cleanText.length > 50 ? 50 : cleanText.length)}...');
 
       _isSpeaking = true;
       _isPaused = false;
 
       await _flutterTts.speak(cleanText);
     } catch (e) {
-      print('❌ [TTS ERROR] Failed to speak: $e');
+      AppLogger.debug('❌ [TTS ERROR] Failed to speak: $e');
       _isSpeaking = false;
     }
   }
@@ -108,9 +109,9 @@ class TtsService {
       try {
         await _flutterTts.pause();
         _isPaused = true;
-        print('⏸️ [TTS] Paused');
+        AppLogger.debug('⏸️ [TTS] Paused');
       } catch (e) {
-        print('❌ [TTS ERROR] Failed to pause: $e');
+        AppLogger.debug('❌ [TTS ERROR] Failed to pause: $e');
       }
     }
   }
@@ -122,9 +123,9 @@ class TtsService {
         // Note: Flutter TTS doesn't have a resume method on all platforms
         // We'll need to continue from where we left off
         _isPaused = false;
-        print('▶️ [TTS] Resumed');
+        AppLogger.debug('▶️ [TTS] Resumed');
       } catch (e) {
-        print('❌ [TTS ERROR] Failed to resume: $e');
+        AppLogger.debug('❌ [TTS ERROR] Failed to resume: $e');
       }
     }
   }
@@ -136,9 +137,9 @@ class TtsService {
         await _flutterTts.stop();
         _isSpeaking = false;
         _isPaused = false;
-        print('⏹️ [TTS] Stopped');
+        AppLogger.debug('⏹️ [TTS] Stopped');
       } catch (e) {
-        print('❌ [TTS ERROR] Failed to stop: $e');
+        AppLogger.debug('❌ [TTS ERROR] Failed to stop: $e');
       }
     }
   }
@@ -155,7 +156,7 @@ class TtsService {
       final languages = await _flutterTts.getLanguages;
       return List<String>.from(languages);
     } catch (e) {
-      print('❌ [TTS ERROR] Failed to get languages: $e');
+      AppLogger.debug('❌ [TTS ERROR] Failed to get languages: $e');
       return ['en-US'];
     }
   }
@@ -176,13 +177,13 @@ class TtsService {
             .map((voice) => (voice as Map)['name'] as String)
             .toList();
         
-        print('🎤 [TTS] Found ${_availableVoices.length} English voices');
+        AppLogger.debug('🎤 [TTS] Found ${_availableVoices.length} English voices');
         if (_availableVoices.isNotEmpty) {
-          print('🎤 [TTS] Available voices: ${_availableVoices.take(5).join(", ")}...');
+          AppLogger.debug('🎤 [TTS] Available voices: ${_availableVoices.take(5).join(", ")}...');
         }
       }
     } catch (e) {
-      print('❌ [TTS ERROR] Failed to load voices: $e');
+      AppLogger.debug('❌ [TTS ERROR] Failed to load voices: $e');
       _availableVoices = [];
     }
   }
@@ -198,9 +199,9 @@ class TtsService {
     try {
       await _flutterTts.setVoice({'name': voiceName, 'locale': 'en-US'});
       _currentVoice = voiceName;
-      print('🎤 [TTS] Voice set to: $voiceName');
+      AppLogger.debug('🎤 [TTS] Voice set to: $voiceName');
     } catch (e) {
-      print('❌ [TTS ERROR] Failed to set voice: $e');
+      AppLogger.debug('❌ [TTS ERROR] Failed to set voice: $e');
     }
   }
   
@@ -218,12 +219,12 @@ class TtsService {
       // Set recommended speed
       await setSpeechRate(persona.recommendedSpeed);
       
-      print('🎭 [TTS] Applied persona: ${persona.name}');
-      print('   Voice: ${persona.voiceName}');
-      print('   Pitch: ${persona.pitch}');
-      print('   Speed: ${persona.recommendedSpeed}');
+      AppLogger.debug('🎭 [TTS] Applied persona: ${persona.name}');
+      AppLogger.debug('   Voice: ${persona.voiceName}');
+      AppLogger.debug('   Pitch: ${persona.pitch}');
+      AppLogger.debug('   Speed: ${persona.recommendedSpeed}');
     } catch (e) {
-      print('❌ [TTS ERROR] Failed to apply persona: $e');
+      AppLogger.debug('❌ [TTS ERROR] Failed to apply persona: $e');
     }
   }
   
@@ -360,9 +361,9 @@ class TtsService {
   Future<void> setSpeechRate(double rate) async {
     try {
       await _flutterTts.setSpeechRate(rate);
-      print('🎚️ [TTS] Speech rate set to $rate');
+      AppLogger.debug('🎚️ [TTS] Speech rate set to $rate');
     } catch (e) {
-      print('❌ [TTS ERROR] Failed to set speech rate: $e');
+      AppLogger.debug('❌ [TTS ERROR] Failed to set speech rate: $e');
     }
   }
 
@@ -370,9 +371,9 @@ class TtsService {
   Future<void> setPitch(double pitch) async {
     try {
       await _flutterTts.setPitch(pitch);
-      print('🎚️ [TTS] Pitch set to $pitch');
+      AppLogger.debug('🎚️ [TTS] Pitch set to $pitch');
     } catch (e) {
-      print('❌ [TTS ERROR] Failed to set pitch: $e');
+      AppLogger.debug('❌ [TTS ERROR] Failed to set pitch: $e');
     }
   }
 

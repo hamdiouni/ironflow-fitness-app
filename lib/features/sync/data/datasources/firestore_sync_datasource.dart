@@ -1,3 +1,4 @@
+import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../core/models/sync_operation.dart';
 import '../../../workout/data/models/workout_model.dart';
@@ -234,7 +235,7 @@ class FirestoreSyncDataSourceImpl implements FirestoreSyncDataSource {
       final timestamp = doc.data()?['lastSyncTime'] as Timestamp?;
       return timestamp?.toDate();
     } catch (e) {
-      print('Failed to get last sync time: $e');
+      AppLogger.debug('Failed to get last sync time: $e');
       return null;
     }
   }

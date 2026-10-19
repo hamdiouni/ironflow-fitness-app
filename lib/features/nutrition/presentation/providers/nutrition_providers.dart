@@ -1,3 +1,4 @@
+import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -76,22 +77,22 @@ class DailyNutritionNotifier extends StateNotifier<AsyncValue<DailyNutritionSumm
   Future<void> _loadSummary() async {
     try {
       if (kDebugMode) {
-        print('📊 [Nutrition] Fetching daily nutrition summary...');
-        print('🔍 [Nutrition] Date: ${_date.toIso8601String().split('T')[0]}');
+        AppLogger.debug('📊 [Nutrition] Fetching daily nutrition summary...');
+        AppLogger.debug('🔍 [Nutrition] Date: ${_date.toIso8601String().split('T')[0]}');
       }
       
       final summary = await _repository.getDailyNutrition(_date);
       
       if (kDebugMode) {
-        print('✅ [Nutrition] Daily nutrition summary retrieved successfully');
-        print('🔍 [Nutrition] Total calories: ${summary.totalCalories}, Meals: ${summary.meals.length}');
+        AppLogger.debug('✅ [Nutrition] Daily nutrition summary retrieved successfully');
+        AppLogger.debug('🔍 [Nutrition] Total calories: ${summary.totalCalories}, Meals: ${summary.meals.length}');
       }
       
       state = AsyncValue.data(summary);
     } catch (e, stackTrace) {
       if (kDebugMode) {
-        print('❌ [Nutrition] Failed to fetch daily nutrition summary: $e');
-        print('🔍 [Nutrition] Stack trace: $stackTrace');
+        AppLogger.debug('❌ [Nutrition] Failed to fetch daily nutrition summary: $e');
+        AppLogger.debug('🔍 [Nutrition] Stack trace: $stackTrace');
       }
       state = AsyncValue.error(e, stackTrace);
     }
@@ -101,14 +102,14 @@ class DailyNutritionNotifier extends StateNotifier<AsyncValue<DailyNutritionSumm
   Future<void> addMeal(Meal meal) async {
     try {
       if (kDebugMode) {
-        print('📊 [Nutrition] Adding meal: ${meal.name}');
+        AppLogger.debug('📊 [Nutrition] Adding meal: ${meal.name}');
       }
       
       // Save to repository
       await _repository.saveMealEntry(meal);
       
       if (kDebugMode) {
-        print('✅ [Nutrition] Meal saved to repository');
+        AppLogger.debug('✅ [Nutrition] Meal saved to repository');
       }
       
       // Update state immediately by creating new summary with added meal
@@ -121,8 +122,8 @@ class DailyNutritionNotifier extends StateNotifier<AsyncValue<DailyNutritionSumm
         );
         
         if (kDebugMode) {
-          print('✅ [Nutrition] State updated with new meal');
-          print('🔍 [Nutrition] Total meals: ${updatedMeals.length}');
+          AppLogger.debug('✅ [Nutrition] State updated with new meal');
+          AppLogger.debug('🔍 [Nutrition] Total meals: ${updatedMeals.length}');
         }
         
         state = AsyncValue.data(updatedSummary);
@@ -140,16 +141,16 @@ class DailyNutritionNotifier extends StateNotifier<AsyncValue<DailyNutritionSumm
           fat: meal.macros.fats,
         );
         if (kDebugMode) {
-          print('📊 [Analytics] Meal logged event tracked');
+          AppLogger.debug('📊 [Analytics] Meal logged event tracked');
         }
       } catch (e) {
         if (kDebugMode) {
-          print('⚠️ [Analytics] Failed to log meal event: $e');
+          AppLogger.debug('⚠️ [Analytics] Failed to log meal event: $e');
         }
       }
     } catch (e, stackTrace) {
       if (kDebugMode) {
-        print('❌ [Nutrition] Failed to add meal: $e');
+        AppLogger.debug('❌ [Nutrition] Failed to add meal: $e');
       }
       state = AsyncValue.error(e, stackTrace);
     }
@@ -159,14 +160,14 @@ class DailyNutritionNotifier extends StateNotifier<AsyncValue<DailyNutritionSumm
   Future<void> deleteMeal(String mealId) async {
     try {
       if (kDebugMode) {
-        print('📊 [Nutrition] Deleting meal: $mealId');
+        AppLogger.debug('📊 [Nutrition] Deleting meal: $mealId');
       }
       
       // Delete from repository
       await _repository.deleteMealEntry(mealId);
       
       if (kDebugMode) {
-        print('✅ [Nutrition] Meal deleted from repository');
+        AppLogger.debug('✅ [Nutrition] Meal deleted from repository');
       }
       
       // Update state immediately by removing the meal
@@ -179,8 +180,8 @@ class DailyNutritionNotifier extends StateNotifier<AsyncValue<DailyNutritionSumm
         );
         
         if (kDebugMode) {
-          print('✅ [Nutrition] State updated after deletion');
-          print('🔍 [Nutrition] Remaining meals: ${updatedMeals.length}');
+          AppLogger.debug('✅ [Nutrition] State updated after deletion');
+          AppLogger.debug('🔍 [Nutrition] Remaining meals: ${updatedMeals.length}');
         }
         
         state = AsyncValue.data(updatedSummary);
@@ -188,7 +189,7 @@ class DailyNutritionNotifier extends StateNotifier<AsyncValue<DailyNutritionSumm
       _ref.invalidate(recentFoodsProvider);
     } catch (e, stackTrace) {
       if (kDebugMode) {
-        print('❌ [Nutrition] Failed to delete meal: $e');
+        AppLogger.debug('❌ [Nutrition] Failed to delete meal: $e');
       }
       state = AsyncValue.error(e, stackTrace);
     }
@@ -255,7 +256,7 @@ final recentFoodsProvider = FutureProvider<List<Meal>>((ref) async {
     return distinctRecent;
   } catch (e) {
     if (kDebugMode) {
-      print('⚠️ [Nutrition] Error fetching recent foods: $e');
+      AppLogger.debug('⚠️ [Nutrition] Error fetching recent foods: $e');
     }
     return <Meal>[];
   }
@@ -281,8 +282,8 @@ final mealSuggestionsProvider = FutureProvider.family<
       double targetFat,
     })>((ref, params) async {
   try {
-    print('📊 [Nutrition] Calculating meal suggestions...');
-    print('🔍 [Nutrition] Target - Calories: ${params.targetCalories}, Protein: ${params.targetProtein}g, Carbs: ${params.targetCarbs}g, Fat: ${params.targetFat}g');
+    AppLogger.debug('📊 [Nutrition] Calculating meal suggestions...');
+    AppLogger.debug('🔍 [Nutrition] Target - Calories: ${params.targetCalories}, Protein: ${params.targetProtein}g, Carbs: ${params.targetCarbs}g, Fat: ${params.targetFat}g');
     
     final useCase = ref.watch(getMealSuggestionsUseCaseProvider);
     final suggestions = await useCase(
@@ -292,13 +293,13 @@ final mealSuggestionsProvider = FutureProvider.family<
       targetFat: params.targetFat,
     );
     
-    print('✅ [Nutrition] Meal suggestions calculated successfully');
-    print('🔍 [Nutrition] Found ${suggestions.length} suggestions');
+    AppLogger.debug('✅ [Nutrition] Meal suggestions calculated successfully');
+    AppLogger.debug('🔍 [Nutrition] Found ${suggestions.length} suggestions');
     
     return suggestions;
   } catch (e, stackTrace) {
-    print('❌ [Nutrition] Failed to calculate meal suggestions: $e');
-    print('🔍 [Nutrition] Stack trace: $stackTrace');
+    AppLogger.debug('❌ [Nutrition] Failed to calculate meal suggestions: $e');
+    AppLogger.debug('🔍 [Nutrition] Stack trace: $stackTrace');
     rethrow;
   }
 });
@@ -311,26 +312,26 @@ final mealSuggestionsProvider = FutureProvider.family<
 final foodSearchProvider =
     FutureProvider.family<List<FoodItemFull>, String>((ref, query) async {
   try {
-    print('📊 [Nutrition] Searching for foods...');
-    print('🔍 [Nutrition] Query: "$query"');
+    AppLogger.debug('📊 [Nutrition] Searching for foods...');
+    AppLogger.debug('🔍 [Nutrition] Query: "$query"');
     
     final repository = ref.watch(foodRepositoryProvider);
     final List<FoodItemFull> results;
     
     if (query.isEmpty) {
-      print('📊 [Nutrition] Empty query, fetching all foods...');
+      AppLogger.debug('📊 [Nutrition] Empty query, fetching all foods...');
       results = await repository.getAllFoods();
     } else {
       results = await repository.searchFoods(query);
     }
     
-    print('✅ [Nutrition] Food search completed successfully');
-    print('🔍 [Nutrition] Found ${results.length} foods');
+    AppLogger.debug('✅ [Nutrition] Food search completed successfully');
+    AppLogger.debug('🔍 [Nutrition] Found ${results.length} foods');
     
     return results;
   } catch (e, stackTrace) {
-    print('❌ [Nutrition] Failed to search foods: $e');
-    print('🔍 [Nutrition] Stack trace: $stackTrace');
+    AppLogger.debug('❌ [Nutrition] Failed to search foods: $e');
+    AppLogger.debug('🔍 [Nutrition] Stack trace: $stackTrace');
     rethrow;
   }
 });
@@ -351,13 +352,13 @@ final foodFilterProvider = FutureProvider.family<
       List<DietaryPreference> dietaryPreferences,
     })>((ref, params) async {
   try {
-    print('📊 [Nutrition] Filtering foods...');
-    print('🔍 [Nutrition] Meal type: ${params.mealType}, Dietary preferences: ${params.dietaryPreferences.length}');
+    AppLogger.debug('📊 [Nutrition] Filtering foods...');
+    AppLogger.debug('🔍 [Nutrition] Meal type: ${params.mealType}, Dietary preferences: ${params.dietaryPreferences.length}');
     
     final repository = ref.watch(foodRepositoryProvider);
     final allFoods = await repository.getAllFoods();
     
-    print('📊 [Nutrition] Applying filters to ${allFoods.length} foods...');
+    AppLogger.debug('📊 [Nutrition] Applying filters to ${allFoods.length} foods...');
 
     final filtered = allFoods.where((food) {
       // Filter by meal type if specified
@@ -379,13 +380,13 @@ final foodFilterProvider = FutureProvider.family<
       return true;
     }).toList();
     
-    print('✅ [Nutrition] Food filtering completed successfully');
-    print('🔍 [Nutrition] Filtered to ${filtered.length} foods');
+    AppLogger.debug('✅ [Nutrition] Food filtering completed successfully');
+    AppLogger.debug('🔍 [Nutrition] Filtered to ${filtered.length} foods');
 
     return filtered;
   } catch (e, stackTrace) {
-    print('❌ [Nutrition] Failed to filter foods: $e');
-    print('🔍 [Nutrition] Stack trace: $stackTrace');
+    AppLogger.debug('❌ [Nutrition] Failed to filter foods: $e');
+    AppLogger.debug('🔍 [Nutrition] Stack trace: $stackTrace');
     rethrow;
   }
 });
@@ -402,20 +403,20 @@ final foodAlternativesProvider = FutureProvider.family<
     List<FoodAlternative>,
     FoodItemFull>((ref, targetFood) async {
   try {
-    print('📊 [Nutrition] Finding food alternatives...');
-    print('🔍 [Nutrition] Target food: ${targetFood.name}');
-    print('🔍 [Nutrition] Target macros - Calories: ${targetFood.macros.calories}, Protein: ${targetFood.macros.protein}g, Carbs: ${targetFood.macros.carbs}g, Fat: ${targetFood.macros.fats}g');
+    AppLogger.debug('📊 [Nutrition] Finding food alternatives...');
+    AppLogger.debug('🔍 [Nutrition] Target food: ${targetFood.name}');
+    AppLogger.debug('🔍 [Nutrition] Target macros - Calories: ${targetFood.macros.calories}, Protein: ${targetFood.macros.protein}g, Carbs: ${targetFood.macros.carbs}g, Fat: ${targetFood.macros.fats}g');
     
     final useCase = ref.watch(getFoodAlternativesUseCaseProvider);
     final alternatives = await useCase.getAlternatives(targetFood);
     
-    print('✅ [Nutrition] Food alternatives found successfully');
-    print('🔍 [Nutrition] Found ${alternatives.length} alternatives');
+    AppLogger.debug('✅ [Nutrition] Food alternatives found successfully');
+    AppLogger.debug('🔍 [Nutrition] Found ${alternatives.length} alternatives');
     
     return alternatives;
   } catch (e, stackTrace) {
-    print('❌ [Nutrition] Failed to find food alternatives: $e');
-    print('🔍 [Nutrition] Stack trace: $stackTrace');
+    AppLogger.debug('❌ [Nutrition] Failed to find food alternatives: $e');
+    AppLogger.debug('🔍 [Nutrition] Stack trace: $stackTrace');
     rethrow;
   }
 });

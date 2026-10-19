@@ -1,3 +1,4 @@
+import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:hive/hive.dart';
 import '../../domain/entities/user.dart';
 
@@ -17,8 +18,8 @@ class AuthSessionStorage {
 
   /// Save user session
   Future<void> saveSession(User user) async {
-    print('📊 [AuthSession] Saving user session...');
-    print('🔍 [AuthSession] User ID: ${user.id.substring(0, 8)}...');
+    AppLogger.debug('📊 [AuthSession] Saving user session...');
+    AppLogger.debug('🔍 [AuthSession] User ID: ${user.id.substring(0, 8)}...');
     
     await _box.put(_userIdKey, user.id);
     await _box.put(_emailKey, user.email);
@@ -28,17 +29,17 @@ class AuthSessionStorage {
     await _box.put(_updatedAtKey, user.updatedAt.toIso8601String());
     await _box.put(_isLoggedInKey, true);
     
-    print('✅ [AuthSession] Session saved successfully');
+    AppLogger.debug('✅ [AuthSession] Session saved successfully');
   }
 
   /// Load user session
   Future<User?> loadSession() async {
-    print('📊 [AuthSession] Loading user session...');
+    AppLogger.debug('📊 [AuthSession] Loading user session...');
     
     final isLoggedIn = _box.get(_isLoggedInKey, defaultValue: false) as bool;
     
     if (!isLoggedIn) {
-      print('⚠️ [AuthSession] No active session found');
+      AppLogger.debug('⚠️ [AuthSession] No active session found');
       return null;
     }
 
@@ -46,7 +47,7 @@ class AuthSessionStorage {
     final email = _box.get(_emailKey) as String?;
     
     if (userId == null || email == null) {
-      print('⚠️ [AuthSession] Incomplete session data');
+      AppLogger.debug('⚠️ [AuthSession] Incomplete session data');
       return null;
     }
 
@@ -68,25 +69,25 @@ class AuthSessionStorage {
           : DateTime.now(),
     );
 
-    print('✅ [AuthSession] Session loaded successfully');
-    print('🔍 [AuthSession] User ID: ${userId.substring(0, 8)}...');
+    AppLogger.debug('✅ [AuthSession] Session loaded successfully');
+    AppLogger.debug('🔍 [AuthSession] User ID: ${userId.substring(0, 8)}...');
     
     return user;
   }
 
   /// Clear user session
   Future<void> clearSession() async {
-    print('📊 [AuthSession] Clearing user session...');
+    AppLogger.debug('📊 [AuthSession] Clearing user session...');
     
     await _box.clear();
     
-    print('✅ [AuthSession] Session cleared successfully');
+    AppLogger.debug('✅ [AuthSession] Session cleared successfully');
   }
 
   /// Check if user is logged in
   Future<bool> isLoggedIn() async {
     final isLoggedIn = _box.get(_isLoggedInKey, defaultValue: false) as bool;
-    print('📊 [AuthSession] Checking login status: $isLoggedIn');
+    AppLogger.debug('📊 [AuthSession] Checking login status: $isLoggedIn');
     return isLoggedIn;
   }
 

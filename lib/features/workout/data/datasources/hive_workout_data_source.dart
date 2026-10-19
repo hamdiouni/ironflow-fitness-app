@@ -1,3 +1,4 @@
+import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:hive/hive.dart';
 import '../models/workout_model.dart';
 
@@ -29,35 +30,35 @@ class HiveWorkoutDataSource {
 
   Future<void> saveWorkout(WorkoutModel workout) async {
     try {
-      print('📊 [WorkoutData] Saving workout...');
-      print('🔍 [WorkoutData] Workout ID: ${workout.id}');
+      AppLogger.debug('📊 [WorkoutData] Saving workout...');
+      AppLogger.debug('🔍 [WorkoutData] Workout ID: ${workout.id}');
       
       if (!_box.isOpen) {
-        print('⚠️ [WorkoutData] Workouts box is not open');
+        AppLogger.debug('⚠️ [WorkoutData] Workouts box is not open');
         throw Exception('Workouts box not open');
       }
       
       await _box.put(workout.id, workout.toJson());
       
-      print('✅ [WorkoutData] Workout saved successfully');
-      print('🔍 [WorkoutData] Exercises: ${workout.exercises.length}, Duration: ${workout.durationSeconds}s');
+      AppLogger.debug('✅ [WorkoutData] Workout saved successfully');
+      AppLogger.debug('🔍 [WorkoutData] Exercises: ${workout.exercises.length}, Duration: ${workout.durationSeconds}s');
     } catch (e, stackTrace) {
-      print('❌ [WorkoutData] Failed to save workout: $e');
-      print('🔍 [WorkoutData] Stack trace: $stackTrace');
+      AppLogger.debug('❌ [WorkoutData] Failed to save workout: $e');
+      AppLogger.debug('🔍 [WorkoutData] Stack trace: $stackTrace');
       rethrow;
     }
   }
 
   Future<List<WorkoutModel>> getAllWorkouts() async {
     try {
-      print('📊 [WorkoutData] Retrieving all workouts...');
+      AppLogger.debug('📊 [WorkoutData] Retrieving all workouts...');
       
       if (!_box.isOpen) {
-        print('⚠️ [WorkoutData] Workouts box is not open');
+        AppLogger.debug('⚠️ [WorkoutData] Workouts box is not open');
         throw Exception('Workouts box not open');
       }
       
-      print('🔍 [WorkoutData] Deserializing workout data...');
+      AppLogger.debug('🔍 [WorkoutData] Deserializing workout data...');
       final workouts = _box.values
           .map((json) => WorkoutModel.fromJson(_deepCast(json)))
           .toList();
@@ -65,13 +66,13 @@ class HiveWorkoutDataSource {
       // Sort by date descending
       workouts.sort((a, b) => b.date.compareTo(a.date));
       
-      print('✅ [WorkoutData] All workouts retrieved successfully');
-      print('🔍 [WorkoutData] Total workouts: ${workouts.length}');
+      AppLogger.debug('✅ [WorkoutData] All workouts retrieved successfully');
+      AppLogger.debug('🔍 [WorkoutData] Total workouts: ${workouts.length}');
       
       return workouts;
     } catch (e, stackTrace) {
-      print('❌ [WorkoutData] Failed to retrieve workouts: $e');
-      print('🔍 [WorkoutData] Stack trace: $stackTrace');
+      AppLogger.debug('❌ [WorkoutData] Failed to retrieve workouts: $e');
+      AppLogger.debug('🔍 [WorkoutData] Stack trace: $stackTrace');
       rethrow;
     }
   }
@@ -81,15 +82,15 @@ class HiveWorkoutDataSource {
     int limit = 20,
   }) async {
     try {
-      print('📊 [WorkoutData] Retrieving paginated workouts...');
-      print('🔍 [WorkoutData] Offset: $offset, Limit: $limit');
+      AppLogger.debug('📊 [WorkoutData] Retrieving paginated workouts...');
+      AppLogger.debug('🔍 [WorkoutData] Offset: $offset, Limit: $limit');
       
       if (!_box.isOpen) {
-        print('⚠️ [WorkoutData] Workouts box is not open');
+        AppLogger.debug('⚠️ [WorkoutData] Workouts box is not open');
         throw Exception('Workouts box not open');
       }
       
-      print('🔍 [WorkoutData] Deserializing workout data...');
+      AppLogger.debug('🔍 [WorkoutData] Deserializing workout data...');
       final workouts = _box.values
           .map((json) => WorkoutModel.fromJson(_deepCast(json)))
           .toList();
@@ -102,62 +103,62 @@ class HiveWorkoutDataSource {
       final endIndex = (offset + limit).clamp(0, workouts.length);
       
       if (startIndex >= workouts.length) {
-        print('⚠️ [WorkoutData] Offset exceeds total workouts');
-        print('🔍 [WorkoutData] Returning empty list');
+        AppLogger.debug('⚠️ [WorkoutData] Offset exceeds total workouts');
+        AppLogger.debug('🔍 [WorkoutData] Returning empty list');
         return [];
       }
       
       final paginatedWorkouts = workouts.sublist(startIndex, endIndex);
       
-      print('✅ [WorkoutData] Paginated workouts retrieved successfully');
-      print('🔍 [WorkoutData] Returned: ${paginatedWorkouts.length} workouts (${startIndex + 1}-$endIndex of ${workouts.length})');
+      AppLogger.debug('✅ [WorkoutData] Paginated workouts retrieved successfully');
+      AppLogger.debug('🔍 [WorkoutData] Returned: ${paginatedWorkouts.length} workouts (${startIndex + 1}-$endIndex of ${workouts.length})');
       
       return paginatedWorkouts;
     } catch (e, stackTrace) {
-      print('❌ [WorkoutData] Failed to retrieve paginated workouts: $e');
-      print('🔍 [WorkoutData] Stack trace: $stackTrace');
+      AppLogger.debug('❌ [WorkoutData] Failed to retrieve paginated workouts: $e');
+      AppLogger.debug('🔍 [WorkoutData] Stack trace: $stackTrace');
       rethrow;
     }
   }
 
   Future<int> getWorkoutCount() async {
     try {
-      print('📊 [WorkoutData] Getting workout count...');
+      AppLogger.debug('📊 [WorkoutData] Getting workout count...');
       
       if (!_box.isOpen) {
-        print('⚠️ [WorkoutData] Workouts box is not open');
+        AppLogger.debug('⚠️ [WorkoutData] Workouts box is not open');
         throw Exception('Workouts box not open');
       }
       
       final count = _box.length;
       
-      print('✅ [WorkoutData] Workout count retrieved successfully');
-      print('🔍 [WorkoutData] Total workouts: $count');
+      AppLogger.debug('✅ [WorkoutData] Workout count retrieved successfully');
+      AppLogger.debug('🔍 [WorkoutData] Total workouts: $count');
       
       return count;
     } catch (e, stackTrace) {
-      print('❌ [WorkoutData] Failed to get workout count: $e');
-      print('🔍 [WorkoutData] Stack trace: $stackTrace');
+      AppLogger.debug('❌ [WorkoutData] Failed to get workout count: $e');
+      AppLogger.debug('🔍 [WorkoutData] Stack trace: $stackTrace');
       rethrow;
     }
   }
 
   Future<void> deleteWorkout(String id) async {
     try {
-      print('📊 [WorkoutData] Deleting workout...');
-      print('🔍 [WorkoutData] Workout ID: $id');
+      AppLogger.debug('📊 [WorkoutData] Deleting workout...');
+      AppLogger.debug('🔍 [WorkoutData] Workout ID: $id');
       
       if (!_box.isOpen) {
-        print('⚠️ [WorkoutData] Workouts box is not open');
+        AppLogger.debug('⚠️ [WorkoutData] Workouts box is not open');
         throw Exception('Workouts box not open');
       }
       
       await _box.delete(id);
       
-      print('✅ [WorkoutData] Workout deleted successfully');
+      AppLogger.debug('✅ [WorkoutData] Workout deleted successfully');
     } catch (e, stackTrace) {
-      print('❌ [WorkoutData] Failed to delete workout: $e');
-      print('🔍 [WorkoutData] Stack trace: $stackTrace');
+      AppLogger.debug('❌ [WorkoutData] Failed to delete workout: $e');
+      AppLogger.debug('🔍 [WorkoutData] Stack trace: $stackTrace');
       rethrow;
     }
   }

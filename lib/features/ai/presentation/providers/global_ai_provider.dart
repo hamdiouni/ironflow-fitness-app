@@ -1,3 +1,4 @@
+import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -141,11 +142,11 @@ class GlobalAINotifier extends StateNotifier<GlobalAIState> {
   /// - 4.8: Check if cached insights are stale before regenerating
   Future<void> init() async {
     try {
-      print('🚀 [GlobalAI] Initializing Global AI Provider...');
+      AppLogger.debug('🚀 [GlobalAI] Initializing Global AI Provider...');
       
       // 1. Initialize cache service (open Hive box)
       await _cacheService.init();
-      print('✅ [GlobalAI] Cache service initialized');
+      AppLogger.debug('✅ [GlobalAI] Cache service initialized');
       
       // 2. Restore cached insights for all contexts
       final Map<InsightContext, List<Insight>> restoredInsights = {};
@@ -154,7 +155,7 @@ class GlobalAINotifier extends StateNotifier<GlobalAIState> {
       // Loop through all InsightContext values
       for (final context in InsightContext.values) {
         try {
-          print('🔍 [GlobalAI] Restoring cache for context: ${context.name}');
+          AppLogger.debug('🔍 [GlobalAI] Restoring cache for context: ${context.name}');
           
           final cachedInsights = await _cacheService.getCachedInsights(context);
           
@@ -165,18 +166,18 @@ class GlobalAINotifier extends StateNotifier<GlobalAIState> {
               restoredInsights[context] = cachedInsights.insights;
               restoredTimestamps[context] = cachedInsights.cachedAt;
               
-              print('✅ [GlobalAI] Restored ${cachedInsights.insights.length} insights for ${context.name}');
-              print('🔍 [GlobalAI] Cache timestamp: ${cachedInsights.cachedAt}');
+              AppLogger.debug('✅ [GlobalAI] Restored ${cachedInsights.insights.length} insights for ${context.name}');
+              AppLogger.debug('🔍 [GlobalAI] Cache timestamp: ${cachedInsights.cachedAt}');
             } else {
-              print('⚠️ [GlobalAI] Cache for ${context.name} is stale, will regenerate on next request');
+              AppLogger.debug('⚠️ [GlobalAI] Cache for ${context.name} is stale, will regenerate on next request');
             }
           } else {
-            print('🔍 [GlobalAI] No cache found for ${context.name}');
+            AppLogger.debug('🔍 [GlobalAI] No cache found for ${context.name}');
           }
         } catch (e, stackTrace) {
           // Handle individual context restoration errors gracefully
-          print('❌ [GlobalAI] Failed to restore cache for ${context.name}: $e');
-          print('🔍 [GlobalAI] Stack trace: $stackTrace');
+          AppLogger.debug('❌ [GlobalAI] Failed to restore cache for ${context.name}: $e');
+          AppLogger.debug('🔍 [GlobalAI] Stack trace: $stackTrace');
           // Continue with other contexts
         }
       }
@@ -188,16 +189,16 @@ class GlobalAINotifier extends StateNotifier<GlobalAIState> {
           lastUpdated: restoredTimestamps,
         );
         
-        print('✅ [GlobalAI] State updated with restored insights');
-        print('🔍 [GlobalAI] Restored contexts: ${restoredInsights.keys.map((c) => c.name).join(', ')}');
+        AppLogger.debug('✅ [GlobalAI] State updated with restored insights');
+        AppLogger.debug('🔍 [GlobalAI] Restored contexts: ${restoredInsights.keys.map((c) => c.name).join(', ')}');
       }
       
-      print('🎉 [GlobalAI] Global AI Provider initialization complete');
+      AppLogger.debug('🎉 [GlobalAI] Global AI Provider initialization complete');
       
     } catch (e, stackTrace) {
       // Handle initialization errors gracefully - log but don't fail
-      print('❌ [GlobalAI] Failed to initialize Global AI Provider: $e');
-      print('🔍 [GlobalAI] Stack trace: $stackTrace');
+      AppLogger.debug('❌ [GlobalAI] Failed to initialize Global AI Provider: $e');
+      AppLogger.debug('🔍 [GlobalAI] Stack trace: $stackTrace');
       
       // Don't rethrow - the app should continue to work even if AI initialization fails
       // The provider will work with empty state and generate insights on demand
@@ -233,7 +234,7 @@ class GlobalAINotifier extends StateNotifier<GlobalAIState> {
     NutritionTargets? nutritionTargets,
   }) async {
     try {
-      print('🔍 [GlobalAI] Getting insights for context: ${context.name}');
+      AppLogger.debug('🔍 [GlobalAI] Getting insights for context: ${context.name}');
       
       // Set loading state to true at start
       state = state.copyWith(
@@ -246,7 +247,7 @@ class GlobalAINotifier extends StateNotifier<GlobalAIState> {
       final lastUpdated = state.lastUpdated[context];
       
       if (memoryInsights != null && memoryInsights.isNotEmpty && lastUpdated != null) {
-        print('✅ [GlobalAI] Found ${memoryInsights.length} insights in memory cache for ${context.name}');
+        AppLogger.debug('✅ [GlobalAI] Found ${memoryInsights.length} insights in memory cache for ${context.name}');
         
         // Check if memory cache is still fresh (less than 1 hour old)
         final cacheAge = DateTime.now().difference(lastUpdated);
@@ -255,7 +256,7 @@ class GlobalAINotifier extends StateNotifier<GlobalAIState> {
           final dataChanged = await _hasDataChangedForContext(context, lastUpdated);
           
           if (!dataChanged) {
-            print('✅ [GlobalAI] Memory cache is fresh and data unchanged, returning cached insights');
+            AppLogger.debug('✅ [GlobalAI] Memory cache is fresh and data unchanged, returning cached insights');
             
             // Set loading to false and return cached insights
             state = state.copyWith(
@@ -264,20 +265,20 @@ class GlobalAINotifier extends StateNotifier<GlobalAIState> {
             
             return memoryInsights;
           } else {
-            print('🔄 [GlobalAI] Data has changed since last generation, need to regenerate');
+            AppLogger.debug('🔄 [GlobalAI] Data has changed since last generation, need to regenerate');
           }
         } else {
-          print('⏰ [GlobalAI] Memory cache is stale (${cacheAge.inHours} hours old), checking Hive cache');
+          AppLogger.debug('⏰ [GlobalAI] Memory cache is stale (${cacheAge.inHours} hours old), checking Hive cache');
         }
       } else {
-        print('🔍 [GlobalAI] No insights found in memory cache for ${context.name}');
+        AppLogger.debug('🔍 [GlobalAI] No insights found in memory cache for ${context.name}');
       }
 
       // 2. Check Hive cache if memory miss or stale
       final cachedInsights = await _cacheService.getCachedInsights(context);
       
       if (cachedInsights != null) {
-        print('✅ [GlobalAI] Found cached insights in Hive for ${context.name}');
+        AppLogger.debug('✅ [GlobalAI] Found cached insights in Hive for ${context.name}');
         
         // Check if Hive cache is stale
         if (!_cacheService.isCacheStale(cachedInsights)) {
@@ -285,7 +286,7 @@ class GlobalAINotifier extends StateNotifier<GlobalAIState> {
           final dataChanged = await _hasDataChangedForContext(context, cachedInsights.cachedAt);
           
           if (!dataChanged) {
-            print('✅ [GlobalAI] Hive cache is fresh and data unchanged, restoring to memory');
+            AppLogger.debug('✅ [GlobalAI] Hive cache is fresh and data unchanged, restoring to memory');
             
             // Restore to memory cache and return
             state = state.copyWith(
@@ -296,17 +297,17 @@ class GlobalAINotifier extends StateNotifier<GlobalAIState> {
             
             return cachedInsights.insights;
           } else {
-            print('🔄 [GlobalAI] Data has changed since Hive cache was created, need to regenerate');
+            AppLogger.debug('🔄 [GlobalAI] Data has changed since Hive cache was created, need to regenerate');
           }
         } else {
-          print('⏰ [GlobalAI] Hive cache is stale, need to regenerate');
+          AppLogger.debug('⏰ [GlobalAI] Hive cache is stale, need to regenerate');
         }
       } else {
-        print('🔍 [GlobalAI] No cached insights found in Hive for ${context.name}');
+        AppLogger.debug('🔍 [GlobalAI] No cached insights found in Hive for ${context.name}');
       }
 
       // 3. Generate fresh insights if cache miss or stale or data changed
-      print('🚀 [GlobalAI] Generating fresh insights for ${context.name}');
+      AppLogger.debug('🚀 [GlobalAI] Generating fresh insights for ${context.name}');
       
       final freshInsights = await _generateFreshInsights(context, nutritionTargets);
       
@@ -322,23 +323,23 @@ class GlobalAINotifier extends StateNotifier<GlobalAIState> {
       
       // Update Hive cache (don't await to avoid blocking)
       _updateHiveCache(context, freshInsights, now).catchError((e) {
-        print('⚠️ [GlobalAI] Failed to update Hive cache for ${context.name}: $e');
+        AppLogger.debug('⚠️ [GlobalAI] Failed to update Hive cache for ${context.name}: $e');
         // Don't rethrow - caching failure shouldn't affect the user experience
       });
       
-      print('✅ [GlobalAI] Successfully generated and cached ${freshInsights.length} fresh insights for ${context.name}');
+      AppLogger.debug('✅ [GlobalAI] Successfully generated and cached ${freshInsights.length} fresh insights for ${context.name}');
       
       return freshInsights;
       
     } catch (e, stackTrace) {
-      print('❌ [GlobalAI] Failed to get insights for ${context.name}: $e');
-      print('🔍 [GlobalAI] Stack trace: $stackTrace');
+      AppLogger.debug('❌ [GlobalAI] Failed to get insights for ${context.name}: $e');
+      AppLogger.debug('🔍 [GlobalAI] Stack trace: $stackTrace');
       
       // Handle errors with fallback to cached insights
       String errorMessage;
       if (e is TimeoutException) {
         errorMessage = 'Insight generation timed out';
-        print('⏰ [GlobalAI] Timeout occurred during getInsights for ${context.name}');
+        AppLogger.debug('⏰ [GlobalAI] Timeout occurred during getInsights for ${context.name}');
       } else {
         errorMessage = e.toString();
       }
@@ -373,7 +374,7 @@ class GlobalAINotifier extends StateNotifier<GlobalAIState> {
           return workoutChanged || bodyChanged;
       }
     } catch (e) {
-      print('⚠️ [GlobalAI] Failed to check data changes for ${context.name}: $e');
+      AppLogger.debug('⚠️ [GlobalAI] Failed to check data changes for ${context.name}: $e');
       // If change detection fails, assume data has changed to be safe
       return true;
     }
@@ -392,14 +393,14 @@ class GlobalAINotifier extends StateNotifier<GlobalAIState> {
       final generationContext = await _buildInsightGenerationContext(context, nutritionTargets);
 
       final dataFetchMs = stopwatch.elapsedMilliseconds;
-      print('⏱️ [GlobalAI] Data fetch for ${context.name} took ${dataFetchMs}ms');
+      AppLogger.debug('⏱️ [GlobalAI] Data fetch for ${context.name} took ${dataFetchMs}ms');
 
       // Generate insights using the insights engine with 5-second timeout
       final insights = await _insightsEngine.generateInsights(generationContext)
           .timeout(
             const Duration(seconds: 5),
             onTimeout: () async {
-              print('⏰ [GlobalAI] Insight generation timed out for ${context.name}, attempting fallback');
+              AppLogger.debug('⏰ [GlobalAI] Insight generation timed out for ${context.name}, attempting fallback');
               
               if (isRefresh) {
                 // For refresh operations, throw TimeoutException to return empty list
@@ -409,28 +410,28 @@ class GlobalAINotifier extends StateNotifier<GlobalAIState> {
               // For getInsights, try to return cached insights on timeout
               final cachedInsights = await _cacheService.getCachedInsights(context);
               if (cachedInsights != null && cachedInsights.insights.isNotEmpty) {
-                print('✅ [GlobalAI] Returning cached insights as timeout fallback for ${context.name}');
+                AppLogger.debug('✅ [GlobalAI] Returning cached insights as timeout fallback for ${context.name}');
                 return cachedInsights.insights;
               }
               
               // If no cached insights available, return fallback insights
-              print('⚠️ [GlobalAI] No cached insights available, generating fallback insights for ${context.name}');
+              AppLogger.debug('⚠️ [GlobalAI] No cached insights available, generating fallback insights for ${context.name}');
               return generateFallbackInsights(context);
             },
           );
 
       stopwatch.stop();
       final totalMs = stopwatch.elapsedMilliseconds;
-      print('⏱️ [GlobalAI] Total generation for ${context.name}: ${totalMs}ms (data: ${dataFetchMs}ms, engine: ${totalMs - dataFetchMs}ms)');
+      AppLogger.debug('⏱️ [GlobalAI] Total generation for ${context.name}: ${totalMs}ms (data: ${dataFetchMs}ms, engine: ${totalMs - dataFetchMs}ms)');
 
       if (totalMs > 500) {
-        print('⚠️ [GlobalAI] Insight generation exceeded 500ms target for ${context.name}: ${totalMs}ms');
+        AppLogger.debug('⚠️ [GlobalAI] Insight generation exceeded 500ms target for ${context.name}: ${totalMs}ms');
       }
 
       return insights;
       
     } on TimeoutException catch (e) {
-      print('⏰ [GlobalAI] TimeoutException caught for ${context.name}: $e');
+      AppLogger.debug('⏰ [GlobalAI] TimeoutException caught for ${context.name}: $e');
       
       if (isRefresh) {
         // For refresh operations, rethrow to return empty list
@@ -440,12 +441,12 @@ class GlobalAINotifier extends StateNotifier<GlobalAIState> {
       // For getInsights, try to return cached insights on timeout
       final cachedInsights = await _cacheService.getCachedInsights(context);
       if (cachedInsights != null && cachedInsights.insights.isNotEmpty) {
-        print('✅ [GlobalAI] Returning cached insights as timeout fallback for ${context.name}');
+        AppLogger.debug('✅ [GlobalAI] Returning cached insights as timeout fallback for ${context.name}');
         return cachedInsights.insights;
       }
       
       // If no cached insights available, return fallback insights
-      print('⚠️ [GlobalAI] No cached insights available, generating fallback insights for ${context.name}');
+      AppLogger.debug('⚠️ [GlobalAI] No cached insights available, generating fallback insights for ${context.name}');
       return generateFallbackInsights(context);
     }
   }
@@ -496,7 +497,7 @@ class GlobalAINotifier extends StateNotifier<GlobalAIState> {
       final nutrition = results[1] as List<DailyNutritionSummary>;
       final bodyEntries = results[2] as List<BodyEntry>;
 
-      print('🔍 [GlobalAI] Fetched data for ${context.name}: ${workouts.length} workouts, ${nutrition.length} nutrition days, ${bodyEntries.length} body entries');
+      AppLogger.debug('🔍 [GlobalAI] Fetched data for ${context.name}: ${workouts.length} workouts, ${nutrition.length} nutrition days, ${bodyEntries.length} body entries');
 
       return InsightGenerationContext(
         context: context,
@@ -508,7 +509,7 @@ class GlobalAINotifier extends StateNotifier<GlobalAIState> {
         generatedAt: now,
       );
     } catch (e) {
-      print('⚠️ [GlobalAI] Failed to fetch some data for ${context.name}: $e');
+      AppLogger.debug('⚠️ [GlobalAI] Failed to fetch some data for ${context.name}: $e');
       
       // Return context with empty data rather than failing completely
       return InsightGenerationContext(
@@ -556,10 +557,10 @@ class GlobalAINotifier extends StateNotifier<GlobalAIState> {
       );
 
       await _cacheService.cacheInsights(cache);
-      print('✅ [GlobalAI] Updated Hive cache for ${context.name}');
+      AppLogger.debug('✅ [GlobalAI] Updated Hive cache for ${context.name}');
       
     } catch (e) {
-      print('⚠️ [GlobalAI] Failed to update Hive cache for ${context.name}: $e');
+      AppLogger.debug('⚠️ [GlobalAI] Failed to update Hive cache for ${context.name}: $e');
       // Don't rethrow - caching failure shouldn't affect the user experience
     }
   }
@@ -569,7 +570,7 @@ class GlobalAINotifier extends StateNotifier<GlobalAIState> {
     InsightContext context,
     String errorMessage,
   ) async {
-    print('🔄 [GlobalAI] Handling insight generation error for ${context.name}');
+    AppLogger.debug('🔄 [GlobalAI] Handling insight generation error for ${context.name}');
     
     // Set error state
     state = state.copyWith(
@@ -582,7 +583,7 @@ class GlobalAINotifier extends StateNotifier<GlobalAIState> {
       final cachedInsights = await _cacheService.getCachedInsights(context);
       
       if (cachedInsights != null && cachedInsights.insights.isNotEmpty) {
-        print('✅ [GlobalAI] Returning cached insights as fallback for ${context.name}');
+        AppLogger.debug('✅ [GlobalAI] Returning cached insights as fallback for ${context.name}');
         
         // Update memory cache with fallback insights
         state = state.copyWith(
@@ -593,11 +594,11 @@ class GlobalAINotifier extends StateNotifier<GlobalAIState> {
         return cachedInsights.insights;
       }
     } catch (e) {
-      print('⚠️ [GlobalAI] Failed to retrieve cached insights as fallback: $e');
+      AppLogger.debug('⚠️ [GlobalAI] Failed to retrieve cached insights as fallback: $e');
     }
 
     // If no cached insights available, return fallback insights
-    print('⚠️ [GlobalAI] No cached insights available for ${context.name}, generating fallback insights');
+    AppLogger.debug('⚠️ [GlobalAI] No cached insights available for ${context.name}, generating fallback insights');
     return generateFallbackInsights(context);
   }
 
@@ -736,7 +737,7 @@ class GlobalAINotifier extends StateNotifier<GlobalAIState> {
     NutritionTargets? nutritionTargets,
   }) async {
     try {
-      print('🔄 [GlobalAI] Force refreshing insights for context: ${context.name}');
+      AppLogger.debug('🔄 [GlobalAI] Force refreshing insights for context: ${context.name}');
       
       // 1. Set loading state to true and clear errors
       state = state.copyWith(
@@ -745,7 +746,7 @@ class GlobalAINotifier extends StateNotifier<GlobalAIState> {
       );
 
       // 2. Invalidate existing cache to ensure fresh generation
-      print('🗑️ [GlobalAI] Invalidating cache for ${context.name}');
+      AppLogger.debug('🗑️ [GlobalAI] Invalidating cache for ${context.name}');
       
       // Clear memory cache for this context
       final updatedInsights = Map<InsightContext, List<Insight>>.from(state.insights);
@@ -761,14 +762,14 @@ class GlobalAINotifier extends StateNotifier<GlobalAIState> {
       // Invalidate Hive cache (handle errors gracefully)
       try {
         await _cacheService.invalidateCache(context);
-        print('✅ [GlobalAI] Successfully invalidated Hive cache for ${context.name}');
+        AppLogger.debug('✅ [GlobalAI] Successfully invalidated Hive cache for ${context.name}');
       } catch (e) {
-        print('⚠️ [GlobalAI] Failed to invalidate Hive cache for ${context.name}: $e');
+        AppLogger.debug('⚠️ [GlobalAI] Failed to invalidate Hive cache for ${context.name}: $e');
         // Don't rethrow - cache invalidation failure shouldn't stop refresh
       }
 
       // 3. Generate fresh insights (reuse existing helper method with timeout)
-      print('🚀 [GlobalAI] Generating fresh insights for ${context.name} (forced refresh)');
+      AppLogger.debug('🚀 [GlobalAI] Generating fresh insights for ${context.name} (forced refresh)');
       
       final freshInsights = await _generateFreshInsights(context, nutritionTargets, isRefresh: true);
       
@@ -784,23 +785,23 @@ class GlobalAINotifier extends StateNotifier<GlobalAIState> {
       
       // Update Hive cache (don't await to avoid blocking)
       _updateHiveCache(context, freshInsights, now).catchError((e) {
-        print('⚠️ [GlobalAI] Failed to update Hive cache for ${context.name}: $e');
+        AppLogger.debug('⚠️ [GlobalAI] Failed to update Hive cache for ${context.name}: $e');
         // Don't rethrow - caching failure shouldn't affect the user experience
       });
       
-      print('✅ [GlobalAI] Successfully force refreshed ${freshInsights.length} insights for ${context.name}');
+      AppLogger.debug('✅ [GlobalAI] Successfully force refreshed ${freshInsights.length} insights for ${context.name}');
       
       return freshInsights;
       
     } catch (e, stackTrace) {
-      print('❌ [GlobalAI] Failed to refresh insights for ${context.name}: $e');
-      print('🔍 [GlobalAI] Stack trace: $stackTrace');
+      AppLogger.debug('❌ [GlobalAI] Failed to refresh insights for ${context.name}: $e');
+      AppLogger.debug('🔍 [GlobalAI] Stack trace: $stackTrace');
       
       // Handle errors gracefully - set error state
       String errorMessage;
       if (e is TimeoutException) {
         errorMessage = 'Insight generation timed out. Please try again.';
-        print('⏰ [GlobalAI] Timeout occurred during refresh for ${context.name}');
+        AppLogger.debug('⏰ [GlobalAI] Timeout occurred during refresh for ${context.name}');
       } else {
         errorMessage = 'Failed to refresh insights: ${e.toString()}';
       }
@@ -812,7 +813,7 @@ class GlobalAINotifier extends StateNotifier<GlobalAIState> {
       
       // For refresh operations, we don't fall back to cached insights since
       // the user explicitly requested fresh data. Return empty list instead.
-      print('⚠️ [GlobalAI] Returning empty list due to refresh failure for ${context.name}');
+      AppLogger.debug('⚠️ [GlobalAI] Returning empty list due to refresh failure for ${context.name}');
       return [];
     }
   }
@@ -842,10 +843,10 @@ class GlobalAINotifier extends StateNotifier<GlobalAIState> {
   /// - 10.2: Show bottom sheet within 1 second of workout completion
   Future<void> onWorkoutCompleted(Workout completedWorkout) async {
     try {
-      print('🎉 [GlobalAI] Workout completed: ${completedWorkout.exercises.length} exercises on ${completedWorkout.date}');
+      AppLogger.debug('🎉 [GlobalAI] Workout completed: ${completedWorkout.exercises.length} exercises on ${completedWorkout.date}');
       
       // 1. Generate quick feedback first (this is time-sensitive for user experience)
-      print('🚀 [GlobalAI] Generating quick feedback for completed workout...');
+      AppLogger.debug('🚀 [GlobalAI] Generating quick feedback for completed workout...');
       
       try {
         // Fetch workout history for quick feedback generation (last 30 days)
@@ -855,7 +856,7 @@ class GlobalAINotifier extends StateNotifier<GlobalAIState> {
           DateTime.now(),
         );
         
-        print('🔍 [GlobalAI] Fetched ${workoutHistory.length} workouts for quick feedback generation');
+        AppLogger.debug('🔍 [GlobalAI] Fetched ${workoutHistory.length} workouts for quick feedback generation');
         
         // Generate quick feedback using the insights engine
         final quickFeedback = await _insightsEngine.generateQuickFeedback(
@@ -866,29 +867,29 @@ class GlobalAINotifier extends StateNotifier<GlobalAIState> {
         // Update quickFeedback state
         state = state.copyWith(quickFeedback: quickFeedback);
         
-        print('✅ [GlobalAI] Quick feedback generated and updated in state');
-        print('🔍 [GlobalAI] Quick feedback: ${quickFeedback.title} - ${quickFeedback.message}');
+        AppLogger.debug('✅ [GlobalAI] Quick feedback generated and updated in state');
+        AppLogger.debug('🔍 [GlobalAI] Quick feedback: ${quickFeedback.title} - ${quickFeedback.message}');
         
       } catch (e, stackTrace) {
-        print('❌ [GlobalAI] Failed to generate quick feedback: $e');
-        print('🔍 [GlobalAI] Stack trace: $stackTrace');
+        AppLogger.debug('❌ [GlobalAI] Failed to generate quick feedback: $e');
+        AppLogger.debug('🔍 [GlobalAI] Stack trace: $stackTrace');
         
         // Don't fail the entire method if quick feedback generation fails
         // The user should still get cache invalidation for fresh insights
       }
       
       // 2. Schedule refresh for Home and Workout contexts by invalidating cache
-      print('🔄 [GlobalAI] Scheduling refresh for Home and Workout contexts...');
+      AppLogger.debug('🔄 [GlobalAI] Scheduling refresh for Home and Workout contexts...');
       
       // Use batching logic to schedule refresh
       _scheduleBatchedRefresh([InsightContext.home, InsightContext.workout]);
       
-      print('✅ [GlobalAI] Successfully scheduled batched refresh for Home and Workout contexts');
-      print('🔍 [GlobalAI] Cache will be invalidated after 5-second batch window');
+      AppLogger.debug('✅ [GlobalAI] Successfully scheduled batched refresh for Home and Workout contexts');
+      AppLogger.debug('🔍 [GlobalAI] Cache will be invalidated after 5-second batch window');
       
     } catch (e, stackTrace) {
-      print('❌ [GlobalAI] Failed to handle workout completion: $e');
-      print('🔍 [GlobalAI] Stack trace: $stackTrace');
+      AppLogger.debug('❌ [GlobalAI] Failed to handle workout completion: $e');
+      AppLogger.debug('🔍 [GlobalAI] Stack trace: $stackTrace');
       
       // Log error but don't rethrow - workout completion handling should never block the user
       // The workout is already saved, this is just for AI insights
@@ -900,9 +901,9 @@ class GlobalAINotifier extends StateNotifier<GlobalAIState> {
     final futures = contexts.map((context) async {
       try {
         await _cacheService.invalidateCache(context);
-        print('✅ [GlobalAI] Invalidated Hive cache for ${context.name}');
+        AppLogger.debug('✅ [GlobalAI] Invalidated Hive cache for ${context.name}');
       } catch (e) {
-        print('⚠️ [GlobalAI] Failed to invalidate Hive cache for ${context.name}: $e');
+        AppLogger.debug('⚠️ [GlobalAI] Failed to invalidate Hive cache for ${context.name}: $e');
         // Don't rethrow - individual cache invalidation failures shouldn't stop others
       }
     });
@@ -934,19 +935,19 @@ class GlobalAINotifier extends StateNotifier<GlobalAIState> {
   /// - 4.6: Batch multiple data changes within 5 seconds
   /// - 11.7: Refresh all pending contexts in parallel after timer expires
   void _scheduleBatchedRefresh(List<InsightContext> contexts) {
-    print('⏱️ [GlobalAI] Scheduling batched refresh for contexts: ${contexts.map((c) => c.name).join(', ')}');
+    AppLogger.debug('⏱️ [GlobalAI] Scheduling batched refresh for contexts: ${contexts.map((c) => c.name).join(', ')}');
     
     // 1. Add contexts to pending set
     _pendingContexts.addAll(contexts);
-    print('🔍 [GlobalAI] Pending contexts: ${_pendingContexts.map((c) => c.name).join(', ')}');
+    AppLogger.debug('🔍 [GlobalAI] Pending contexts: ${_pendingContexts.map((c) => c.name).join(', ')}');
     
     // 2. Cancel existing timer if any
     _batchTimer?.cancel();
-    print('🔍 [GlobalAI] Cancelled existing batch timer');
+    AppLogger.debug('🔍 [GlobalAI] Cancelled existing batch timer');
     
     // 3. Start new 5-second timer
     _batchTimer = Timer(const Duration(seconds: 5), () async {
-      print('⏰ [GlobalAI] Batch timer expired, refreshing ${_pendingContexts.length} pending contexts...');
+      AppLogger.debug('⏰ [GlobalAI] Batch timer expired, refreshing ${_pendingContexts.length} pending contexts...');
       
       // 4. Refresh all pending contexts in parallel
       final contextsToRefresh = List<InsightContext>.from(_pendingContexts);
@@ -971,11 +972,11 @@ class GlobalAINotifier extends StateNotifier<GlobalAIState> {
       // Invalidate Hive cache for all pending contexts in parallel
       await _invalidateContextCaches(contextsToRefresh);
       
-      print('✅ [GlobalAI] Batched refresh completed for ${contextsToRefresh.length} contexts');
-      print('🔍 [GlobalAI] Refreshed contexts: ${contextsToRefresh.map((c) => c.name).join(', ')}');
+      AppLogger.debug('✅ [GlobalAI] Batched refresh completed for ${contextsToRefresh.length} contexts');
+      AppLogger.debug('🔍 [GlobalAI] Refreshed contexts: ${contextsToRefresh.map((c) => c.name).join(', ')}');
     });
     
-    print('✅ [GlobalAI] Batch timer started (5 seconds)');
+    AppLogger.debug('✅ [GlobalAI] Batch timer started (5 seconds)');
   }
 
   /// Handle meal logged event
@@ -1000,17 +1001,17 @@ class GlobalAINotifier extends StateNotifier<GlobalAIState> {
   /// - 4.2: Regenerate insights for Home and Nutrition contexts when meal logged
   Future<void> onMealLogged() async {
     try {
-      print('🍽️ [GlobalAI] Meal logged, scheduling refresh for Home and Nutrition contexts...');
+      AppLogger.debug('🍽️ [GlobalAI] Meal logged, scheduling refresh for Home and Nutrition contexts...');
       
       // Use batching logic to schedule refresh
       _scheduleBatchedRefresh([InsightContext.home, InsightContext.nutrition]);
       
-      print('✅ [GlobalAI] Successfully scheduled batched refresh for Home and Nutrition contexts');
-      print('🔍 [GlobalAI] Cache will be invalidated after 5-second batch window');
+      AppLogger.debug('✅ [GlobalAI] Successfully scheduled batched refresh for Home and Nutrition contexts');
+      AppLogger.debug('🔍 [GlobalAI] Cache will be invalidated after 5-second batch window');
       
     } catch (e, stackTrace) {
-      print('❌ [GlobalAI] Failed to handle meal logging: $e');
-      print('🔍 [GlobalAI] Stack trace: $stackTrace');
+      AppLogger.debug('❌ [GlobalAI] Failed to handle meal logging: $e');
+      AppLogger.debug('🔍 [GlobalAI] Stack trace: $stackTrace');
       
       // Log error but don't rethrow - meal logging handling should never block the user
       // The meal is already saved, this is just for AI insights
@@ -1039,17 +1040,17 @@ class GlobalAINotifier extends StateNotifier<GlobalAIState> {
   /// - 4.3: Regenerate insights for Home and Profile contexts when body weight recorded
   Future<void> onBodyWeightRecorded() async {
     try {
-      print('⚖️ [GlobalAI] Body weight recorded, scheduling refresh for Home and Profile contexts...');
+      AppLogger.debug('⚖️ [GlobalAI] Body weight recorded, scheduling refresh for Home and Profile contexts...');
       
       // Use batching logic to schedule refresh
       _scheduleBatchedRefresh([InsightContext.home, InsightContext.profile]);
       
-      print('✅ [GlobalAI] Successfully scheduled batched refresh for Home and Profile contexts');
-      print('🔍 [GlobalAI] Cache will be invalidated after 5-second batch window');
+      AppLogger.debug('✅ [GlobalAI] Successfully scheduled batched refresh for Home and Profile contexts');
+      AppLogger.debug('🔍 [GlobalAI] Cache will be invalidated after 5-second batch window');
       
     } catch (e, stackTrace) {
-      print('❌ [GlobalAI] Failed to handle body weight recording: $e');
-      print('🔍 [GlobalAI] Stack trace: $stackTrace');
+      AppLogger.debug('❌ [GlobalAI] Failed to handle body weight recording: $e');
+      AppLogger.debug('🔍 [GlobalAI] Stack trace: $stackTrace');
       
       // Log error but don't rethrow - body weight recording handling should never block the user
       // The body weight is already saved, this is just for AI insights
@@ -1073,19 +1074,19 @@ class GlobalAINotifier extends StateNotifier<GlobalAIState> {
   /// **Requirements:**
   /// - 10.7: Clear quickFeedback from state when dismissed
   void dismissQuickFeedback() {
-    print('👋 [GlobalAI] Dismissing quick feedback');
+    AppLogger.debug('👋 [GlobalAI] Dismissing quick feedback');
     
     // Clear quickFeedback from state
     state = state.copyWith(quickFeedback: null);
     
-    print('✅ [GlobalAI] Quick feedback dismissed and cleared from state');
+    AppLogger.debug('✅ [GlobalAI] Quick feedback dismissed and cleared from state');
   }
 
   @override
   void dispose() {
     // Cancel batch timer to prevent memory leaks
     _batchTimer?.cancel();
-    print('🧹 [GlobalAI] Batch timer cancelled during dispose');
+    AppLogger.debug('🧹 [GlobalAI] Batch timer cancelled during dispose');
     
     super.dispose();
   }

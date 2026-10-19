@@ -1,3 +1,4 @@
+import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
@@ -55,7 +56,7 @@ class LanguageNotifier extends StateNotifier<Locale> {
       
       state = locale;
     } catch (e) {
-      print('Error loading language: $e');
+      AppLogger.debug('Error loading language: $e');
       state = const Locale('en');
     }
   }
@@ -64,7 +65,7 @@ class LanguageNotifier extends StateNotifier<Locale> {
   Future<void> setLanguage(Locale locale) async {
     // Validate that the locale is supported
     if (!supportedLocales.contains(locale)) {
-      print('Unsupported locale: ${locale.languageCode}');
+      AppLogger.debug('Unsupported locale: ${locale.languageCode}');
       return;
     }
 
@@ -74,7 +75,7 @@ class LanguageNotifier extends StateNotifier<Locale> {
       final box = await Hive.openBox<String>(_boxName);
       await box.put(_languageKey, locale.languageCode);
     } catch (e) {
-      print('Error saving language: $e');
+      AppLogger.debug('Error saving language: $e');
     }
   }
 

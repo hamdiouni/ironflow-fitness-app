@@ -1,3 +1,4 @@
+import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
@@ -18,7 +19,7 @@ class PeriodicSyncService {
   /// Start periodic sync
   void start({required Future<void> Function() onSync}) {
     if (_isRunning) {
-      print('⚠️ Periodic sync already running');
+      AppLogger.debug('⚠️ Periodic sync already running');
       return;
     }
 
@@ -33,7 +34,7 @@ class PeriodicSyncService {
       _performSync();
     });
 
-    print('✅ Periodic sync started (every ${_syncInterval.inMinutes} minutes)');
+    AppLogger.debug('✅ Periodic sync started (every ${_syncInterval.inMinutes} minutes)');
   }
 
   /// Stop periodic sync
@@ -42,7 +43,7 @@ class PeriodicSyncService {
     _syncTimer = null;
     _isRunning = false;
     _onSync = null;
-    print('❌ Periodic sync stopped');
+    AppLogger.debug('❌ Periodic sync stopped');
   }
 
   /// Perform sync if online
@@ -56,15 +57,15 @@ class PeriodicSyncService {
           connectivityResult.contains(ConnectivityResult.wifi);
 
       if (!isOnline) {
-        print('⚠️ Skipping sync - device is offline');
+        AppLogger.debug('⚠️ Skipping sync - device is offline');
         return;
       }
 
-      print('🔄 Running periodic sync...');
+      AppLogger.debug('🔄 Running periodic sync...');
       await _onSync!();
-      print('✅ Periodic sync completed');
+      AppLogger.debug('✅ Periodic sync completed');
     } catch (e) {
-      print('❌ Periodic sync failed: $e');
+      AppLogger.debug('❌ Periodic sync failed: $e');
     }
   }
 

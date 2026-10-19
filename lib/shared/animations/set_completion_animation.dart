@@ -21,7 +21,7 @@ class SetCompletionAnimation extends StatelessWidget {
       height: 60,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: Colors.green.withOpacity(0.2),
+        color: Colors.green.withValues(alpha: 0.2),
       ),
       child: const Icon(Icons.check, color: Colors.green, size: 32),
     )

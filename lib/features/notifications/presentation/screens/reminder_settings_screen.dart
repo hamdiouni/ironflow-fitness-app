@@ -1,10 +1,7 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_theme.dart';
-import '../../../../core/theme/app_theme_tokens.dart';
-import '../../../../core/theme/app_typography.dart';
 import '../../domain/entities/reminder_settings.dart';
 import '../providers/notification_providers.dart';
 
@@ -403,7 +400,7 @@ class ReminderSettingsScreen extends ConsumerWidget {
       ),
       value: value,
       onChanged: onChanged,
-      activeColor: tokens.kineticAccent,
+      activeThumbColor: tokens.kineticAccent,
     );
   }
 

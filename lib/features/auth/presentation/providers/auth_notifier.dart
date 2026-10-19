@@ -1,3 +1,4 @@
+import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:progression_tracker/features/auth/domain/entities/user.dart';
@@ -60,7 +61,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   /// Check for existing session on app start
   Future<void> _checkExistingSession() async {
     if (kDebugMode) {
-      print('📊 [Auth] Checking for existing session...');
+      AppLogger.debug('📊 [Auth] Checking for existing session...');
     }
 
     try {
@@ -69,8 +70,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
       if (user != null) {
         if (kDebugMode) {
-          print('✅ [Auth] Found existing session');
-          print('🔍 [Auth] User ID: ${_sanitizeUserId(user.id)}');
+          AppLogger.debug('✅ [Auth] Found existing session');
+          AppLogger.debug('🔍 [Auth] User ID: ${_sanitizeUserId(user.id)}');
         }
 
         state = state.copyWith(
@@ -80,12 +81,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
         );
       } else {
         if (kDebugMode) {
-          print('📊 [Auth] No existing session found');
+          AppLogger.debug('📊 [Auth] No existing session found');
         }
       }
     } catch (e) {
       if (kDebugMode) {
-        print('⚠️ [Auth] Error checking session: $e');
+        AppLogger.debug('⚠️ [Auth] Error checking session: $e');
       }
       // Don't set error state, just continue as unauthenticated
     }
@@ -97,13 +98,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
     required String password,
   }) async {
     if (kDebugMode) {
-      print('📊 [Auth] Starting sign up...');
-      print('🔍 [Auth] Email domain: ${_sanitizeEmail(email)}');
+      AppLogger.debug('📊 [Auth] Starting sign up...');
+      AppLogger.debug('🔍 [Auth] Email domain: ${_sanitizeEmail(email)}');
     }
 
     state = state.copyWith(isLoading: true, error: null);
     if (kDebugMode) {
-      print('📊 [Auth] State set to loading');
+      AppLogger.debug('📊 [Auth] State set to loading');
     }
 
     try {
@@ -113,8 +114,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
       );
 
       if (kDebugMode) {
-        print('✅ [Auth] Sign up successful');
-        print('🔍 [Auth] User ID: ${_sanitizeUserId(user.id)}');
+        AppLogger.debug('✅ [Auth] Sign up successful');
+        AppLogger.debug('🔍 [Auth] User ID: ${_sanitizeUserId(user.id)}');
       }
 
       state = state.copyWith(
@@ -129,21 +130,21 @@ class AuthNotifier extends StateNotifier<AuthState> {
         final analytics = _ref.read(analyticsServiceProvider);
         await analytics.logSignUp('email');
         if (kDebugMode) {
-          print('📊 [Analytics] Sign up event logged');
+          AppLogger.debug('📊 [Analytics] Sign up event logged');
         }
       } catch (e) {
         if (kDebugMode) {
-          print('⚠️ [Analytics] Failed to log sign up event: $e');
+          AppLogger.debug('⚠️ [Analytics] Failed to log sign up event: $e');
         }
       }
       
       if (kDebugMode) {
-        print('✅ [Auth] State set to authenticated');
+        AppLogger.debug('✅ [Auth] State set to authenticated');
       }
     } catch (e, stackTrace) {
       if (kDebugMode) {
-        print('❌ [Auth] Sign up failed: $e');
-        print('🔍 [Auth] Stack trace: $stackTrace');
+        AppLogger.debug('❌ [Auth] Sign up failed: $e');
+        AppLogger.debug('🔍 [Auth] Stack trace: $stackTrace');
       }
       
       state = state.copyWith(
@@ -152,7 +153,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       );
       
       if (kDebugMode) {
-        print('📊 [Auth] State set to error');
+        AppLogger.debug('📊 [Auth] State set to error');
       }
       rethrow;
     }
@@ -164,13 +165,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
     required String password,
   }) async {
     if (kDebugMode) {
-      print('📊 [Auth] Starting sign in...');
-      print('🔍 [Auth] Email domain: ${_sanitizeEmail(email)}');
+      AppLogger.debug('📊 [Auth] Starting sign in...');
+      AppLogger.debug('🔍 [Auth] Email domain: ${_sanitizeEmail(email)}');
     }
 
     state = state.copyWith(isLoading: true, error: null);
     if (kDebugMode) {
-      print('📊 [Auth] State set to loading');
+      AppLogger.debug('📊 [Auth] State set to loading');
     }
 
     try {
@@ -180,8 +181,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
       );
 
       if (kDebugMode) {
-        print('✅ [Auth] Sign in successful');
-        print('🔍 [Auth] User ID: ${_sanitizeUserId(user.id)}');
+        AppLogger.debug('✅ [Auth] Sign in successful');
+        AppLogger.debug('🔍 [Auth] User ID: ${_sanitizeUserId(user.id)}');
       }
 
       state = state.copyWith(
@@ -196,21 +197,21 @@ class AuthNotifier extends StateNotifier<AuthState> {
         final analytics = _ref.read(analyticsServiceProvider);
         await analytics.logLogin('email');
         if (kDebugMode) {
-          print('📊 [Analytics] Login event logged');
+          AppLogger.debug('📊 [Analytics] Login event logged');
         }
       } catch (e) {
         if (kDebugMode) {
-          print('⚠️ [Analytics] Failed to log login event: $e');
+          AppLogger.debug('⚠️ [Analytics] Failed to log login event: $e');
         }
       }
       
       if (kDebugMode) {
-        print('✅ [Auth] State set to authenticated');
+        AppLogger.debug('✅ [Auth] State set to authenticated');
       }
     } catch (e, stackTrace) {
       if (kDebugMode) {
-        print('❌ [Auth] Sign in failed: $e');
-        print('🔍 [Auth] Stack trace: $stackTrace');
+        AppLogger.debug('❌ [Auth] Sign in failed: $e');
+        AppLogger.debug('🔍 [Auth] Stack trace: $stackTrace');
       }
       
       state = state.copyWith(
@@ -219,7 +220,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       );
       
       if (kDebugMode) {
-        print('📊 [Auth] State set to error');
+        AppLogger.debug('📊 [Auth] State set to error');
       }
       rethrow;
     }
@@ -228,12 +229,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
   /// Sign in with Google
   Future<void> signInWithGoogle() async {
     if (kDebugMode) {
-      print('📊 [Auth] Starting Google sign in...');
+      AppLogger.debug('📊 [Auth] Starting Google sign in...');
     }
 
     state = state.copyWith(isLoading: true, error: null);
     if (kDebugMode) {
-      print('📊 [Auth] State set to loading');
+      AppLogger.debug('📊 [Auth] State set to loading');
     }
 
     try {
@@ -241,8 +242,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final user = await _signInUseCase.repository.signInWithGoogle();
 
       if (kDebugMode) {
-        print('✅ [Auth] Google sign in successful');
-        print('🔍 [Auth] User ID: ${_sanitizeUserId(user.id)}');
+        AppLogger.debug('✅ [Auth] Google sign in successful');
+        AppLogger.debug('🔍 [Auth] User ID: ${_sanitizeUserId(user.id)}');
       }
 
       state = state.copyWith(
@@ -257,21 +258,21 @@ class AuthNotifier extends StateNotifier<AuthState> {
         final analytics = _ref.read(analyticsServiceProvider);
         await analytics.logLogin('google');
         if (kDebugMode) {
-          print('📊 [Analytics] Google login event logged');
+          AppLogger.debug('📊 [Analytics] Google login event logged');
         }
       } catch (e) {
         if (kDebugMode) {
-          print('⚠️ [Analytics] Failed to log login event: $e');
+          AppLogger.debug('⚠️ [Analytics] Failed to log login event: $e');
         }
       }
       
       if (kDebugMode) {
-        print('✅ [Auth] State set to authenticated');
+        AppLogger.debug('✅ [Auth] State set to authenticated');
       }
     } catch (e, stackTrace) {
       if (kDebugMode) {
-        print('❌ [Auth] Google sign in failed: $e');
-        print('🔍 [Auth] Stack trace: $stackTrace');
+        AppLogger.debug('❌ [Auth] Google sign in failed: $e');
+        AppLogger.debug('🔍 [Auth] Stack trace: $stackTrace');
       }
       
       // Check if error is due to user cancellation
@@ -287,9 +288,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
       
       if (kDebugMode) {
         if (isCancelled) {
-          print('📊 [Auth] User cancelled Google sign in');
+          AppLogger.debug('📊 [Auth] User cancelled Google sign in');
         } else {
-          print('📊 [Auth] State set to error');
+          AppLogger.debug('📊 [Auth] State set to error');
         }
       }
       
@@ -303,22 +304,22 @@ class AuthNotifier extends StateNotifier<AuthState> {
   /// Sign out
   Future<void> signOut() async {
     if (kDebugMode) {
-      print('📊 [Auth] Starting sign out...');
+      AppLogger.debug('📊 [Auth] Starting sign out...');
       if (state.user != null) {
-        print('🔍 [Auth] Current user ID: ${_sanitizeUserId(state.user!.id)}');
+        AppLogger.debug('🔍 [Auth] Current user ID: ${_sanitizeUserId(state.user!.id)}');
       }
     }
 
     state = state.copyWith(isLoading: true, error: null);
     if (kDebugMode) {
-      print('📊 [Auth] State set to loading');
+      AppLogger.debug('📊 [Auth] State set to loading');
     }
 
     try {
       await _signOutUseCase.call();
 
       if (kDebugMode) {
-        print('✅ [Auth] Sign out successful');
+        AppLogger.debug('✅ [Auth] Sign out successful');
       }
 
       state = const AuthState(
@@ -333,21 +334,21 @@ class AuthNotifier extends StateNotifier<AuthState> {
         final analytics = _ref.read(analyticsServiceProvider);
         await analytics.logLogout();
         if (kDebugMode) {
-          print('📊 [Analytics] Logout event logged');
+          AppLogger.debug('📊 [Analytics] Logout event logged');
         }
       } catch (e) {
         if (kDebugMode) {
-          print('⚠️ [Analytics] Failed to log logout event: $e');
+          AppLogger.debug('⚠️ [Analytics] Failed to log logout event: $e');
         }
       }
       
       if (kDebugMode) {
-        print('✅ [Auth] State set to unauthenticated');
+        AppLogger.debug('✅ [Auth] State set to unauthenticated');
       }
     } catch (e, stackTrace) {
       if (kDebugMode) {
-        print('❌ [Auth] Sign out failed: $e');
-        print('🔍 [Auth] Stack trace: $stackTrace');
+        AppLogger.debug('❌ [Auth] Sign out failed: $e');
+        AppLogger.debug('🔍 [Auth] Stack trace: $stackTrace');
       }
       
       state = state.copyWith(
@@ -356,7 +357,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       );
       
       if (kDebugMode) {
-        print('📊 [Auth] State set to error');
+        AppLogger.debug('📊 [Auth] State set to error');
       }
       rethrow;
     }

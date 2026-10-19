@@ -1,3 +1,4 @@
+import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:progression_tracker/features/ai/domain/entities/chat_message.dart';
 import 'package:progression_tracker/features/ai/domain/services/local_ai_coach.dart';
@@ -145,10 +146,10 @@ class AIChatNotifier extends StateNotifier<AIChatState> {
     _chatStorage?.saveMessages(state.messages);
 
     try {
-      print('═══════════════════════════════════════');
-      print('🚀 [AI CHAT] Starting message processing');
-      print('📝 [AI CHAT] User message: $message');
-      print('═══════════════════════════════════════');
+      AppLogger.debug('═══════════════════════════════════════');
+      AppLogger.debug('🚀 [AI CHAT] Starting message processing');
+      AppLogger.debug('📝 [AI CHAT] User message: $message');
+      AppLogger.debug('═══════════════════════════════════════');
       
       // Gather user data if personalization consent is granted
       final hasConsent = _ref.read(aiPersonalizationConsentProvider);
@@ -159,7 +160,7 @@ class AIChatNotifier extends StateNotifier<AIChatState> {
       List<BodyEntry> bodyEntries = const [];
 
       if (hasConsent) {
-        print('📊 [AI CHAT] Step 1: Personalization consent ENABLED. Gathering user data...');
+        AppLogger.debug('📊 [AI CHAT] Step 1: Personalization consent ENABLED. Gathering user data...');
         try {
           final authRepo = _ref.read(authRepositoryProvider);
           final workoutRepo = _ref.read(workoutRepositoryProvider);
@@ -168,14 +169,14 @@ class AIChatNotifier extends StateNotifier<AIChatState> {
 
           final user = await authRepo.getCurrentUser();
           profile = user != null ? await authRepo.getUserProfile(user.id) : null;
-          print('✅ [AI CHAT] User profile: ${profile?.name ?? "Guest"}');
+          AppLogger.debug('✅ [AI CHAT] User profile: ${profile?.name ?? "Guest"}');
 
           final thirtyDaysAgo = DateTime.now().subtract(const Duration(days: 30));
           recentWorkouts = await workoutRepo.getWorkoutsByDateRange(
             thirtyDaysAgo,
             DateTime.now(),
           );
-          print('✅ [AI CHAT] Found ${recentWorkouts.length} workouts');
+          AppLogger.debug('✅ [AI CHAT] Found ${recentWorkouts.length} workouts');
 
           final sevenDaysAgo = DateTime.now().subtract(const Duration(days: 7));
           nutritionHistory = await nutritionRepo.getNutritionHistory(
@@ -183,22 +184,22 @@ class AIChatNotifier extends StateNotifier<AIChatState> {
             DateTime.now(),
           );
           nutritionTargets = await nutritionRepo.getNutritionTargets();
-          print('✅ [AI CHAT] Found ${nutritionHistory.length} nutrition days');
+          AppLogger.debug('✅ [AI CHAT] Found ${nutritionHistory.length} nutrition days');
 
           bodyEntries = await bodyRepo.getBodyEntriesByDateRange(
             thirtyDaysAgo,
             DateTime.now(),
           );
-          print('✅ [AI CHAT] Found ${bodyEntries.length} body entries');
+          AppLogger.debug('✅ [AI CHAT] Found ${bodyEntries.length} body entries');
         } catch (e) {
-          print('⚠️ [AI CHAT] Error gathering user telemetry: $e');
+          AppLogger.debug('⚠️ [AI CHAT] Error gathering user telemetry: $e');
         }
       } else {
-        print('🔒 [AI CHAT] Personalization consent DISABLED. Preserving user telemetry privacy.');
+        AppLogger.debug('🔒 [AI CHAT] Personalization consent DISABLED. Preserving user telemetry privacy.');
       }
 
       // Build system prompt with user context
-      print('🔧 [AI CHAT] Step 2: Building system prompt...');
+      AppLogger.debug('🔧 [AI CHAT] Step 2: Building system prompt...');
       final systemPrompt = _buildSystemPrompt(
         hasConsent: hasConsent,
         profile: profile,
@@ -207,14 +208,14 @@ class AIChatNotifier extends StateNotifier<AIChatState> {
         nutritionTargets: nutritionTargets,
         bodyEntries: bodyEntries,
       );
-      print('✅ [AI CHAT] System prompt built (${systemPrompt.length} chars)');
+      AppLogger.debug('✅ [AI CHAT] System prompt built (${systemPrompt.length} chars)');
 
       String responseText;
       bool isFallback = false;
       String? errorMessage;
       
       if (!_geminiService.isConfigured) {
-        print('⚠️ [AI CHAT] No Gemini API key configured. Using Local AI Coach...');
+        AppLogger.debug('⚠️ [AI CHAT] No Gemini API key configured. Using Local AI Coach...');
         isFallback = true;
         errorMessage = 'Gemini API key is not configured. Running offline rule-based coach.';
         responseText = _localCoach.generateResponse(
@@ -227,10 +228,10 @@ class AIChatNotifier extends StateNotifier<AIChatState> {
         );
       } else {
         try {
-          print('═══════════════════════════════════════');
-          print('🤖 [AI CHAT] Step 7: Calling Gemini AI (FREE!)');
-          print('📡 [AI CHAT] Sending request to Gemini API...');
-          print('═══════════════════════════════════════');
+          AppLogger.debug('═══════════════════════════════════════');
+          AppLogger.debug('🤖 [AI CHAT] Step 7: Calling Gemini AI (FREE!)');
+          AppLogger.debug('📡 [AI CHAT] Sending request to Gemini API...');
+          AppLogger.debug('═══════════════════════════════════════');
           
           responseText = await _geminiService.sendMessage(
             [{'role': 'user', 'content': message}],
@@ -239,19 +240,19 @@ class AIChatNotifier extends StateNotifier<AIChatState> {
             maxTokens: 8000,
           );
           
-          print('═══════════════════════════════════════');
-          print('✅ [AI CHAT] Gemini response received!');
-          print('📝 [AI CHAT] Response length: ${responseText.length} chars');
-          print('═══════════════════════════════════════');
+          AppLogger.debug('═══════════════════════════════════════');
+          AppLogger.debug('✅ [AI CHAT] Gemini response received!');
+          AppLogger.debug('📝 [AI CHAT] Response length: ${responseText.length} chars');
+          AppLogger.debug('═══════════════════════════════════════');
         } catch (e, stackTrace) {
-          print('═══════════════════════════════════════');
-          print('❌ [AI CHAT ERROR] Gemini API failed!');
-          print('🔴 [AI CHAT ERROR] Error type: ${e.runtimeType}');
-          print('🔴 [AI CHAT ERROR] Error message: $e');
-          print('🔴 [AI CHAT ERROR] Stack trace:');
-          print(stackTrace.toString().split('\n').take(10).join('\n'));
-          print('═══════════════════════════════════════');
-          print('🔄 [AI CHAT] Falling back to LocalAI with transparent warning...');
+          AppLogger.debug('═══════════════════════════════════════');
+          AppLogger.debug('❌ [AI CHAT ERROR] Gemini API failed!');
+          AppLogger.debug('🔴 [AI CHAT ERROR] Error type: ${e.runtimeType}');
+          AppLogger.debug('🔴 [AI CHAT ERROR] Error message: $e');
+          AppLogger.debug('🔴 [AI CHAT ERROR] Stack trace:');
+          AppLogger.debug(stackTrace.toString().split('\n').take(10).join('\n'));
+          AppLogger.debug('═══════════════════════════════════════');
+          AppLogger.debug('🔄 [AI CHAT] Falling back to LocalAI with transparent warning...');
           
           isFallback = true;
           final errorText = e is GeminiAIServiceException ? e.message : e.toString();
@@ -269,7 +270,7 @@ class AIChatNotifier extends StateNotifier<AIChatState> {
       }
 
       // Add assistant message
-      print('💾 [AI CHAT] Step 8: Saving response to chat...');
+      AppLogger.debug('💾 [AI CHAT] Step 8: Saving response to chat...');
       final assistantMessage = ChatMessage(
         id: const Uuid().v4(),
         role: 'assistant',
@@ -293,23 +294,23 @@ class AIChatNotifier extends StateNotifier<AIChatState> {
           query: message,
           responseLength: responseText.length,
         );
-        print('📊 [Analytics] AI query event logged');
+        AppLogger.debug('📊 [Analytics] AI query event logged');
       } catch (e) {
-        print('⚠️ [Analytics] Failed to log AI query event: $e');
+        AppLogger.debug('⚠️ [Analytics] Failed to log AI query event: $e');
       }
       
-      print('═══════════════════════════════════════');
-      print('🎉 [AI CHAT] Message processing complete!');
-      print('📊 [AI CHAT] Total messages: ${state.messages.length}');
-      print('═══════════════════════════════════════');
+      AppLogger.debug('═══════════════════════════════════════');
+      AppLogger.debug('🎉 [AI CHAT] Message processing complete!');
+      AppLogger.debug('📊 [AI CHAT] Total messages: ${state.messages.length}');
+      AppLogger.debug('═══════════════════════════════════════');
     } catch (e, stackTrace) {
-      print('═══════════════════════════════════════');
-      print('❌❌❌ [AI CHAT FATAL ERROR] ❌❌❌');
-      print('🔴 [AI CHAT ERROR] Error type: ${e.runtimeType}');
-      print('🔴 [AI CHAT ERROR] Error message: $e');
-      print('🔴 [AI CHAT ERROR] Full stack trace:');
-      print(stackTrace);
-      print('═══════════════════════════════════════');
+      AppLogger.debug('═══════════════════════════════════════');
+      AppLogger.debug('❌❌❌ [AI CHAT FATAL ERROR] ❌❌❌');
+      AppLogger.debug('🔴 [AI CHAT ERROR] Error type: ${e.runtimeType}');
+      AppLogger.debug('🔴 [AI CHAT ERROR] Error message: $e');
+      AppLogger.debug('🔴 [AI CHAT ERROR] Full stack trace:');
+      AppLogger.debug(stackTrace);
+      AppLogger.debug('═══════════════════════════════════════');
       
       state = state.copyWith(
         isLoading: false,

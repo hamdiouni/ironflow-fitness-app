@@ -1,3 +1,4 @@
+import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../exercise_database.dart';
 import 'firestore_exercise_datasource.dart';
@@ -12,19 +13,19 @@ import 'firestore_exercise_datasource.dart';
 /// ```
 Future<void> uploadAllExercisesToFirestore(FirebaseFirestore firestore) async {
   try {
-    print('Starting exercise upload to Firestore...');
-    print('Total exercises to upload: ${ExerciseDatabase.all.length}');
+    AppLogger.debug('Starting exercise upload to Firestore...');
+    AppLogger.debug('Total exercises to upload: ${ExerciseDatabase.all.length}');
 
     final datasource = FirestoreExerciseDatasource(firestore);
     
     // Upload all exercises
     await datasource.uploadExercises(ExerciseDatabase.all);
     
-    print('✓ Successfully uploaded ${ExerciseDatabase.all.length} exercises to Firestore');
+    AppLogger.debug('✓ Successfully uploaded ${ExerciseDatabase.all.length} exercises to Firestore');
     
     // Verify upload by checking count
     final allExercises = await datasource.getAllExercises();
-    print('✓ Verification: ${allExercises.length} exercises found in Firestore');
+    AppLogger.debug('✓ Verification: ${allExercises.length} exercises found in Firestore');
     
     // Print summary by muscle group
     final byMuscleGroup = <String, int>{};
@@ -33,13 +34,13 @@ Future<void> uploadAllExercisesToFirestore(FirebaseFirestore firestore) async {
       byMuscleGroup[group] = (byMuscleGroup[group] ?? 0) + 1;
     }
     
-    print('\nExercises by muscle group:');
+    AppLogger.debug('\nExercises by muscle group:');
     byMuscleGroup.forEach((group, total) {
-      print('  $group: $total');
+      AppLogger.debug('  $group: $total');
     });
     
   } catch (e) {
-    print('✗ Error uploading exercises: $e');
+    AppLogger.debug('✗ Error uploading exercises: $e');
     rethrow;
   }
 }
@@ -48,17 +49,17 @@ Future<void> uploadAllExercisesToFirestore(FirebaseFirestore firestore) async {
 /// Returns true if all exercises are present and valid.
 Future<bool> verifyExercisesInFirestore(FirebaseFirestore firestore) async {
   try {
-    print('Verifying exercises in Firestore...');
+    AppLogger.debug('Verifying exercises in Firestore...');
     
     final datasource = FirestoreExerciseDatasource(firestore);
     final firestoreExercises = await datasource.getAllExercises();
     final localExercises = ExerciseDatabase.all;
     
-    print('Local exercises: ${localExercises.length}');
-    print('Firestore exercises: ${firestoreExercises.length}');
+    AppLogger.debug('Local exercises: ${localExercises.length}');
+    AppLogger.debug('Firestore exercises: ${firestoreExercises.length}');
     
     if (firestoreExercises.length != localExercises.length) {
-      print('✗ Exercise count mismatch!');
+      AppLogger.debug('✗ Exercise count mismatch!');
       return false;
     }
     
@@ -68,14 +69,14 @@ Future<bool> verifyExercisesInFirestore(FirebaseFirestore firestore) async {
     
     final missing = localIds.difference(firestoreIds);
     if (missing.isNotEmpty) {
-      print('✗ Missing exercises in Firestore: $missing');
+      AppLogger.debug('✗ Missing exercises in Firestore: $missing');
       return false;
     }
     
-    print('✓ All exercises verified successfully!');
+    AppLogger.debug('✓ All exercises verified successfully!');
     return true;
   } catch (e) {
-    print('✗ Error verifying exercises: $e');
+    AppLogger.debug('✗ Error verifying exercises: $e');
     return false;
   }
 }
@@ -83,7 +84,7 @@ Future<bool> verifyExercisesInFirestore(FirebaseFirestore firestore) async {
 /// Delete all exercises from Firestore (use with caution!).
 Future<void> deleteAllExercisesFromFirestore(FirebaseFirestore firestore) async {
   try {
-    print('Deleting all exercises from Firestore...');
+    AppLogger.debug('Deleting all exercises from Firestore...');
     
     final batch = firestore.batch();
     final snapshot = await firestore.collection('exercises').get();
@@ -93,9 +94,9 @@ Future<void> deleteAllExercisesFromFirestore(FirebaseFirestore firestore) async 
     }
     
     await batch.commit();
-    print('✓ Successfully deleted ${snapshot.docs.length} exercises from Firestore');
+    AppLogger.debug('✓ Successfully deleted ${snapshot.docs.length} exercises from Firestore');
   } catch (e) {
-    print('✗ Error deleting exercises: $e');
+    AppLogger.debug('✗ Error deleting exercises: $e');
     rethrow;
   }
 }

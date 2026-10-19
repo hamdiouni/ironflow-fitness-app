@@ -1,3 +1,4 @@
+import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import '../models/meal_model.dart';
@@ -45,7 +46,7 @@ class FirestoreNutritionDatasource {
           );
     } catch (e) {
       if (kDebugMode) {
-        print('Error saving meal to Firestore: $e');
+        AppLogger.debug('Error saving meal to Firestore: $e');
       }
       rethrow;
     }
@@ -73,7 +74,7 @@ class FirestoreNutritionDatasource {
           .toList();
     } catch (e) {
       if (kDebugMode) {
-        print('Error getting meals by date from Firestore: $e');
+        AppLogger.debug('Error getting meals by date from Firestore: $e');
       }
       rethrow;
     }
@@ -100,7 +101,7 @@ class FirestoreNutritionDatasource {
           .toList();
     } catch (e) {
       if (kDebugMode) {
-        print('Error getting meals by date range from Firestore: $e');
+        AppLogger.debug('Error getting meals by date range from Firestore: $e');
       }
       rethrow;
     }
@@ -114,7 +115,7 @@ class FirestoreNutritionDatasource {
       await _getNutritionCollection(userId).doc(mealId).delete();
     } catch (e) {
       if (kDebugMode) {
-        print('Error deleting meal from Firestore: $e');
+        AppLogger.debug('Error deleting meal from Firestore: $e');
       }
       rethrow;
     }
@@ -135,7 +136,7 @@ class FirestoreNutritionDatasource {
           );
     } catch (e) {
       if (kDebugMode) {
-        print('Error saving nutrition targets to Firestore: $e');
+        AppLogger.debug('Error saving nutrition targets to Firestore: $e');
       }
       rethrow;
     }
@@ -154,7 +155,7 @@ class FirestoreNutritionDatasource {
       return NutritionTargetsModel.fromJson(doc.data() ?? {});
     } catch (e) {
       if (kDebugMode) {
-        print('Error getting nutrition targets from Firestore: $e');
+        AppLogger.debug('Error getting nutrition targets from Firestore: $e');
       }
       rethrow;
     }
@@ -242,7 +243,7 @@ class FirestoreNutritionDatasource {
       };
     } catch (e) {
       if (kDebugMode) {
-        print('Error getting daily nutrition summary from Firestore: $e');
+        AppLogger.debug('Error getting daily nutrition summary from Firestore: $e');
       }
       rethrow;
     }
@@ -262,7 +263,7 @@ class FirestoreNutritionDatasource {
       await batch.commit();
     } catch (e) {
       if (kDebugMode) {
-        print('Error batch saving meals to Firestore: $e');
+        AppLogger.debug('Error batch saving meals to Firestore: $e');
       }
       rethrow;
     }
@@ -281,7 +282,7 @@ class FirestoreNutritionDatasource {
       await batch.commit();
     } catch (e) {
       if (kDebugMode) {
-        print('Error batch deleting meals from Firestore: $e');
+        AppLogger.debug('Error batch deleting meals from Firestore: $e');
       }
       rethrow;
     }

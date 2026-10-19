@@ -1,3 +1,4 @@
+import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:uuid/uuid.dart';
@@ -127,7 +128,7 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
   /// falling back gracefully to an empty workout if no active program exists.
   Future<void> start({List<Exercise>? initialExercises}) async {
     try {
-      print('📊 [Workout] Starting workout session...');
+      AppLogger.debug('📊 [Workout] Starting workout session...');
       Workout workout;
       if (initialExercises != null) {
         workout = Workout(
@@ -141,7 +142,7 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
         try {
           workout = await _startWorkout();
         } catch (e) {
-          print('⚠️ [Workout] Could not load active program workout ($e); launching empty workout');
+          AppLogger.debug('⚠️ [Workout] Could not load active program workout ($e); launching empty workout');
           workout = Workout(
             id: const Uuid().v4(),
             date: DateTime.now(),
@@ -153,14 +154,14 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
       }
       final startTime = DateTime.now();
       
-      print('✅ [Workout] Workout created successfully');
-      print('🔍 [Workout] Workout ID: ${workout.id}, Start time: $startTime');
+      AppLogger.debug('✅ [Workout] Workout created successfully');
+      AppLogger.debug('🔍 [Workout] Workout ID: ${workout.id}, Start time: $startTime');
       
       state = WorkoutState.inProgress(workout, startTime);
-      print('✅ [Workout] State updated to inProgress');
+      AppLogger.debug('✅ [Workout] State updated to inProgress');
       
       await _stateManager.saveState(workout, startTime);
-      print('✅ [Workout] Workout state saved to Hive');
+      AppLogger.debug('✅ [Workout] Workout state saved to Hive');
       
       // Track workout started
       try {
@@ -168,13 +169,13 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
         await analytics.logWorkoutStarted(
           workoutId: workout.id,
         );
-        print('📊 [Analytics] Workout started event logged');
+        AppLogger.debug('📊 [Analytics] Workout started event logged');
       } catch (e) {
-        print('⚠️ [Analytics] Failed to log workout started: $e');
+        AppLogger.debug('⚠️ [Analytics] Failed to log workout started: $e');
       }
     } catch (e, stackTrace) {
-      print('❌ [Workout] Failed to start workout: $e');
-      print('🔍 [Workout] Stack trace: $stackTrace');
+      AppLogger.debug('❌ [Workout] Failed to start workout: $e');
+      AppLogger.debug('🔍 [Workout] Stack trace: $stackTrace');
       rethrow;
     }
   }
@@ -195,27 +196,27 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
   /// Returns `true` if a state was restored, `false` otherwise.
   Future<bool> restoreState() async {
     try {
-      print('📊 [Workout] Restoring workout state...');
+      AppLogger.debug('📊 [Workout] Restoring workout state...');
       
       await _stateManager.init();
-      print('✅ [Workout] State manager initialized');
+      AppLogger.debug('✅ [Workout] State manager initialized');
       
       final saved = await _stateManager.restoreState();
       if (saved != null) {
-        print('✅ [Workout] Workout state restored from Hive');
-        print('🔍 [Workout] Workout ID: ${saved.workout.id}, Start time: ${saved.startTime}');
-        print('🔍 [Workout] Exercises: ${saved.workout.exercises.length}');
+        AppLogger.debug('✅ [Workout] Workout state restored from Hive');
+        AppLogger.debug('🔍 [Workout] Workout ID: ${saved.workout.id}, Start time: ${saved.startTime}');
+        AppLogger.debug('🔍 [Workout] Exercises: ${saved.workout.exercises.length}');
         
         state = WorkoutState.inProgress(saved.workout, saved.startTime);
-        print('✅ [Workout] State updated to inProgress');
+        AppLogger.debug('✅ [Workout] State updated to inProgress');
         return true;
       } else {
-        print('📊 [Workout] No saved workout state found');
+        AppLogger.debug('📊 [Workout] No saved workout state found');
         return false;
       }
     } catch (e, stackTrace) {
-      print('❌ [Workout] Failed to restore workout state: $e');
-      print('🔍 [Workout] Stack trace: $stackTrace');
+      AppLogger.debug('❌ [Workout] Failed to restore workout state: $e');
+      AppLogger.debug('🔍 [Workout] Stack trace: $stackTrace');
       rethrow;
     }
   }
@@ -225,25 +226,25 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
   /// FIX: Same async-in-maybeWhen bug — extracted to direct state check.
   Future<void> addExercise(Exercise exercise) async {
     try {
-      print('📊 [Workout] Adding exercise to workout...');
-      print('🔍 [Workout] Exercise name: ${exercise.name}, Type: ${exercise.type}');
+      AppLogger.debug('📊 [Workout] Adding exercise to workout...');
+      AppLogger.debug('🔍 [Workout] Exercise name: ${exercise.name}, Type: ${exercise.type}');
       
       final current = state;
       if (current is! _InProgress) {
-        print('⚠️ [Workout] Cannot add exercise: workout not in progress');
+        AppLogger.debug('⚠️ [Workout] Cannot add exercise: workout not in progress');
         return;
       }
 
       final updated = await _addExercise(current.workout, exercise);
-      print('✅ [Workout] Exercise added successfully');
-      print('🔍 [Workout] Exercise ID: ${exercise.id}');
-      print('🔍 [Workout] Total exercises: ${updated.exercises.length}');
+      AppLogger.debug('✅ [Workout] Exercise added successfully');
+      AppLogger.debug('🔍 [Workout] Exercise ID: ${exercise.id}');
+      AppLogger.debug('🔍 [Workout] Total exercises: ${updated.exercises.length}');
       
       state = WorkoutState.inProgress(updated, current.startTime);
-      print('✅ [Workout] State updated with new exercise');
+      AppLogger.debug('✅ [Workout] State updated with new exercise');
       
       await _stateManager.saveState(updated, current.startTime);
-      print('✅ [Workout] Workout state saved to Hive');
+      AppLogger.debug('✅ [Workout] Workout state saved to Hive');
       
       // Track exercise added
       try {
@@ -252,13 +253,13 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
           exerciseId: exercise.id,
           exerciseName: exercise.name,
         );
-        print('📊 [Analytics] Exercise added event logged');
+        AppLogger.debug('📊 [Analytics] Exercise added event logged');
       } catch (e) {
-        print('⚠️ [Analytics] Failed to log exercise added: $e');
+        AppLogger.debug('⚠️ [Analytics] Failed to log exercise added: $e');
       }
     } catch (e, stackTrace) {
-      print('❌ [Workout] Failed to add exercise: $e');
-      print('🔍 [Workout] Stack trace: $stackTrace');
+      AppLogger.debug('❌ [Workout] Failed to add exercise: $e');
+      AppLogger.debug('🔍 [Workout] Stack trace: $stackTrace');
       rethrow;
     }
   }
@@ -273,14 +274,14 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
   /// Fixed by extracting the async logic outside of maybeWhen.
   Future<bool> logSetForExercise(String exerciseId, SetEntry set) async {
     try {
-      print('📊 [Workout] Logging set for exercise...');
-      print('🔍 [Workout] Exercise ID: $exerciseId');
-      print('🔍 [Workout] Reps: ${set.reps}, Weight: ${set.weight}kg');
+      AppLogger.debug('📊 [Workout] Logging set for exercise...');
+      AppLogger.debug('🔍 [Workout] Exercise ID: $exerciseId');
+      AppLogger.debug('🔍 [Workout] Reps: ${set.reps}, Weight: ${set.weight}kg');
       
       // Extract current state synchronously — no async inside maybeWhen
       final current = state;
       if (current is! _InProgress) {
-        print('⚠️ [Workout] Cannot log set: workout not in progress');
+        AppLogger.debug('⚠️ [Workout] Cannot log set: workout not in progress');
         return false;
       }
 
@@ -290,25 +291,25 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
       final exerciseIndex =
           workout.exercises.indexWhere((e) => e.id == exerciseId);
       if (exerciseIndex == -1) {
-        print('⚠️ [Workout] Exercise not found in workout');
+        AppLogger.debug('⚠️ [Workout] Exercise not found in workout');
         return false;
       }
 
       final exercise = workout.exercises[exerciseIndex];
-      print('🔍 [Workout] Exercise name: ${exercise.name}');
+      AppLogger.debug('🔍 [Workout] Exercise name: ${exercise.name}');
 
       // Append set immutably
       final updatedExercise = await _logSet(exercise, set);
-      print('✅ [Workout] Set logged successfully');
-      print('🔍 [Workout] Total sets for exercise: ${updatedExercise.sets.length}');
+      AppLogger.debug('✅ [Workout] Set logged successfully');
+      AppLogger.debug('🔍 [Workout] Total sets for exercise: ${updatedExercise.sets.length}');
 
       // Check for PR against historical data
       final isPR = await _detectPR(exercise.name, set);
       if (isPR) {
-        print('✅ [Workout] New PR detected!');
-        print('🔍 [Workout] PR: ${set.reps} reps @ ${set.weight}kg');
+        AppLogger.debug('✅ [Workout] New PR detected!');
+        AppLogger.debug('🔍 [Workout] PR: ${set.reps} reps @ ${set.weight}kg');
       } else {
-        print('📊 [Workout] No PR detected');
+        AppLogger.debug('📊 [Workout] No PR detected');
       }
 
       // Build new exercises list immutably
@@ -321,11 +322,11 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
 
       // Update state — triggers UI rebuild
       state = WorkoutState.inProgress(updatedWorkout, startTime);
-      print('✅ [Workout] State updated with new set');
+      AppLogger.debug('✅ [Workout] State updated with new set');
 
       // Persist state after each set to prevent data loss
       await _stateManager.saveState(updatedWorkout, startTime);
-      print('✅ [Workout] Workout state saved to Hive');
+      AppLogger.debug('✅ [Workout] Workout state saved to Hive');
       
       // Track set completed
       try {
@@ -336,15 +337,15 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
           weight: set.weight,
           reps: set.reps,
         );
-        print('📊 [Analytics] Set completed event logged');
+        AppLogger.debug('📊 [Analytics] Set completed event logged');
       } catch (e) {
-        print('⚠️ [Analytics] Failed to log set completed: $e');
+        AppLogger.debug('⚠️ [Analytics] Failed to log set completed: $e');
       }
 
       return isPR;
     } catch (e, stackTrace) {
-      print('❌ [Workout] Failed to log set: $e');
-      print('🔍 [Workout] Stack trace: $stackTrace');
+      AppLogger.debug('❌ [Workout] Failed to log set: $e');
+      AppLogger.debug('🔍 [Workout] Stack trace: $stackTrace');
       rethrow;
     }
   }
@@ -380,7 +381,7 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
       state = WorkoutState.inProgress(updatedWorkout, startTime);
       await _stateManager.saveState(updatedWorkout, startTime);
     } catch (e) {
-      print('❌ [Workout] Failed to update set type: $e');
+      AppLogger.debug('❌ [Workout] Failed to update set type: $e');
     }
   }
 
@@ -390,21 +391,21 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
   /// FIX: Same async-in-maybeWhen bug — extracted to direct state check.
   Future<void> finish() async {
     try {
-      print('📊 [Workout] Finishing workout...');
+      AppLogger.debug('📊 [Workout] Finishing workout...');
       
       final current = state;
       if (current is! _InProgress) {
-        print('⚠️ [Workout] Cannot finish: workout not in progress');
+        AppLogger.debug('⚠️ [Workout] Cannot finish: workout not in progress');
         return;
       }
 
       final duration = DateTime.now().difference(current.startTime);
-      print('🔍 [Workout] Workout duration: ${duration.inMinutes} minutes');
-      print('🔍 [Workout] Total exercises: ${current.workout.exercises.length}');
+      AppLogger.debug('🔍 [Workout] Workout duration: ${duration.inMinutes} minutes');
+      AppLogger.debug('🔍 [Workout] Total exercises: ${current.workout.exercises.length}');
       
-      print('📊 [Workout] Saving workout to repository...');
+      AppLogger.debug('📊 [Workout] Saving workout to repository...');
       await _saveWorkout(current.workout, duration);
-      print('✅ [Workout] Workout saved successfully');
+      AppLogger.debug('✅ [Workout] Workout saved successfully');
       
       // Track workout completed
       try {
@@ -419,34 +420,34 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
           exerciseCount: current.workout.exercises.length,
           setCount: totalSets,
         );
-        print('📊 [Analytics] Workout completed event logged');
+        AppLogger.debug('📊 [Analytics] Workout completed event logged');
       } catch (e) {
-        print('⚠️ [Analytics] Failed to log workout completed: $e');
+        AppLogger.debug('⚠️ [Analytics] Failed to log workout completed: $e');
       }
       
       // Notify Global AI Provider about workout completion for insights and quick feedback
-      print('📊 [Workout] Notifying Global AI Provider about workout completion...');
+      AppLogger.debug('📊 [Workout] Notifying Global AI Provider about workout completion...');
       try {
         await _ref.read(globalAIProvider.notifier).onWorkoutCompleted(current.workout);
-        print('✅ [Workout] Global AI Provider notified successfully');
+        AppLogger.debug('✅ [Workout] Global AI Provider notified successfully');
       } catch (e) {
-        print('⚠️ [Workout] Failed to notify Global AI Provider: $e');
+        AppLogger.debug('⚠️ [Workout] Failed to notify Global AI Provider: $e');
         // Don't rethrow - AI notification failure shouldn't block workout completion
       }
       
-      print('📊 [Workout] Clearing active workout state...');
+      AppLogger.debug('📊 [Workout] Clearing active workout state...');
       await _stateManager.clearState();
-      print('✅ [Workout] Active state cleared from Hive');
+      AppLogger.debug('✅ [Workout] Active state cleared from Hive');
       
       state = WorkoutState.completed(current.workout);
-      print('✅ [Workout] State updated to completed');
+      AppLogger.debug('✅ [Workout] State updated to completed');
 
       // Increment refresh counter so workoutHistoryProvider re-fetches
       _ref.read(workoutRefreshCounterProvider.notifier).state++;
-      print('✅ [Workout] Workout history refresh triggered');
+      AppLogger.debug('✅ [Workout] Workout history refresh triggered');
     } catch (e, stackTrace) {
-      print('❌ [Workout] Failed to finish workout: $e');
-      print('🔍 [Workout] Stack trace: $stackTrace');
+      AppLogger.debug('❌ [Workout] Failed to finish workout: $e');
+      AppLogger.debug('🔍 [Workout] Stack trace: $stackTrace');
       rethrow;
     }
   }
@@ -458,10 +459,10 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
         final updatedWorkout = workout.copyWith(caloriesBurned: caloriesBurned);
         state = WorkoutState.inProgress(updatedWorkout, startTime);
         _stateManager.saveState(updatedWorkout, startTime);
-        print('✅ [Workout] Workout updated with calories: $caloriesBurned');
+        AppLogger.debug('✅ [Workout] Workout updated with calories: $caloriesBurned');
       },
       orElse: () {
-        print('⚠️ [Workout] Cannot update calories: workout not in progress');
+        AppLogger.debug('⚠️ [Workout] Cannot update calories: workout not in progress');
       },
     );
   }
@@ -470,16 +471,16 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
   /// persisted active workout state.
   Future<void> reset() async {
     try {
-      print('📊 [Workout] Resetting workout state...');
+      AppLogger.debug('📊 [Workout] Resetting workout state...');
       
       await _stateManager.clearState();
-      print('✅ [Workout] Active state cleared from Hive');
+      AppLogger.debug('✅ [Workout] Active state cleared from Hive');
       
       state = const WorkoutState.initial();
-      print('✅ [Workout] State reset to initial');
+      AppLogger.debug('✅ [Workout] State reset to initial');
     } catch (e, stackTrace) {
-      print('❌ [Workout] Failed to reset workout state: $e');
-      print('🔍 [Workout] Stack trace: $stackTrace');
+      AppLogger.debug('❌ [Workout] Failed to reset workout state: $e');
+      AppLogger.debug('🔍 [Workout] Stack trace: $stackTrace');
       rethrow;
     }
   }

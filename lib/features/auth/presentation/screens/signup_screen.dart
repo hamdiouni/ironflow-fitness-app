@@ -1,3 +1,4 @@
+import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -58,7 +59,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       }
     } catch (e) {
       if (kDebugMode) {
-        print('❌ [Signup] Sign up error: $e');
+        AppLogger.debug('❌ [Signup] Sign up error: $e');
       }
     }
   }
@@ -80,7 +81,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       }
     } catch (e) {
       if (kDebugMode) {
-        print('❌ [Signup] Google sign in error: $e');
+        AppLogger.debug('❌ [Signup] Google sign in error: $e');
       }
     } finally {
       if (mounted) {

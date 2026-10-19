@@ -1,3 +1,4 @@
+import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/food_item_full.dart';
@@ -48,7 +49,7 @@ class NutritionNotifier extends StateNotifier<NutritionState> {
     
     try {
       if (kDebugMode) {
-        print('📊 [Nutrition] Initializing nutrition state...');
+        AppLogger.debug('📊 [Nutrition] Initializing nutrition state...');
       }
       
       // Load all data in parallel for better performance
@@ -65,8 +66,8 @@ class NutritionNotifier extends StateNotifier<NutritionState> {
       final targets = results[3] as NutritionTargets?;
       
       if (kDebugMode) {
-        print('✅ [Nutrition] Initialization complete');
-        print('🔍 [Nutrition] Loaded ${allFoods.length} foods, ${customFoods.length} custom foods, ${todayMeals.length} meals');
+        AppLogger.debug('✅ [Nutrition] Initialization complete');
+        AppLogger.debug('🔍 [Nutrition] Loaded ${allFoods.length} foods, ${customFoods.length} custom foods, ${todayMeals.length} meals');
       }
       
       state = state.copyWith(
@@ -78,8 +79,8 @@ class NutritionNotifier extends StateNotifier<NutritionState> {
       );
     } catch (e, stackTrace) {
       if (kDebugMode) {
-        print('❌ [Nutrition] Initialization failed: $e');
-        print('🔍 [Nutrition] Stack trace: $stackTrace');
+        AppLogger.debug('❌ [Nutrition] Initialization failed: $e');
+        AppLogger.debug('🔍 [Nutrition] Stack trace: $stackTrace');
       }
       
       state = state.copyWith(
@@ -104,15 +105,15 @@ class NutritionNotifier extends StateNotifier<NutritionState> {
   Future<void> addMeal(Meal meal) async {
     try {
       if (kDebugMode) {
-        print('📊 [Nutrition] Adding meal: ${meal.name}');
-        print('🔍 [Nutrition] Macros - Calories: ${meal.calories}, Protein: ${meal.protein}g, Carbs: ${meal.carbs}g, Fats: ${meal.fats}g');
+        AppLogger.debug('📊 [Nutrition] Adding meal: ${meal.name}');
+        AppLogger.debug('🔍 [Nutrition] Macros - Calories: ${meal.calories}, Protein: ${meal.protein}g, Carbs: ${meal.carbs}g, Fats: ${meal.fats}g');
       }
       
       // 1. Save to repository (offline-first)
       await _nutritionRepository.saveMealEntry(meal);
       
       if (kDebugMode) {
-        print('✅ [Nutrition] Meal saved to repository');
+        AppLogger.debug('✅ [Nutrition] Meal saved to repository');
       }
       
       final prevProtein = state.totalProtein;
@@ -145,17 +146,17 @@ class NutritionNotifier extends StateNotifier<NutritionState> {
       }
       
       if (kDebugMode) {
-        print('✅ [Nutrition] State updated with new meal');
-        print('🔍 [Nutrition] Total meals: ${state.todayMeals.length}');
-        print('🔍 [Nutrition] Total calories: ${state.totalCalories}');
+        AppLogger.debug('✅ [Nutrition] State updated with new meal');
+        AppLogger.debug('🔍 [Nutrition] Total meals: ${state.todayMeals.length}');
+        AppLogger.debug('🔍 [Nutrition] Total calories: ${state.totalCalories}');
       }
       
       // Totals recalculate automatically via computed properties
       // UI rebuilds automatically via ref.watch
     } catch (e, stackTrace) {
       if (kDebugMode) {
-        print('❌ [Nutrition] Failed to add meal: $e');
-        print('🔍 [Nutrition] Stack trace: $stackTrace');
+        AppLogger.debug('❌ [Nutrition] Failed to add meal: $e');
+        AppLogger.debug('🔍 [Nutrition] Stack trace: $stackTrace');
       }
       
       state = state.copyWith(error: e.toString());
@@ -173,14 +174,14 @@ class NutritionNotifier extends StateNotifier<NutritionState> {
   Future<void> deleteMeal(String mealId) async {
     try {
       if (kDebugMode) {
-        print('📊 [Nutrition] Deleting meal: $mealId');
+        AppLogger.debug('📊 [Nutrition] Deleting meal: $mealId');
       }
       
       // 1. Delete from repository
       await _nutritionRepository.deleteMealEntry(mealId);
       
       if (kDebugMode) {
-        print('✅ [Nutrition] Meal deleted from repository');
+        AppLogger.debug('✅ [Nutrition] Meal deleted from repository');
       }
       
       // 2. Update state IMMEDIATELY (immutable - create new list)
@@ -190,17 +191,17 @@ class NutritionNotifier extends StateNotifier<NutritionState> {
       );
       
       if (kDebugMode) {
-        print('✅ [Nutrition] State updated after deletion');
-        print('🔍 [Nutrition] Remaining meals: ${state.todayMeals.length}');
-        print('🔍 [Nutrition] Total calories: ${state.totalCalories}');
+        AppLogger.debug('✅ [Nutrition] State updated after deletion');
+        AppLogger.debug('🔍 [Nutrition] Remaining meals: ${state.todayMeals.length}');
+        AppLogger.debug('🔍 [Nutrition] Total calories: ${state.totalCalories}');
       }
       
       // Totals recalculate automatically via computed properties
       // UI rebuilds automatically via ref.watch
     } catch (e, stackTrace) {
       if (kDebugMode) {
-        print('❌ [Nutrition] Failed to delete meal: $e');
-        print('🔍 [Nutrition] Stack trace: $stackTrace');
+        AppLogger.debug('❌ [Nutrition] Failed to delete meal: $e');
+        AppLogger.debug('🔍 [Nutrition] Stack trace: $stackTrace');
       }
       
       state = state.copyWith(error: e.toString());
@@ -222,8 +223,8 @@ class NutritionNotifier extends StateNotifier<NutritionState> {
   Future<void> addCustomFood(FoodItemFull food) async {
     try {
       if (kDebugMode) {
-        print('📊 [Nutrition] Adding custom food: ${food.name}');
-        print('🔍 [Nutrition] Macros - Calories: ${food.macros.calories}, Protein: ${food.macros.protein}g, Carbs: ${food.macros.carbs}g, Fats: ${food.macros.fats}g');
+        AppLogger.debug('📊 [Nutrition] Adding custom food: ${food.name}');
+        AppLogger.debug('🔍 [Nutrition] Macros - Calories: ${food.macros.calories}, Protein: ${food.macros.protein}g, Carbs: ${food.macros.carbs}g, Fats: ${food.macros.fats}g');
       }
       
       // 1. Validate
@@ -240,7 +241,7 @@ class NutritionNotifier extends StateNotifier<NutritionState> {
       await _foodRepository.saveCustomFood(food);
       
       if (kDebugMode) {
-        print('✅ [Nutrition] Custom food saved to repository');
+        AppLogger.debug('✅ [Nutrition] Custom food saved to repository');
       }
       
       // 3. Update state IMMEDIATELY (immutable - create new list)
@@ -250,17 +251,17 @@ class NutritionNotifier extends StateNotifier<NutritionState> {
       );
       
       if (kDebugMode) {
-        print('✅ [Nutrition] State updated with new custom food');
-        print('🔍 [Nutrition] Total custom foods: ${state.customFoods.length}');
-        print('🔍 [Nutrition] Total searchable foods: ${state.searchableFoods.length}');
+        AppLogger.debug('✅ [Nutrition] State updated with new custom food');
+        AppLogger.debug('🔍 [Nutrition] Total custom foods: ${state.customFoods.length}');
+        AppLogger.debug('🔍 [Nutrition] Total searchable foods: ${state.searchableFoods.length}');
       }
       
       // Food now appears in searchableFoods automatically
       // UI rebuilds automatically via ref.watch
     } catch (e, stackTrace) {
       if (kDebugMode) {
-        print('❌ [Nutrition] Failed to add custom food: $e');
-        print('🔍 [Nutrition] Stack trace: $stackTrace');
+        AppLogger.debug('❌ [Nutrition] Failed to add custom food: $e');
+        AppLogger.debug('🔍 [Nutrition] Stack trace: $stackTrace');
       }
       
       state = state.copyWith(error: e.toString());
@@ -277,14 +278,14 @@ class NutritionNotifier extends StateNotifier<NutritionState> {
   Future<void> deleteCustomFood(String id) async {
     try {
       if (kDebugMode) {
-        print('📊 [Nutrition] Deleting custom food: $id');
+        AppLogger.debug('📊 [Nutrition] Deleting custom food: $id');
       }
       
       // 1. Delete from repository
       await _foodRepository.deleteCustomFood(id);
       
       if (kDebugMode) {
-        print('✅ [Nutrition] Custom food deleted from repository');
+        AppLogger.debug('✅ [Nutrition] Custom food deleted from repository');
       }
       
       // 2. Update state IMMEDIATELY (immutable - create new list)
@@ -294,16 +295,16 @@ class NutritionNotifier extends StateNotifier<NutritionState> {
       );
       
       if (kDebugMode) {
-        print('✅ [Nutrition] State updated after deletion');
-        print('🔍 [Nutrition] Remaining custom foods: ${state.customFoods.length}');
+        AppLogger.debug('✅ [Nutrition] State updated after deletion');
+        AppLogger.debug('🔍 [Nutrition] Remaining custom foods: ${state.customFoods.length}');
       }
       
       // Food disappears from searchableFoods automatically
       // UI rebuilds automatically via ref.watch
     } catch (e, stackTrace) {
       if (kDebugMode) {
-        print('❌ [Nutrition] Failed to delete custom food: $e');
-        print('🔍 [Nutrition] Stack trace: $stackTrace');
+        AppLogger.debug('❌ [Nutrition] Failed to delete custom food: $e');
+        AppLogger.debug('🔍 [Nutrition] Stack trace: $stackTrace');
       }
       
       state = state.copyWith(error: e.toString());
@@ -398,14 +399,14 @@ class NutritionNotifier extends StateNotifier<NutritionState> {
     
     try {
       if (kDebugMode) {
-        print('📊 [Nutrition] Changing date to: ${normalizedDate.toIso8601String().split('T')[0]}');
+        AppLogger.debug('📊 [Nutrition] Changing date to: ${normalizedDate.toIso8601String().split('T')[0]}');
       }
       
       // Load meals for new date
       final meals = await _nutritionRepository.getMealsByDate(normalizedDate);
       
       if (kDebugMode) {
-        print('✅ [Nutrition] Loaded ${meals.length} meals for new date');
+        AppLogger.debug('✅ [Nutrition] Loaded ${meals.length} meals for new date');
       }
       
       state = state.copyWith(
@@ -414,8 +415,8 @@ class NutritionNotifier extends StateNotifier<NutritionState> {
       );
     } catch (e, stackTrace) {
       if (kDebugMode) {
-        print('❌ [Nutrition] Failed to change date: $e');
-        print('🔍 [Nutrition] Stack trace: $stackTrace');
+        AppLogger.debug('❌ [Nutrition] Failed to change date: $e');
+        AppLogger.debug('🔍 [Nutrition] Stack trace: $stackTrace');
       }
       
       state = state.copyWith(
@@ -433,15 +434,15 @@ class NutritionNotifier extends StateNotifier<NutritionState> {
   Future<void> updateTargets(NutritionTargets targets) async {
     try {
       if (kDebugMode) {
-        print('📊 [Nutrition] Updating nutrition targets');
-        print('🔍 [Nutrition] Calories: ${targets.macros.calories}, Protein: ${targets.macros.protein}g, Carbs: ${targets.macros.carbs}g, Fats: ${targets.macros.fats}g');
+        AppLogger.debug('📊 [Nutrition] Updating nutrition targets');
+        AppLogger.debug('🔍 [Nutrition] Calories: ${targets.macros.calories}, Protein: ${targets.macros.protein}g, Carbs: ${targets.macros.carbs}g, Fats: ${targets.macros.fats}g');
       }
       
       // Save to repository
       await _nutritionRepository.saveNutritionTargets(targets);
       
       if (kDebugMode) {
-        print('✅ [Nutrition] Targets saved to repository');
+        AppLogger.debug('✅ [Nutrition] Targets saved to repository');
       }
       
       // Update state immediately
@@ -451,12 +452,12 @@ class NutritionNotifier extends StateNotifier<NutritionState> {
       );
       
       if (kDebugMode) {
-        print('✅ [Nutrition] State updated with new targets');
+        AppLogger.debug('✅ [Nutrition] State updated with new targets');
       }
     } catch (e, stackTrace) {
       if (kDebugMode) {
-        print('❌ [Nutrition] Failed to update targets: $e');
-        print('🔍 [Nutrition] Stack trace: $stackTrace');
+        AppLogger.debug('❌ [Nutrition] Failed to update targets: $e');
+        AppLogger.debug('🔍 [Nutrition] Stack trace: $stackTrace');
       }
       
       state = state.copyWith(error: e.toString());

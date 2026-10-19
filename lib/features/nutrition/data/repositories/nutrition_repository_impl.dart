@@ -1,3 +1,4 @@
+import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:flutter/foundation.dart';
 import '../../domain/entities/entities.dart';
 import '../../domain/repositories/nutrition_repository.dart';
@@ -79,7 +80,7 @@ class NutritionRepositoryImpl implements NutritionRepository {
           );
         } catch (e) {
           if (kDebugMode) {
-            print('Error fetching from Firestore, using local data: $e');
+            AppLogger.debug('Error fetching from Firestore, using local data: $e');
           }
         }
       }
@@ -92,7 +93,7 @@ class NutritionRepositoryImpl implements NutritionRepository {
       );
     } catch (e) {
       if (kDebugMode) {
-        print('Error getting daily nutrition: $e');
+        AppLogger.debug('Error getting daily nutrition: $e');
       }
       rethrow;
     }
@@ -112,13 +113,13 @@ class NutritionRepositoryImpl implements NutritionRepository {
           await firestoreDataSource.saveMealEntry(userId, model);
         } catch (e) {
           if (kDebugMode) {
-            print('Could not sync meal to Firestore, saved locally: $e');
+            AppLogger.debug('Could not sync meal to Firestore, saved locally: $e');
           }
         }
       }
     } catch (e) {
       if (kDebugMode) {
-        print('Error saving meal entry: $e');
+        AppLogger.debug('Error saving meal entry: $e');
       }
       rethrow;
     }
@@ -185,7 +186,7 @@ class NutritionRepositoryImpl implements NutritionRepository {
           }
         } catch (e) {
           if (kDebugMode) {
-            print('Could not sync history from Firestore: $e');
+            AppLogger.debug('Could not sync history from Firestore: $e');
           }
         }
       }
@@ -193,7 +194,7 @@ class NutritionRepositoryImpl implements NutritionRepository {
       return summaries;
     } catch (e) {
       if (kDebugMode) {
-        print('Error getting nutrition history: $e');
+        AppLogger.debug('Error getting nutrition history: $e');
       }
       rethrow;
     }
@@ -263,7 +264,7 @@ class NutritionRepositoryImpl implements NutritionRepository {
           }
         } catch (e) {
           if (kDebugMode) {
-            print('Could not sync paginated history from Firestore: $e');
+            AppLogger.debug('Could not sync paginated history from Firestore: $e');
           }
         }
       }
@@ -271,7 +272,7 @@ class NutritionRepositoryImpl implements NutritionRepository {
       return summaries;
     } catch (e) {
       if (kDebugMode) {
-        print('Error getting paginated nutrition history: $e');
+        AppLogger.debug('Error getting paginated nutrition history: $e');
       }
       rethrow;
     }
@@ -284,7 +285,7 @@ class NutritionRepositoryImpl implements NutritionRepository {
       return allDates.length;
     } catch (e) {
       if (kDebugMode) {
-        print('Error getting nutrition history count: $e');
+        AppLogger.debug('Error getting nutrition history count: $e');
       }
       rethrow;
     }
@@ -312,7 +313,7 @@ class NutritionRepositoryImpl implements NutritionRepository {
           }
         } catch (e) {
           if (kDebugMode) {
-            print('Could not fetch targets from Firestore: $e');
+            AppLogger.debug('Could not fetch targets from Firestore: $e');
           }
         }
       }
@@ -320,7 +321,7 @@ class NutritionRepositoryImpl implements NutritionRepository {
       return null;
     } catch (e) {
       if (kDebugMode) {
-        print('Error getting nutrition targets: $e');
+        AppLogger.debug('Error getting nutrition targets: $e');
       }
       rethrow;
     }
@@ -340,13 +341,13 @@ class NutritionRepositoryImpl implements NutritionRepository {
           await firestoreDataSource.saveNutritionTargets(userId, model);
         } catch (e) {
           if (kDebugMode) {
-            print('Could not sync targets to Firestore, saved locally: $e');
+            AppLogger.debug('Could not sync targets to Firestore, saved locally: $e');
           }
         }
       }
     } catch (e) {
       if (kDebugMode) {
-        print('Error saving nutrition targets: $e');
+        AppLogger.debug('Error saving nutrition targets: $e');
       }
       rethrow;
     }
@@ -364,13 +365,13 @@ class NutritionRepositoryImpl implements NutritionRepository {
           await firestoreDataSource.deleteMealEntry(userId, mealId);
         } catch (e) {
           if (kDebugMode) {
-            print('Could not delete meal from Firestore, deleted locally: $e');
+            AppLogger.debug('Could not delete meal from Firestore, deleted locally: $e');
           }
         }
       }
     } catch (e) {
       if (kDebugMode) {
-        print('Error deleting meal entry: $e');
+        AppLogger.debug('Error deleting meal entry: $e');
       }
       rethrow;
     }
@@ -405,7 +406,7 @@ class NutritionRepositoryImpl implements NutritionRepository {
           return syncedMeals;
         } catch (e) {
           if (kDebugMode) {
-            print('Could not fetch meals from Firestore: $e');
+            AppLogger.debug('Could not fetch meals from Firestore: $e');
           }
         }
       }
@@ -413,7 +414,7 @@ class NutritionRepositoryImpl implements NutritionRepository {
       return meals;
     } catch (e) {
       if (kDebugMode) {
-        print('Error getting meals by date: $e');
+        AppLogger.debug('Error getting meals by date: $e');
       }
       rethrow;
     }
@@ -425,7 +426,7 @@ class NutritionRepositoryImpl implements NutritionRepository {
       await hiveDataSource.clearAllData();
     } catch (e) {
       if (kDebugMode) {
-        print('Error clearing all nutrition data: $e');
+        AppLogger.debug('Error clearing all nutrition data: $e');
       }
       rethrow;
     }

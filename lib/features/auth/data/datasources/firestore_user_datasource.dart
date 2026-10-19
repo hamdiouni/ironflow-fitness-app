@@ -1,3 +1,4 @@
+import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/entities/user_profile.dart';
 
@@ -28,7 +29,7 @@ class FirestoreUserDataSourceImpl implements FirestoreUserDataSource {
 
       return UserProfile.fromJson(doc.data()!);
     } catch (e) {
-      print('Error getting user profile: $e');
+      AppLogger.debug('Error getting user profile: $e');
       return null;
     }
   }

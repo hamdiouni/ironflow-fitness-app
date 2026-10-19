@@ -1,3 +1,4 @@
+import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -95,25 +96,25 @@ class UserProfileStorage {
       if (userVal != null) {
         final result = userVal as bool;
         if (kDebugMode) {
-          print('📊 [Onboarding] Checking onboarding status for $resolvedUid: $result');
+          AppLogger.debug('📊 [Onboarding] Checking onboarding status for $resolvedUid: $result');
         }
         return result;
       }
       final userProfile = box.get(_getProfileKey(resolvedUid));
       if (userProfile != null) {
         if (kDebugMode) {
-          print('📊 [Onboarding] User profile exists for $resolvedUid -> onboarded');
+          AppLogger.debug('📊 [Onboarding] User profile exists for $resolvedUid -> onboarded');
         }
         return true;
       }
       if (kDebugMode) {
-        print('📊 [Onboarding] No profile/onboarded flag found for $resolvedUid -> needs onboarding');
+        AppLogger.debug('📊 [Onboarding] No profile/onboarded flag found for $resolvedUid -> needs onboarding');
       }
       return false;
     }
     final result = box.get(_legacyOnboardedKey, defaultValue: false) as bool;
     if (kDebugMode) {
-      print('📊 [Onboarding] Checking global onboarding status: $result');
+      AppLogger.debug('📊 [Onboarding] Checking global onboarding status: $result');
     }
     return result;
   }
@@ -127,7 +128,7 @@ class UserProfileStorage {
     await box.put(_legacyOnboardedKey, true);
     await clearDraft(userId: resolvedUid);
     if (kDebugMode) {
-      print('✅ [Onboarding] User marked as onboarded (userId: $resolvedUid)');
+      AppLogger.debug('✅ [Onboarding] User marked as onboarded (userId: $resolvedUid)');
     }
   }
 
@@ -153,7 +154,7 @@ class UserProfileStorage {
     }
     await box.put(_legacyOnboardedKey, false);
     if (kDebugMode) {
-      print('🔄 [Onboarding] User marked as NOT onboarded (reset, userId: $resolvedUid)');
+      AppLogger.debug('🔄 [Onboarding] User marked as NOT onboarded (reset, userId: $resolvedUid)');
     }
   }
 

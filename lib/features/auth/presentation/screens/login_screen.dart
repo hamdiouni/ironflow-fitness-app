@@ -1,3 +1,4 @@
+import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -61,7 +62,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       }
     } catch (e) {
       if (kDebugMode) {
-        print('❌ [Login] Email sign-in failed: $e');
+        AppLogger.debug('❌ [Login] Email sign-in failed: $e');
       }
     }
   }
@@ -83,7 +84,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       }
     } catch (e) {
       if (kDebugMode) {
-        print('❌ [Login] Google Sign-In failed: $e');
+        AppLogger.debug('❌ [Login] Google Sign-In failed: $e');
       }
     } finally {
       if (mounted) {
