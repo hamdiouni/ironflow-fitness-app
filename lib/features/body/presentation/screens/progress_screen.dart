@@ -120,7 +120,7 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen>
               ),
             ),
             Text(
-              'BIOMETRIC & PERFORMANCE TELEMETRY',
+              'PERFORMANCE & BODY STATS',
               style: TextStyle(
                 fontFamily: AppTypography.displayFontFamily,
                 fontSize: 9,

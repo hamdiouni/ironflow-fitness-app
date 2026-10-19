@@ -174,7 +174,7 @@ class ReminderSettingsScreen extends ConsumerWidget {
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 40),
       children: [
         // Workout Reminders Section
-        _buildSectionHeader('WORKOUT DIRECTIVES', tokens),
+        _buildSectionHeader('WORKOUT REMINDERS', tokens),
         Container(
           decoration: BoxDecoration(
             color: tokens.panel,
@@ -214,7 +214,7 @@ class ReminderSettingsScreen extends ConsumerWidget {
         const SizedBox(height: 20),
 
         // Meal Reminders Section
-        _buildSectionHeader('NUTRITION DIRECTIVES', tokens),
+        _buildSectionHeader('MEAL REMINDERS', tokens),
         Container(
           decoration: BoxDecoration(
             color: tokens.panel,

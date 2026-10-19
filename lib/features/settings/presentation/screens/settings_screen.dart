@@ -45,7 +45,7 @@ class SettingsScreen extends ConsumerWidget {
           color: tokens.error,
         ),
         title: Text(
-          'TERMINATE SESSION',
+          'LOG OUT',
           textAlign: TextAlign.center,
           style: TextStyle(
             fontFamily: AppTypography.displayFontFamily,
@@ -56,7 +56,7 @@ class SettingsScreen extends ConsumerWidget {
           ),
         ),
         content: Text(
-          'Confirm session termination. All local encrypted records and cache are safely stored and synced upon reactivation.',
+          'Are you sure you want to log out? Your workouts and nutrition logs are saved on your device.',
           textAlign: TextAlign.center,
           style: TextStyle(
             fontFamily: AppTypography.bodyFontFamily,
@@ -381,8 +381,8 @@ class SettingsScreen extends ConsumerWidget {
         ? displayName
         : (email != null && email.isNotEmpty)
             ? email.split('@').first.toUpperCase()
-            : 'OPERATOR';
-    final goalDesc = profileAsync.valueOrNull?.goal.displayName.toUpperCase() ?? 'ACTIVE PROTOCOL';
+            : 'ATHLETE';
+    final goalDesc = profileAsync.valueOrNull?.goal.displayName.toUpperCase() ?? 'ACTIVE PLAN';
 
     return Scaffold(
       backgroundColor: tokens.canvas,
@@ -432,7 +432,7 @@ class SettingsScreen extends ConsumerWidget {
         children: [
           // ── SECTION 1: ACCOUNT ──────────────────────────────────────────
           _SettingsSection(
-            title: 'OPERATOR ACCOUNT',
+            title: 'ACCOUNT',
             tokens: tokens,
             children: [
               Container(
@@ -445,23 +445,23 @@ class SettingsScreen extends ConsumerWidget {
                   children: [
                     _SettingsTile(
                       title: profileName.toUpperCase(),
-                      subtitle: '$goalDesc · View biometric telemetry & directives',
+                      subtitle: '$goalDesc · View your body stats & workout plan',
                       icon: Icons.person_outline_rounded,
                       tokens: tokens,
                       onTap: () => context.push(AppRoutes.profile),
                     ),
                     Divider(color: tokens.borderSubtle, height: 1),
                     _SettingsTile(
-                      title: 'Edit Biometric Goals',
-                      subtitle: 'Recalibrate targets, training days & equipment',
+                      title: 'Edit Body Stats & Goals',
+                      subtitle: 'Update targets, training days, and equipment',
                       icon: Icons.edit_note_rounded,
                       tokens: tokens,
                       onTap: () => context.go(AppRoutes.onboarding),
                     ),
                     Divider(color: tokens.borderSubtle, height: 1),
                     _SettingsTile(
-                      title: 'Terminate Session',
-                      subtitle: 'Sign out and secure local encrypted storage',
+                      title: 'Log Out',
+                      subtitle: 'Sign out of your account on this device',
                       icon: Icons.logout_rounded,
                       tokens: tokens,
                       iconColor: tokens.error,
@@ -512,7 +512,7 @@ class SettingsScreen extends ConsumerWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'HAPTIC TELEMETRY',
+                                  'VIBRATION & HAPTICS',
                                   style: TextStyle(
                                     fontFamily: AppTypography.displayFontFamily,
                                     fontSize: 12,
@@ -638,7 +638,7 @@ class SettingsScreen extends ConsumerWidget {
                 child: Column(
                   children: [
                     _SettingsTile(
-                      title: 'Export Telemetry Data',
+                      title: 'Export Workout & Nutrition Data',
                       subtitle: 'Generate CSV / JSON archives for workouts, nutrition & backup',
                       icon: Icons.download_rounded,
                       tokens: tokens,
@@ -735,7 +735,7 @@ class SettingsScreen extends ConsumerWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'AI PERSONALIZATION TELEMETRY',
+                                  'AI WORKOUT & DIET SHARING',
                                   style: TextStyle(
                                     fontFamily: AppTypography.displayFontFamily,
                                     fontSize: 12,
@@ -746,8 +746,8 @@ class SettingsScreen extends ConsumerWidget {
                                 const SizedBox(height: 2),
                                 Text(
                                   aiConsent
-                                      ? 'Active · Workout & nutrition telemetry shared'
-                                      : 'Disabled · Privacy-first heuristic guidance',
+                                      ? 'Active · Workout & nutrition logs shared with AI coach'
+                                      : 'Disabled · AI coach only answers general questions',
                                   style: TextStyle(
                                     fontFamily: AppTypography.bodyFontFamily,
                                     fontSize: 11,
@@ -770,7 +770,7 @@ class SettingsScreen extends ConsumerWidget {
                     ),
                     Divider(color: tokens.borderSubtle, height: 1),
                     _SettingsTile(
-                      title: 'Telemetry & Privacy Controls',
+                      title: 'Privacy & Data Controls',
                       subtitle: 'Manage anonymous metrics, crash reports & danger zone',
                       icon: Icons.privacy_tip_outlined,
                       tokens: tokens,

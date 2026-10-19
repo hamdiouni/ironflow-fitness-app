@@ -416,7 +416,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'INITIALIZE // OPERATOR PROFILE',
+                    'SET UP YOUR PROFILE',
                     style: TextStyle(
                       fontFamily: AppTypography.displayFontFamily,
                       fontSize: 10,
@@ -496,7 +496,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           tokens: tokens,
           value: FitnessGoal.loseWeight,
           groupValue: _goal,
-          code: 'DIRECTIVE // 01',
+          code: 'GOAL 01',
           title: 'LOSE FAT',
           subtitle: 'Moderate caloric deficit designed to maximize fat oxidation while preserving lean muscle.',
           icon: Icons.local_fire_department_rounded,
@@ -510,7 +510,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           tokens: tokens,
           value: FitnessGoal.gainMuscle,
           groupValue: _goal,
-          code: 'DIRECTIVE // 02',
+          code: 'GOAL 02',
           title: 'GAIN MUSCLE',
           subtitle: 'Targeted caloric surplus optimized for hypertrophy, strength gains, and recovery.',
           icon: Icons.fitness_center_rounded,
@@ -524,7 +524,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           tokens: tokens,
           value: FitnessGoal.maintain,
           groupValue: _goal,
-          code: 'DIRECTIVE // 03',
+          code: 'GOAL 03',
           title: 'MAINTAIN',
           subtitle: 'Nutritional equilibrium to sustain current body composition, health, and fitness.',
           icon: Icons.balance_rounded,
@@ -1849,7 +1849,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 Switch.adaptive(
                   key: const Key('diet_plan_toggle_switch'),
                   value: _includeDietPlan,
-                  activeColor: tokens.kineticAccent,
+                  activeThumbColor: tokens.kineticAccent,
                   onChanged: (val) {
                     AppHaptics.shared.selectionChanged();
                     setState(() => _includeDietPlan = val);

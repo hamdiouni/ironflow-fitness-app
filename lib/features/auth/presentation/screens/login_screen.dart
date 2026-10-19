@@ -130,7 +130,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            'OPERATOR AUTHENTICATION',
+                            'ACCOUNT LOGIN',
                             style: TextStyle(
                               fontFamily: AppTypography.displayFontFamily,
                               fontSize: 10,
@@ -142,7 +142,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ],
                       ),
                       Text(
-                        'NODE // 01',
+                        'SECURE',
                         style: TextStyle(
                           fontFamily: AppTypography.displayFontFamily,
                           fontSize: 10,
@@ -219,7 +219,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   const SizedBox(height: 6),
 
                   Text(
-                    'Authenticate operator credentials to decrypt telemetry records',
+                    'Sign in to access your workout plan, nutrition, and progress',
                     style: TextStyle(
                       fontFamily: AppTypography.bodyFontFamily,
                       fontSize: 12,
@@ -276,7 +276,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       children: [
                         // Email Field
                         Text(
-                          'OPERATOR IDENTIFIER',
+                          'EMAIL ADDRESS',
                           style: TextStyle(
                             fontFamily: AppTypography.displayFontFamily,
                             fontSize: 10,
@@ -298,7 +298,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             color: tokens.textPrimary,
                           ),
                           decoration: InputDecoration(
-                            hintText: 'operator@ironflow.com',
+                            hintText: 'you@example.com',
                             hintStyle: TextStyle(
                               fontFamily: AppTypography.bodyFontFamily,
                               fontSize: 13,
@@ -338,10 +338,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ),
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
-                              return 'Operator identifier is required';
+                              return 'Email is required';
                             }
                             if (!value.contains('@') || !value.contains('.')) {
-                              return 'Enter a valid communication address';
+                              return 'Enter a valid email address';
                             }
                             return null;
                           },
@@ -351,7 +351,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                         // Password Field
                         Text(
-                          'SECURITY CIPHER',
+                          'PASSWORD',
                           style: TextStyle(
                             fontFamily: AppTypography.displayFontFamily,
                             fontSize: 10,
@@ -428,10 +428,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return 'Security cipher is required';
+                              return 'Password is required';
                             }
                             if (value.length < 6) {
-                              return 'Cipher must be at least 6 characters';
+                              return 'Password must be at least 6 characters';
                             }
                             return null;
                           },
@@ -457,7 +457,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
-                                    'AUTOFILL DEMO CREDENTIALS',
+                                    'AUTOFILL DEMO ACCOUNT',
                                     style: TextStyle(
                                       fontFamily: AppTypography.displayFontFamily,
                                       fontSize: 10,
@@ -479,7 +479,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                   // Submit Action Button
                   AppButton(
-                    label: 'AUTHENTICATE OPERATOR',
+                    label: 'LOG IN',
                     variant: AppButtonVariant.primary,
                     isLoading: authState.isLoading,
                     isFullWidth: true,
@@ -495,7 +495,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 14),
                         child: Text(
-                          'OR EXTERNAL FEDERATION',
+                          'OR SIGN IN WITH',
                           style: TextStyle(
                             fontFamily: AppTypography.displayFontFamily,
                             fontSize: 9,
@@ -534,7 +534,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        'NEW OPERATOR? ',
+                        'NEW TO IRONFLOW? ',
                         style: TextStyle(
                           fontFamily: AppTypography.bodyFontFamily,
                           fontSize: 12,
@@ -547,7 +547,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           context.go(AppRoutes.signup);
                         },
                         child: Text(
-                          'INITIALIZE PROTOCOL',
+                          'CREATE ACCOUNT',
                           style: TextStyle(
                             fontFamily: AppTypography.displayFontFamily,
                             fontSize: 12,

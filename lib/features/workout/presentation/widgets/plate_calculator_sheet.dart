@@ -256,7 +256,7 @@ class _PlateCalculatorSheetState extends State<PlateCalculatorSheet> {
                         ),
                       ),
                       Text(
-                        'OFFLINE BARBELL SLEEVE TELEMETRY',
+                        'BARBELL SLEEVE BREAKDOWN',
                         style: TextStyle(
                           fontFamily: AppTypography.displayFontFamily,
                           color: tokens.textMuted,

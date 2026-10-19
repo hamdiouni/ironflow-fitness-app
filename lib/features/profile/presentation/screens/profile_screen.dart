@@ -47,7 +47,7 @@ class ProfileScreen extends ConsumerWidget {
               ),
             ),
             Text(
-              'BIOMETRIC ID & DIRECTIVES',
+              'PROFILE & WORKOUT PLAN',
               style: TextStyle(
                 fontFamily: AppTypography.displayFontFamily,
                 fontSize: 9,
@@ -124,7 +124,7 @@ class _NoProfileView extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'NO PROFILE DETECTED',
+              'NO PROFILE FOUND',
               style: TextStyle(
                 fontFamily: AppTypography.displayFontFamily,
                 fontSize: 16,
@@ -135,7 +135,7 @@ class _NoProfileView extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Text(
-              'Calibrate biometric telemetry to initialize personalized AI protocols.',
+              'Set up your body stats to personalize your workout and nutrition plans.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontFamily: AppTypography.bodyFontFamily,
@@ -145,7 +145,7 @@ class _NoProfileView extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             AppButton(
-              label: 'INITIALIZE ONBOARDING',
+              label: 'START SETUP',
               icon: const Icon(Icons.play_arrow_rounded, size: 18),
               onPressed: () => context.go(AppRoutes.onboarding),
             ),
@@ -852,7 +852,7 @@ class _DietTipsCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'OPERATIONAL DIRECTIVES / NUTRITION',
+              'DAILY NUTRITION TIPS',
               style: TextStyle(
                 fontFamily: AppTypography.displayFontFamily,
                 fontSize: 11,
@@ -921,7 +921,7 @@ class _SettingsSection extends StatelessWidget {
           color: tokens.error,
         ),
         title: Text(
-          'TERMINATE SESSION',
+          'LOG OUT',
           textAlign: TextAlign.center,
           style: TextStyle(
             fontFamily: AppTypography.displayFontFamily,
@@ -932,7 +932,7 @@ class _SettingsSection extends StatelessWidget {
           ),
         ),
         content: Text(
-          'Confirm session termination. All local encrypted records and cache are safely stored and synced upon reactivation.',
+          'Are you sure you want to log out? Your workouts, nutrition, and stats are saved on your device.',
           textAlign: TextAlign.center,
           style: TextStyle(
             fontFamily: AppTypography.bodyFontFamily,
@@ -1074,7 +1074,7 @@ class _SettingsSection extends StatelessWidget {
               children: [
                 _SettingsTile(
                   icon: Icons.edit_rounded,
-                  label: 'Calibrate Biometrics & Goals',
+                  label: 'Edit Body Stats & Goals',
                   onTap: () => context.go(AppRoutes.onboarding),
                   tokens: tokens,
                 ),
@@ -1100,7 +1100,7 @@ class _SettingsSection extends StatelessWidget {
                     size: 20,
                   ),
                   title: Text(
-                    'TERMINATE SESSION',
+                    'LOG OUT',
                     style: TextStyle(
                       fontFamily: AppTypography.displayFontFamily,
                       color: tokens.error,

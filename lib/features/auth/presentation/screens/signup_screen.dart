@@ -115,7 +115,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'INITIALIZE OPERATOR',
+              'CREATE ACCOUNT',
               style: TextStyle(
                 fontFamily: AppTypography.displayFontFamily,
                 fontSize: 16,
@@ -125,7 +125,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
               ),
             ),
             Text(
-              'NEW REGISTRATION PROTOCOL',
+              'START YOUR FITNESS JOURNEY',
               style: TextStyle(
                 fontFamily: AppTypography.displayFontFamily,
                 fontSize: 9,
@@ -268,9 +268,9 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Operator Callsign (Name)
+                        // Full Name
                         Text(
-                          'OPERATOR CALLSIGN',
+                          'YOUR FULL NAME',
                           style: TextStyle(
                             fontFamily: AppTypography.displayFontFamily,
                             fontSize: 10,
@@ -292,14 +292,14 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                             color: tokens.textPrimary,
                           ),
                           decoration: InputDecoration(
-                            hintText: 'Commander Shepard',
+                            hintText: 'Alex Morgan',
                             hintStyle: TextStyle(
                               fontFamily: AppTypography.bodyFontFamily,
                               fontSize: 13,
                               color: tokens.textMuted.withValues(alpha: 0.5),
                             ),
                             prefixIcon: Icon(
-                              Icons.badge_outlined,
+                              Icons.person_outline_rounded,
                               size: 18,
                               color: tokens.kineticAccent,
                             ),
@@ -332,7 +332,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                           ),
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
-                              return 'Operator callsign is required';
+                              return 'Name is required';
                             }
                             return null;
                           },
@@ -340,9 +340,9 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
                         const SizedBox(height: 16),
 
-                        // Operator Identifier (Email)
+                        // Email Field
                         Text(
-                          'COMMUNICATION ADDRESS',
+                          'EMAIL ADDRESS',
                           style: TextStyle(
                             fontFamily: AppTypography.displayFontFamily,
                             fontSize: 10,
@@ -364,7 +364,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                             color: tokens.textPrimary,
                           ),
                           decoration: InputDecoration(
-                            hintText: 'operator@ironflow.com',
+                            hintText: 'you@example.com',
                             hintStyle: TextStyle(
                               fontFamily: AppTypography.bodyFontFamily,
                               fontSize: 13,
@@ -404,10 +404,10 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                           ),
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
-                              return 'Communication address is required';
+                              return 'Email is required';
                             }
                             if (!value.contains('@') || !value.contains('.')) {
-                              return 'Enter a valid communication address';
+                              return 'Enter a valid email address';
                             }
                             return null;
                           },
@@ -415,9 +415,9 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
                         const SizedBox(height: 16),
 
-                        // Security Cipher (Password)
+                        // Password Field
                         Text(
-                          'SECURITY CIPHER',
+                          'PASSWORD',
                           style: TextStyle(
                             fontFamily: AppTypography.displayFontFamily,
                             fontSize: 10,
@@ -493,10 +493,10 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                           ),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return 'Security cipher is required';
+                              return 'Password is required';
                             }
                             if (value.length < 6) {
-                              return 'Cipher must be at least 6 characters';
+                              return 'Password must be at least 6 characters';
                             }
                             return null;
                           },
@@ -504,9 +504,9 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
                         const SizedBox(height: 16),
 
-                        // Confirm Security Cipher
+                        // Confirm Password
                         Text(
-                          'CONFIRM CIPHER',
+                          'CONFIRM PASSWORD',
                           style: TextStyle(
                             fontFamily: AppTypography.displayFontFamily,
                             fontSize: 10,
@@ -528,7 +528,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                             color: tokens.textPrimary,
                           ),
                           decoration: InputDecoration(
-                            hintText: 'Re-enter cipher',
+                            hintText: 'Re-enter password',
                             hintStyle: TextStyle(
                               fontFamily: AppTypography.bodyFontFamily,
                               fontSize: 13,
@@ -582,10 +582,10 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                           ),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return 'Please confirm your security cipher';
+                              return 'Please confirm your password';
                             }
                             if (value != _passwordController.text) {
-                              return 'Ciphers do not match';
+                              return 'Passwords do not match';
                             }
                             return null;
                           },
@@ -598,7 +598,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
                   // Submit Button
                   AppButton(
-                    label: 'INITIALIZE OPERATOR ACCOUNT',
+                    label: 'CREATE ACCOUNT',
                     variant: AppButtonVariant.primary,
                     isLoading: authState.isLoading,
                     isFullWidth: true,
@@ -614,7 +614,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 14),
                         child: Text(
-                          'OR EXTERNAL FEDERATION',
+                          'OR SIGN UP WITH',
                           style: TextStyle(
                             fontFamily: AppTypography.displayFontFamily,
                             fontSize: 9,
@@ -653,7 +653,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        'ALREADY REGISTERED? ',
+                        'ALREADY HAVE AN ACCOUNT? ',
                         style: TextStyle(
                           fontFamily: AppTypography.bodyFontFamily,
                           fontSize: 12,
@@ -666,7 +666,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                           context.go(AppRoutes.login);
                         },
                         child: Text(
-                          'AUTHENTICATE OPERATOR',
+                          'LOG IN',
                           style: TextStyle(
                             fontFamily: AppTypography.displayFontFamily,
                             fontSize: 12,

@@ -266,7 +266,7 @@ class _HomeHeader extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'OPERATOR HUB',
+                          'PROFILE',
                           style: TextStyle(
                             fontFamily: AppTypography.displayFontFamily,
                             color: tokens.textPrimary,
@@ -276,7 +276,7 @@ class _HomeHeader extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          'PROFILE & SYSTEM CONFIGURATION',
+                          'PROFILE & SETTINGS',
                           style: TextStyle(
                             fontFamily: AppTypography.displayFontFamily,
                             color: tokens.textMuted,
@@ -304,7 +304,7 @@ class _HomeHeader extends StatelessWidget {
                   ),
                 ),
                 subtitle: Text(
-                  'Directives, fitness level, and nutrition targets',
+                  'Workout plan, fitness level, and nutrition targets',
                   style: TextStyle(
                     fontFamily: AppTypography.bodyFontFamily,
                     color: tokens.textSecondary,
@@ -740,7 +740,7 @@ class _TodayDirectiveCard extends ConsumerWidget {
                         Row(
                           children: [
                             Text(
-                              'RECOVERY DIRECTIVE',
+                              'REST DAY',
                               style: TextStyle(
                                 fontFamily: AppTypography.displayFontFamily,
                                 fontSize: 13,
@@ -770,7 +770,7 @@ class _TodayDirectiveCard extends ConsumerWidget {
                         ),
                         const SizedBox(height: 3),
                         Text(
-                          'Deep tissue recovery & neural adaptation active. Prioritize hydration & sleep.',
+                          'Rest and recovery day. Prioritize hydration, nutrition, and good sleep.',
                           style: TextStyle(
                             fontFamily: AppTypography.bodyFontFamily,
                             fontSize: 11,
@@ -814,7 +814,7 @@ class _TodayDirectiveCard extends ConsumerWidget {
                         Icon(Icons.flash_on_rounded, color: tokens.kineticAccent, size: 18),
                         const SizedBox(width: 6),
                         Text(
-                          'TODAY\'S PROTOCOL DIRECTIVE',
+                          'TODAY\'S WORKOUT',
                           style: TextStyle(
                             fontFamily: AppTypography.displayFontFamily,
                             fontSize: 11,
@@ -862,7 +862,7 @@ class _TodayDirectiveCard extends ConsumerWidget {
                   height: 42,
                   width: double.infinity,
                   child: AppButton(
-                    label: 'EXECUTE TODAY\'S DIRECTIVE',
+                    label: 'START TODAY\'S WORKOUT',
                     variant: AppButtonVariant.primary,
                     icon: const Icon(Icons.play_arrow_rounded, size: 20),
                     onPressed: () async {
@@ -931,7 +931,7 @@ class _DailyFuelSummaryBar extends ConsumerWidget {
                           Icon(Icons.restaurant_menu_rounded, color: tokens.warning, size: 16),
                           const SizedBox(width: 6),
                           Text(
-                            'DAILY FUEL TELEMETRY',
+                            'DAILY NUTRITION',
                             style: TextStyle(
                               fontFamily: AppTypography.displayFontFamily,
                               fontSize: 10,
@@ -1228,7 +1228,7 @@ class _SuggestionCard extends StatelessWidget {
         icon: Icons.rocket_launch,
         color: tokens.kineticAccent,
         title: 'Start your journey!',
-        body: 'Log your first workout to unlock telemetry progression tracking.',
+        body: 'Log your first workout to start tracking your progress.',
       );
     }
     final daysSince = DateTime.now().difference(workouts.first.date).inDays;
@@ -1614,7 +1614,7 @@ class _EmptyWorkoutCard extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              'Complete your first workout session to view telemetry stats here.',
+              'Complete your first workout session to view your stats here.',
               style: TextStyle(
                 fontFamily: AppTypography.bodyFontFamily,
                 color: tokens.textSecondary,
@@ -1658,7 +1658,7 @@ class _ProfileSetupPrompt extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              'Set your weekly workout goal to track your telemetry progress.',
+              'Set your weekly workout goal to track your progress.',
               style: TextStyle(
                 fontFamily: AppTypography.bodyFontFamily,
                 color: tokens.textSecondary,
