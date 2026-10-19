@@ -20,6 +20,7 @@ import '../../domain/usecases/save_body_entry_use_case.dart';
 import '../providers/body_providers.dart';
 import '../widgets/lifts_volume_tab.dart';
 import '../widgets/progress_photo_comparison.dart';
+import '../../../onboarding/presentation/providers/onboarding_provider.dart';
 
 /// Monolithic Sci-Fi Progress Screen displaying:
 /// - Tab 0: Lifts & Volume (charts, frequency, volume progression, muscle breakdown merged from Analytics)
@@ -198,6 +199,7 @@ class _BodyWeightTab extends ConsumerWidget {
     final tokens = AppThemeTokens.of(context);
     final trendAsync = ref.watch(weightTrendProvider);
     final historyAsync = ref.watch(bodyHistoryProvider);
+    final profileAsync = ref.watch(userProfileProvider);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppTheme.spacingMedium),
@@ -256,7 +258,10 @@ class _BodyWeightTab extends ConsumerWidget {
                 ),
                 const SizedBox(height: 14),
                 trendAsync.when(
-                  data: (points) => WeightTrendGraph(dataPoints: points)
+                  data: (points) => WeightTrendGraph(
+                    dataPoints: points,
+                    targetWeight: profileAsync.value?.targetWeightKg,
+                  )
                       .animate()
                       .fadeIn(duration: 400.ms),
                   loading: () => SizedBox(
