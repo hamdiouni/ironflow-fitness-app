@@ -42,13 +42,13 @@ class ExerciseSwapSheet extends StatelessWidget {
     final tokens = AppThemeTokens.of(context);
     final isHome = equipment == EquipmentType.home;
 
-    // Find current definition to determine muscle group
+    // Find current definition to determine muscle group and movement pattern
     final currentDef = ExerciseDatabase.all.firstWhere(
       (e) => e.name.toLowerCase() == currentExercise.exerciseName.toLowerCase(),
       orElse: () => ExerciseDatabase.all.first,
     );
 
-    // Candidates with compatible equipment and muscle group
+    // Candidates with compatible equipment and muscle group, sorted by relevance
     final candidates = ExerciseDatabase.all.where((e) {
       if (e.name.toLowerCase() == currentExercise.exerciseName.toLowerCase()) {
         return false;
@@ -59,10 +59,21 @@ class ExerciseSwapSheet extends StatelessWidget {
             e.equipment == Equipment.band;
         if (!isHomeFriendly) return false;
       }
-      // Match muscle group or secondary
+      // Match primary muscle group or secondary
       return e.muscleGroup == currentDef.muscleGroup ||
           e.primaryMuscles.contains(currentDef.muscleGroup);
     }).toList();
+
+    // Sort candidates: same equipment first, then alphabetical
+    candidates.sort((a, b) {
+      final aSameEquip = a.equipment == currentDef.equipment ? 1 : 0;
+      final bSameEquip = b.equipment == currentDef.equipment ? 1 : 0;
+      if (aSameEquip != bSameEquip) return bSameEquip.compareTo(aSameEquip);
+      return a.name.compareTo(b.name);
+    });
+
+    // Limit to up to 3 alternatives
+    final topAlternatives = candidates.take(3).toList();
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.65,
@@ -89,7 +100,7 @@ class ExerciseSwapSheet extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'SUBSTITUTE EXERCISE',
+            'SWAP EXERCISE',
             style: TextStyle(
               color: tokens.cyanAccent,
               fontSize: 12,
@@ -100,7 +111,7 @@ class ExerciseSwapSheet extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Replacing "${currentExercise.exerciseName}" (${currentDef.muscleGroup.name.toUpperCase()})',
+            'Choose an alternative for "${currentExercise.exerciseName}" (${currentDef.muscleGroup.name.toUpperCase()}):',
             style: TextStyle(
               color: tokens.textSecondary,
               fontSize: 13,
@@ -108,7 +119,7 @@ class ExerciseSwapSheet extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           Expanded(
-            child: candidates.isEmpty
+            child: topAlternatives.isEmpty
                 ? Center(
                     child: Text(
                       'No other compatible exercises found for this equipment profile.',
@@ -116,13 +127,13 @@ class ExerciseSwapSheet extends StatelessWidget {
                     ),
                   )
                 : ListView.separated(
-                    itemCount: candidates.length,
+                    itemCount: topAlternatives.length,
                     separatorBuilder: (_, _) => Divider(
                       color: tokens.borderSubtle.withValues(alpha: 0.5),
                       height: 1,
                     ),
                     itemBuilder: (context, index) {
-                      final candidate = candidates[index];
+                      final candidate = topAlternatives[index];
                       return ListTile(
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 4,
