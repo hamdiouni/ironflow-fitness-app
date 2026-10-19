@@ -1,3 +1,4 @@
+import 'package:progression_tracker/core/utils/app_logger.dart';
 import '../../domain/services/change_detection_service.dart';
 import '../../domain/entities/insight.dart';
 import '../../../workout/domain/repositories/workout_repository.dart';
@@ -38,8 +39,8 @@ class ChangeDetectionServiceImpl implements ChangeDetectionService {
   @override
   Future<bool> hasWorkoutDataChanged(DateTime lastGenerated) async {
     try {
-      print('🔍 [ChangeDetection] Checking workout data changes...');
-      print('🔍 [ChangeDetection] Last generated: $lastGenerated');
+      AppLogger.debug('🔍 [ChangeDetection] Checking workout data changes...');
+      AppLogger.debug('🔍 [ChangeDetection] Last generated: $lastGenerated');
       
       // Get the most recent workout (limit=1, offset=0)
       final recentWorkouts = await _workoutRepository.getWorkoutsPaginated(
@@ -48,22 +49,22 @@ class ChangeDetectionServiceImpl implements ChangeDetectionService {
       );
       
       if (recentWorkouts.isEmpty) {
-        print('🔍 [ChangeDetection] No workouts found');
+        AppLogger.debug('🔍 [ChangeDetection] No workouts found');
         return false;
       }
       
       final latestWorkout = recentWorkouts.first;
       
-      print('🔍 [ChangeDetection] Latest workout: ${latestWorkout.date}');
+      AppLogger.debug('🔍 [ChangeDetection] Latest workout: ${latestWorkout.date}');
       
       // Check if latest workout is newer than last generation
       final hasChanged = latestWorkout.date.isAfter(lastGenerated);
       
-      print('🔍 [ChangeDetection] Workout data changed: $hasChanged');
+      AppLogger.debug('🔍 [ChangeDetection] Workout data changed: $hasChanged');
       return hasChanged;
     } catch (e, stackTrace) {
-      print('❌ [ChangeDetection] Failed to check workout data changes: $e');
-      print('🔍 [ChangeDetection] Stack trace: $stackTrace');
+      AppLogger.debug('❌ [ChangeDetection] Failed to check workout data changes: $e');
+      AppLogger.debug('🔍 [ChangeDetection] Stack trace: $stackTrace');
       // Return true on error to force regeneration
       return true;
     }
@@ -72,8 +73,8 @@ class ChangeDetectionServiceImpl implements ChangeDetectionService {
   @override
   Future<bool> hasNutritionDataChanged(DateTime lastGenerated) async {
     try {
-      print('🔍 [ChangeDetection] Checking nutrition data changes...');
-      print('🔍 [ChangeDetection] Last generated: $lastGenerated');
+      AppLogger.debug('🔍 [ChangeDetection] Checking nutrition data changes...');
+      AppLogger.debug('🔍 [ChangeDetection] Last generated: $lastGenerated');
       
       // Get the most recent nutrition data (limit=1, offset=0)
       final recentNutrition = await _nutritionRepository.getNutritionHistoryPaginated(
@@ -82,7 +83,7 @@ class ChangeDetectionServiceImpl implements ChangeDetectionService {
       );
       
       if (recentNutrition.isEmpty) {
-        print('🔍 [ChangeDetection] No nutrition data found');
+        AppLogger.debug('🔍 [ChangeDetection] No nutrition data found');
         return false;
       }
       
@@ -99,18 +100,18 @@ class ChangeDetectionServiceImpl implements ChangeDetectionService {
       // Use the most recent meal time or the day's date as fallback
       final latestDataTime = mostRecentMealTime ?? latestNutrition.date;
       
-      print('🔍 [ChangeDetection] Latest nutrition date: ${latestNutrition.date}');
-      print('🔍 [ChangeDetection] Most recent meal time: $mostRecentMealTime');
-      print('🔍 [ChangeDetection] Latest data time: $latestDataTime');
+      AppLogger.debug('🔍 [ChangeDetection] Latest nutrition date: ${latestNutrition.date}');
+      AppLogger.debug('🔍 [ChangeDetection] Most recent meal time: $mostRecentMealTime');
+      AppLogger.debug('🔍 [ChangeDetection] Latest data time: $latestDataTime');
       
       // Check if latest data is newer than last generation
       final hasChanged = latestDataTime.isAfter(lastGenerated);
       
-      print('🔍 [ChangeDetection] Nutrition data changed: $hasChanged');
+      AppLogger.debug('🔍 [ChangeDetection] Nutrition data changed: $hasChanged');
       return hasChanged;
     } catch (e, stackTrace) {
-      print('❌ [ChangeDetection] Failed to check nutrition data changes: $e');
-      print('🔍 [ChangeDetection] Stack trace: $stackTrace');
+      AppLogger.debug('❌ [ChangeDetection] Failed to check nutrition data changes: $e');
+      AppLogger.debug('🔍 [ChangeDetection] Stack trace: $stackTrace');
       // Return true on error to force regeneration
       return true;
     }
@@ -119,31 +120,31 @@ class ChangeDetectionServiceImpl implements ChangeDetectionService {
   @override
   Future<bool> hasBodyDataChanged(DateTime lastGenerated) async {
     try {
-      print('🔍 [ChangeDetection] Checking body data changes...');
-      print('🔍 [ChangeDetection] Last generated: $lastGenerated');
+      AppLogger.debug('🔍 [ChangeDetection] Checking body data changes...');
+      AppLogger.debug('🔍 [ChangeDetection] Last generated: $lastGenerated');
       
       // Get all body entries and find the most recent one
       // Note: BodyRepository doesn't have pagination, so we get all and take the first
       final allBodyEntries = await _bodyRepository.getAllBodyEntries();
       
       if (allBodyEntries.isEmpty) {
-        print('🔍 [ChangeDetection] No body entries found');
+        AppLogger.debug('🔍 [ChangeDetection] No body entries found');
         return false;
       }
       
       // Body entries are sorted by date descending, so first is most recent
       final latestEntry = allBodyEntries.first;
       
-      print('🔍 [ChangeDetection] Latest body entry: ${latestEntry.date}');
+      AppLogger.debug('🔍 [ChangeDetection] Latest body entry: ${latestEntry.date}');
       
       // Check if latest entry is newer than last generation
       final hasChanged = latestEntry.date.isAfter(lastGenerated);
       
-      print('🔍 [ChangeDetection] Body data changed: $hasChanged');
+      AppLogger.debug('🔍 [ChangeDetection] Body data changed: $hasChanged');
       return hasChanged;
     } catch (e, stackTrace) {
-      print('❌ [ChangeDetection] Failed to check body data changes: $e');
-      print('🔍 [ChangeDetection] Stack trace: $stackTrace');
+      AppLogger.debug('❌ [ChangeDetection] Failed to check body data changes: $e');
+      AppLogger.debug('🔍 [ChangeDetection] Stack trace: $stackTrace');
       // Return true on error to force regeneration
       return true;
     }
@@ -152,7 +153,7 @@ class ChangeDetectionServiceImpl implements ChangeDetectionService {
   @override
   Future<DateTime?> getLastDataChange(InsightContext context) async {
     try {
-      print('🔍 [ChangeDetection] Getting last data change for context: ${context.name}');
+      AppLogger.debug('🔍 [ChangeDetection] Getting last data change for context: ${context.name}');
       
       final timestamps = <DateTime>[];
       
@@ -180,7 +181,7 @@ class ChangeDetectionServiceImpl implements ChangeDetectionService {
       }
       
       if (timestamps.isEmpty) {
-        print('🔍 [ChangeDetection] No data found for context: ${context.name}');
+        AppLogger.debug('🔍 [ChangeDetection] No data found for context: ${context.name}');
         return null;
       }
       
@@ -188,11 +189,11 @@ class ChangeDetectionServiceImpl implements ChangeDetectionService {
       timestamps.sort((a, b) => b.compareTo(a)); // Sort descending
       final mostRecentDate = timestamps.first;
       
-      print('🔍 [ChangeDetection] Most recent data change for ${context.name}: $mostRecentDate');
+      AppLogger.debug('🔍 [ChangeDetection] Most recent data change for ${context.name}: $mostRecentDate');
       return mostRecentDate;
     } catch (e, stackTrace) {
-      print('❌ [ChangeDetection] Failed to get last data change for context ${context.name}: $e');
-      print('🔍 [ChangeDetection] Stack trace: $stackTrace');
+      AppLogger.debug('❌ [ChangeDetection] Failed to get last data change for context ${context.name}: $e');
+      AppLogger.debug('🔍 [ChangeDetection] Stack trace: $stackTrace');
       // Return null on error
       return null;
     }
@@ -209,7 +210,7 @@ class ChangeDetectionServiceImpl implements ChangeDetectionService {
         timestamps.add(recentWorkouts.first.date);
       }
     } catch (e) {
-      print('⚠️ [ChangeDetection] Failed to get workout timestamp: $e');
+      AppLogger.debug('⚠️ [ChangeDetection] Failed to get workout timestamp: $e');
     }
   }
 
@@ -236,7 +237,7 @@ class ChangeDetectionServiceImpl implements ChangeDetectionService {
         timestamps.add(latestDataTime);
       }
     } catch (e) {
-      print('⚠️ [ChangeDetection] Failed to get nutrition timestamp: $e');
+      AppLogger.debug('⚠️ [ChangeDetection] Failed to get nutrition timestamp: $e');
     }
   }
 
@@ -248,7 +249,7 @@ class ChangeDetectionServiceImpl implements ChangeDetectionService {
         timestamps.add(allBodyEntries.first.date);
       }
     } catch (e) {
-      print('⚠️ [ChangeDetection] Failed to get body timestamp: $e');
+      AppLogger.debug('⚠️ [ChangeDetection] Failed to get body timestamp: $e');
     }
   }
 

@@ -1,3 +1,4 @@
+import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 class HiveManager {
@@ -23,9 +24,9 @@ class HiveManager {
   /// Initialize Hive
   static Future<void> initialize() async {
     try {
-      print('📊 [Hive] Initializing Hive...');
+      AppLogger.debug('📊 [Hive] Initializing Hive...');
       await Hive.initFlutter();
-      print('✅ [Hive] Hive initialized successfully');
+      AppLogger.debug('✅ [Hive] Hive initialized successfully');
       
       // Open boxes with Map type to match datasource expectations
       final mapBoxes = [
@@ -45,184 +46,184 @@ class HiveManager {
       ];
       
       for (final boxName in mapBoxes) {
-        print('📊 [Hive] Opening box: $boxName...');
+        AppLogger.debug('📊 [Hive] Opening box: $boxName...');
         await Hive.openBox<Map>(boxName);
-        print('✅ [Hive] Box opened: $boxName');
+        AppLogger.debug('✅ [Hive] Box opened: $boxName');
       }
 
       // Open foods box (stores heterogeneous items: List, String, int)
-      print('📊 [Hive] Opening box: $_foodsBox...');
+      AppLogger.debug('📊 [Hive] Opening box: $_foodsBox...');
       await Hive.openBox(_foodsBox);
-      print('✅ [Hive] Box opened: $_foodsBox');
+      AppLogger.debug('✅ [Hive] Box opened: $_foodsBox');
       
       // Open app settings box separately (String type)
-      print('📊 [Hive] Opening box: $_appSettingsBox...');
+      AppLogger.debug('📊 [Hive] Opening box: $_appSettingsBox...');
       await Hive.openBox<String>(_appSettingsBox);
-      print('✅ [Hive] Box opened: $_appSettingsBox');
+      AppLogger.debug('✅ [Hive] Box opened: $_appSettingsBox');
       
       // Open auth session box (dynamic type for flexibility)
-      print('📊 [Hive] Opening box: $_authSessionBox...');
+      AppLogger.debug('📊 [Hive] Opening box: $_authSessionBox...');
       await Hive.openBox(_authSessionBox);
-      print('✅ [Hive] Box opened: $_authSessionBox');
+      AppLogger.debug('✅ [Hive] Box opened: $_authSessionBox');
 
       // Open user profile box (dynamic type for profile JSON and onboarded flag)
-      print('📊 [Hive] Opening box: $_userProfileBox...');
+      AppLogger.debug('📊 [Hive] Opening box: $_userProfileBox...');
       await Hive.openBox(_userProfileBox);
-      print('✅ [Hive] Box opened: $_userProfileBox');
+      AppLogger.debug('✅ [Hive] Box opened: $_userProfileBox');
 
       // Open AI chat history box (dynamic type for persisted messages)
-      print('📊 [Hive] Opening box: $_aiChatHistoryBox...');
+      AppLogger.debug('📊 [Hive] Opening box: $_aiChatHistoryBox...');
       await Hive.openBox(_aiChatHistoryBox);
-      print('✅ [Hive] Box opened: $_aiChatHistoryBox');
+      AppLogger.debug('✅ [Hive] Box opened: $_aiChatHistoryBox');
       
-      print('✅ [Hive] All boxes opened successfully');
+      AppLogger.debug('✅ [Hive] All boxes opened successfully');
     } catch (e, stackTrace) {
-      print('❌ [Hive] Failed to initialize: $e');
-      print('🔍 [Hive] Stack trace: $stackTrace');
+      AppLogger.debug('❌ [Hive] Failed to initialize: $e');
+      AppLogger.debug('🔍 [Hive] Stack trace: $stackTrace');
       throw Exception('Failed to initialize Hive: $e');
     }
   }
 
   /// Get workout box
   static Box<Map> getWorkoutBox() {
-    print('📊 [Hive] Getting workout box...');
+    AppLogger.debug('📊 [Hive] Getting workout box...');
     final box = Hive.box<Map>(_workoutBox);
-    print('✅ [Hive] Workout box retrieved (isOpen: ${box.isOpen})');
+    AppLogger.debug('✅ [Hive] Workout box retrieved (isOpen: ${box.isOpen})');
     return box;
   }
 
   /// Get nutrition box
   static Box<Map> getNutritionBox() {
-    print('📊 [Hive] Getting nutrition box...');
+    AppLogger.debug('📊 [Hive] Getting nutrition box...');
     final box = Hive.box<Map>(_nutritionBox);
-    print('✅ [Hive] Nutrition box retrieved (isOpen: ${box.isOpen})');
+    AppLogger.debug('✅ [Hive] Nutrition box retrieved (isOpen: ${box.isOpen})');
     return box;
   }
 
   /// Get program box
   static Box<Map> getProgramBox() {
-    print('📊 [Hive] Getting program box...');
+    AppLogger.debug('📊 [Hive] Getting program box...');
     final box = Hive.box<Map>(_programBox);
-    print('✅ [Hive] Program box retrieved (isOpen: ${box.isOpen})');
+    AppLogger.debug('✅ [Hive] Program box retrieved (isOpen: ${box.isOpen})');
     return box;
   }
 
   /// Get user box
   static Box<Map> getUserBox() {
-    print('📊 [Hive] Getting user box...');
+    AppLogger.debug('📊 [Hive] Getting user box...');
     final box = Hive.box<Map>(_userBox);
-    print('✅ [Hive] User box retrieved (isOpen: ${box.isOpen})');
+    AppLogger.debug('✅ [Hive] User box retrieved (isOpen: ${box.isOpen})');
     return box;
   }
 
   /// Get settings box
   static Box<Map> getSettingsBox() {
-    print('📊 [Hive] Getting settings box...');
+    AppLogger.debug('📊 [Hive] Getting settings box...');
     final box = Hive.box<Map>(_settingsBox);
-    print('✅ [Hive] Settings box retrieved (isOpen: ${box.isOpen})');
+    AppLogger.debug('✅ [Hive] Settings box retrieved (isOpen: ${box.isOpen})');
     return box;
   }
 
   /// Get sync queue box
   static Box<Map> getSyncQueueBox() {
-    print('📊 [Hive] Getting sync queue box...');
+    AppLogger.debug('📊 [Hive] Getting sync queue box...');
     final box = Hive.box<Map>(_syncQueueBox);
-    print('✅ [Hive] Sync queue box retrieved (isOpen: ${box.isOpen})');
+    AppLogger.debug('✅ [Hive] Sync queue box retrieved (isOpen: ${box.isOpen})');
     return box;
   }
 
   /// Get exercises box
   static Box<Map> getExercisesBox() {
-    print('📊 [Hive] Getting exercises box...');
+    AppLogger.debug('📊 [Hive] Getting exercises box...');
     final box = Hive.box<Map>(_exercisesBox);
-    print('✅ [Hive] Exercises box retrieved (isOpen: ${box.isOpen})');
+    AppLogger.debug('✅ [Hive] Exercises box retrieved (isOpen: ${box.isOpen})');
     return box;
   }
 
   /// Get foods box
   static Box getFoodsBox() {
-    print('📊 [Hive] Getting foods box...');
+    AppLogger.debug('📊 [Hive] Getting foods box...');
     final box = Hive.box(_foodsBox);
-    print('✅ [Hive] Foods box retrieved (isOpen: ${box.isOpen})');
+    AppLogger.debug('✅ [Hive] Foods box retrieved (isOpen: ${box.isOpen})');
     return box;
   }
 
   /// Get body entries box
   static Box<Map> getBodyEntriesBox() {
-    print('📊 [Hive] Getting body entries box...');
+    AppLogger.debug('📊 [Hive] Getting body entries box...');
     final box = Hive.box<Map>(_bodyEntriesBox);
-    print('✅ [Hive] Body entries box retrieved (isOpen: ${box.isOpen})');
+    AppLogger.debug('✅ [Hive] Body entries box retrieved (isOpen: ${box.isOpen})');
     return box;
   }
 
   /// Get streak box
   static Box<Map> getStreakBox() {
-    print('📊 [Hive] Getting streak box...');
+    AppLogger.debug('📊 [Hive] Getting streak box...');
     final box = Hive.box<Map>(_streakBox);
-    print('✅ [Hive] Streak box retrieved (isOpen: ${box.isOpen})');
+    AppLogger.debug('✅ [Hive] Streak box retrieved (isOpen: ${box.isOpen})');
     return box;
   }
 
   /// Get notification settings box
   static Box<Map> getNotificationSettingsBox() {
-    print('📊 [Hive] Getting notification settings box...');
+    AppLogger.debug('📊 [Hive] Getting notification settings box...');
     final box = Hive.box<Map>(_notificationSettingsBox);
-    print('✅ [Hive] Notification settings box retrieved (isOpen: ${box.isOpen})');
+    AppLogger.debug('✅ [Hive] Notification settings box retrieved (isOpen: ${box.isOpen})');
     return box;
   }
 
   /// Get meals box
   static Box<Map> getMealsBox() {
-    print('📊 [Hive] Getting meals box...');
+    AppLogger.debug('📊 [Hive] Getting meals box...');
     final box = Hive.box<Map>(_mealsBox);
-    print('✅ [Hive] Meals box retrieved (isOpen: ${box.isOpen})');
+    AppLogger.debug('✅ [Hive] Meals box retrieved (isOpen: ${box.isOpen})');
     return box;
   }
 
   /// Get macro targets box
   static Box<Map> getMacroTargetsBox() {
-    print('📊 [Hive] Getting macro targets box...');
+    AppLogger.debug('📊 [Hive] Getting macro targets box...');
     final box = Hive.box<Map>(_macroTargetsBox);
-    print('✅ [Hive] Macro targets box retrieved (isOpen: ${box.isOpen})');
+    AppLogger.debug('✅ [Hive] Macro targets box retrieved (isOpen: ${box.isOpen})');
     return box;
   }
 
   /// Get app settings box
   static Box<String> getAppSettingsBox() {
-    print('📊 [Hive] Getting app settings box...');
+    AppLogger.debug('📊 [Hive] Getting app settings box...');
     final box = Hive.box<String>(_appSettingsBox);
-    print('✅ [Hive] App settings box retrieved (isOpen: ${box.isOpen})');
+    AppLogger.debug('✅ [Hive] App settings box retrieved (isOpen: ${box.isOpen})');
     return box;
   }
 
   /// Get insight cache box
   static Box<Map> getInsightCacheBox() {
-    print('📊 [Hive] Getting insight cache box...');
+    AppLogger.debug('📊 [Hive] Getting insight cache box...');
     final box = Hive.box<Map>(_insightCacheBox);
-    print('✅ [Hive] Insight cache box retrieved (isOpen: ${box.isOpen})');
+    AppLogger.debug('✅ [Hive] Insight cache box retrieved (isOpen: ${box.isOpen})');
     return box;
   }
 
   /// Get user profile box
   static Box getUserProfileBox() {
-    print('📊 [Hive] Getting user profile box...');
+    AppLogger.debug('📊 [Hive] Getting user profile box...');
     final box = Hive.box(_userProfileBox);
-    print('✅ [Hive] User profile box retrieved (isOpen: ${box.isOpen})');
+    AppLogger.debug('✅ [Hive] User profile box retrieved (isOpen: ${box.isOpen})');
     return box;
   }
 
   /// Get AI chat history box
   static Box getAIChatHistoryBox() {
-    print('📊 [Hive] Getting AI chat history box...');
+    AppLogger.debug('📊 [Hive] Getting AI chat history box...');
     final box = Hive.box(_aiChatHistoryBox);
-    print('✅ [Hive] AI chat history box retrieved (isOpen: ${box.isOpen})');
+    AppLogger.debug('✅ [Hive] AI chat history box retrieved (isOpen: ${box.isOpen})');
     return box;
   }
 
   /// Clear all boxes
   static Future<void> clearAll() async {
     try {
-      print('📊 [Hive] Clearing all boxes...');
+      AppLogger.debug('📊 [Hive] Clearing all boxes...');
       
       final boxNames = [
         _workoutBox,
@@ -241,9 +242,9 @@ class HiveManager {
       ];
       
       for (final boxName in boxNames) {
-        print('📊 [Hive] Clearing box: $boxName...');
+        AppLogger.debug('📊 [Hive] Clearing box: $boxName...');
       }
-      print('📊 [Hive] Clearing box: $_appSettingsBox...');
+      AppLogger.debug('📊 [Hive] Clearing box: $_appSettingsBox...');
       
       await Future.wait([
         Hive.box<Map>(_workoutBox).clear(),
@@ -263,10 +264,10 @@ class HiveManager {
         Hive.box<Map>(_insightCacheBox).clear(),
       ]);
       
-      print('✅ [Hive] All boxes cleared successfully');
+      AppLogger.debug('✅ [Hive] All boxes cleared successfully');
     } catch (e, stackTrace) {
-      print('❌ [Hive] Failed to clear boxes: $e');
-      print('🔍 [Hive] Stack trace: $stackTrace');
+      AppLogger.debug('❌ [Hive] Failed to clear boxes: $e');
+      AppLogger.debug('🔍 [Hive] Stack trace: $stackTrace');
       throw Exception('Failed to clear Hive boxes: $e');
     }
   }
@@ -274,12 +275,12 @@ class HiveManager {
   /// Close all boxes
   static Future<void> closeAll() async {
     try {
-      print('📊 [Hive] Closing all boxes...');
+      AppLogger.debug('📊 [Hive] Closing all boxes...');
       await Hive.close();
-      print('✅ [Hive] All boxes closed successfully');
+      AppLogger.debug('✅ [Hive] All boxes closed successfully');
     } catch (e, stackTrace) {
-      print('❌ [Hive] Failed to close Hive: $e');
-      print('🔍 [Hive] Stack trace: $stackTrace');
+      AppLogger.debug('❌ [Hive] Failed to close Hive: $e');
+      AppLogger.debug('🔍 [Hive] Stack trace: $stackTrace');
       throw Exception('Failed to close Hive: $e');
     }
   }

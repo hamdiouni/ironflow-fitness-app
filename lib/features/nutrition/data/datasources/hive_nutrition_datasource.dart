@@ -1,3 +1,4 @@
+import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:hive/hive.dart';
 import '../models/meal_model.dart';
 import '../models/nutrition_targets_model.dart';
@@ -46,21 +47,21 @@ class HiveNutritionDatasource {
   /// Uses the meal ID as the key for easy retrieval.
   Future<void> saveMealEntry(MealModel meal) async {
     try {
-      print('📊 [NutritionData] Saving meal entry...');
-      print('🔍 [NutritionData] Meal ID: ${meal.id}, Name: ${meal.name}');
+      AppLogger.debug('📊 [NutritionData] Saving meal entry...');
+      AppLogger.debug('🔍 [NutritionData] Meal ID: ${meal.id}, Name: ${meal.name}');
       
       if (!_mealsBox.isOpen) {
-        print('⚠️ [NutritionData] Meals box is not open');
+        AppLogger.debug('⚠️ [NutritionData] Meals box is not open');
         throw Exception('Meals box not open');
       }
       
       await _mealsBox.put(meal.id, meal.toJson());
       
-      print('✅ [NutritionData] Meal saved successfully');
-      print('🔍 [NutritionData] Calories: ${meal.macros.calories}, Name: ${meal.name}');
+      AppLogger.debug('✅ [NutritionData] Meal saved successfully');
+      AppLogger.debug('🔍 [NutritionData] Calories: ${meal.macros.calories}, Name: ${meal.name}');
     } catch (e, stackTrace) {
-      print('❌ [NutritionData] Failed to save meal: $e');
-      print('🔍 [NutritionData] Stack trace: $stackTrace');
+      AppLogger.debug('❌ [NutritionData] Failed to save meal: $e');
+      AppLogger.debug('🔍 [NutritionData] Stack trace: $stackTrace');
       rethrow;
     }
   }
@@ -71,11 +72,11 @@ class HiveNutritionDatasource {
   /// Returns an empty list if no meals found.
   Future<List<MealModel>> getMealsByDate(DateTime date) async {
     try {
-      print('📊 [NutritionData] Getting meals by date...');
-      print('🔍 [NutritionData] Date: ${date.year}-${date.month}-${date.day}');
+      AppLogger.debug('📊 [NutritionData] Getting meals by date...');
+      AppLogger.debug('🔍 [NutritionData] Date: ${date.year}-${date.month}-${date.day}');
       
       if (!_mealsBox.isOpen) {
-        print('⚠️ [NutritionData] Meals box is not open');
+        AppLogger.debug('⚠️ [NutritionData] Meals box is not open');
         throw Exception('Meals box not open');
       }
       
@@ -89,13 +90,13 @@ class HiveNutritionDatasource {
           })
           .toList();
       
-      print('✅ [NutritionData] Meals retrieved successfully');
-      print('🔍 [NutritionData] Found ${meals.length} meals for date');
+      AppLogger.debug('✅ [NutritionData] Meals retrieved successfully');
+      AppLogger.debug('🔍 [NutritionData] Found ${meals.length} meals for date');
       
       return meals;
     } catch (e, stackTrace) {
-      print('❌ [NutritionData] Failed to get meals by date: $e');
-      print('🔍 [NutritionData] Stack trace: $stackTrace');
+      AppLogger.debug('❌ [NutritionData] Failed to get meals by date: $e');
+      AppLogger.debug('🔍 [NutritionData] Stack trace: $stackTrace');
       rethrow;
     }
   }
@@ -109,11 +110,11 @@ class HiveNutritionDatasource {
     DateTime endDate,
   ) async {
     try {
-      print('📊 [NutritionData] Getting meals by date range...');
-      print('🔍 [NutritionData] Start: ${startDate.toIso8601String()}, End: ${endDate.toIso8601String()}');
+      AppLogger.debug('📊 [NutritionData] Getting meals by date range...');
+      AppLogger.debug('🔍 [NutritionData] Start: ${startDate.toIso8601String()}, End: ${endDate.toIso8601String()}');
       
       if (!_mealsBox.isOpen) {
-        print('⚠️ [NutritionData] Meals box is not open');
+        AppLogger.debug('⚠️ [NutritionData] Meals box is not open');
         throw Exception('Meals box not open');
       }
       
@@ -125,13 +126,13 @@ class HiveNutritionDatasource {
           })
           .toList();
       
-      print('✅ [NutritionData] Meals retrieved successfully');
-      print('🔍 [NutritionData] Found ${meals.length} meals in date range');
+      AppLogger.debug('✅ [NutritionData] Meals retrieved successfully');
+      AppLogger.debug('🔍 [NutritionData] Found ${meals.length} meals in date range');
       
       return meals;
     } catch (e, stackTrace) {
-      print('❌ [NutritionData] Failed to get meals by date range: $e');
-      print('🔍 [NutritionData] Stack trace: $stackTrace');
+      AppLogger.debug('❌ [NutritionData] Failed to get meals by date range: $e');
+      AppLogger.debug('🔍 [NutritionData] Stack trace: $stackTrace');
       rethrow;
     }
   }
@@ -141,10 +142,10 @@ class HiveNutritionDatasource {
   /// Returns all meal entries stored locally.
   Future<List<MealModel>> getAllMeals() async {
     try {
-      print('📊 [NutritionData] Getting all meals...');
+      AppLogger.debug('📊 [NutritionData] Getting all meals...');
       
       if (!_mealsBox.isOpen) {
-        print('⚠️ [NutritionData] Meals box is not open');
+        AppLogger.debug('⚠️ [NutritionData] Meals box is not open');
         throw Exception('Meals box not open');
       }
       
@@ -152,13 +153,13 @@ class HiveNutritionDatasource {
           .map((json) => MealModel.fromJson(_deepCast(json)))
           .toList();
       
-      print('✅ [NutritionData] All meals retrieved successfully');
-      print('🔍 [NutritionData] Total meals: ${meals.length}');
+      AppLogger.debug('✅ [NutritionData] All meals retrieved successfully');
+      AppLogger.debug('🔍 [NutritionData] Total meals: ${meals.length}');
       
       return meals;
     } catch (e, stackTrace) {
-      print('❌ [NutritionData] Failed to get all meals: $e');
-      print('🔍 [NutritionData] Stack trace: $stackTrace');
+      AppLogger.debug('❌ [NutritionData] Failed to get all meals: $e');
+      AppLogger.debug('🔍 [NutritionData] Stack trace: $stackTrace');
       rethrow;
     }
   }
@@ -168,29 +169,29 @@ class HiveNutritionDatasource {
   /// Returns the meal if found, null otherwise.
   Future<MealModel?> getMealById(String mealId) async {
     try {
-      print('📊 [NutritionData] Getting meal by ID...');
-      print('🔍 [NutritionData] Meal ID: $mealId');
+      AppLogger.debug('📊 [NutritionData] Getting meal by ID...');
+      AppLogger.debug('🔍 [NutritionData] Meal ID: $mealId');
       
       if (!_mealsBox.isOpen) {
-        print('⚠️ [NutritionData] Meals box is not open');
+        AppLogger.debug('⚠️ [NutritionData] Meals box is not open');
         throw Exception('Meals box not open');
       }
       
       final json = _mealsBox.get(mealId);
       
       if (json == null) {
-        print('⚠️ [NutritionData] Meal not found');
+        AppLogger.debug('⚠️ [NutritionData] Meal not found');
         return null;
       }
       
       final meal = MealModel.fromJson(_deepCast(json));
-      print('✅ [NutritionData] Meal retrieved successfully');
-      print('🔍 [NutritionData] Name: ${meal.name}, Calories: ${meal.macros.calories}');
+      AppLogger.debug('✅ [NutritionData] Meal retrieved successfully');
+      AppLogger.debug('🔍 [NutritionData] Name: ${meal.name}, Calories: ${meal.macros.calories}');
       
       return meal;
     } catch (e, stackTrace) {
-      print('❌ [NutritionData] Failed to get meal by ID: $e');
-      print('🔍 [NutritionData] Stack trace: $stackTrace');
+      AppLogger.debug('❌ [NutritionData] Failed to get meal by ID: $e');
+      AppLogger.debug('🔍 [NutritionData] Stack trace: $stackTrace');
       rethrow;
     }
   }
@@ -200,20 +201,20 @@ class HiveNutritionDatasource {
   /// Removes the meal by its ID.
   Future<void> deleteMealEntry(String mealId) async {
     try {
-      print('📊 [NutritionData] Deleting meal entry...');
-      print('🔍 [NutritionData] Meal ID: $mealId');
+      AppLogger.debug('📊 [NutritionData] Deleting meal entry...');
+      AppLogger.debug('🔍 [NutritionData] Meal ID: $mealId');
       
       if (!_mealsBox.isOpen) {
-        print('⚠️ [NutritionData] Meals box is not open');
+        AppLogger.debug('⚠️ [NutritionData] Meals box is not open');
         throw Exception('Meals box not open');
       }
       
       await _mealsBox.delete(mealId);
       
-      print('✅ [NutritionData] Meal deleted successfully');
+      AppLogger.debug('✅ [NutritionData] Meal deleted successfully');
     } catch (e, stackTrace) {
-      print('❌ [NutritionData] Failed to delete meal: $e');
-      print('🔍 [NutritionData] Stack trace: $stackTrace');
+      AppLogger.debug('❌ [NutritionData] Failed to delete meal: $e');
+      AppLogger.debug('🔍 [NutritionData] Stack trace: $stackTrace');
       rethrow;
     }
   }
@@ -223,26 +224,26 @@ class HiveNutritionDatasource {
   /// Useful for clearing a day's nutrition data.
   Future<void> deleteMealsByDate(DateTime date) async {
     try {
-      print('📊 [NutritionData] Deleting meals by date...');
-      print('🔍 [NutritionData] Date: ${date.year}-${date.month}-${date.day}');
+      AppLogger.debug('📊 [NutritionData] Deleting meals by date...');
+      AppLogger.debug('🔍 [NutritionData] Date: ${date.year}-${date.month}-${date.day}');
       
       if (!_mealsBox.isOpen) {
-        print('⚠️ [NutritionData] Meals box is not open');
+        AppLogger.debug('⚠️ [NutritionData] Meals box is not open');
         throw Exception('Meals box not open');
       }
       
       final meals = await getMealsByDate(date);
-      print('🔍 [NutritionData] Found ${meals.length} meals to delete');
+      AppLogger.debug('🔍 [NutritionData] Found ${meals.length} meals to delete');
       
       for (final meal in meals) {
         await _mealsBox.delete(meal.id);
       }
       
-      print('✅ [NutritionData] Meals deleted successfully');
-      print('🔍 [NutritionData] Deleted ${meals.length} meals');
+      AppLogger.debug('✅ [NutritionData] Meals deleted successfully');
+      AppLogger.debug('🔍 [NutritionData] Deleted ${meals.length} meals');
     } catch (e, stackTrace) {
-      print('❌ [NutritionData] Failed to delete meals by date: $e');
-      print('🔍 [NutritionData] Stack trace: $stackTrace');
+      AppLogger.debug('❌ [NutritionData] Failed to delete meals by date: $e');
+      AppLogger.debug('🔍 [NutritionData] Stack trace: $stackTrace');
       rethrow;
     }
   }
@@ -252,21 +253,21 @@ class HiveNutritionDatasource {
   /// Stores the user's daily nutrition targets.
   Future<void> saveNutritionTargets(NutritionTargetsModel targets) async {
     try {
-      print('📊 [NutritionData] Saving nutrition targets...');
-      print('🔍 [NutritionData] Macros - Calories: ${targets.macros.calories}, Protein: ${targets.macros.protein}g');
+      AppLogger.debug('📊 [NutritionData] Saving nutrition targets...');
+      AppLogger.debug('🔍 [NutritionData] Macros - Calories: ${targets.macros.calories}, Protein: ${targets.macros.protein}g');
       
       if (!_targetsBox.isOpen) {
-        print('⚠️ [NutritionData] Targets box is not open');
+        AppLogger.debug('⚠️ [NutritionData] Targets box is not open');
         throw Exception('Targets box not open');
       }
       
       await _targetsBox.put(targetsKey, targets.toJson());
       
-      print('✅ [NutritionData] Nutrition targets saved successfully');
-      print('🔍 [NutritionData] Macros - Calories: ${targets.macros.calories}, Protein: ${targets.macros.protein}g, Carbs: ${targets.macros.carbs}g, Fat: ${targets.macros.fats}g');
+      AppLogger.debug('✅ [NutritionData] Nutrition targets saved successfully');
+      AppLogger.debug('🔍 [NutritionData] Macros - Calories: ${targets.macros.calories}, Protein: ${targets.macros.protein}g, Carbs: ${targets.macros.carbs}g, Fat: ${targets.macros.fats}g');
     } catch (e, stackTrace) {
-      print('❌ [NutritionData] Failed to save nutrition targets: $e');
-      print('🔍 [NutritionData] Stack trace: $stackTrace');
+      AppLogger.debug('❌ [NutritionData] Failed to save nutrition targets: $e');
+      AppLogger.debug('🔍 [NutritionData] Stack trace: $stackTrace');
       rethrow;
     }
   }
@@ -276,28 +277,28 @@ class HiveNutritionDatasource {
   /// Returns the stored targets or null if not set.
   Future<NutritionTargetsModel?> getNutritionTargets() async {
     try {
-      print('📊 [NutritionData] Getting nutrition targets...');
+      AppLogger.debug('📊 [NutritionData] Getting nutrition targets...');
       
       if (!_targetsBox.isOpen) {
-        print('⚠️ [NutritionData] Targets box is not open');
+        AppLogger.debug('⚠️ [NutritionData] Targets box is not open');
         throw Exception('Targets box not open');
       }
       
       final json = _targetsBox.get(targetsKey);
       
       if (json == null) {
-        print('⚠️ [NutritionData] No nutrition targets found');
+        AppLogger.debug('⚠️ [NutritionData] No nutrition targets found');
         return null;
       }
       
       final targets = NutritionTargetsModel.fromJson(_deepCast(json));
-      print('✅ [NutritionData] Nutrition targets retrieved successfully');
-      print('🔍 [NutritionData] Macros - Calories: ${targets.macros.calories}, Protein: ${targets.macros.protein}g');
+      AppLogger.debug('✅ [NutritionData] Nutrition targets retrieved successfully');
+      AppLogger.debug('🔍 [NutritionData] Macros - Calories: ${targets.macros.calories}, Protein: ${targets.macros.protein}g');
       
       return targets;
     } catch (e, stackTrace) {
-      print('❌ [NutritionData] Failed to get nutrition targets: $e');
-      print('🔍 [NutritionData] Stack trace: $stackTrace');
+      AppLogger.debug('❌ [NutritionData] Failed to get nutrition targets: $e');
+      AppLogger.debug('🔍 [NutritionData] Stack trace: $stackTrace');
       rethrow;
     }
   }
@@ -308,27 +309,27 @@ class HiveNutritionDatasource {
   /// Used for logout or data reset.
   Future<void> clearAllData() async {
     try {
-      print('📊 [NutritionData] Clearing all nutrition data...');
+      AppLogger.debug('📊 [NutritionData] Clearing all nutrition data...');
       
       if (!_mealsBox.isOpen) {
-        print('⚠️ [NutritionData] Meals box is not open');
+        AppLogger.debug('⚠️ [NutritionData] Meals box is not open');
       } else {
         final mealsCount = _mealsBox.length;
         await _mealsBox.clear();
-        print('✅ [NutritionData] Meals box cleared ($mealsCount meals removed)');
+        AppLogger.debug('✅ [NutritionData] Meals box cleared ($mealsCount meals removed)');
       }
       
       if (!_targetsBox.isOpen) {
-        print('⚠️ [NutritionData] Targets box is not open');
+        AppLogger.debug('⚠️ [NutritionData] Targets box is not open');
       } else {
         await _targetsBox.clear();
-        print('✅ [NutritionData] Targets box cleared');
+        AppLogger.debug('✅ [NutritionData] Targets box cleared');
       }
       
-      print('✅ [NutritionData] All nutrition data cleared successfully');
+      AppLogger.debug('✅ [NutritionData] All nutrition data cleared successfully');
     } catch (e, stackTrace) {
-      print('❌ [NutritionData] Failed to clear all data: $e');
-      print('🔍 [NutritionData] Stack trace: $stackTrace');
+      AppLogger.debug('❌ [NutritionData] Failed to clear all data: $e');
+      AppLogger.debug('🔍 [NutritionData] Stack trace: $stackTrace');
       rethrow;
     }
   }
@@ -338,21 +339,21 @@ class HiveNutritionDatasource {
   /// Useful for debugging and monitoring.
   Future<int> getMealCount() async {
     try {
-      print('📊 [NutritionData] Getting meal count...');
+      AppLogger.debug('📊 [NutritionData] Getting meal count...');
       
       if (!_mealsBox.isOpen) {
-        print('⚠️ [NutritionData] Meals box is not open');
+        AppLogger.debug('⚠️ [NutritionData] Meals box is not open');
         throw Exception('Meals box not open');
       }
       
       final count = _mealsBox.length;
-      print('✅ [NutritionData] Meal count retrieved successfully');
-      print('🔍 [NutritionData] Total meals: $count');
+      AppLogger.debug('✅ [NutritionData] Meal count retrieved successfully');
+      AppLogger.debug('🔍 [NutritionData] Total meals: $count');
       
       return count;
     } catch (e, stackTrace) {
-      print('❌ [NutritionData] Failed to get meal count: $e');
-      print('🔍 [NutritionData] Stack trace: $stackTrace');
+      AppLogger.debug('❌ [NutritionData] Failed to get meal count: $e');
+      AppLogger.debug('🔍 [NutritionData] Stack trace: $stackTrace');
       rethrow;
     }
   }
@@ -362,21 +363,21 @@ class HiveNutritionDatasource {
   /// Returns true if at least one meal is stored.
   Future<bool> hasMeals() async {
     try {
-      print('📊 [NutritionData] Checking if meals exist...');
+      AppLogger.debug('📊 [NutritionData] Checking if meals exist...');
       
       if (!_mealsBox.isOpen) {
-        print('⚠️ [NutritionData] Meals box is not open');
+        AppLogger.debug('⚠️ [NutritionData] Meals box is not open');
         throw Exception('Meals box not open');
       }
       
       final hasData = _mealsBox.isNotEmpty;
-      print('✅ [NutritionData] Meal check completed');
-      print('🔍 [NutritionData] Has meals: $hasData');
+      AppLogger.debug('✅ [NutritionData] Meal check completed');
+      AppLogger.debug('🔍 [NutritionData] Has meals: $hasData');
       
       return hasData;
     } catch (e, stackTrace) {
-      print('❌ [NutritionData] Failed to check meals: $e');
-      print('🔍 [NutritionData] Stack trace: $stackTrace');
+      AppLogger.debug('❌ [NutritionData] Failed to check meals: $e');
+      AppLogger.debug('🔍 [NutritionData] Stack trace: $stackTrace');
       rethrow;
     }
   }
@@ -386,10 +387,10 @@ class HiveNutritionDatasource {
   /// Useful for calendar views and history.
   Future<List<DateTime>> getAllMealDates() async {
     try {
-      print('📊 [NutritionData] Getting all meal dates...');
+      AppLogger.debug('📊 [NutritionData] Getting all meal dates...');
       
       if (!_mealsBox.isOpen) {
-        print('⚠️ [NutritionData] Meals box is not open');
+        AppLogger.debug('⚠️ [NutritionData] Meals box is not open');
         throw Exception('Meals box not open');
       }
       
@@ -401,13 +402,13 @@ class HiveNutritionDatasource {
       }
       
       final sortedDates = dates.toList()..sort();
-      print('✅ [NutritionData] Meal dates retrieved successfully');
-      print('🔍 [NutritionData] Unique dates: ${sortedDates.length}');
+      AppLogger.debug('✅ [NutritionData] Meal dates retrieved successfully');
+      AppLogger.debug('🔍 [NutritionData] Unique dates: ${sortedDates.length}');
       
       return sortedDates;
     } catch (e, stackTrace) {
-      print('❌ [NutritionData] Failed to get meal dates: $e');
-      print('🔍 [NutritionData] Stack trace: $stackTrace');
+      AppLogger.debug('❌ [NutritionData] Failed to get meal dates: $e');
+      AppLogger.debug('🔍 [NutritionData] Stack trace: $stackTrace');
       rethrow;
     }
   }

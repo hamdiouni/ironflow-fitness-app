@@ -1,3 +1,4 @@
+import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:hive/hive.dart';
 
 import '../../domain/entities/streak.dart';
@@ -32,7 +33,7 @@ class HiveStreakDataSource {
       await box.put(_streakKey, streak.toJson());
     } catch (e) {
       // Log error but don't throw
-      print('Error saving streak: $e');
+      AppLogger.debug('Error saving streak: $e');
     }
   }
 
@@ -42,7 +43,7 @@ class HiveStreakDataSource {
       final box = Hive.box<Map>(_boxName);
       await box.delete(_streakKey);
     } catch (e) {
-      print('Error clearing streak: $e');
+      AppLogger.debug('Error clearing streak: $e');
     }
   }
 }

@@ -1,3 +1,4 @@
+import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -28,7 +29,7 @@ class RemoteDataPurgerImpl implements RemoteDataPurger {
       // 1. Check if Firebase is initialized
       if (Firebase.apps.isEmpty) {
         if (kDebugMode) {
-          print('ℹ️ [RemoteDataPurger] Firebase is not initialized. Skipping remote cloud purge.');
+          AppLogger.debug('ℹ️ [RemoteDataPurger] Firebase is not initialized. Skipping remote cloud purge.');
         }
         return;
       }
@@ -37,7 +38,7 @@ class RemoteDataPurgerImpl implements RemoteDataPurger {
       final storage = _storage ?? FirebaseStorage.instance;
 
       if (kDebugMode) {
-        print('📊 [RemoteDataPurger] Purging remote Firestore documents for user: $userId');
+        AppLogger.debug('📊 [RemoteDataPurger] Purging remote Firestore documents for user: $userId');
       }
 
       // Purge profile subcollection document
@@ -50,7 +51,7 @@ class RemoteDataPurgerImpl implements RemoteDataPurger {
         await profileDoc.delete();
       } catch (e) {
         if (kDebugMode) {
-          print('⚠️ [RemoteDataPurger] Firestore profile doc deletion note: $e');
+          AppLogger.debug('⚠️ [RemoteDataPurger] Firestore profile doc deletion note: $e');
         }
       }
 
@@ -60,7 +61,7 @@ class RemoteDataPurgerImpl implements RemoteDataPurger {
         await userDoc.delete();
       } catch (e) {
         if (kDebugMode) {
-          print('⚠️ [RemoteDataPurger] Firestore user doc deletion note: $e');
+          AppLogger.debug('⚠️ [RemoteDataPurger] Firestore user doc deletion note: $e');
         }
       }
 
@@ -73,16 +74,16 @@ class RemoteDataPurgerImpl implements RemoteDataPurger {
         }
       } catch (e) {
         if (kDebugMode) {
-          print('⚠️ [RemoteDataPurger] Storage user assets deletion note: $e');
+          AppLogger.debug('⚠️ [RemoteDataPurger] Storage user assets deletion note: $e');
         }
       }
 
       if (kDebugMode) {
-        print('✅ [RemoteDataPurger] Remote purge completed successfully for user: $userId');
+        AppLogger.debug('✅ [RemoteDataPurger] Remote purge completed successfully for user: $userId');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('❌ [RemoteDataPurger] Remote purge failed: $e');
+        AppLogger.debug('❌ [RemoteDataPurger] Remote purge failed: $e');
       }
       throw Exception('Remote data purge failed: $e');
     }

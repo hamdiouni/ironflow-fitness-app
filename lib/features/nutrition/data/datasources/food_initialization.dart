@@ -1,3 +1,4 @@
+import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'food_upload_script.dart';
@@ -20,14 +21,14 @@ Future<void> initializeFoodDatabase(FirebaseFirestore firestore) async {
     
     if (snapshot.docs.isNotEmpty) {
       if (kDebugMode) {
-        print('✓ Foods already exist in Firestore, skipping upload');
+        AppLogger.debug('✓ Foods already exist in Firestore, skipping upload');
       }
       return;
     }
     
     // Upload foods
     if (kDebugMode) {
-      print('Foods not found in Firestore, uploading...');
+      AppLogger.debug('Foods not found in Firestore, uploading...');
     }
     await uploadAllFoodsToFirestore(firestore);
     
@@ -35,16 +36,16 @@ Future<void> initializeFoodDatabase(FirebaseFirestore firestore) async {
     final isValid = await verifyFoodsInFirestore(firestore);
     if (isValid) {
       if (kDebugMode) {
-        print('✓ Food database initialized successfully');
+        AppLogger.debug('✓ Food database initialized successfully');
       }
     } else {
       if (kDebugMode) {
-        print('✗ Food database verification failed');
+        AppLogger.debug('✗ Food database verification failed');
       }
     }
   } catch (e) {
     if (kDebugMode) {
-      print('✗ Error initializing food database: $e');
+      AppLogger.debug('✗ Error initializing food database: $e');
     }
     // Don't rethrow - allow app to continue even if upload fails
   }
@@ -57,7 +58,7 @@ Future<void> initializeFoodDatabase(FirebaseFirestore firestore) async {
 Future<void> reinitializeFoodDatabase(FirebaseFirestore firestore) async {
   try {
     if (kDebugMode) {
-      print('Re-initializing food database...');
+      AppLogger.debug('Re-initializing food database...');
     }
     
     // Delete existing foods
@@ -70,16 +71,16 @@ Future<void> reinitializeFoodDatabase(FirebaseFirestore firestore) async {
     final isValid = await verifyFoodsInFirestore(firestore);
     if (isValid) {
       if (kDebugMode) {
-        print('✓ Food database re-initialized successfully');
+        AppLogger.debug('✓ Food database re-initialized successfully');
       }
     } else {
       if (kDebugMode) {
-        print('✗ Food database verification failed');
+        AppLogger.debug('✗ Food database verification failed');
       }
     }
   } catch (e) {
     if (kDebugMode) {
-      print('✗ Error re-initializing food database: $e');
+      AppLogger.debug('✗ Error re-initializing food database: $e');
     }
     rethrow;
   }

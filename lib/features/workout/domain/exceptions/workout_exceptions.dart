@@ -58,7 +58,7 @@ class ActiveProgramStorageException extends ActiveProgramException {
 /// try {
 ///   validator.validateSets(sets);
 /// } on ProgramValidationException catch (e) {
-///   print('Validation failed: ${e.message}');
+///   AppLogger.debug('Validation failed: ${e.message}');
 /// }
 /// ```
 class ProgramValidationException implements Exception {

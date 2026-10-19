@@ -1,3 +1,4 @@
+import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import '../repositories/workout_repository.dart';
 
@@ -53,9 +54,9 @@ class SyncOfflineDataUseCase {
     try {
       // Store operation in local queue
       // This would be persisted to Hive in a real implementation
-      print('Operation queued: ${operation.id}');
+      AppLogger.debug('Operation queued: ${operation.id}');
     } catch (e) {
-      print('Error queuing operation: $e');
+      AppLogger.debug('Error queuing operation: $e');
       rethrow;
     }
   }
@@ -76,7 +77,7 @@ class SyncOfflineDataUseCase {
         await _syncOperation(op);
       }
     } catch (e) {
-      print('Error syncing operations: $e');
+      AppLogger.debug('Error syncing operations: $e');
       rethrow;
     }
   }
@@ -97,7 +98,7 @@ class SyncOfflineDataUseCase {
       }
 
       // Remove from queue after successful sync
-      print('Operation synced: ${operation.id}');
+      AppLogger.debug('Operation synced: ${operation.id}');
     } catch (e) {
       // Increment retry count and re-queue
       final retried = PendingOperation(
@@ -111,7 +112,7 @@ class SyncOfflineDataUseCase {
       if (retried.retryCount < 3) {
         await queueOperation(retried);
       } else {
-        print('Operation failed after 3 retries: ${operation.id}');
+        AppLogger.debug('Operation failed after 3 retries: ${operation.id}');
       }
     }
   }
@@ -119,19 +120,19 @@ class SyncOfflineDataUseCase {
   /// Syncs a workout operation.
   Future<void> _syncWorkout(PendingOperation operation) async {
     // Implementation would sync workout data
-    print('Syncing workout: ${operation.data}');
+    AppLogger.debug('Syncing workout: ${operation.data}');
   }
 
   /// Syncs a program edit operation.
   Future<void> _syncProgramEdit(PendingOperation operation) async {
     // Implementation would sync program edits
-    print('Syncing program edit: ${operation.data}');
+    AppLogger.debug('Syncing program edit: ${operation.data}');
   }
 
   /// Syncs a diet log operation.
   Future<void> _syncDietLog(PendingOperation operation) async {
     // Implementation would sync diet logs
-    print('Syncing diet log: ${operation.data}');
+    AppLogger.debug('Syncing diet log: ${operation.data}');
   }
 
   /// Handles sync conflicts using last-write-wins strategy.

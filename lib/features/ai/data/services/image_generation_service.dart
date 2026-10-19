@@ -1,3 +1,4 @@
+import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
@@ -18,7 +19,7 @@ class ImageGenerationService {
   /// Returns image bytes or null if generation fails
   Future<Uint8List?> generateImage(String prompt, {int retryCount = 0}) async {
     try {
-      print('🎨 Generating image for: $prompt');
+      AppLogger.debug('🎨 Generating image for: $prompt');
 
       final headers = {
         'Content-Type': 'application/json',
@@ -41,24 +42,24 @@ class ImageGenerationService {
       );
 
       if (response.statusCode == 200) {
-        print('✅ Image generated successfully');
+        AppLogger.debug('✅ Image generated successfully');
         return response.bodyBytes;
       } else if (response.statusCode == 503 && retryCount < 2) {
         // Model is loading, retry after a delay (max 2 retries)
-        print('⏳ Model is loading, retrying in 10 seconds... (attempt ${retryCount + 1}/2)');
+        AppLogger.debug('⏳ Model is loading, retrying in 10 seconds... (attempt ${retryCount + 1}/2)');
         await Future.delayed(const Duration(seconds: 10));
         return generateImage(prompt, retryCount: retryCount + 1); // Retry with counter
       } else {
-        print('❌ Image generation failed: ${response.statusCode}');
-        print('Response: ${response.body}');
+        AppLogger.debug('❌ Image generation failed: ${response.statusCode}');
+        AppLogger.debug('Response: ${response.body}');
         return null;
       }
     } catch (e) {
-      print('❌ Image generation error: $e');
+      AppLogger.debug('❌ Image generation error: $e');
       // CORS error on web - image generation not available in browser
       if (e.toString().contains('Failed to fetch') || e.toString().contains('CORS')) {
-        print('⚠️ Image generation not available on web (CORS restriction)');
-        print('💡 Image generation will work on Android/iOS apps');
+        AppLogger.debug('⚠️ Image generation not available on web (CORS restriction)');
+        AppLogger.debug('💡 Image generation will work on Android/iOS apps');
       }
       return null;
     }
