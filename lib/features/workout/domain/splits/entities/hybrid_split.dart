@@ -88,4 +88,6 @@ class HybridSplit extends Split {
       notes: notes,
     );
   }
+
+  HybridSplit copyWithMode(HybridMode newMode) => copyWith(mode: newMode);
 }

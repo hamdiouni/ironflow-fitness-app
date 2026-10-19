@@ -27,4 +27,13 @@ abstract class ActiveProgramRepository {
   /// This is typically used for progress tracking, exercise modifications,
   /// or advancing to the next day.
   Future<void> updateActiveProgram(ActiveProgram program);
+
+  /// Archives the currently active program for undo recovery.
+  Future<void> archiveCurrentProgram();
+
+  /// Restores previously archived active program and returns it.
+  Future<ActiveProgram?> restoreArchivedProgram();
+
+  /// Returns true if an archived program is available for undo.
+  Future<bool> hasArchivedProgram();
 }

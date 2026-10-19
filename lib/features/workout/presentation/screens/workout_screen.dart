@@ -56,17 +56,32 @@ class WorkoutScreen extends ConsumerWidget {
         actions: [
           const AiEntryButton(),
           const SizedBox(width: 4),
-          // Edit program button
+          // Change Split & Edit program buttons
           activeProgramAsync.when(
             data: (program) => program != null
-                ? SizedBox(
-                    width: 48,
-                    height: 48,
-                    child: IconButton(
-                      onPressed: () => context.go(AppRoutes.workoutEditor),
-                      icon: Icon(Icons.edit_outlined, color: tokens.textPrimary, size: 20),
-                      tooltip: 'Edit Program',
-                    ),
+                ? Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        width: 44,
+                        height: 48,
+                        child: IconButton(
+                          key: const Key('change_split_appbar_btn'),
+                          onPressed: () => context.go(AppRoutes.workoutProgramSelection),
+                          icon: Icon(Icons.auto_awesome_motion_outlined, color: tokens.cyanAccent, size: 20),
+                          tooltip: 'Change Split',
+                        ),
+                      ),
+                      SizedBox(
+                        width: 44,
+                        height: 48,
+                        child: IconButton(
+                          onPressed: () => context.go(AppRoutes.workoutEditor),
+                          icon: Icon(Icons.edit_outlined, color: tokens.textPrimary, size: 20),
+                          tooltip: 'Edit Program',
+                        ),
+                      ),
+                    ],
                   )
                 : const SizedBox.shrink(),
             loading: () => const SizedBox.shrink(),
@@ -338,6 +353,62 @@ class _ActiveProgramHeader extends StatelessWidget {
               progressColor: tokens.kineticAccent,
               backgroundColor: tokens.panel,
               height: 6,
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                if (program.cycleLength != null)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: tokens.panel,
+                      borderRadius: BorderRadius.circular(tokens.radiusSm),
+                      border: Border.all(color: tokens.borderSubtle),
+                    ),
+                    child: Text(
+                      'CYCLE: ${program.cycleLength} DAYS',
+                      style: TextStyle(
+                        color: tokens.textMuted,
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w700,
+                        fontFamily: AppTypography.fontFamilyHeadings,
+                        letterSpacing: 0.8,
+                      ),
+                    ),
+                  )
+                else
+                  const SizedBox.shrink(),
+                InkWell(
+                  key: const Key('switch_split_header_btn'),
+                  onTap: () => context.go(AppRoutes.workoutProgramSelection),
+                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'CHANGE SPLIT',
+                          style: TextStyle(
+                            color: tokens.cyanAccent,
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w800,
+                            fontFamily: AppTypography.fontFamilyHeadings,
+                            letterSpacing: 0.8,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Icon(
+                          Icons.arrow_forward_ios_rounded,
+                          color: tokens.cyanAccent,
+                          size: 10,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),

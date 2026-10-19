@@ -1,148 +1,554 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Split;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/app_router.dart';
-import '../../../../core/utils/error_handler.dart';
+import '../../../../core/theme/app_theme_tokens.dart';
+import '../../../../core/theme/app_typography.dart';
+import '../../../onboarding/domain/entities/user_profile.dart';
 import '../../../onboarding/presentation/providers/onboarding_provider.dart';
+import '../../domain/entities/workout_program.dart';
+import '../../domain/splits/entities/hybrid_split.dart';
+import '../../domain/splits/entities/split.dart';
+import '../../domain/splits/services/split_catalog.dart';
+import '../../domain/splits/services/split_schedule_builder.dart';
 import '../providers/active_program_providers.dart';
-import '../providers/workout_providers.dart';
+import '../widgets/split_generator/days_stepper.dart';
+import '../widgets/split_generator/guidance_badge.dart';
+import '../widgets/split_generator/hybrid_mode_selector.dart';
+import '../widgets/split_generator/muscle_frequency_card.dart';
+import '../widgets/split_generator/schedule_day_preview.dart';
+import '../widgets/split_generator/split_card.dart';
 
-/// Screen for selecting a workout program split type.
-///
-/// Displays three split type options: Full Body, Upper-Lower, and Push-Pull-Legs.
-/// Users can select a split to generate a new program.
-/// 
-/// **Validates: Requirements 2.1, 2.2, 13.3, 13.4**
-class ProgramSelectionScreen extends ConsumerWidget {
+enum SplitCategory {
+  standard,
+  hybrids,
+  custom,
+}
+
+enum PreviewMode {
+  schedule,
+  frequency,
+}
+
+/// Dynamic Sci-Fi Split Protocol Generator screen.
+/// Allows full freedom to pick any split, hybrid mode, days 1..7,
+/// preview live schedule & muscle frequency telemetry, customize exercises,
+/// and save with instant Undo capability.
+class ProgramSelectionScreen extends ConsumerStatefulWidget {
   const ProgramSelectionScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Select Program'),
+  ConsumerState<ProgramSelectionScreen> createState() => _ProgramSelectionScreenState();
+}
+
+class _ProgramSelectionScreenState extends ConsumerState<ProgramSelectionScreen> {
+  static const _builder = SplitScheduleBuilder();
+
+  SplitCategory _category = SplitCategory.standard;
+  PreviewMode _previewMode = PreviewMode.schedule;
+
+  late Split _selectedSplit;
+  int _daysPerWeek = 4;
+  HybridMode _hybridMode = HybridMode.combinedCycle;
+
+  WorkoutProgram? _cachedProgram;
+  bool _initialized = false;
+
+  final Map<int, List<ProgramExercise>> _customizedExercises = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedSplit = SplitCatalog.pushPullLegs;
+  }
+
+  void _syncInitialProfile(UserProfile profile) {
+    if (_initialized) return;
+    _initialized = true;
+    _daysPerWeek = profile.workoutDaysPerWeek.clamp(1, 7);
+    _selectedSplit = SplitCatalog.getRecommendedSplitForDays(_daysPerWeek);
+    _rebuildProgram(profile);
+  }
+
+  void _rebuildProgram(UserProfile profile) {
+    Split splitToBuild = _selectedSplit;
+    if (_selectedSplit is HybridSplit) {
+      splitToBuild = (_selectedSplit as HybridSplit).copyWithMode(_hybridMode);
+    }
+
+    final rawProgram = _builder.buildProgram(
+      split: splitToBuild,
+      daysPerWeek: _daysPerWeek,
+      profile: profile,
+    );
+
+    // Apply any local exercise customizations
+    final updatedDays = rawProgram.days.map((day) {
+      if (_customizedExercises.containsKey(day.dayNumber)) {
+        return day.copyWith(exercises: _customizedExercises[day.dayNumber]!);
+      }
+      return day;
+    }).toList();
+
+    _cachedProgram = rawProgram.copyWith(days: updatedDays);
+  }
+
+  void _handleSplitSelected(Split split, UserProfile profile) {
+    setState(() {
+      _selectedSplit = split;
+      _customizedExercises.clear();
+      _rebuildProgram(profile);
+    });
+  }
+
+  void _handleDaysChanged(int days, UserProfile profile) {
+    setState(() {
+      _daysPerWeek = days;
+      _rebuildProgram(profile);
+    });
+  }
+
+  void _handleHybridModeChanged(HybridMode mode, UserProfile profile) {
+    setState(() {
+      _hybridMode = mode;
+      _rebuildProgram(profile);
+    });
+  }
+
+  void _handleExerciseSwapped(
+    int dayIndex,
+    int exerciseIndex,
+    String newExerciseName,
+    UserProfile profile,
+  ) {
+    if (_cachedProgram == null) return;
+    final day = _cachedProgram!.days[dayIndex];
+    final updatedList = List<ProgramExercise>.from(day.exercises);
+    final oldEx = updatedList[exerciseIndex];
+    updatedList[exerciseIndex] = oldEx.copyWith(exerciseName: newExerciseName);
+
+    setState(() {
+      _customizedExercises[day.dayNumber] = updatedList;
+      _rebuildProgram(profile);
+    });
+  }
+
+  Future<void> _applyProgram(BuildContext context, WorkoutProgram program) async {
+    final activeNotifier = ref.read(activeProgramProvider.notifier);
+    await activeNotifier.setActiveProgram(program, archivePrevious: true);
+
+    if (!context.mounted) return;
+
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Protocol initialized: ${program.name}'),
+        duration: const Duration(seconds: 6),
+        action: SnackBarAction(
+          label: 'UNDO',
+          textColor: Colors.amberAccent,
+          onPressed: () async {
+            final restored = await activeNotifier.undoProgramChange();
+            if (context.mounted && restored) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Previous protocol restored.'),
+                  duration: Duration(seconds: 3),
+                ),
+              );
+            }
+          },
+        ),
       ),
-      body: Center(
+    );
+
+    _navigateBack(context);
+  }
+
+  void _navigateBack(BuildContext context) {
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    } else {
+      try {
+        context.go(AppRoutes.workout);
+      } catch (_) {}
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = AppThemeTokens.of(context);
+    final userProfileAsync = ref.watch(userProfileProvider);
+
+    final profile = userProfileAsync.value ??
+        const UserProfile(
+          goal: FitnessGoal.gainMuscle,
+          age: 26,
+          weightKg: 75,
+          heightCm: 178,
+          fitnessLevel: FitnessLevel.intermediate,
+          equipment: EquipmentType.gym,
+          workoutDaysPerWeek: 4,
+          budget: BudgetLevel.medium,
+          sex: BiologicalSex.male,
+        );
+
+    _syncInitialProfile(profile);
+
+    if (_cachedProgram == null) {
+      _rebuildProgram(profile);
+    }
+
+    final guidance = _selectedSplit.getScheduleGuidance(_daysPerWeek, profile.fitnessLevel);
+    final frequencyReport = _builder.computeFrequencyReport(
+      split: _selectedSplit is HybridSplit
+          ? (_selectedSplit as HybridSplit).copyWithMode(_hybridMode)
+          : _selectedSplit,
+      daysPerWeek: _daysPerWeek,
+    );
+
+    return Scaffold(
+      backgroundColor: tokens.canvas,
+      appBar: AppBar(
+        backgroundColor: tokens.canvas,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: tokens.textPrimary, size: 20),
+          onPressed: () => _navigateBack(context),
+        ),
+        title: Text(
+          'PROTOCOL GENERATOR',
+          style: TextStyle(
+            color: tokens.textPrimary,
+            fontSize: 16,
+            fontWeight: FontWeight.w800,
+            fontFamily: AppTypography.fontFamilyHeadings,
+            letterSpacing: 1.2,
+          ),
+        ),
+      ),
+      body: SafeArea(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Text('Choose Your Training Split'),
-            const SizedBox(height: 32),
-            _SplitOption(
-              title: 'Full Body',
-              description: '3 days per week',
-              onPressed: () => _selectSplit(context, ref, 'full_body'),
+            Expanded(
+              child: ListView(
+                cacheExtent: 3000,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                children: [
+                  // Category Segmented Tabs
+                  _buildCategoryTabs(tokens, profile),
+                  const SizedBox(height: 14),
+
+                  // Split Cards List
+                  ..._buildSplitCards(profile),
+                  const SizedBox(height: 14),
+
+                  // Hybrid Mode Toggle if applicable
+                  if (_selectedSplit.isHybrid) ...[
+                    HybridModeSelector(
+                      selectedMode: _hybridMode,
+                      onModeChanged: (mode) => _handleHybridModeChanged(mode, profile),
+                    ),
+                    const SizedBox(height: 14),
+                  ],
+
+                  // Days Stepper (1..7)
+                  DaysStepper(
+                    daysPerWeek: _daysPerWeek,
+                    onChanged: (days) => _handleDaysChanged(days, profile),
+                  ),
+                  const SizedBox(height: 10),
+
+                  // Non-blocking Guidance Badge
+                  if (guidance != null) ...[
+                    SplitGuidanceBadge(message: guidance),
+                    const SizedBox(height: 14),
+                  ],
+
+                  // Live Preview Segmented Header
+                  _buildPreviewTabs(tokens),
+                  const SizedBox(height: 12),
+
+                  // Preview Content
+                  if (_previewMode == PreviewMode.schedule)
+                    ScheduleDayPreview(
+                      program: _cachedProgram!,
+                      equipment: profile.equipment,
+                      onExerciseSwapped: (dayIdx, exIdx, newName) =>
+                          _handleExerciseSwapped(dayIdx, exIdx, newName, profile),
+                    )
+                  else
+                    MuscleFrequencyCard(report: frequencyReport),
+
+                  const SizedBox(height: 24),
+                ],
+              ),
             ),
-            const SizedBox(height: 16),
-            _SplitOption(
-              title: 'Upper-Lower',
-              description: '4 days per week',
-              onPressed: () => _selectSplit(context, ref, 'upper_lower'),
-            ),
-            const SizedBox(height: 16),
-            _SplitOption(
-              title: 'Push-Pull-Legs',
-              description: '6 days per week',
-              onPressed: () => _selectSplit(context, ref, 'push_pull_legs'),
+
+            // Persistent Action Bar
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: tokens.panel,
+                border: Border(top: BorderSide(color: tokens.borderSubtle)),
+              ),
+              child: SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton(
+                  key: const Key('apply_protocol_btn'),
+                  onPressed: _cachedProgram == null
+                      ? null
+                      : () => _applyProgram(context, _cachedProgram!),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: tokens.cyanAccent,
+                    foregroundColor: Colors.black,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(tokens.radiusLg),
+                    ),
+                    elevation: 4,
+                    shadowColor: tokens.cyanAccent.withValues(alpha: 0.5),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.bolt_rounded, color: Colors.black, size: 22),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          'APPLY PROTOCOL',
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w900,
+                            fontFamily: AppTypography.fontFamilyHeadings,
+                            letterSpacing: 1.2,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ],
         ),
       ),
     );
   }
-  
-  Future<void> _selectSplit(BuildContext context, WidgetRef ref, String splitType) async {
-    try {
-      // Show loading dialog
-      if (context.mounted) {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => const AlertDialog(
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 16),
-                Text('Generating your program...'),
-              ],
-            ),
-          ),
-        );
-      }
-      
-      // Get user profile from onboarding provider
-      final userProfileAsync = ref.read(userProfileProvider);
-      final userProfile = userProfileAsync.value;
-      
-      if (userProfile == null) {
-        if (context.mounted) {
-          Navigator.of(context).pop(); // Close loading dialog
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('User profile not found')),
-          );
-        }
-        return;
-      }
-      
-      // Generate program with selected split
-      final generateUseCase = ref.read(generateWorkoutProgramUseCaseProvider);
-      final program = generateUseCase(
-        userProfile: userProfile,
-        splitType: splitType,
-      );
-      
-      // Set as active program
-      await ref.read(activeProgramProvider.notifier).setActiveProgram(program);
-      
-      if (context.mounted) {
-        Navigator.of(context).pop(); // Close loading dialog
-        context.go(AppRoutes.workout); // Navigate back to workout screen
-      }
-    } catch (e, s) {
-      if (context.mounted) {
-        Navigator.of(context).pop(); // Close loading dialog
-        ErrorHandler.handleError(context, e, s);
-      }
-    }
-  }
-}
 
-class _SplitOption extends StatelessWidget {
-  final String title;
-  final String description;
-  final VoidCallback onPressed;
-  
-  const _SplitOption({
-    required this.title,
-    required this.description,
-    required this.onPressed,
-  });
-  
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 280,
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 24),
+  void _setCategory(SplitCategory category, UserProfile profile) {
+    setState(() {
+      _category = category;
+      if (category == SplitCategory.hybrids && !_selectedSplit.isHybrid) {
+        _selectedSplit = SplitCatalog.pplXArnold(mode: _hybridMode);
+        _customizedExercises.clear();
+        _rebuildProgram(profile);
+      } else if (category == SplitCategory.standard && _selectedSplit.isHybrid) {
+        _selectedSplit = SplitCatalog.pushPullLegs;
+        _customizedExercises.clear();
+        _rebuildProgram(profile);
+      } else if (category == SplitCategory.custom && _selectedSplit != SplitCatalog.mixCustom) {
+        _selectedSplit = SplitCatalog.mixCustom;
+        _customizedExercises.clear();
+        _rebuildProgram(profile);
+      }
+    });
+  }
+
+  Widget _buildCategoryTabs(AppThemeTokens tokens, UserProfile profile) {
+    return Row(
+      children: [
+        _CategoryTabButton(
+          title: 'STANDARD',
+          isSelected: _category == SplitCategory.standard,
+          tokens: tokens,
+          onTap: () => _setCategory(SplitCategory.standard, profile),
         ),
-        child: Column(
+        const SizedBox(width: 8),
+        _CategoryTabButton(
+          title: 'HYBRIDS',
+          isSelected: _category == SplitCategory.hybrids,
+          tokens: tokens,
+          onTap: () => _setCategory(SplitCategory.hybrids, profile),
+        ),
+        const SizedBox(width: 8),
+        _CategoryTabButton(
+          title: 'MIX / CUSTOM',
+          isSelected: _category == SplitCategory.custom,
+          tokens: tokens,
+          onTap: () => _setCategory(SplitCategory.custom, profile),
+        ),
+      ],
+    );
+  }
+
+  List<Widget> _buildSplitCards(UserProfile profile) {
+    final List<Split> splits;
+    switch (_category) {
+      case SplitCategory.standard:
+        splits = [
+          SplitCatalog.pushPullLegs,
+          SplitCatalog.upperLower,
+          SplitCatalog.fullBody,
+          SplitCatalog.arnoldSplit,
+        ];
+        break;
+      case SplitCategory.hybrids:
+        splits = [
+          SplitCatalog.pplXArnold(mode: _hybridMode),
+          SplitCatalog.arnoldXUpperLower(mode: _hybridMode),
+          SplitCatalog.pplXUpperLower(mode: _hybridMode),
+        ];
+        break;
+      case SplitCategory.custom:
+        splits = [
+          SplitCatalog.mixCustom,
+          SplitCatalog.createDynamicHybrid(
+            splitA: SplitCatalog.fullBody,
+            splitB: SplitCatalog.arnoldSplit,
+            mode: _hybridMode,
+          ),
+        ];
+        break;
+    }
+
+    return splits.map((s) {
+      final isSelected = _selectedSplit.id == s.id;
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 10),
+        child: SplitSelectionCard(
+          split: s,
+          isSelected: isSelected,
+          onTap: () => _handleSplitSelected(s, profile),
+        ),
+      );
+    }).toList();
+  }
+
+  Widget _buildPreviewTabs(AppThemeTokens tokens) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Row(
           children: [
-            Text(
-              title,
-              style: Theme.of(context).textTheme.titleLarge,
+            InkWell(
+              key: const Key('preview_mode_schedule'),
+              onTap: () => setState(() => _previewMode = PreviewMode.schedule),
+              borderRadius: BorderRadius.circular(tokens.radiusSm),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: _previewMode == PreviewMode.schedule
+                      ? tokens.cyanAccent.withValues(alpha: 0.15)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                  border: Border.all(
+                    color: _previewMode == PreviewMode.schedule
+                        ? tokens.cyanAccent
+                        : Colors.transparent,
+                  ),
+                ),
+                child: Text(
+                  'SCHEDULE MATRIX',
+                  style: TextStyle(
+                    color: _previewMode == PreviewMode.schedule
+                        ? tokens.cyanAccent
+                        : tokens.textMuted,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    fontFamily: AppTypography.fontFamilyHeadings,
+                    letterSpacing: 0.8,
+                  ),
+                ),
+              ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              description,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.grey,
+            const SizedBox(width: 8),
+            InkWell(
+              key: const Key('preview_mode_frequency'),
+              onTap: () => setState(() => _previewMode = PreviewMode.frequency),
+              borderRadius: BorderRadius.circular(tokens.radiusSm),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: _previewMode == PreviewMode.frequency
+                      ? tokens.cyanAccent.withValues(alpha: 0.15)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                  border: Border.all(
+                    color: _previewMode == PreviewMode.frequency
+                        ? tokens.cyanAccent
+                        : Colors.transparent,
+                  ),
+                ),
+                child: Text(
+                  'MUSCLE FREQUENCY',
+                  style: TextStyle(
+                    color: _previewMode == PreviewMode.frequency
+                        ? tokens.cyanAccent
+                        : tokens.textMuted,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    fontFamily: AppTypography.fontFamilyHeadings,
+                    letterSpacing: 0.8,
+                  ),
+                ),
               ),
             ),
           ],
+        ),
+      ],
+    );
+  }
+}
+
+class _CategoryTabButton extends StatelessWidget {
+  final String title;
+  final bool isSelected;
+  final AppThemeTokens tokens;
+  final VoidCallback onTap;
+
+  const _CategoryTabButton({
+    required this.title,
+    required this.isSelected,
+    required this.tokens,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(tokens.radiusMd),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? tokens.cyanAccent.withValues(alpha: 0.18)
+                : tokens.panel,
+            borderRadius: BorderRadius.circular(tokens.radiusMd),
+            border: Border.all(
+              color: isSelected ? tokens.cyanAccent : tokens.borderSubtle,
+              width: isSelected ? 1.4 : 1.0,
+            ),
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            title,
+            style: TextStyle(
+              color: isSelected ? tokens.cyanAccent : tokens.textSecondary,
+              fontSize: 11,
+              fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+              fontFamily: AppTypography.fontFamilyHeadings,
+              letterSpacing: 0.8,
+            ),
+          ),
         ),
       ),
     );
