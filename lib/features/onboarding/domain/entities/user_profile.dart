@@ -10,6 +10,7 @@ class UserProfile {
     required this.workoutDaysPerWeek,
     required this.budget,
     this.sex = BiologicalSex.preferNotToSay,
+    this.targetWeightKg,
   });
 
   final FitnessGoal goal;
@@ -21,6 +22,16 @@ class UserProfile {
   final int workoutDaysPerWeek;
   final BudgetLevel budget;
   final BiologicalSex sex;
+  final double? targetWeightKg;
+
+  /// Effective target weight (either explicitly configured or estimated from goal)
+  double get effectiveTargetWeightKg =>
+      targetWeightKg ??
+      switch (goal) {
+        FitnessGoal.loseWeight => weightKg > 5 ? (weightKg - 5.0) : weightKg,
+        FitnessGoal.gainMuscle => weightKg + 5.0,
+        FitnessGoal.maintain => weightKg,
+      };
 
   double get bmi => weightKg / ((heightCm / 100) * (heightCm / 100));
 
@@ -109,6 +120,7 @@ class UserProfile {
     int? workoutDaysPerWeek,
     BudgetLevel? budget,
     BiologicalSex? sex,
+    double? targetWeightKg,
   }) {
     return UserProfile(
       goal: goal ?? this.goal,
@@ -120,6 +132,7 @@ class UserProfile {
       workoutDaysPerWeek: workoutDaysPerWeek ?? this.workoutDaysPerWeek,
       budget: budget ?? this.budget,
       sex: sex ?? this.sex,
+      targetWeightKg: targetWeightKg ?? this.targetWeightKg,
     );
   }
 
@@ -133,6 +146,7 @@ class UserProfile {
         'workoutDaysPerWeek': workoutDaysPerWeek,
         'budget': budget.name,
         'sex': sex.name,
+        if (targetWeightKg != null) 'targetWeightKg': targetWeightKg,
       };
 
   factory UserProfile.fromJson(Map<String, dynamic> json) => UserProfile(
@@ -147,6 +161,7 @@ class UserProfile {
         sex: json['sex'] != null
             ? BiologicalSex.values.byName(json['sex'] as String)
             : BiologicalSex.preferNotToSay,
+        targetWeightKg: (json['targetWeightKg'] as num?)?.toDouble(),
       );
 }
 
