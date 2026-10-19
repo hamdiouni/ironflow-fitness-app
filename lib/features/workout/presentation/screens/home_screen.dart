@@ -203,7 +203,7 @@ class _HomeHeader extends StatelessWidget {
               ],
             ),
           ),
-          const AiEntryButton(),
+          const AiEntryButton(contextScreen: 'today'),
           const SizedBox(width: AppSpacings.xs),
           Semantics(
             button: true,

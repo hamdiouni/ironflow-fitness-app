@@ -313,6 +313,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           final extra = state.extra as Map<String, dynamic>?;
           return AIChatScreen(
             initialMessage: extra?['initialMessage'] as String?,
+            contextScreen: extra?['contextScreen'] as String?,
           );
         },
       ),

@@ -82,9 +82,16 @@ class ContextualInsightBanner extends ConsumerWidget {
           child: InkWell(
             borderRadius: BorderRadius.circular(tokens.radiusSm),
             onTap: () {
+              final screenName = switch (this.context) {
+                InsightContext.workout => 'workout',
+                InsightContext.nutrition => 'fuel',
+                InsightContext.profile => 'progress',
+                _ => 'today',
+              };
               navigateToAiCoach(
                 context,
                 initialMessage: 'Tell me more about: ${insight.title}',
+                contextScreen: screenName,
               );
             },
             child: Padding(

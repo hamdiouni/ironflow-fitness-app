@@ -73,7 +73,7 @@ class NutritionScreen extends ConsumerWidget {
           ],
         ),
         actions: [
-          const AiEntryButton(),
+          const AiEntryButton(contextScreen: 'fuel'),
           Padding(
             padding: const EdgeInsets.only(right: 12),
             child: Container(
