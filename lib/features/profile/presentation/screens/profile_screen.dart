@@ -1080,6 +1080,13 @@ class _SettingsSection extends StatelessWidget {
                 ),
                 Divider(color: tokens.borderSubtle, height: 1),
                 _SettingsTile(
+                  icon: Icons.calculate_outlined,
+                  label: 'Fitness Calculators & Tools',
+                  onTap: () => context.push(AppRoutes.tools),
+                  tokens: tokens,
+                ),
+                Divider(color: tokens.borderSubtle, height: 1),
+                _SettingsTile(
                   icon: Icons.settings_outlined,
                   label: 'System Preferences & Data',
                   onTap: () => context.push(AppRoutes.settings),

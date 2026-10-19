@@ -38,6 +38,7 @@ import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/settings/presentation/screens/export_settings_screen.dart';
 import '../../features/settings/presentation/screens/privacy_settings_screen.dart';
 import '../../features/workout/domain/entities/exercise_definition.dart';
+import '../../features/tools/presentation/screens/tools_hub_screen.dart';
 
 // ---------------------------------------------------------------------------
 // Route path constants
@@ -72,6 +73,7 @@ class AppRoutes {
   static const String aiChat = '/ai-chat';
   static const String aiTest = '/ai-test';
   static const String designGallery = '/design-gallery';
+  static const String tools = '/tools';
 }
 
 // ---------------------------------------------------------------------------
@@ -316,6 +318,10 @@ final routerProvider = Provider<GoRouter>((ref) {
             contextScreen: extra?['contextScreen'] as String?,
           );
         },
+      ),
+      GoRoute(
+        path: AppRoutes.tools,
+        builder: (context, state) => const ToolsHubScreen(),
       ),
       GoRoute(
         path: AppRoutes.exercisePicker,
