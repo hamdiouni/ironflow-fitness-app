@@ -15,6 +15,8 @@ import 'package:progression_tracker/features/workout/domain/splits/entities/spli
 import 'package:progression_tracker/features/workout/domain/splits/services/split_catalog.dart';
 import 'package:progression_tracker/features/workout/domain/splits/services/split_schedule_builder.dart';
 import 'package:progression_tracker/features/workout/presentation/widgets/split_generator/exercise_swap_sheet.dart';
+import 'package:progression_tracker/features/nutrition/domain/usecases/build_suggested_meal_plan_use_case.dart';
+import 'package:progression_tracker/features/nutrition/domain/entities/diet_plan.dart';
 
 /// Monolithic Sci-Fi Guided 7-Step Onboarding Stepper.
 ///
@@ -62,6 +64,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   // Step 6: Diet Budget
   BudgetLevel _budget = BudgetLevel.medium;
+
+  // Step 7: Optional Diet Plan Suggestion (Outcome 3)
+  bool _includeDietPlan = true;
 
   // Local exercise customizations per day (dayNumber -> list of exercises)
   final Map<int, List<ProgramExercise>> _customizedExercises = {};
@@ -155,6 +160,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           if (draft['chosenSplitId'] != null) {
             _chosenSplitId = draft['chosenSplitId'] as String;
           }
+          if (draft['includeDietPlan'] != null) {
+            _includeDietPlan = draft['includeDietPlan'] as bool;
+          }
 
           final savedStep = draft['draft_step'] as int? ?? 0;
           if (savedStep > 0 && savedStep < _totalSteps) {
@@ -194,6 +202,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           'chosenSplitId': _chosenSplitId,
           'fitnessLevel': _fitnessLevel.name,
           'budget': _budget.name,
+          'includeDietPlan': _includeDietPlan,
         },
       );
     } catch (e) {
@@ -317,6 +326,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             userId: userId,
             customProgram: program,
             chosenSplit: _chosenSplitId != null ? _getEffectiveSplit() : null,
+            includeDietPlan: _includeDietPlan,
           );
 
       if (mounted) {
@@ -1413,6 +1423,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
         const SizedBox(height: 14),
 
+        // Optional Budget Meal Suggestion (Outcome 3)
+        _buildStep7DietSuggestion(tokens, tempProfile),
+
+        const SizedBox(height: 14),
+
         // Disclaimer
         Container(
           padding: const EdgeInsets.all(12),
@@ -1719,6 +1734,219 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               );
             },
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStep7DietSuggestion(AppThemeTokens tokens, UserProfile tempProfile) {
+    final plan = const BuildSuggestedMealPlanUseCase().call(tempProfile);
+    final day1 = plan.days.isNotEmpty ? plan.days.first : null;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: tokens.card,
+        borderRadius: BorderRadius.circular(tokens.radiusMd),
+        border: Border.all(color: tokens.borderSubtle),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: tokens.kineticAccent.withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(Icons.restaurant_menu_rounded, size: 22, color: tokens.kineticAccent),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'SUGGESTED MEAL PLAN',
+                                style: TextStyle(
+                                  fontFamily: AppTypography.displayFontFamily,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.8,
+                                  color: tokens.textSecondary,
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: _includeDietPlan
+                                      ? tokens.kineticAccent.withValues(alpha: 0.15)
+                                      : tokens.panel,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  _includeDietPlan ? 'INCLUDED' : 'SKIPPED',
+                                  style: TextStyle(
+                                    fontFamily: AppTypography.displayFontFamily,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w800,
+                                    color: _includeDietPlan ? tokens.kineticAccent : tokens.textMuted,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Based on your ${_budget.displayName} budget',
+                            style: TextStyle(
+                              fontFamily: AppTypography.displayFontFamily,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: tokens.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Accept / Skip toggle row
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: tokens.canvas,
+              borderRadius: BorderRadius.circular(tokens.radiusSm),
+              border: Border.all(color: tokens.borderSubtle),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  _includeDietPlan ? 'Use this meal plan' : 'Skip meal plan for now',
+                  style: TextStyle(
+                    fontFamily: AppTypography.bodyFontFamily,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: _includeDietPlan ? tokens.textPrimary : tokens.textMuted,
+                  ),
+                ),
+                Switch.adaptive(
+                  key: const Key('diet_plan_toggle_switch'),
+                  value: _includeDietPlan,
+                  activeColor: tokens.kineticAccent,
+                  onChanged: (val) {
+                    AppHaptics.shared.selectionChanged();
+                    setState(() => _includeDietPlan = val);
+                  },
+                ),
+              ],
+            ),
+          ),
+
+          if (_includeDietPlan && day1 != null) ...[
+            const SizedBox(height: 12),
+            Text(
+              'DAY 1 SAMPLE MEALS',
+              style: TextStyle(
+                fontFamily: AppTypography.displayFontFamily,
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.8,
+                color: tokens.textMuted,
+              ),
+            ),
+            const SizedBox(height: 8),
+            ...day1.meals.map((meal) => Container(
+                  margin: const EdgeInsets.only(bottom: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: tokens.canvas,
+                    borderRadius: BorderRadius.circular(tokens.radiusSm),
+                    border: Border.all(color: tokens.borderSubtle.withValues(alpha: 0.6)),
+                  ),
+                  child: Row(
+                    children: [
+                      Text(meal.mealType.emoji, style: const TextStyle(fontSize: 16)),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              meal.mealType.displayName.toUpperCase(),
+                              style: TextStyle(
+                                fontFamily: AppTypography.displayFontFamily,
+                                fontSize: 9,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.6,
+                                color: tokens.kineticAccent,
+                              ),
+                            ),
+                            const SizedBox(height: 1),
+                            Text(
+                              meal.name,
+                              style: TextStyle(
+                                fontFamily: AppTypography.bodyFontFamily,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: tokens.textPrimary,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                      Text(
+                        '${meal.calories.toInt()} kcal',
+                        style: TextStyle(
+                          fontFamily: AppTypography.displayFontFamily,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: tokens.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                )),
+            const SizedBox(height: 6),
+            Text(
+              'Uses verified USDA foods matching your budget. You can swap meals or log them with 1 tap in Fuel.',
+              style: TextStyle(
+                fontFamily: AppTypography.bodyFontFamily,
+                fontSize: 10.5,
+                color: tokens.textMuted,
+                height: 1.35,
+              ),
+            ),
+          ] else ...[
+            const SizedBox(height: 8),
+            Text(
+              'You chose to track on your own. You can still generate or view budget meal suggestions anytime in Fuel.',
+              style: TextStyle(
+                fontFamily: AppTypography.bodyFontFamily,
+                fontSize: 11,
+                color: tokens.textMuted,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
         ],
       ),
     );

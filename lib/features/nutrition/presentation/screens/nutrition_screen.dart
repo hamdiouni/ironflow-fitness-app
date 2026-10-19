@@ -22,6 +22,7 @@ import '../../domain/usecases/generate_diet_plan_use_case.dart';
 import '../../domain/usecases/get_budget_food_alternatives_use_case.dart';
 import '../providers/diet_plan_providers.dart';
 import '../providers/nutrition_providers.dart';
+import '../widgets/suggested_diet_plan_card.dart';
 import '../../../onboarding/presentation/providers/onboarding_provider.dart';
 import 'food_search_screen.dart';
 
@@ -333,9 +334,16 @@ class _NutritionBody extends StatelessWidget {
 
           // 4. Remaining macros display with progress bars
           _RemainingMacrosCard(summary: summary),
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
 
-          // 5. Recent foods quick-add chips (Batch 5)
+          // 5. Budget-Aware Suggested Diet Plan (Outcome 3)
+          SuggestedDietPlanCard(
+            onLogMeal: onLogMeal,
+            onSwapMeal: (meal) => _showSwapMealDialog(context, meal),
+          ),
+          const SizedBox(height: 16),
+
+          // 6. Recent foods quick-add chips (Batch 5)
           _RecentFoodsQuickAdd(
             today: today,
           ),
