@@ -62,10 +62,40 @@ class HiveActiveProgramDataSource {
     return ActiveProgramModel.fromJson(_deepCast(json));
   }
 
+  static const String archivedKey = 'archived_active_program';
+
   /// Clear the active program from local storage
   Future<void> clearActiveProgram() async {
     final box = await _box;
     if (box == null) return;
     await box.delete(key);
+  }
+
+  /// Archives the current active program for undo support
+  Future<void> archiveCurrentProgram() async {
+    final box = await _box;
+    if (box == null) return;
+    final current = box.get(key);
+    if (current != null) {
+      await box.put(archivedKey, current);
+    }
+  }
+
+  /// Restores the previously archived active program and returns it
+  Future<ActiveProgramModel?> restoreArchivedProgram() async {
+    final box = await _box;
+    if (box == null) return null;
+    final archived = box.get(archivedKey);
+    if (archived == null) return null;
+    await box.put(key, archived);
+    await box.delete(archivedKey);
+    return ActiveProgramModel.fromJson(_deepCast(archived));
+  }
+
+  /// Checks if an archived program exists
+  Future<bool> hasArchivedProgram() async {
+    final box = await _box;
+    if (box == null) return false;
+    return box.containsKey(archivedKey);
   }
 }

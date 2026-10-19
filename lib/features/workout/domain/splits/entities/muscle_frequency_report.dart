@@ -86,5 +86,23 @@ class MuscleFrequencyReport {
     );
   }
 
+  int get totalTrainingSessionsPerWeek => totalWorkoutsPerWeek;
+
   double getFrequency(MuscleGroup group) => frequencies[group] ?? 0.0;
+
+  FrequencyStatus getStatus(MuscleGroup group) {
+    final freq = frequencies[group] ?? 0.0;
+    if (freq <= 0.0) return FrequencyStatus.none;
+    if (freq < 1.5) return FrequencyStatus.low;
+    if (freq > 3.2) return FrequencyStatus.high;
+    return FrequencyStatus.optimal;
+  }
+}
+
+/// Frequency rating status for telemetry badges.
+enum FrequencyStatus {
+  optimal,
+  low,
+  high,
+  none,
 }

@@ -23,6 +23,32 @@ class WorkoutProgram {
   final String? hybridSplitId;
   final String? hybridMode;
   final int? cycleLength;
+
+  WorkoutProgram copyWith({
+    String? id,
+    String? name,
+    String? description,
+    List<ProgramDay>? days,
+    int? durationWeeks,
+    String? difficulty,
+    String? splitId,
+    String? hybridSplitId,
+    String? hybridMode,
+    int? cycleLength,
+  }) {
+    return WorkoutProgram(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      days: days ?? this.days,
+      durationWeeks: durationWeeks ?? this.durationWeeks,
+      difficulty: difficulty ?? this.difficulty,
+      splitId: splitId ?? this.splitId,
+      hybridSplitId: hybridSplitId ?? this.hybridSplitId,
+      hybridMode: hybridMode ?? this.hybridMode,
+      cycleLength: cycleLength ?? this.cycleLength,
+    );
+  }
 }
 
 class ProgramDay {
@@ -39,6 +65,22 @@ class ProgramDay {
   final String focus;
   final List<ProgramExercise> exercises;
   final bool isRestDay;
+
+  ProgramDay copyWith({
+    int? dayNumber,
+    String? name,
+    String? focus,
+    List<ProgramExercise>? exercises,
+    bool? isRestDay,
+  }) {
+    return ProgramDay(
+      dayNumber: dayNumber ?? this.dayNumber,
+      name: name ?? this.name,
+      focus: focus ?? this.focus,
+      exercises: exercises ?? this.exercises,
+      isRestDay: isRestDay ?? this.isRestDay,
+    );
+  }
 }
 
 class ProgramExercise {

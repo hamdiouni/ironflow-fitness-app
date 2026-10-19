@@ -149,11 +149,15 @@ class ActiveProgramNotifier extends StateNotifier<AsyncValue<ActiveProgram?>> {
   
   /// Sets a new workout program as the active program.
   /// 
+  /// Optionally archives the previous active program for undo support.
   /// Creates a new ActiveProgram with initial state (day 0, no completions)
   /// and persists it to storage.
   /// 
   /// **Validates: Requirements 7.3, 7.4**
-  Future<void> setActiveProgram(WorkoutProgram program) async {
+  Future<void> setActiveProgram(WorkoutProgram program, {bool archivePrevious = true}) async {
+    if (archivePrevious && state.value != null) {
+      await _repository.archiveCurrentProgram();
+    }
     final activeProgram = ActiveProgram(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       program: program,
@@ -165,6 +169,22 @@ class ActiveProgramNotifier extends StateNotifier<AsyncValue<ActiveProgram?>> {
     
     await _repository.saveActiveProgram(activeProgram);
     state = AsyncValue.data(activeProgram);
+  }
+
+  /// Restores the previously archived program (Undo support).
+  /// Returns true if an archived program was successfully restored.
+  Future<bool> undoProgramChange() async {
+    final restored = await _repository.restoreArchivedProgram();
+    if (restored != null) {
+      state = AsyncValue.data(restored);
+      return true;
+    }
+    return false;
+  }
+
+  /// Checks if an archived program exists for undo.
+  Future<bool> hasArchivedProgram() async {
+    return _repository.hasArchivedProgram();
   }
   
   /// Updates the active program with new data.

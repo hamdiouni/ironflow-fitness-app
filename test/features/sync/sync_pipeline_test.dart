@@ -182,6 +182,17 @@ class FakeHiveActiveProgramDataSource implements HiveActiveProgramDataSource {
   Future<void> clearActiveProgram() async {
     current = null;
   }
+
+  @override
+  Future<void> archiveCurrentProgram() async {
+    // No-op for sync pipeline test
+  }
+
+  @override
+  Future<ActiveProgramModel?> restoreArchivedProgram() async => null;
+
+  @override
+  Future<bool> hasArchivedProgram() async => false;
 }
 
 void main() {
