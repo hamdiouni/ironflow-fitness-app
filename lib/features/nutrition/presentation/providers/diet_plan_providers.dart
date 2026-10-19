@@ -4,6 +4,7 @@ import '../../data/datasources/hive_diet_plan_datasource.dart';
 import '../../data/repositories/diet_plan_repository_impl.dart';
 import '../../domain/entities/diet_plan_state.dart';
 import '../../domain/repositories/diet_plan_repository.dart';
+import '../../domain/usecases/clear_diet_plan_use_case.dart';
 import '../../domain/usecases/save_diet_plan_use_case.dart';
 import '../../domain/usecases/swap_diet_meal_use_case.dart';
 
@@ -44,6 +45,12 @@ final saveDietPlanUseCaseProvider = Provider<SaveDietPlanUseCase>((ref) {
 final swapDietMealUseCaseProvider = Provider<SwapDietMealUseCase>((ref) {
   final repository = ref.watch(dietPlanRepositoryProvider);
   return SwapDietMealUseCase(repository);
+});
+
+/// Provider for ClearDietPlanUseCase.
+final clearDietPlanUseCaseProvider = Provider<ClearDietPlanUseCase>((ref) {
+  final repository = ref.watch(dietPlanRepositoryProvider);
+  return ClearDietPlanUseCase(repository);
 });
 
 // ---------------------------------------------------------------------------
