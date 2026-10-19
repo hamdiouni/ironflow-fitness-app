@@ -242,6 +242,11 @@ void main() {
       await tester.tap(applyBtn);
       await tester.pumpAndSettle();
 
+      // Replacement confirmation dialog appears
+      expect(find.byKey(const Key('confirm_replace_program_btn')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('confirm_replace_program_btn')));
+      await tester.pumpAndSettle();
+
       // Verifications:
       expect(notifier.lastSavedProgram, isNotNull);
       expect(notifier.archivePreviousCalled, isTrue);
@@ -258,6 +263,37 @@ void main() {
       expect(notifier.undoCalled, isTrue);
       expect(notifier.state.value, equals(initialActive));
       expect(find.text('Previous protocol restored.'), findsOneWidget);
+    });
+
+    testWidgets('Cancelling replacement dialog preserves existing active program', (tester) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+      final notifier = MockActiveProgramNotifier(initialActive);
+
+      await tester.pumpWidget(createWidgetUnderTest(
+        activeProgram: initialActive,
+        notifier: notifier,
+      ));
+      await tester.pumpAndSettle();
+
+      // Tap APPLY PROTOCOL button
+      final applyBtn = find.byKey(const Key('apply_protocol_btn'));
+      await tester.tap(applyBtn);
+      await tester.pumpAndSettle();
+
+      // Tap CANCEL
+      expect(find.byKey(const Key('cancel_replace_program_btn')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('cancel_replace_program_btn')));
+      await tester.pumpAndSettle();
+
+      // Verifications:
+      expect(notifier.lastSavedProgram, isNull);
+      expect(notifier.archivePreviousCalled, isFalse);
+      expect(notifier.state.value, equals(initialActive));
     });
   });
 }
