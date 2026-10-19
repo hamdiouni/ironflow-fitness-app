@@ -768,4 +768,12 @@ class SplitCatalog {
     if (id.startsWith('hybrid_ppl_arnold')) return pplXArnold();
     return null;
   }
+
+  /// Returns the recommended split for the given days per week.
+  static Split getRecommendedSplitForDays(int days) {
+    if (days <= 3) return fullBody;
+    if (days == 4) return upperLower;
+    if (days == 5) return pplXUpperLower();
+    return pushPullLegs;
+  }
 }

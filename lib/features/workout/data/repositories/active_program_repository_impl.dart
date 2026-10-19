@@ -113,4 +113,30 @@ class ActiveProgramRepositoryImpl implements ActiveProgramRepository {
       );
     }
   }
+
+  @override
+  Future<void> archiveCurrentProgram() async {
+    try {
+      await dataSource.archiveCurrentProgram();
+    } catch (_) {}
+  }
+
+  @override
+  Future<ActiveProgram?> restoreArchivedProgram() async {
+    try {
+      final model = await dataSource.restoreArchivedProgram();
+      return model?.toEntity();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
+  Future<bool> hasArchivedProgram() async {
+    try {
+      return await dataSource.hasArchivedProgram();
+    } catch (_) {
+      return false;
+    }
+  }
 }
