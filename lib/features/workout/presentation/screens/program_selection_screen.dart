@@ -7,6 +7,7 @@ import '../../../../core/theme/app_theme_tokens.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../onboarding/domain/entities/user_profile.dart';
 import '../../../onboarding/presentation/providers/onboarding_provider.dart';
+import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../../domain/entities/workout_program.dart';
 import '../../domain/splits/entities/hybrid_split.dart';
 import '../../domain/splits/entities/split.dart';
@@ -126,17 +127,106 @@ class _ProgramSelectionScreenState extends ConsumerState<ProgramSelectionScreen>
     final day = _cachedProgram!.days[dayIndex];
     final updatedList = List<ProgramExercise>.from(day.exercises);
     final oldEx = updatedList[exerciseIndex];
+    final oldName = oldEx.exerciseName;
     updatedList[exerciseIndex] = oldEx.copyWith(exerciseName: newExerciseName);
 
     setState(() {
       _customizedExercises[day.dayNumber] = updatedList;
       _rebuildProgram(profile);
     });
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Swapped $oldName for $newExerciseName'),
+          duration: const Duration(seconds: 4),
+          action: SnackBarAction(
+            label: 'UNDO',
+            textColor: Colors.amberAccent,
+            onPressed: () {
+              if (!mounted) return;
+              final currentList = List<ProgramExercise>.from(
+                _customizedExercises[day.dayNumber] ?? day.exercises,
+              );
+              currentList[exerciseIndex] = oldEx;
+              setState(() {
+                _customizedExercises[day.dayNumber] = currentList;
+                _rebuildProgram(profile);
+              });
+            },
+          ),
+        ),
+      );
+    }
   }
 
-  Future<void> _applyProgram(BuildContext context, WorkoutProgram program) async {
+  Future<void> _applyProgram(
+    BuildContext context,
+    WorkoutProgram program,
+    UserProfile profile,
+  ) async {
+    final activeProgram = ref.read(activeProgramProvider).value;
+    if (activeProgram != null) {
+      final tokens = AppThemeTokens.of(context);
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: tokens.panel,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(tokens.radiusMd),
+            side: BorderSide(color: tokens.borderSubtle, width: 1),
+          ),
+          title: Text(
+            'CHANGE ACTIVE PROTOCOL?',
+            style: TextStyle(
+              fontFamily: AppTypography.fontFamilyHeadings,
+              color: tokens.textPrimary,
+              fontWeight: FontWeight.bold,
+              fontSize: 15,
+            ),
+          ),
+          content: Text(
+            'This will replace "${activeProgram.program.name}" with "${program.name}". Your past workout history is safely saved.',
+            style: TextStyle(
+              fontFamily: AppTypography.fontFamilyBody,
+              color: tokens.textSecondary,
+              fontSize: 13,
+            ),
+          ),
+          actions: [
+            TextButton(
+              key: const Key('cancel_replace_program_btn'),
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: Text('CANCEL', style: TextStyle(color: tokens.textMuted)),
+            ),
+            TextButton(
+              key: const Key('confirm_replace_program_btn'),
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: Text(
+                'REPLACE',
+                style: TextStyle(color: tokens.cyanAccent, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true) return;
+    }
+
     final activeNotifier = ref.read(activeProgramProvider.notifier);
     await activeNotifier.setActiveProgram(program, archivePrevious: true);
+
+    // Sync workout days to user profile if split frequency changed
+    if (program.daysPerWeek != profile.workoutDaysPerWeek) {
+      try {
+        final userId = ref.read(authNotifierProvider).user?.id;
+        final updatedProfile = profile.copyWith(workoutDaysPerWeek: program.daysPerWeek);
+        final storage = ref.read(userProfileStorageProvider);
+        await storage.saveProfile(updatedProfile, userId: userId);
+        ref.invalidate(userProfileProvider);
+      } catch (_) {}
+    }
 
     if (!context.mounted) return;
 
@@ -301,7 +391,7 @@ class _ProgramSelectionScreenState extends ConsumerState<ProgramSelectionScreen>
                   key: const Key('apply_protocol_btn'),
                   onPressed: _cachedProgram == null
                       ? null
-                      : () => _applyProgram(context, _cachedProgram!),
+                      : () => _applyProgram(context, _cachedProgram!, profile),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: tokens.cyanAccent,
                     foregroundColor: Colors.black,

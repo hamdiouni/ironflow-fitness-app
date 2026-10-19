@@ -3,6 +3,7 @@ import '../../../../../core/theme/app_theme_tokens.dart';
 import '../../../../../core/theme/app_typography.dart';
 import '../../../../onboarding/domain/entities/user_profile.dart';
 import '../../../domain/entities/workout_program.dart';
+import '../../../domain/splits/config/workout_volume_config.dart';
 import 'exercise_swap_sheet.dart';
 
 /// Interactive preview of the 7-day program schedule with exercise swap capability.
@@ -205,24 +206,33 @@ class _ScheduleDayPreviewState extends State<ScheduleDayPreview> {
                         ],
                       ),
                     ),
-                    if (!currentDay.isRestDay)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: tokens.card,
-                          borderRadius: BorderRadius.circular(tokens.radiusSm),
-                          border: Border.all(color: tokens.borderSubtle),
-                        ),
-                        child: Text(
-                          '${currentDay.exercises.length} EXERCISES',
-                          style: TextStyle(
-                            color: tokens.cyanAccent,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w800,
-                            fontFamily: AppTypography.fontFamilyHeadings,
+                    if (!currentDay.isRestDay) ...[
+                      Builder(builder: (_) {
+                        final totalSets = currentDay.exercises.fold<int>(0, (sum, ex) => sum + ex.sets);
+                        final totalRest = currentDay.exercises.fold<int>(0, (sum, ex) => sum + (ex.sets * ex.restSeconds));
+                        final estMin = WorkoutVolumeConfig.estimateSessionDurationMinutes(
+                          totalSets: totalSets,
+                          totalRestSeconds: totalRest,
+                        );
+                        return Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: tokens.card,
+                            borderRadius: BorderRadius.circular(tokens.radiusSm),
+                            border: Border.all(color: tokens.borderSubtle),
                           ),
-                        ),
-                      ),
+                          child: Text(
+                            '${currentDay.exercises.length} EXERCISES • ~$estMin MIN',
+                            style: TextStyle(
+                              color: tokens.cyanAccent,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              fontFamily: AppTypography.fontFamilyHeadings,
+                            ),
+                          ),
+                        );
+                      }),
+                    ],
                   ],
                 ),
                 const SizedBox(height: 12),

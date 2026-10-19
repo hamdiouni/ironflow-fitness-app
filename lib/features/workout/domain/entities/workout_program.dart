@@ -24,6 +24,12 @@ class WorkoutProgram {
   final String? hybridMode;
   final int? cycleLength;
 
+  /// Number of active training days in this program per week.
+  int get daysPerWeek {
+    final active = days.where((d) => !d.isRestDay).length;
+    return active > 0 ? active : days.length;
+  }
+
   WorkoutProgram copyWith({
     String? id,
     String? name,

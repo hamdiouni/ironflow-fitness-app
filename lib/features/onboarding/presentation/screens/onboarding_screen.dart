@@ -1,6 +1,6 @@
 import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Split;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:progression_tracker/core/constants/app_theme.dart';
@@ -10,6 +10,11 @@ import 'package:progression_tracker/features/onboarding/domain/entities/user_pro
 import 'package:progression_tracker/features/onboarding/presentation/providers/onboarding_provider.dart';
 import 'package:progression_tracker/shared/presentation/components/app_button.dart';
 import 'package:progression_tracker/shared/presentation/services/app_haptics.dart';
+import 'package:progression_tracker/features/workout/domain/entities/workout_program.dart';
+import 'package:progression_tracker/features/workout/domain/splits/entities/split.dart';
+import 'package:progression_tracker/features/workout/domain/splits/services/split_catalog.dart';
+import 'package:progression_tracker/features/workout/domain/splits/services/split_schedule_builder.dart';
+import 'package:progression_tracker/features/workout/presentation/widgets/split_generator/exercise_swap_sheet.dart';
 
 /// Monolithic Sci-Fi Guided 7-Step Onboarding Stepper.
 ///
@@ -17,10 +22,10 @@ import 'package:progression_tracker/shared/presentation/services/app_haptics.dar
 /// 1. Goal (Lose fat, Gain muscle, Maintain)
 /// 2. About You (Sex, Age, Height, Weight with unit selection & safety validation)
 /// 3. Training Place (Commercial Gym vs Home, with equipment options)
-/// 4. Weekly Frequency (2 to 6 days/week)
+/// 4. Weekly Frequency & Split (2 to 6 days/week, auto-recommended or custom split)
 /// 5. Experience Level (Beginner, Intermediate, Advanced)
 /// 6. Nutrition Budget (Low, Medium, High)
-/// 7. Protocol Summary (Computed BMR, TDEE, Calorie/Macro targets, recommended program, and Start)
+/// 7. Ready-to-Start Plan (Computed Targets, Pre-selected exercises with optional swap)
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -32,6 +37,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _pageController = PageController();
   int _currentStep = 0;
   static const int _totalSteps = 7;
+  static const _scheduleBuilder = SplitScheduleBuilder();
 
   // Step 1: Goal
   FitnessGoal? _goal = FitnessGoal.gainMuscle;
@@ -47,8 +53,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   EquipmentType _equipment = EquipmentType.gym;
   String _homeEquipment = 'dumbbells'; // 'none', 'dumbbells', 'bands'
 
-  // Step 4: Weekly Frequency
+  // Step 4: Weekly Frequency & Split Selection
   int _daysPerWeek = 4;
+  String? _chosenSplitId;
 
   // Step 5: Experience Level
   FitnessLevel _fitnessLevel = FitnessLevel.beginner;
@@ -56,9 +63,42 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   // Step 6: Diet Budget
   BudgetLevel _budget = BudgetLevel.medium;
 
+  // Local exercise customizations per day (dayNumber -> list of exercises)
+  final Map<int, List<ProgramExercise>> _customizedExercises = {};
+
   // Synthesis state
   bool _isSynthesizing = false;
   String? _synthesisError;
+
+  Split _getEffectiveSplit() {
+    if (_chosenSplitId != null) {
+      final catalogSplit = SplitCatalog.findById(_chosenSplitId!);
+      if (catalogSplit != null) return catalogSplit;
+    }
+    return SplitCatalog.getRecommendedSplitForDays(_daysPerWeek);
+  }
+
+  WorkoutProgram _buildProgramForCurrentSettings(UserProfile profile) {
+    final split = _getEffectiveSplit();
+    final rawProgram = _scheduleBuilder.buildProgram(
+      split: split,
+      daysPerWeek: _daysPerWeek,
+      profile: profile,
+    );
+
+    if (_customizedExercises.isEmpty) {
+      return rawProgram;
+    }
+
+    final updatedDays = rawProgram.days.map((day) {
+      if (_customizedExercises.containsKey(day.dayNumber)) {
+        return day.copyWith(exercises: _customizedExercises[day.dayNumber]!);
+      }
+      return day;
+    }).toList();
+
+    return rawProgram.copyWith(days: updatedDays);
+  }
 
   @override
   void initState() {
@@ -112,6 +152,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           if (draft['budget'] != null) {
             _budget = BudgetLevel.values.byName(draft['budget'] as String);
           }
+          if (draft['chosenSplitId'] != null) {
+            _chosenSplitId = draft['chosenSplitId'] as String;
+          }
 
           final savedStep = draft['draft_step'] as int? ?? 0;
           if (savedStep > 0 && savedStep < _totalSteps) {
@@ -148,6 +191,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           'equipment': _equipment.name,
           'homeEquipment': _homeEquipment,
           'daysPerWeek': _daysPerWeek,
+          'chosenSplitId': _chosenSplitId,
           'fitnessLevel': _fitnessLevel.name,
           'budget': _budget.name,
         },
@@ -266,10 +310,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         sex: _sex,
       );
 
+      final program = _buildProgramForCurrentSettings(profile);
       final userId = ref.read(authNotifierProvider).user?.id;
       await ref.read(onboardingNotifierProvider.notifier).completeOnboarding(
             profile,
             userId: userId,
+            customProgram: program,
+            chosenSplit: _chosenSplitId != null ? _getEffectiveSplit() : null,
           );
 
       if (mounted) {
@@ -839,9 +886,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 children: [2, 3, 4, 5, 6].map((days) {
                   final isSelected = _daysPerWeek == days;
                   return InkWell(
+                    key: Key('frequency_day_$days'),
                     onTap: () {
                       AppHaptics.shared.selectionChanged();
-                      setState(() => _daysPerWeek = days);
+                      setState(() {
+                        _daysPerWeek = days;
+                        _customizedExercises.clear();
+                      });
                       _saveDraft();
                     },
                     borderRadius: BorderRadius.circular(6),
@@ -885,6 +936,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             ],
           ),
         ),
+        const SizedBox(height: 14),
+        _buildSplitSelectionSection(tokens),
       ],
     );
   }
@@ -904,6 +957,204 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       default:
         return 'Custom schedule.';
     }
+  }
+
+  Widget _buildSplitSelectionSection(AppThemeTokens tokens) {
+    final recommendedSplit = SplitCatalog.getRecommendedSplitForDays(_daysPerWeek);
+    final isAuto = _chosenSplitId == null;
+
+    final availableSplits = [
+      SplitCatalog.pushPullLegs,
+      SplitCatalog.upperLower,
+      SplitCatalog.fullBody,
+      SplitCatalog.arnoldSplit,
+      SplitCatalog.pplXUpperLower(),
+      SplitCatalog.arnoldXUpperLower(),
+    ];
+
+    return _buildContainerBox(
+      tokens: tokens,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'WORKOUT SPLIT',
+                style: TextStyle(
+                  fontFamily: AppTypography.displayFontFamily,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.8,
+                  color: tokens.textSecondary,
+                ),
+              ),
+              if (isAuto)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: tokens.kineticAccent.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    'AUTO-OPTIMIZED',
+                    style: TextStyle(
+                      fontFamily: AppTypography.displayFontFamily,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                      color: tokens.kineticAccent,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          // Option 1: Pick for me (Recommended)
+          InkWell(
+            key: const Key('split_pick_for_me'),
+            onTap: () {
+              AppHaptics.shared.selectionChanged();
+              setState(() {
+                _chosenSplitId = null;
+                _customizedExercises.clear();
+              });
+              _saveDraft();
+            },
+            borderRadius: BorderRadius.circular(tokens.radiusSm),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: isAuto
+                    ? tokens.kineticAccent.withValues(alpha: 0.08)
+                    : tokens.canvas,
+                borderRadius: BorderRadius.circular(tokens.radiusSm),
+                border: Border.all(
+                  color: isAuto ? tokens.kineticAccent : tokens.borderSubtle,
+                  width: isAuto ? 1.5 : 1,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    isAuto ? Icons.auto_awesome : Icons.auto_awesome_outlined,
+                    color: isAuto ? tokens.kineticAccent : tokens.textMuted,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Pick for me: ${recommendedSplit.name}',
+                          style: TextStyle(
+                            fontFamily: AppTypography.displayFontFamily,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: isAuto ? tokens.textPrimary : tokens.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Optimal muscle recovery and balance for $_daysPerWeek days/week.',
+                          style: TextStyle(
+                            fontFamily: AppTypography.bodyFontFamily,
+                            fontSize: 11,
+                            color: tokens.textMuted,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (isAuto)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: tokens.kineticAccent,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text(
+                        'RECOMMENDED',
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'OR PICK ANY SPLIT',
+            style: TextStyle(
+              fontFamily: AppTypography.displayFontFamily,
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.6,
+              color: tokens.textMuted,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: availableSplits.map((split) {
+              final isSelected = !isAuto && _chosenSplitId == split.id;
+              final isHybrid = split.isHybrid;
+              return InkWell(
+                key: Key('split_option_${split.id}'),
+                onTap: () {
+                  AppHaptics.shared.selectionChanged();
+                  setState(() {
+                    _chosenSplitId = split.id;
+                    _customizedExercises.clear();
+                  });
+                  _saveDraft();
+                },
+                borderRadius: BorderRadius.circular(tokens.radiusSm),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? tokens.kineticAccent.withValues(alpha: 0.15)
+                        : tokens.canvas,
+                    borderRadius: BorderRadius.circular(tokens.radiusSm),
+                    border: Border.all(
+                      color: isSelected ? tokens.kineticAccent : tokens.borderSubtle,
+                      width: isSelected ? 1.5 : 1,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (isHybrid) ...[
+                        Icon(Icons.hub_outlined, size: 12, color: isSelected ? tokens.kineticAccent : tokens.textMuted),
+                        const SizedBox(width: 4),
+                      ],
+                      Text(
+                        split.name,
+                        style: TextStyle(
+                          fontFamily: AppTypography.displayFontFamily,
+                          fontSize: 11,
+                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                          color: isSelected ? tokens.kineticAccent : tokens.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
   }
 
   // ─── Step 5: Experience Level ────────────────────────────────────────────────
@@ -1029,13 +1280,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     final proteinGrams = tempProfile.dailyProteinTargetGrams.round();
     final fatGrams = tempProfile.dailyFatTargetGrams.round();
     final carbGrams = tempProfile.dailyCarbTargetGrams.round();
-
-    final programName = switch (_daysPerWeek) {
-      <= 3 => 'Full Body Split ($_daysPerWeek Days)',
-      4 => 'Upper / Lower Split (4 Days)',
-      5 => '5-Day Hybrid Split (Upper/Lower/PPL)',
-      _ => 'Push / Pull / Legs Split (6 Days)',
-    };
 
     return _StepContentLayout(
       stepTitle: 'PROTOCOL INITIALIZED',
@@ -1164,65 +1408,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
         const SizedBox(height: 14),
 
-        // Program Assignment Preview
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: tokens.card,
-            borderRadius: BorderRadius.circular(tokens.radiusMd),
-            border: Border.all(color: tokens.borderSubtle),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: tokens.kineticAccent.withValues(alpha: 0.15),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(Icons.fitness_center_rounded, size: 20, color: tokens.kineticAccent),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'RECOMMENDED PROGRAM',
-                      style: TextStyle(
-                        fontFamily: AppTypography.displayFontFamily,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.8,
-                        color: tokens.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      programName,
-                      style: TextStyle(
-                        fontFamily: AppTypography.displayFontFamily,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: tokens.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '${_equipment.displayName} • ${_fitnessLevel.displayName}',
-                      style: TextStyle(
-                        fontFamily: AppTypography.bodyFontFamily,
-                        fontSize: 11,
-                        color: tokens.textMuted,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
+        // Ready-to-start Program Preview with Live Exercises
+        _buildStep7ProgramPreview(tokens, tempProfile),
 
         const SizedBox(height: 14),
 
@@ -1303,6 +1490,282 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildStep7ProgramPreview(AppThemeTokens tokens, UserProfile tempProfile) {
+    final program = _buildProgramForCurrentSettings(tempProfile);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: tokens.card,
+        borderRadius: BorderRadius.circular(tokens.radiusMd),
+        border: Border.all(color: tokens.borderSubtle),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: tokens.kineticAccent.withValues(alpha: 0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.fitness_center_rounded, size: 22, color: tokens.kineticAccent),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'READY-TO-START PROGRAM',
+                            style: TextStyle(
+                              fontFamily: AppTypography.displayFontFamily,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.8,
+                              color: tokens.textSecondary,
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: tokens.kineticAccent.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              'READY',
+                              style: TextStyle(
+                                fontFamily: AppTypography.displayFontFamily,
+                                fontSize: 9,
+                                fontWeight: FontWeight.w800,
+                                color: tokens.kineticAccent,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        program.name,
+                        style: TextStyle(
+                          fontFamily: AppTypography.displayFontFamily,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: tokens.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${program.daysPerWeek} Days/Wk • ${_equipment.displayName} • ${_fitnessLevel.displayName}',
+                        style: TextStyle(
+                          fontFamily: AppTypography.bodyFontFamily,
+                          fontSize: 11,
+                          color: tokens.textMuted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Divider(color: tokens.borderSubtle, height: 1),
+          // Reassurance Note
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            color: tokens.panel.withValues(alpha: 0.5),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.check_circle_outline_rounded, size: 16, color: tokens.kineticAccent),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Exercises are chosen and ready. Swapping is 100% optional — tap any exercise to swap it, or start now and change exercises anytime.',
+                    style: TextStyle(
+                      fontFamily: AppTypography.bodyFontFamily,
+                      fontSize: 11,
+                      color: tokens.textSecondary,
+                      height: 1.35,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Divider(color: tokens.borderSubtle, height: 1),
+          // Days List
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: program.days.length,
+            separatorBuilder: (context, index) => Divider(color: tokens.borderSubtle.withValues(alpha: 0.5), height: 1),
+            itemBuilder: (context, dayIdx) {
+              final day = program.days[dayIdx];
+              return Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          day.name.toUpperCase(),
+                          style: TextStyle(
+                            fontFamily: AppTypography.displayFontFamily,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.6,
+                            color: tokens.kineticAccent,
+                          ),
+                        ),
+                        Text(
+                          day.focus,
+                          style: TextStyle(
+                            fontFamily: AppTypography.bodyFontFamily,
+                            fontSize: 11,
+                            color: tokens.textMuted,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    ...day.exercises.asMap().entries.map((entry) {
+                      final exIdx = entry.key;
+                      final ex = entry.value;
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: InkWell(
+                          key: Key('swap_exercise_${day.dayNumber}_$exIdx'),
+                          onTap: () => _openSwapSheetForOnboarding(day, exIdx, ex),
+                          borderRadius: BorderRadius.circular(tokens.radiusSm),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: tokens.canvas,
+                              borderRadius: BorderRadius.circular(tokens.radiusSm),
+                              border: Border.all(color: tokens.borderSubtle.withValues(alpha: 0.6)),
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        ex.exerciseName,
+                                        style: TextStyle(
+                                          fontFamily: AppTypography.bodyFontFamily,
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                          color: tokens.textPrimary,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        '${ex.sets} sets × ${ex.reps} reps',
+                                        style: TextStyle(
+                                          fontFamily: AppTypography.bodyFontFamily,
+                                          fontSize: 11,
+                                          color: tokens.textMuted,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: tokens.panel,
+                                    borderRadius: BorderRadius.circular(4),
+                                    border: Border.all(color: tokens.borderSubtle),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.swap_horiz_rounded, size: 14, color: tokens.kineticAccent),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        'Swap',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w600,
+                                          color: tokens.kineticAccent,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    }),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _openSwapSheetForOnboarding(ProgramDay day, int exerciseIndex, ProgramExercise currentEx) {
+    ExerciseSwapSheet.show(
+      context: context,
+      currentExercise: currentEx,
+      equipment: _equipment,
+      onSelected: (newExerciseName) {
+        final oldName = currentEx.exerciseName;
+        final currentExercises = List<ProgramExercise>.from(
+          _customizedExercises[day.dayNumber] ?? day.exercises,
+        );
+        currentExercises[exerciseIndex] = currentEx.copyWith(exerciseName: newExerciseName);
+
+        setState(() {
+          _customizedExercises[day.dayNumber] = currentExercises;
+        });
+        _saveDraft();
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).clearSnackBars();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Swapped $oldName for $newExerciseName'),
+                duration: const Duration(seconds: 4),
+                action: SnackBarAction(
+                  label: 'UNDO',
+                  textColor: Colors.amberAccent,
+                  onPressed: () {
+                    if (!mounted) return;
+                    final revertedList = List<ProgramExercise>.from(
+                      _customizedExercises[day.dayNumber] ?? day.exercises,
+                    );
+                    revertedList[exerciseIndex] = currentEx;
+                    setState(() {
+                      _customizedExercises[day.dayNumber] = revertedList;
+                    });
+                    _saveDraft();
+                  },
+                ),
+              ),
+            );
+          }
+        },
     );
   }
 
