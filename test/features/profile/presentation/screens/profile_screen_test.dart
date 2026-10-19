@@ -59,7 +59,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('PROFILE'), findsOneWidget);
-      expect(find.text('BIOMETRIC ID & DIRECTIVES'), findsOneWidget);
+      expect(find.text('PROFILE & WORKOUT PLAN'), findsOneWidget);
       expect(find.text('GAIN MUSCLE'), findsOneWidget);
       expect(find.text('4 DAYS / WEEK PROTOCOL'), findsOneWidget);
 
@@ -85,8 +85,8 @@ void main() {
       await tester.pumpWidget(createWidgetUnderTest(profile: null));
       await tester.pumpAndSettle();
 
-      expect(find.text('NO PROFILE DETECTED'), findsOneWidget);
-      expect(find.text('INITIALIZE ONBOARDING'), findsOneWidget);
+      expect(find.text('NO PROFILE FOUND'), findsOneWidget);
+      expect(find.text('START SETUP'), findsOneWidget);
     });
   });
 }
