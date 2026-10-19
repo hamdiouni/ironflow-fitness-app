@@ -14,6 +14,10 @@ class WorkoutProgramModel with _$WorkoutProgramModel {
     required List<ProgramDayModel> days,
     required int durationWeeks,
     required String difficulty,
+    String? splitId,
+    String? hybridSplitId,
+    String? hybridMode,
+    int? cycleLength,
   }) = _WorkoutProgramModel;
   
   factory WorkoutProgramModel.fromJson(Map<String, dynamic> json) =>
@@ -27,6 +31,10 @@ class WorkoutProgramModel with _$WorkoutProgramModel {
       days: entity.days.map(ProgramDayModel.fromEntity).toList(),
       durationWeeks: entity.durationWeeks,
       difficulty: entity.difficulty,
+      splitId: entity.splitId,
+      hybridSplitId: entity.hybridSplitId,
+      hybridMode: entity.hybridMode,
+      cycleLength: entity.cycleLength,
     );
   }
 }
@@ -40,6 +48,10 @@ extension WorkoutProgramModelX on WorkoutProgramModel {
       days: days.map((d) => d.toEntity()).toList(),
       durationWeeks: durationWeeks,
       difficulty: difficulty,
+      splitId: splitId,
+      hybridSplitId: hybridSplitId,
+      hybridMode: hybridMode,
+      cycleLength: cycleLength,
     );
   }
 }

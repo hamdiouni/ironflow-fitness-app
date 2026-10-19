@@ -7,6 +7,10 @@ class WorkoutProgram {
     required this.days,
     required this.durationWeeks,
     required this.difficulty,
+    this.splitId,
+    this.hybridSplitId,
+    this.hybridMode,
+    this.cycleLength,
   });
 
   final String id;
@@ -15,6 +19,10 @@ class WorkoutProgram {
   final List<ProgramDay> days;
   final int durationWeeks;
   final String difficulty;
+  final String? splitId;
+  final String? hybridSplitId;
+  final String? hybridMode;
+  final int? cycleLength;
 }
 
 class ProgramDay {
