@@ -67,6 +67,7 @@ class AIChatState {
   final String? streamingMessage;
   final bool isOfflineFallback;
   final bool isKeyMissing;
+  final String? lastFailedMessage;
 
   AIChatState({
     this.messages = const [],
@@ -75,6 +76,7 @@ class AIChatState {
     this.streamingMessage,
     this.isOfflineFallback = false,
     this.isKeyMissing = false,
+    this.lastFailedMessage,
   });
 
   AIChatState copyWith({
@@ -84,14 +86,17 @@ class AIChatState {
     String? streamingMessage,
     bool? isOfflineFallback,
     bool? isKeyMissing,
+    String? lastFailedMessage,
+    bool clearError = false,
   }) {
     return AIChatState(
       messages: messages ?? this.messages,
       isLoading: isLoading ?? this.isLoading,
-      error: error,
+      error: clearError ? null : (error ?? this.error),
       streamingMessage: streamingMessage,
       isOfflineFallback: isOfflineFallback ?? this.isOfflineFallback,
       isKeyMissing: isKeyMissing ?? this.isKeyMissing,
+      lastFailedMessage: lastFailedMessage ?? this.lastFailedMessage,
     );
   }
 }
@@ -127,6 +132,37 @@ class AIChatNotifier extends StateNotifier<AIChatState> {
     } catch (_) {}
   }
 
+  String _formatErrorMessage(Object error) {
+    if (error is GeminiAIServiceException) {
+      switch (error.code) {
+        case 'TIMEOUT':
+        case 'NETWORK_ERROR':
+          return 'Could not connect to the fitness assistant. Please check your internet connection and try again.';
+        case 'RATE_LIMIT_EXCEEDED':
+          return 'The assistant is receiving high traffic right now. Please try again in a few minutes.';
+        case 'UNAUTHORIZED':
+          return 'Could not authenticate with the AI service. Please check your settings.';
+        case 'MISSING_API_KEY':
+          return 'AI assistant is in offline mode. Switched to basic coach.';
+        default:
+          return 'Could not get an answer right now. Please tap Retry to try again.';
+      }
+    }
+    final str = error.toString().toLowerCase();
+    if (str.contains('socket') || str.contains('timeout') || str.contains('network') || str.contains('connection')) {
+      return 'Could not connect to the fitness assistant. Please check your internet connection and try again.';
+    }
+    return 'Something went wrong while contacting the coach. Please tap Retry to try again.';
+  }
+
+  Future<void> retryLastMessage() async {
+    final failed = state.lastFailedMessage;
+    if (failed != null && failed.trim().isNotEmpty) {
+      state = state.copyWith(clearError: true);
+      await sendMessage(failed);
+    }
+  }
+
   Future<void> sendMessage(String message) async {
     if (message.trim().isEmpty) return;
 
@@ -141,7 +177,7 @@ class AIChatNotifier extends StateNotifier<AIChatState> {
     state = state.copyWith(
       messages: [...state.messages, userMessage],
       isLoading: true,
-      error: null,
+      clearError: true,
     );
     _chatStorage?.saveMessages(state.messages);
 
@@ -192,10 +228,10 @@ class AIChatNotifier extends StateNotifier<AIChatState> {
           );
           AppLogger.debug('✅ [AI CHAT] Found ${bodyEntries.length} body entries');
         } catch (e) {
-          AppLogger.debug('⚠️ [AI CHAT] Error gathering user telemetry: $e');
+          AppLogger.debug('⚠️ [AI CHAT] Error gathering user data: $e');
         }
       } else {
-        AppLogger.debug('🔒 [AI CHAT] Personalization consent DISABLED. Preserving user telemetry privacy.');
+        AppLogger.debug('🔒 [AI CHAT] Personalization consent DISABLED. Preserving privacy.');
       }
 
       // Build system prompt with user context
@@ -217,7 +253,6 @@ class AIChatNotifier extends StateNotifier<AIChatState> {
       if (!_geminiService.isConfigured) {
         AppLogger.debug('⚠️ [AI CHAT] No Gemini API key configured. Using Local AI Coach...');
         isFallback = true;
-        errorMessage = 'Gemini API key is not configured. Running offline rule-based coach.';
         responseText = _localCoach.generateResponse(
           message,
           profile: profile,
@@ -229,15 +264,15 @@ class AIChatNotifier extends StateNotifier<AIChatState> {
       } else {
         try {
           AppLogger.debug('═══════════════════════════════════════');
-          AppLogger.debug('🤖 [AI CHAT] Step 7: Calling Gemini AI (FREE!)');
+          AppLogger.debug('🤖 [AI CHAT] Step 7: Calling Gemini AI');
           AppLogger.debug('📡 [AI CHAT] Sending request to Gemini API...');
           AppLogger.debug('═══════════════════════════════════════');
           
           responseText = await _geminiService.sendMessage(
             [{'role': 'user', 'content': message}],
             systemPrompt: systemPrompt,
-            temperature: 0.8,
-            maxTokens: 8000,
+            temperature: 0.7,
+            maxTokens: 1000,
           );
           
           AppLogger.debug('═══════════════════════════════════════');
@@ -247,16 +282,12 @@ class AIChatNotifier extends StateNotifier<AIChatState> {
         } catch (e, stackTrace) {
           AppLogger.debug('═══════════════════════════════════════');
           AppLogger.debug('❌ [AI CHAT ERROR] Gemini API failed!');
-          AppLogger.debug('🔴 [AI CHAT ERROR] Error type: ${e.runtimeType}');
           AppLogger.debug('🔴 [AI CHAT ERROR] Error message: $e');
-          AppLogger.debug('🔴 [AI CHAT ERROR] Stack trace:');
-          AppLogger.debug(stackTrace.toString().split('\n').take(10).join('\n'));
           AppLogger.debug('═══════════════════════════════════════');
-          AppLogger.debug('🔄 [AI CHAT] Falling back to LocalAI with transparent warning...');
+          AppLogger.debug('🔄 [AI CHAT] Falling back to LocalAI with plain English notification...');
           
           isFallback = true;
-          final errorText = e is GeminiAIServiceException ? e.message : e.toString();
-          errorMessage = 'Cloud AI error: $errorText. Responded with local fallback coach.';
+          errorMessage = _formatErrorMessage(e);
           
           responseText = _localCoach.generateResponse(
             message,
@@ -283,6 +314,7 @@ class AIChatNotifier extends StateNotifier<AIChatState> {
         isLoading: false,
         isOfflineFallback: isFallback,
         error: errorMessage,
+        lastFailedMessage: errorMessage != null ? message : null,
       );
       _chatStorage?.saveMessages(state.messages);
       
@@ -306,15 +338,14 @@ class AIChatNotifier extends StateNotifier<AIChatState> {
     } catch (e, stackTrace) {
       AppLogger.debug('═══════════════════════════════════════');
       AppLogger.debug('❌❌❌ [AI CHAT FATAL ERROR] ❌❌❌');
-      AppLogger.debug('🔴 [AI CHAT ERROR] Error type: ${e.runtimeType}');
       AppLogger.debug('🔴 [AI CHAT ERROR] Error message: $e');
-      AppLogger.debug('🔴 [AI CHAT ERROR] Full stack trace:');
       AppLogger.debug(stackTrace);
       AppLogger.debug('═══════════════════════════════════════');
       
       state = state.copyWith(
         isLoading: false,
-        error: 'Failed to generate response: $e',
+        error: _formatErrorMessage(e),
+        lastFailedMessage: message,
       );
     }
   }
@@ -330,35 +361,20 @@ class AIChatNotifier extends StateNotifier<AIChatState> {
   }) {
     final buffer = StringBuffer();
     
-    buffer.writeln('You are an expert fitness coach and nutritionist for IronFlow, a comprehensive fitness tracking app.');
-    buffer.writeln('Your role is to provide detailed, professional, and evidence-based fitness and nutrition guidance.');
+    buffer.writeln('You are an expert fitness coach and nutritionist for IronFlow, a fitness tracking app.');
+    buffer.writeln('Your role is to provide short, accurate, evidence-based fitness and nutrition answers in plain English.');
     buffer.writeln();
-    buffer.writeln('RESPONSE FORMATTING (CRITICAL):');
-    buffer.writeln('- Use Markdown formatting for ALL responses');
-    buffer.writeln('- Use **bold** for exercise names, key terms, and important points');
-    buffer.writeln('- Use ## for main section headers (e.g., ## Workout Program, ## Nutrition Plan)');
-    buffer.writeln('- Use ### for subsections (e.g., ### Day 1: Upper Body)');
-    buffer.writeln('- Use bullet points (-) for lists of exercises, tips, or recommendations');
-    buffer.writeln('- Use numbered lists (1., 2., 3.) for step-by-step instructions or progression plans');
-    buffer.writeln('- Use > for important notes or warnings (e.g., > ⚠️ Important: Always warm up first)');
-    buffer.writeln('- Add emojis to make responses more engaging (💪 🏋️ 🥗 📈 ⚡ 🎯 ✅ ⚠️ 💡 🔥)');
+    buffer.writeln('STRICT RESPONSE RULES (CRITICAL):');
+    buffer.writeln('1. Under 80 words: Keep your entire response under 80 words. Be direct, clear, and concise.');
+    buffer.writeln('2. Maximum 3 bullets: If you list items or recommendations, use at most 3 bullet points.');
+    buffer.writeln('3. Exactly 1 next step: Always conclude your response with a clear heading or line "**Next Step:**" followed by exactly 1 practical action the user should take right now.');
+    buffer.writeln('4. Simple English: Speak like an encouraging, knowledgeable human coach. Do NOT use sci-fi, military, or robotic jargon (avoid words like "operator", "directive", "protocol", "telemetry", "cipher", "heuristic", "neural core").');
     buffer.writeln();
     buffer.writeln('SAFETY AND MEDICAL GUARDRAILS (CRITICAL):');
-    buffer.writeln('- You are an AI fitness intelligence core and educational coach, NOT a physician, doctor, or licensed physical therapist.');
+    buffer.writeln('- You are a fitness coach, NOT a physician or doctor.');
     buffer.writeln('- NEVER provide clinical medical diagnoses or prescribe medications.');
-    buffer.writeln('- If a user inquires about or reports chest pain, acute joint injury, dizziness, numbness, or severe pain, IMMEDIATELY instruct them to cease exercise and seek professional medical evaluation.');
-    buffer.writeln('- Remind users to adhere to proper warmup protocols, progressive overload, and to differentiate between muscular fatigue (good) and joint/ligament strain (stop immediately).');
-    buffer.writeln('- All nutritional targets are general guidelines and not tailored medical diets.');
-    buffer.writeln();
-    buffer.writeln('RESPONSE GUIDELINES:');
-    buffer.writeln('- Provide comprehensive, detailed answers that demonstrate deep expertise');
-    buffer.writeln('- Use specific numbers, sets, reps, weights, and percentages when relevant');
-    buffer.writeln('- Explain the science and reasoning behind your recommendations');
-    buffer.writeln('- Structure longer responses with clear sections using markdown headers');
-    buffer.writeln('- Be conversational yet professional - like a knowledgeable personal trainer');
-    buffer.writeln('- For workout programs: include specific exercises, sets, reps, rest periods, and progression plans');
-    buffer.writeln('- For nutrition advice: include specific foods, macros, meal timing, and practical tips');
-    buffer.writeln('- For form advice: provide detailed cues and common mistakes to avoid');
+    buffer.writeln('- If the user asks about chest pain, joint injury, acute dizziness, or sharp pain, instruct them to stop exercising immediately and consult a doctor.');
+    buffer.writeln('- Remind users to adhere to proper warmup and progressive overload.');
     buffer.writeln();
     
     // Add user profile context only if user gave consent
@@ -383,7 +399,7 @@ class AIChatNotifier extends StateNotifier<AIChatState> {
       
       buffer.writeln();
     } else if (!hasConsent) {
-      buffer.writeln('USER PRIVACY TELEMETRY:');
+      buffer.writeln('USER PRIVACY:');
       buffer.writeln('- Detailed profile, workout and nutrition sharing is disabled for privacy.');
       buffer.writeln('- Provide general evidence-based training advice and ask clarifying questions if specifics are needed.');
       buffer.writeln();
@@ -413,17 +429,6 @@ class AIChatNotifier extends StateNotifier<AIChatState> {
       buffer.writeln();
     }
     
-    buffer.writeln('COACHING PHILOSOPHY:');
-    buffer.writeln('- Provide evidence-based advice grounded in exercise science');
-    buffer.writeln('- Be encouraging and motivating while maintaining high standards');
-    buffer.writeln('- Give specific, actionable recommendations with clear implementation steps');
-    buffer.writeln('- Explain the "why" behind every recommendation to educate the user');
-    buffer.writeln('- Use progressive overload principles and periodization concepts');
-    buffer.writeln('- Prioritize proper form, injury prevention, and long-term sustainability');
-    buffer.writeln('- Adapt advice based on the user\'s experience level and available equipment');
-    buffer.writeln('- When creating programs, think like a professional strength coach');
-    buffer.writeln('- When giving nutrition advice, think like a registered dietitian');
-    
     return buffer.toString();
   }
 
@@ -433,7 +438,7 @@ class AIChatNotifier extends StateNotifier<AIChatState> {
   }
 
   void clearError() {
-    state = state.copyWith(error: null);
+    state = state.copyWith(clearError: true);
   }
 }
 

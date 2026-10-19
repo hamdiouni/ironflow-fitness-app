@@ -131,7 +131,7 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen>
           ],
         ),
         actions: const [
-          AiEntryButton(),
+          AiEntryButton(contextScreen: 'progress'),
           SizedBox(width: 8),
         ],
         bottom: PreferredSize(

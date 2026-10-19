@@ -11,10 +11,14 @@ class AiEntryButton extends ConsumerWidget {
   const AiEntryButton({
     super.key,
     this.onPressed,
+    this.contextScreen,
   });
 
   /// Optional custom action callback. Defaults to navigating to [AppRoutes.aiChat].
   final VoidCallback? onPressed;
+
+  /// Optional screen context for personalized prompt chips (e.g. 'today', 'workout', 'fuel', 'progress').
+  final String? contextScreen;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -36,7 +40,8 @@ class AiEntryButton extends ConsumerWidget {
             shape: const CircleBorder(),
             clipBehavior: Clip.antiAlias,
             child: InkWell(
-              onTap: onPressed ?? () => navigateToAiCoach(context),
+              onTap: onPressed ??
+                  () => navigateToAiCoach(context, contextScreen: contextScreen),
               customBorder: const CircleBorder(),
               child: Center(
                 child: Container(

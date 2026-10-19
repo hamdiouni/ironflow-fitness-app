@@ -54,7 +54,7 @@ class WorkoutScreen extends ConsumerWidget {
           ),
         ),
         actions: [
-          const AiEntryButton(),
+          const AiEntryButton(contextScreen: 'workout'),
           const SizedBox(width: 4),
           // Change Split & Edit program buttons
           activeProgramAsync.when(
