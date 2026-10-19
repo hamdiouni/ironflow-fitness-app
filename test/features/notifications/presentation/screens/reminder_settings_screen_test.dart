@@ -68,8 +68,8 @@ void main() {
 
       expect(find.text('REMINDER SETTINGS'), findsOneWidget);
       expect(find.text('NOTIFICATION MATRIX'), findsOneWidget);
-      expect(find.text('WORKOUT DIRECTIVES'), findsOneWidget);
-      expect(find.text('NUTRITION DIRECTIVES'), findsOneWidget);
+      expect(find.text('WORKOUT REMINDERS'), findsOneWidget);
+      expect(find.text('MEAL REMINDERS'), findsOneWidget);
       expect(find.text('STREAK CONTINUITY'), findsOneWidget);
       expect(find.text('HAPTIC & AUDIO PROTOCOL'), findsOneWidget);
       expect(find.text('Daily Workout Time'), findsOneWidget);
