@@ -5,6 +5,25 @@ All notable changes to IronFlow will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-10-19
+
+### Added
+- **Data-Driven Workout Split Engine**: Completely rebuilt the workout program generator to eliminate fixed 3-option split constraints and support any split on any training frequency (1..7 days/week).
+  - Built-in Splits: Full Body (A/B/C alternating templates), Upper / Lower, Push / Pull / Legs (PPL), Arnold Split, and Mix / Custom.
+  - Hybrid Splits: PPL x Arnold, Arnold x Upper / Lower, and PPL x Upper / Lower.
+  - Hybrid Architecture Modes: Support for both Combined Cycle (continuous multi-week rolling cycles) and Alternate Weeks (Week A / Week B periodization).
+  - Deterministic Exercise Selector: Equipment-aware (commercial gym vs home), fitness-level-aware, movement-pattern-mapped candidate scoring with deterministic tie-breaking.
+  - Posterior Chain Home Fallback: Automatic zero-equipment fallback for home training hinge slots (e.g., glute bridges / single-leg thrusts) with advisory notes.
+  - Real-time Muscle Frequency Telemetry: Mathematical weekly frequency calculator (`MuscleFrequencyReport`) projecting target sessions per week per muscle group with `OPTIMAL`, `LOW`, and `HIGH` status indicators.
+- **Interactive Sci-Fi HUD Protocol Generator UI**:
+  - Monolithic `DaysStepper` (1..7 days/week) with dynamic work vs rest badges.
+  - Non-blocking `SplitGuidanceBadge` telemetry advisories alerting users to extreme frequencies or multi-week rolling cycles without preventing selection.
+  - Dual-mode preview switcher: interactive 7-day `ScheduleDayPreview` matrix and real-time `MuscleFrequencyCard`.
+  - In-place `ExerciseSwapSheet`: Modal bottom sheet allowing users to substitute any scheduled exercise with equipment-compatible alternatives prior to protocol deployment.
+- **Safety & Protocol Undo Architecture**:
+  - Hive archive subsystem (`archiveCurrentProgram()`, `restoreArchivedProgram()`) in `HiveActiveProgramDataSource` and `ActiveProgramRepository`.
+  - Interactive SnackBar with one-tap `UNDO` action to revert program changes instantaneously without losing prior workout history or PR telemetry.
+
 ## [1.1.0] - 2026-10-17
 
 ### Added

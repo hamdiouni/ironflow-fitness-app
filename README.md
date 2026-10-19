@@ -58,7 +58,8 @@
 - **Rest Timer**: Visual countdown timer between sets with haptic feedback
 - **Personal Records**: Automatic PR detection with celebration animations
 - **Workout History**: Detailed analytics and performance graphs
-- **Custom Programs**: Create and follow personalized training programs
+- **Custom Programs & Splits**: Full freedom to choose any training split (Full Body, Upper/Lower, Push/Pull/Legs, Arnold Split, Mix/Custom, and Hybrids like PPL x Arnold) across any weekly frequency (1..7 days/week) with deterministic exercise selection
+- **Interactive Split Generator & Telemetry**: Live 7-day schedule matrix, in-place exercise swapping modal, real-time muscle frequency telemetry, and one-tap Undo protection
 - **Volume Tracking**: Automatic calculation of training volume and intensity
 
 ### 🥗 Nutrition Tracking
