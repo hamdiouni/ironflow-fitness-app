@@ -24,10 +24,14 @@ class AIChatScreen extends ConsumerStatefulWidget {
   const AIChatScreen({
     super.key,
     this.initialMessage,
+    this.contextScreen,
   });
 
   /// Optional initial message to pre-populate in the input field.
   final String? initialMessage;
+
+  /// Optional source screen context ('today', 'workout', 'fuel', 'progress').
+  final String? contextScreen;
 
   @override
   ConsumerState<AIChatScreen> createState() => _AIChatScreenState();
@@ -36,10 +40,49 @@ class AIChatScreen extends ConsumerStatefulWidget {
 class _AIChatScreenState extends ConsumerState<AIChatScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  late String _selectedScreenCategory;
+
+  static const Map<String, List<String>> _screenPromptChips = {
+    'today': [
+      'How should I warm up today?',
+      'What should my focus be today?',
+      'How can I improve my recovery?',
+      'Quick 5-minute cooldown routine',
+    ],
+    'workout': [
+      'How do I break through a strength plateau?',
+      'Form cues for compound lifts',
+      'How much rest between heavy sets?',
+      "Finisher idea for today's session",
+    ],
+    'fuel': [
+      'Am I eating enough protein?',
+      'Can I swap chicken for tuna?',
+      'What should I eat before my workout?',
+      'High-protein budget snack ideas',
+    ],
+    'progress': [
+      'Analyze my strength progress this month',
+      'Is my weight trend on track for my goal?',
+      'Am I applying progressive overload?',
+      'Tips for staying consistent with tracking',
+    ],
+  };
 
   @override
   void initState() {
     super.initState();
+    final incoming = widget.contextScreen?.toLowerCase();
+    if (incoming == 'workout') {
+      _selectedScreenCategory = 'workout';
+    } else if (incoming == 'fuel' || incoming == 'nutrition') {
+      _selectedScreenCategory = 'fuel';
+    } else if (incoming == 'progress' || incoming == 'analytics') {
+      _selectedScreenCategory = 'progress';
+    } else {
+      _selectedScreenCategory = 'today';
+    }
+
     if (widget.initialMessage != null && widget.initialMessage!.trim().isNotEmpty) {
       _messageController.text = widget.initialMessage!;
     }
@@ -120,47 +163,6 @@ class _AIChatScreenState extends ConsumerState<AIChatScreen> {
   Widget build(BuildContext context) {
     final chatState = ref.watch(aiChatProvider);
     final tokens = AppThemeTokens.of(context);
-
-    // Show error snackbar if error present
-    if (chatState.error != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                Icon(Icons.info_outline_rounded, color: tokens.kineticAccent, size: 20),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    chatState.error!,
-                    style: TextStyle(
-                      fontFamily: AppTypography.bodyFontFamily,
-                      fontSize: 12,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            backgroundColor: tokens.panel,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-              side: BorderSide(color: tokens.borderSubtle),
-            ),
-            action: SnackBarAction(
-              label: 'DISMISS',
-              textColor: tokens.kineticAccent,
-              onPressed: () {
-                ref.read(aiChatProvider.notifier).clearError();
-              },
-            ),
-          ),
-        );
-        ref.read(aiChatProvider.notifier).clearError();
-      });
-    }
 
     return Scaffold(
       backgroundColor: tokens.canvas,
@@ -300,11 +302,11 @@ class _AIChatScreenState extends ConsumerState<AIChatScreen> {
       ),
       body: Column(
         children: [
-          // Live Telemetry Status Bar
+          // Live Status Bar
           _buildTelemetryStatusBanner(tokens, chatState),
 
-          // Quick Action Protocol Chips
-          _buildQuickActionsBar(tokens),
+          // Contextual Prompt Chips Bar (Today, Workout, Fuel, Progress)
+          _buildContextualChipsBar(tokens),
 
           // Messages View or Empty State
           Expanded(
@@ -326,7 +328,10 @@ class _AIChatScreenState extends ConsumerState<AIChatScreen> {
                   ),
           ),
 
-          // Loading Telemetry Indicator
+          // Interactive Error Banner with Retry Button
+          if (chatState.error != null) _buildInteractiveErrorBanner(tokens, chatState),
+
+          // Loading Indicator
           if (chatState.isLoading) _buildLoadingIndicator(tokens),
 
           // Terminal Message Input
@@ -339,50 +344,24 @@ class _AIChatScreenState extends ConsumerState<AIChatScreen> {
   // ─── Status Banner ──────────────────────────────────────────────────────────
 
   Widget _buildTelemetryStatusBanner(AppThemeTokens tokens, AIChatState state) {
-    if (state.isKeyMissing) {
+    if (state.isKeyMissing || state.isOfflineFallback) {
       return Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         color: tokens.warning.withValues(alpha: 0.12),
         child: Row(
           children: [
-            Icon(Icons.vpn_key_off_outlined, size: 14, color: tokens.warning),
+            Icon(Icons.cloud_off_outlined, size: 14, color: tokens.warning),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                'STATUS: OFFLINE HEURISTIC // API KEY REQUIRED FOR GEMINI CLOUD',
+                'Offline mode • Basic assistant active',
                 style: TextStyle(
                   fontFamily: AppTypography.displayFontFamily,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.6,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.3,
                   color: tokens.warning,
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    if (state.isOfflineFallback) {
-      return Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        color: tokens.cyanAccent.withValues(alpha: 0.1),
-        child: Row(
-          children: [
-            Icon(Icons.sync_problem_rounded, size: 14, color: tokens.cyanAccent),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                'STATUS: LOCAL FALLBACK ACTIVE // HEURISTIC ENGINE RESPONDED',
-                style: TextStyle(
-                  fontFamily: AppTypography.displayFontFamily,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.6,
-                  color: tokens.cyanAccent,
                 ),
               ),
             ),
@@ -413,12 +392,12 @@ class _AIChatScreenState extends ConsumerState<AIChatScreen> {
           ),
           const SizedBox(width: 8),
           Text(
-            'STATUS: NEURAL CORE ONLINE // GEMINI-1.5-FLASH ACTIVE',
+            'Online • Ready to help',
             style: TextStyle(
               fontFamily: AppTypography.displayFontFamily,
-              fontSize: 9,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.8,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.3,
               color: tokens.textSecondary,
             ),
           ),
@@ -427,64 +406,195 @@ class _AIChatScreenState extends ConsumerState<AIChatScreen> {
     );
   }
 
-  // ─── Quick Actions Bar ──────────────────────────────────────────────────────
+  // ─── Contextual Prompt Chips Bar ───────────────────────────────────────────
 
-  Widget _buildQuickActionsBar(AppThemeTokens tokens) {
+  Widget _buildContextualChipsBar(AppThemeTokens tokens) {
+    final categories = [
+      (id: 'today', label: 'Today', icon: Icons.today_rounded),
+      (id: 'workout', label: 'Workout', icon: Icons.fitness_center_rounded),
+      (id: 'fuel', label: 'Fuel', icon: Icons.restaurant_rounded),
+      (id: 'progress', label: 'Progress', icon: Icons.trending_up_rounded),
+    ];
+
+    final currentChips = _screenPromptChips[_selectedScreenCategory] ?? _screenPromptChips['today']!;
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: tokens.panel,
         border: Border(
           bottom: BorderSide(color: tokens.borderSubtle, width: 1),
         ),
       ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          children: [
-            _QuickActionButton(
-              code: '01',
-              label: 'Workout Plan',
-              icon: Icons.fitness_center_rounded,
-              onPressed: () => _sendQuickAction('generate_workout'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Category selector tabs
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+            child: Row(
+              children: categories.map((cat) {
+                final isSelected = _selectedScreenCategory == cat.id;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 6),
+                  child: InkWell(
+                    key: ValueKey('screen_tab_${cat.id}'),
+                    onTap: () {
+                      AppHaptics.shared.selectionChanged();
+                      setState(() {
+                        _selectedScreenCategory = cat.id;
+                      });
+                    },
+                    borderRadius: BorderRadius.circular(16),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: isSelected ? tokens.kineticAccent.withValues(alpha: 0.2) : tokens.card,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: isSelected ? tokens.kineticAccent : tokens.borderSubtle,
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            cat.icon,
+                            size: 13,
+                            color: isSelected ? tokens.kineticAccent : tokens.textMuted,
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            cat.label,
+                            style: TextStyle(
+                              fontFamily: AppTypography.displayFontFamily,
+                              fontSize: 11,
+                              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                              color: isSelected ? tokens.kineticAccent : tokens.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
             ),
-            const SizedBox(width: 8),
-            _QuickActionButton(
-              code: '02',
-              label: 'Nutrition',
-              icon: Icons.restaurant_menu_rounded,
-              onPressed: () => _sendQuickAction('adjust_diet'),
+          ),
+
+          // Contextual prompt chips for selected category
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
+            child: Row(
+              children: currentChips.map((prompt) {
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: InkWell(
+                    onTap: () {
+                      _messageController.text = prompt;
+                      _sendMessage(prompt);
+                    },
+                    borderRadius: BorderRadius.circular(6),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: tokens.card,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: tokens.borderSubtle),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.chat_bubble_outline, size: 12, color: tokens.kineticAccent),
+                          const SizedBox(width: 6),
+                          Text(
+                            prompt,
+                            style: TextStyle(
+                              fontFamily: AppTypography.bodyFontFamily,
+                              fontSize: 12,
+                              color: tokens.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
             ),
-            const SizedBox(width: 8),
-            _QuickActionButton(
-              code: '03',
-              label: 'Progress',
-              icon: Icons.trending_up_rounded,
-              onPressed: () => _sendQuickAction('analyze_progress'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─── Interactive Error Banner with Retry ────────────────────────────────────
+
+  Widget _buildInteractiveErrorBanner(AppThemeTokens tokens, AIChatState chatState) {
+    return Container(
+      key: const ValueKey('ai_chat_error_banner'),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: tokens.panel,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.redAccent.withValues(alpha: 0.5)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.redAccent.withValues(alpha: 0.1),
+            blurRadius: 8,
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.info_outline, color: Colors.redAccent, size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              chatState.error!,
+              style: TextStyle(
+                fontFamily: AppTypography.bodyFontFamily,
+                fontSize: 12,
+                color: tokens.textPrimary,
+              ),
             ),
-            const SizedBox(width: 8),
-            _QuickActionButton(
-              code: '04',
-              label: "What's Next",
-              icon: Icons.lightbulb_outline_rounded,
-              onPressed: () => _sendQuickAction('whats_next'),
+          ),
+          const SizedBox(width: 8),
+          FilledButton.icon(
+            key: const ValueKey('ai_chat_retry_button'),
+            onPressed: () {
+              AppHaptics.shared.buttonPress();
+              ref.read(aiChatProvider.notifier).retryLastMessage();
+            },
+            icon: const Icon(Icons.refresh, size: 14),
+            label: const Text('Retry'),
+            style: FilledButton.styleFrom(
+              backgroundColor: tokens.kineticAccent,
+              foregroundColor: Colors.black,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              minimumSize: const Size(0, 34),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(6),
+              ),
+              textStyle: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
             ),
-            const SizedBox(width: 8),
-            _QuickActionButton(
-              code: '05',
-              label: 'Plateau Breaking',
-              icon: Icons.speed_rounded,
-              onPressed: () => _sendQuickAction('plateau_tactics'),
-            ),
-            const SizedBox(width: 8),
-            _QuickActionButton(
-              code: '06',
-              label: 'Form Protocol',
-              icon: Icons.accessibility_new_rounded,
-              onPressed: () => _sendQuickAction('form_cues'),
-            ),
-          ],
-        ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.close, size: 16),
+            color: tokens.textMuted,
+            onPressed: () {
+              ref.read(aiChatProvider.notifier).clearError();
+            },
+            tooltip: 'Dismiss',
+          ),
+        ],
       ),
     );
   }
@@ -492,6 +602,8 @@ class _AIChatScreenState extends ConsumerState<AIChatScreen> {
   // ─── Empty State ────────────────────────────────────────────────────────────
 
   Widget _buildEmptyState(AppThemeTokens tokens) {
+    final chips = _screenPromptChips[_selectedScreenCategory] ?? _screenPromptChips['today']!;
+
     return Center(
       child: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
@@ -520,7 +632,7 @@ class _AIChatScreenState extends ConsumerState<AIChatScreen> {
             ),
             const SizedBox(height: 20),
             Text(
-              'Tactical Training Core',
+              'AI Fitness Assistant',
               style: TextStyle(
                 fontFamily: AppTypography.displayFontFamily,
                 fontSize: 20,
@@ -530,7 +642,7 @@ class _AIChatScreenState extends ConsumerState<AIChatScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Ask me anything about workouts, nutrition, form, or your fitness journey',
+              'Ask me anything about workouts, nutrition, form, or your progress',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontFamily: AppTypography.bodyFontFamily,
@@ -544,23 +656,16 @@ class _AIChatScreenState extends ConsumerState<AIChatScreen> {
               alignment: WrapAlignment.center,
               spacing: 10,
               runSpacing: 10,
-              children: [
-                _SuggestionChip(
-                  icon: Icons.fitness_center_rounded,
-                  label: 'Create workout',
-                  onTap: () => _sendQuickAction('generate_workout'),
-                ),
-                _SuggestionChip(
-                  icon: Icons.restaurant_rounded,
-                  label: 'Nutrition tips',
-                  onTap: () => _sendQuickAction('adjust_diet'),
-                ),
-                _SuggestionChip(
-                  icon: Icons.trending_up_rounded,
-                  label: 'Track progress',
-                  onTap: () => _sendQuickAction('analyze_progress'),
-                ),
-              ],
+              children: chips.take(3).map((prompt) {
+                return _SuggestionChip(
+                  icon: Icons.chat_bubble_outline_rounded,
+                  label: prompt,
+                  onTap: () {
+                    _messageController.text = prompt;
+                    _sendMessage(prompt);
+                  },
+                );
+              }).toList(),
             ),
           ],
         ),
@@ -591,7 +696,7 @@ class _AIChatScreenState extends ConsumerState<AIChatScreen> {
           ),
           const SizedBox(width: 10),
           Text(
-            'AI is analyzing your data...',
+            'Coach is typing...',
             style: TextStyle(
               fontFamily: AppTypography.displayFontFamily,
               fontSize: 11,
@@ -838,13 +943,13 @@ class _ChatBubble extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Call Sign / Role Tag
+                  // Role Tag
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Container(
-                        width: 5,
-                        height: 5,
+                        width: 6,
+                        height: 6,
                         decoration: BoxDecoration(
                           color: isUser ? tokens.textMuted : tokens.kineticAccent,
                           shape: BoxShape.circle,
@@ -852,12 +957,12 @@ class _ChatBubble extends ConsumerWidget {
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        isUser ? 'OPERATOR // QUERY' : 'AI CORE // ADVISORY',
+                        isUser ? 'You' : 'Coach',
                         style: TextStyle(
                           fontFamily: AppTypography.displayFontFamily,
-                          fontSize: 9,
+                          fontSize: 10,
                           fontWeight: FontWeight.w700,
-                          letterSpacing: 0.8,
+                          letterSpacing: 0.4,
                           color: isUser
                               ? tokens.textMuted
                               : tokens.kineticAccent,
