@@ -1,3 +1,4 @@
+import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
@@ -57,7 +58,7 @@ class LocalDataWiper {
   /// session storage and secure storage tokens are also eradicated.
   Future<void> wipeAllUserData(String userId, {bool keepAuthSession = false}) async {
     if (kDebugMode) {
-      print('🗑️ [LocalDataWiper] Starting local user wipe for: $userId (keepAuth: $keepAuthSession)');
+      AppLogger.debug('🗑️ [LocalDataWiper] Starting local user wipe for: $userId (keepAuth: $keepAuthSession)');
     }
 
     // 1. Wipe user-scoped Hive boxes
@@ -78,7 +79,7 @@ class LocalDataWiper {
     await _wipeUserPreferences(keepAuthSession);
 
     if (kDebugMode) {
-      print('✅ [LocalDataWiper] Local user wipe complete for: $userId');
+      AppLogger.debug('✅ [LocalDataWiper] Local user wipe complete for: $userId');
     }
   }
 
@@ -97,7 +98,7 @@ class LocalDataWiper {
         }
       } catch (e) {
         if (kDebugMode) {
-          print('⚠️ [LocalDataWiper] Could not clear box $boxName: $e');
+          AppLogger.debug('⚠️ [LocalDataWiper] Could not clear box $boxName: $e');
         }
       }
     }
@@ -115,7 +116,7 @@ class LocalDataWiper {
         }
       } catch (e) {
         if (kDebugMode) {
-          print('⚠️ [LocalDataWiper] Could not clear $userSpecificBoxName: $e');
+          AppLogger.debug('⚠️ [LocalDataWiper] Could not clear $userSpecificBoxName: $e');
         }
       }
     }
@@ -193,7 +194,7 @@ class LocalDataWiper {
       }
     } catch (e) {
       if (kDebugMode) {
-        print('⚠️ [LocalDataWiper] File wipe note: $e');
+        AppLogger.debug('⚠️ [LocalDataWiper] File wipe note: $e');
       }
     }
   }
@@ -203,7 +204,7 @@ class LocalDataWiper {
       await _notificationService.cancelAllNotifications();
     } catch (e) {
       if (kDebugMode) {
-        print('⚠️ [LocalDataWiper] Could not cancel notifications: $e');
+        AppLogger.debug('⚠️ [LocalDataWiper] Could not cancel notifications: $e');
       }
     }
   }
@@ -213,7 +214,7 @@ class LocalDataWiper {
       await _secureStorage.clearAll();
     } catch (e) {
       if (kDebugMode) {
-        print('⚠️ [LocalDataWiper] Secure storage clear note: $e');
+        AppLogger.debug('⚠️ [LocalDataWiper] Secure storage clear note: $e');
       }
     }
   }
@@ -245,7 +246,7 @@ class LocalDataWiper {
       }
     } catch (e) {
       if (kDebugMode) {
-        print('⚠️ [LocalDataWiper] SharedPreferences wipe note: $e');
+        AppLogger.debug('⚠️ [LocalDataWiper] SharedPreferences wipe note: $e');
       }
     }
   }

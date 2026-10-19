@@ -1,3 +1,4 @@
+import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../food_database.dart';
 import '../../domain/entities/food_item_full.dart';
@@ -171,8 +172,8 @@ FoodItemFull _convertFoodItemToFull(dynamic foodItem) {
 /// ```
 Future<void> uploadAllFoodsToFirestore(FirebaseFirestore firestore) async {
   try {
-    print('Starting food upload to Firestore...');
-    print('Total foods to upload: ${FoodDatabase.foodCount}');
+    AppLogger.debug('Starting food upload to Firestore...');
+    AppLogger.debug('Total foods to upload: ${FoodDatabase.foodCount}');
 
     // Convert FoodItem to FoodItemFull
     final fullFoods = FoodDatabase.foods
@@ -184,11 +185,11 @@ Future<void> uploadAllFoodsToFirestore(FirebaseFirestore firestore) async {
     // Upload all foods
     await datasource.uploadFoods(fullFoods);
     
-    print('✓ Successfully uploaded ${fullFoods.length} foods to Firestore');
+    AppLogger.debug('✓ Successfully uploaded ${fullFoods.length} foods to Firestore');
     
     // Verify upload by checking count
     final allFoods = await datasource.getAllFoods();
-    print('✓ Verification: ${allFoods.length} foods found in Firestore');
+    AppLogger.debug('✓ Verification: ${allFoods.length} foods found in Firestore');
     
     // Print summary by category
     final byCategory = <String, int>{};
@@ -196,13 +197,13 @@ Future<void> uploadAllFoodsToFirestore(FirebaseFirestore firestore) async {
       byCategory[food.category] = (byCategory[food.category] ?? 0) + 1;
     }
     
-    print('\nFoods by category:');
+    AppLogger.debug('\nFoods by category:');
     byCategory.forEach((category, total) {
-      print('  $category: $total');
+      AppLogger.debug('  $category: $total');
     });
     
   } catch (e) {
-    print('✗ Error uploading foods: $e');
+    AppLogger.debug('✗ Error uploading foods: $e');
     rethrow;
   }
 }
@@ -211,17 +212,17 @@ Future<void> uploadAllFoodsToFirestore(FirebaseFirestore firestore) async {
 /// Returns true if all foods are present and valid.
 Future<bool> verifyFoodsInFirestore(FirebaseFirestore firestore) async {
   try {
-    print('Verifying foods in Firestore...');
+    AppLogger.debug('Verifying foods in Firestore...');
     
     final datasource = FirestoreFoodDatasource(firestore);
     final firestoreFoods = await datasource.getAllFoods();
     final localFoods = FoodDatabase.foods;
     
-    print('Local foods: ${localFoods.length}');
-    print('Firestore foods: ${firestoreFoods.length}');
+    AppLogger.debug('Local foods: ${localFoods.length}');
+    AppLogger.debug('Firestore foods: ${firestoreFoods.length}');
     
     if (firestoreFoods.length != localFoods.length) {
-      print('✗ Food count mismatch!');
+      AppLogger.debug('✗ Food count mismatch!');
       return false;
     }
     
@@ -231,14 +232,14 @@ Future<bool> verifyFoodsInFirestore(FirebaseFirestore firestore) async {
     
     final missing = localIds.difference(firestoreIds);
     if (missing.isNotEmpty) {
-      print('✗ Missing foods in Firestore: $missing');
+      AppLogger.debug('✗ Missing foods in Firestore: $missing');
       return false;
     }
     
-    print('✓ All foods verified successfully!');
+    AppLogger.debug('✓ All foods verified successfully!');
     return true;
   } catch (e) {
-    print('✗ Error verifying foods: $e');
+    AppLogger.debug('✗ Error verifying foods: $e');
     return false;
   }
 }
@@ -246,7 +247,7 @@ Future<bool> verifyFoodsInFirestore(FirebaseFirestore firestore) async {
 /// Delete all foods from Firestore (use with caution!).
 Future<void> deleteAllFoodsFromFirestore(FirebaseFirestore firestore) async {
   try {
-    print('Deleting all foods from Firestore...');
+    AppLogger.debug('Deleting all foods from Firestore...');
     
     final batch = firestore.batch();
     final snapshot = await firestore.collection('foods').get();
@@ -256,9 +257,9 @@ Future<void> deleteAllFoodsFromFirestore(FirebaseFirestore firestore) async {
     }
     
     await batch.commit();
-    print('✓ Successfully deleted ${snapshot.docs.length} foods from Firestore');
+    AppLogger.debug('✓ Successfully deleted ${snapshot.docs.length} foods from Firestore');
   } catch (e) {
-    print('✗ Error deleting foods: $e');
+    AppLogger.debug('✗ Error deleting foods: $e');
     rethrow;
   }
 }

@@ -1,3 +1,4 @@
+import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -125,7 +126,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       }
     } catch (e) {
       if (kDebugMode) {
-        print('⚠️ [Onboarding] Error restoring draft: $e');
+        AppLogger.debug('⚠️ [Onboarding] Error restoring draft: $e');
       }
     }
   }
@@ -153,7 +154,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       );
     } catch (e) {
       if (kDebugMode) {
-        print('⚠️ [Onboarding] Error saving draft: $e');
+        AppLogger.debug('⚠️ [Onboarding] Error saving draft: $e');
       }
     }
   }

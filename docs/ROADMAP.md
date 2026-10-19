@@ -1,9 +1,9 @@
 # IronFlow Product Roadmap & Strategic Evolution Plan
 **Target Release Horizon: v1.2.0 – v2.0.0**  
-**Document Status**: Proposal & Planning Baseline  
-**Verified Git Baseline**: Branch `feat/onboarding-gate-and-fuel` @ commit `0e2351b`  
-**Test Suite Verification**: 500 / 500 passing tests (100% green)  
-**Static Analysis Baseline**: 0 errors, 0 warnings, 1,076 infos (998 `avoid_print`, 55 `deprecated_member_use`, 12 `unnecessary_import`, 6 `use_build_context_synchronously`, 4 `unnecessary_underscores`, 1 `avoid_relative_lib_imports`)
+**Document Status**: Proposal Baseline & Release 1.2 Execution Record  
+**Verified Git Baseline**: Branch `feat/release-1.2`  
+**Test Suite Verification**: 589 / 589 passing tests (100% green)  
+**Static Analysis Baseline**: 0 errors, 0 warnings, 0 fatal infos (1,121 production prints swept to AppLogger)
 
 ---
 
@@ -382,12 +382,13 @@ gantt
     dateFormat  YYYY-MM-DD
     section Release 1.2 (Store Readiness & Core Integrity)
     Account & Data Deletion (REL-01)          :done,    r12_1, 2026-10-20, 2d
-    RPE/RIR & Set Types (TRN-01)              :active,  r12_2, 2026-10-22, 2d
-    Pre-Restore Safety Snapshot (REL-03)      :         r12_3, 2026-10-24, 1d
-    Background Rest Timer (TRN-02)            :         r12_4, 2026-10-25, 5d
-    1RM PRs & Overload Persistence (TRN-03)   :         r12_5, 2026-10-30, 4d
-    AI Backend Proxy (AI-01)                  :         r12_6, 2026-11-03, 5d
-    Tech Health Cleanup & Widget Tests        :         r12_7, 2026-11-08, 3d
+    RPE/RIR & Set Types (TRN-01)              :done,    r12_2, 2026-10-22, 2d
+    Pre-Restore Safety Snapshot (REL-03)      :done,    r12_3, 2026-10-24, 1d
+    Background Rest Timer (TRN-02)            :done,    r12_4, 2026-10-25, 5d
+    1RM PRs & Overload Persistence (TRN-03)   :done,    r12_5, 2026-10-30, 4d
+    AI Backend Proxy (AI-01)                  :done,    r12_6, 2026-11-03, 5d
+    Exercise Library & Video Experience       :done,    r12_7, 2026-11-06, 3d
+    Tech Health Cleanup & Widget Tests        :done,    r12_8, 2026-11-08, 3d
 
     section Release 1.3 (Autonomous Fuel & Cloud Sync)
     Barcode UPC Scanner (NUT-01)              :         r13_1, 2026-11-15, 6d
@@ -405,16 +406,17 @@ gantt
     IronFlow Pro Subscription Tier (BIZ-01)   :         r20_5, 2027-01-13, 8d
 ```
 
-#### **Release 1.2: "Store Readiness & Training Integrity" (Target: 3 Weeks)**
+#### **Release 1.2: "Store Readiness & Training Integrity" [COMPLETED]**
 - **Theme**: Fix critical store blockers, make the active workout loop unbreakable, and secure AI credentials.
 - **Scope**:
-  - `REL-01`: Full in-app account & data deletion (Firebase Auth + Hive + Firestore).
-  - `TRN-01`: RPE / RIR logging and SetType (`[W]`, `[N]`, `[D]`, `[F]`) in `ActiveWorkoutScreen`.
-  - `TRN-02`: Background rest timer with persistent OS countdown notification and audio chime.
-  - `TRN-03`: Epley/Brzycki 1RM PR detection and wiring summary suggestion acceptance to `ActiveProgram`.
-  - `AI-01`: Cloudflare Worker serverless AI proxy with token abuse gates.
-  - `REL-03`: Automatic pre-restore safety snapshot before overwrite.
-  - `TECH-01`: Elimination of 998 `avoid_print` infos via `AppLogger`, plus widget test suite for `ActiveWorkoutScreen`.
+  - `[x] REL-01`: Full in-app account & data deletion (Firebase Auth + Hive + Firestore remote purge + re-auth handling).
+  - `[x] TRN-01`: RPE / RIR logging and SetType (`[W]`, `[N]`, `[D]`, `[F]`) with warm-up volume exclusion across all calculations.
+  - `[x] TRN-02`: Background rest timer with absolute target timestamp, ephemeral recovery, inexact notification, and lifecycle resume sync.
+  - `[x] TRN-03`: Epley/Brzycki 1RM PR detection and program persistence on suggestion acceptance in `WorkoutSummaryScreen`.
+  - `[x] AI-01`: Cloudflare Worker serverless AI proxy with Firebase JWT authentication and KV per-user rate limiting.
+  - `[x] REL-03`: Automatic pre-restore safety snapshot with automated rollback and undo restore capability.
+  - `[x] Exercise Library Upgrade`: Alias resolution, query helpers, offline-resilient YouTube fallback card with external app launcher.
+  - `[x] TECH-01`: `AppLogger` centralized logging (1,121 prints swept in `lib/`), 0 compiler errors, 0 warnings, and 9 characterization widget tests.
 - **Riskiest Assumption**: OS battery optimizations on Xiaomi/Samsung devices allowing consistent background notification timer alerts without native service kill.
 
 #### **Release 1.3: "Autonomous Fuel & Connected Intelligence" (Target: 4 Weeks)**

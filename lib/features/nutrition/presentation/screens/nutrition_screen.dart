@@ -1,3 +1,4 @@
+import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -112,7 +113,7 @@ class NutritionScreen extends ConsumerWidget {
           onDeleteMeal: (mealId) async {
             try {
               if (kDebugMode) {
-                print('📊 [Nutrition] Deleting meal: $mealId');
+                AppLogger.debug('📊 [Nutrition] Deleting meal: $mealId');
               }
               await ref
                   .read(dailyNutritionSummaryProvider(today).notifier)
@@ -141,7 +142,7 @@ class NutritionScreen extends ConsumerWidget {
           onLogMeal: (meal) async {
             try {
               if (kDebugMode) {
-                print('📊 [Nutrition] Logging meal: ${meal.name}');
+                AppLogger.debug('📊 [Nutrition] Logging meal: ${meal.name}');
               }
 
               if (context.mounted) {

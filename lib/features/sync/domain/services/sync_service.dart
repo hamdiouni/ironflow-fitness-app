@@ -1,3 +1,4 @@
+import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'dart:async';
 import 'package:uuid/uuid.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -94,18 +95,18 @@ class SyncService {
   /// Sync all pending actions and pull latest data from cloud
   Future<void> syncAll({String? userId}) async {
     if (_isSyncing) {
-      print('Sync already in progress, skipping...');
+      AppLogger.debug('Sync already in progress, skipping...');
       return;
     }
 
     final connectivityResult = await _connectivity.checkConnectivity();
     if (connectivityResult.contains(ConnectivityResult.none)) {
-      print('No internet connection, sync skipped');
+      AppLogger.debug('No internet connection, sync skipped');
       return;
     }
 
     if (userId == null) {
-      print('No user ID provided, sync skipped');
+      AppLogger.debug('No user ID provided, sync skipped');
       return;
     }
 
@@ -123,9 +124,9 @@ class SyncService {
       await _syncQueue.clearCompleted();
 
       _lastSyncTime = DateTime.now();
-      print('✅ Sync completed successfully');
+      AppLogger.debug('✅ Sync completed successfully');
     } catch (e) {
-      print('❌ Sync failed: $e');
+      AppLogger.debug('❌ Sync failed: $e');
     } finally {
       _isSyncing = false;
       _emitStatus();
@@ -139,7 +140,7 @@ class SyncService {
     for (final action in pendingActions) {
       // Skip if too many retries
       if (action.retryCount >= 3) {
-        print('Action ${action.id} exceeded max retries, skipping');
+        AppLogger.debug('Action ${action.id} exceeded max retries, skipping');
         continue;
       }
 
@@ -162,14 +163,14 @@ class SyncService {
         }
 
         await _syncQueue.updateActionStatus(action.id, SyncStatus.completed);
-        print('✅ Synced ${action.dataType} ${action.type} for ${action.dataId}');
+        AppLogger.debug('✅ Synced ${action.dataType} ${action.type} for ${action.dataId}');
       } catch (e) {
         await _syncQueue.updateActionStatus(
           action.id,
           SyncStatus.failed,
           error: e.toString(),
         );
-        print('❌ Failed to sync ${action.dataType} ${action.type}: $e');
+        AppLogger.debug('❌ Failed to sync ${action.dataType} ${action.type}: $e');
       }
     }
   }
@@ -192,7 +193,7 @@ class SyncService {
         if (localWorkout == null) {
           // New workout from cloud, save locally
           await _hiveWorkouts.saveWorkout(workout);
-          print('📥 Pulled new workout ${workout.id}');
+          AppLogger.debug('📥 Pulled new workout ${workout.id}');
         } else {
           // Compare timestamps (simplified - in production, use proper timestamp fields)
           final cloudDate = DateTime.parse(workout.date);
@@ -201,7 +202,7 @@ class SyncService {
           if (cloudDate.isAfter(localDate)) {
             // Cloud version is newer, update local
             await _hiveWorkouts.saveWorkout(workout);
-            print('📥 Updated workout ${workout.id} from cloud');
+            AppLogger.debug('📥 Updated workout ${workout.id} from cloud');
           }
         }
       }
@@ -220,13 +221,13 @@ class SyncService {
             isActive: true,
           );
           await _hivePrograms.saveActiveProgram(activeProgram);
-          print('📥 Pulled new program ${cloudProgram.id}');
+          AppLogger.debug('📥 Pulled new program ${cloudProgram.id}');
         } else {
           // Compare timestamps (simplified)
           // In production, add updatedAt field to ProgramModel
           final activeProgram = localProgram.copyWith(program: cloudProgram);
           await _hivePrograms.saveActiveProgram(activeProgram);
-          print('📥 Updated program ${cloudProgram.id} from cloud');
+          AppLogger.debug('📥 Updated program ${cloudProgram.id} from cloud');
         }
       }
 
@@ -234,7 +235,7 @@ class SyncService {
       await _firestoreSync.updateLastSyncTime(userId, 'workouts', DateTime.now());
       await _firestoreSync.updateLastSyncTime(userId, 'programs', DateTime.now());
     } catch (e) {
-      print('❌ Failed to pull cloud changes: $e');
+      AppLogger.debug('❌ Failed to pull cloud changes: $e');
       rethrow;
     }
   }

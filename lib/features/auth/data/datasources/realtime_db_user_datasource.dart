@@ -1,3 +1,4 @@
+import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/foundation.dart';
 import '../../domain/entities/user.dart';
@@ -19,11 +20,11 @@ class RealtimeDbUserDataSource implements UserDataSource {
     try {
       await _database.child('users').child(user.id).set(user.toJson());
       if (kDebugMode) {
-        print('✓ [RealtimeDB] User saved: ${user.id}');
+        AppLogger.debug('✓ [RealtimeDB] User saved: ${user.id}');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('❌ [RealtimeDB] Error saving user: $e');
+        AppLogger.debug('❌ [RealtimeDB] Error saving user: $e');
       }
       rethrow;
     }
@@ -36,19 +37,19 @@ class RealtimeDbUserDataSource implements UserDataSource {
       
       if (!snapshot.exists) {
         if (kDebugMode) {
-          print('ℹ️ [RealtimeDB] User not found: $userId');
+          AppLogger.debug('ℹ️ [RealtimeDB] User not found: $userId');
         }
         return null;
       }
 
       final data = Map<String, dynamic>.from(snapshot.value as Map);
       if (kDebugMode) {
-        print('✓ [RealtimeDB] User loaded: $userId');
+        AppLogger.debug('✓ [RealtimeDB] User loaded: $userId');
       }
       return User.fromJson(data);
     } catch (e) {
       if (kDebugMode) {
-        print('❌ [RealtimeDB] Error loading user: $e');
+        AppLogger.debug('❌ [RealtimeDB] Error loading user: $e');
       }
       rethrow;
     }
@@ -59,11 +60,11 @@ class RealtimeDbUserDataSource implements UserDataSource {
     try {
       await _database.child('users').child(user.id).update(user.toJson());
       if (kDebugMode) {
-        print('✓ [RealtimeDB] User updated: ${user.id}');
+        AppLogger.debug('✓ [RealtimeDB] User updated: ${user.id}');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('❌ [RealtimeDB] Error updating user: $e');
+        AppLogger.debug('❌ [RealtimeDB] Error updating user: $e');
       }
       rethrow;
     }
@@ -74,11 +75,11 @@ class RealtimeDbUserDataSource implements UserDataSource {
     try {
       await _database.child('users').child(userId).remove();
       if (kDebugMode) {
-        print('✓ [RealtimeDB] User deleted: $userId');
+        AppLogger.debug('✓ [RealtimeDB] User deleted: $userId');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('❌ [RealtimeDB] Error deleting user: $e');
+        AppLogger.debug('❌ [RealtimeDB] Error deleting user: $e');
       }
       rethrow;
     }
@@ -105,11 +106,11 @@ class RealtimeDbUserDataSource implements UserDataSource {
           .child(workoutId)
           .set(workoutData);
       if (kDebugMode) {
-        print('✓ [RealtimeDB] Workout saved: $workoutId');
+        AppLogger.debug('✓ [RealtimeDB] Workout saved: $workoutId');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('❌ [RealtimeDB] Error saving workout: $e');
+        AppLogger.debug('❌ [RealtimeDB] Error saving workout: $e');
       }
       rethrow;
     }
@@ -136,12 +137,12 @@ class RealtimeDbUserDataSource implements UserDataSource {
       }).toList();
 
       if (kDebugMode) {
-        print('✓ [RealtimeDB] Loaded ${workouts.length} workouts');
+        AppLogger.debug('✓ [RealtimeDB] Loaded ${workouts.length} workouts');
       }
       return workouts;
     } catch (e) {
       if (kDebugMode) {
-        print('❌ [RealtimeDB] Error loading workouts: $e');
+        AppLogger.debug('❌ [RealtimeDB] Error loading workouts: $e');
       }
       rethrow;
     }
@@ -157,11 +158,11 @@ class RealtimeDbUserDataSource implements UserDataSource {
           .child(date)
           .set(nutritionData);
       if (kDebugMode) {
-        print('✓ [RealtimeDB] Nutrition saved for: $date');
+        AppLogger.debug('✓ [RealtimeDB] Nutrition saved for: $date');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('❌ [RealtimeDB] Error saving nutrition: $e');
+        AppLogger.debug('❌ [RealtimeDB] Error saving nutrition: $e');
       }
       rethrow;
     }
@@ -191,12 +192,12 @@ class RealtimeDbUserDataSource implements UserDataSource {
       }).toList();
 
       if (kDebugMode) {
-        print('✓ [RealtimeDB] Loaded ${nutrition.length} nutrition entries');
+        AppLogger.debug('✓ [RealtimeDB] Loaded ${nutrition.length} nutrition entries');
       }
       return nutrition;
     } catch (e) {
       if (kDebugMode) {
-        print('❌ [RealtimeDB] Error loading nutrition: $e');
+        AppLogger.debug('❌ [RealtimeDB] Error loading nutrition: $e');
       }
       rethrow;
     }
@@ -212,11 +213,11 @@ class RealtimeDbUserDataSource implements UserDataSource {
           .child(progressId)
           .set(progressData);
       if (kDebugMode) {
-        print('✓ [RealtimeDB] Progress saved: $progressId');
+        AppLogger.debug('✓ [RealtimeDB] Progress saved: $progressId');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('❌ [RealtimeDB] Error saving progress: $e');
+        AppLogger.debug('❌ [RealtimeDB] Error saving progress: $e');
       }
       rethrow;
     }
@@ -243,12 +244,12 @@ class RealtimeDbUserDataSource implements UserDataSource {
       }).toList();
 
       if (kDebugMode) {
-        print('✓ [RealtimeDB] Loaded ${progress.length} progress entries');
+        AppLogger.debug('✓ [RealtimeDB] Loaded ${progress.length} progress entries');
       }
       return progress;
     } catch (e) {
       if (kDebugMode) {
-        print('❌ [RealtimeDB] Error loading progress: $e');
+        AppLogger.debug('❌ [RealtimeDB] Error loading progress: $e');
       }
       rethrow;
     }

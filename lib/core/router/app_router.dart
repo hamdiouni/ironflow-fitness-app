@@ -1,3 +1,4 @@
+import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -97,13 +98,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isOnboarding = loc == AppRoutes.onboarding;
 
       if (kDebugMode) {
-        print('🔍 [Router] Redirect check:');
-        print('  - Location: $loc');
-        print('  - Authenticated: $isAuthenticated');
-        print('  - UserId: $userId');
-        print('  - Onboarded: $isOnboarded');
-        print('  - Is auth route: $isAuthRoute');
-        print('  - Is onboarding: $isOnboarding');
+        AppLogger.debug('🔍 [Router] Redirect check:');
+        AppLogger.debug('  - Location: $loc');
+        AppLogger.debug('  - Authenticated: $isAuthenticated');
+        AppLogger.debug('  - UserId: $userId');
+        AppLogger.debug('  - Onboarded: $isOnboarded');
+        AppLogger.debug('  - Is auth route: $isAuthRoute');
+        AppLogger.debug('  - Is onboarding: $isOnboarding');
       }
 
       // Case 1: Unauthenticated user
@@ -113,7 +114,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           return null;
         }
         if (kDebugMode) {
-          print('⚠️ [Router] Not authenticated, redirecting to login');
+          AppLogger.debug('⚠️ [Router] Not authenticated, redirecting to login');
         }
         return AppRoutes.login;
       }
@@ -122,7 +123,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       if (!isOnboarded) {
         if (!isOnboarding) {
           if (kDebugMode) {
-            print('📊 [Router] Authenticated user needs onboarding -> /onboarding');
+            AppLogger.debug('📊 [Router] Authenticated user needs onboarding -> /onboarding');
           }
           return AppRoutes.onboarding;
         }
@@ -132,13 +133,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Case 3: Authenticated AND onboarded user accessing auth or onboarding routes
       if (isAuthRoute || isOnboarding) {
         if (kDebugMode) {
-          print('⚠️ [Router] Already authenticated and onboarded, redirecting to /home');
+          AppLogger.debug('⚠️ [Router] Already authenticated and onboarded, redirecting to /home');
         }
         return AppRoutes.home;
       }
 
       if (kDebugMode) {
-        print('✅ [Router] No redirect needed');
+        AppLogger.debug('✅ [Router] No redirect needed');
       }
       return null;
     },

@@ -508,20 +508,20 @@ class _ProgramEditorScreenState extends ConsumerState<ProgramEditorScreen> {
                   );
 
                   ref.invalidate(activeProgramProvider);
-                  if (mounted) {
+                  if (context.mounted) {
                     Navigator.of(context).pop();
                     ErrorHandler.showSnackBar(context, 'Parameters updated successfully');
                   }
                 } on ProgramValidationException catch (e) {
-                  if (mounted) {
+                  if (context.mounted) {
                     ErrorHandler.handleError(context, e, null);
                   }
                 } on ActiveProgramException catch (e) {
-                  if (mounted) {
+                  if (context.mounted) {
                     ErrorHandler.handleError(context, e, null);
                   }
                 } catch (e, s) {
-                  if (mounted) {
+                  if (context.mounted) {
                     ErrorHandler.handleError(context, e, s);
                   }
                 }

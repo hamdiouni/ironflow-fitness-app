@@ -1,3 +1,4 @@
+import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../../domain/entities/sync_action.dart';
 
@@ -41,7 +42,7 @@ class HiveSyncQueueDataSourceImpl implements HiveSyncQueueDataSource {
           actions.add(action);
         }
       } catch (e) {
-        print('Error parsing sync action: $e');
+        AppLogger.debug('Error parsing sync action: $e');
       }
     }
 
@@ -90,7 +91,7 @@ class HiveSyncQueueDataSourceImpl implements HiveSyncQueueDataSource {
             keysToDelete.add(key.toString());
           }
         } catch (e) {
-          print('Error parsing sync action for cleanup: $e');
+          AppLogger.debug('Error parsing sync action for cleanup: $e');
         }
       }
     }
@@ -112,7 +113,7 @@ class HiveSyncQueueDataSourceImpl implements HiveSyncQueueDataSource {
           count++;
         }
       } catch (e) {
-        print('Error counting pending actions: $e');
+        AppLogger.debug('Error counting pending actions: $e');
       }
     }
 
@@ -131,7 +132,7 @@ class HiveSyncQueueDataSourceImpl implements HiveSyncQueueDataSource {
           count++;
         }
       } catch (e) {
-        print('Error counting failed actions: $e');
+        AppLogger.debug('Error counting failed actions: $e');
       }
     }
 

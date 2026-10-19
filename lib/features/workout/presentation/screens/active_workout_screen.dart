@@ -1,3 +1,4 @@
+import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,8 +9,6 @@ import 'package:collection/collection.dart';
 
 import '../../../../core/constants/app_theme.dart';
 import '../../../../core/router/app_router.dart';
-import '../../../../core/theme/app_theme_tokens.dart';
-import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/error_handler.dart';
 import '../../../../shared/presentation/components/components.dart';
 import '../../data/exercise_video_map.dart';
@@ -45,26 +44,26 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
 
   @override
   Widget build(BuildContext context) {
-    print('📊 [WorkoutUI] Building active workout screen...');
+    AppLogger.debug('📊 [WorkoutUI] Building active workout screen...');
     final workoutState = ref.watch(workoutNotifierProvider);
     return workoutState.when(
       initial: () {
-        print('🔍 [WorkoutUI] State: initial');
+        AppLogger.debug('🔍 [WorkoutUI] State: initial');
         return _buildInitialView(context);
       },
       inProgress: (workout, startTime) {
-        print('🔍 [WorkoutUI] State: inProgress, exercises: ${workout.exercises.length}');
+        AppLogger.debug('🔍 [WorkoutUI] State: inProgress, exercises: ${workout.exercises.length}');
         return _buildWorkoutView(context, workout, startTime);
       },
       completed: (workout) {
-        print('🔍 [WorkoutUI] State: completed');
+        AppLogger.debug('🔍 [WorkoutUI] State: completed');
         return _buildCompletedView(context, workout);
       },
     );
   }
 
   Widget _buildInitialView(BuildContext context) {
-    print('📊 [WorkoutUI] Building initial view');
+    AppLogger.debug('📊 [WorkoutUI] Building initial view');
     final tokens = context.tokens;
     return Scaffold(
       backgroundColor: tokens.canvas,
@@ -112,12 +111,12 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                   variant: AppButtonVariant.primary,
                   onPressed: () async {
                     try {
-                      print('📊 [WorkoutUI] Begin workout button pressed');
+                      AppLogger.debug('📊 [WorkoutUI] Begin workout button pressed');
                       await ref.read(workoutNotifierProvider.notifier).start();
-                      print('✅ [WorkoutUI] Workout started successfully');
+                      AppLogger.debug('✅ [WorkoutUI] Workout started successfully');
                     } catch (e, s) {
-                      print('❌ [WorkoutUI] Failed to start workout: $e');
-                      print('🔍 [WorkoutUI] Stack trace: $s');
+                      AppLogger.debug('❌ [WorkoutUI] Failed to start workout: $e');
+                      AppLogger.debug('🔍 [WorkoutUI] Stack trace: $s');
                       if (context.mounted) ErrorHandler.handleError(context, e, s);
                     }
                   },
@@ -131,12 +130,12 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
   }
 
   Widget _buildWorkoutView(BuildContext context, Workout workout, DateTime startTime) {
-    print('📊 [WorkoutUI] Building workout view');
+    AppLogger.debug('📊 [WorkoutUI] Building workout view');
     final tokens = context.tokens;
     final hasExercises = workout.exercises.isNotEmpty;
     final hasSets = workout.exercises.any((e) => e.sets.isNotEmpty);
     
-    print('🔍 [WorkoutUI] Has exercises: $hasExercises, Has sets: $hasSets');
+    AppLogger.debug('🔍 [WorkoutUI] Has exercises: $hasExercises, Has sets: $hasSets');
     
     // Get program exercises from active program
     final programExercises = ref.watch(currentDayExercisesProvider);
@@ -165,8 +164,8 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
               icon: Icon(Icons.add, color: tokens.kineticAccent, size: 22),
               tooltip: 'Add exercise',
               onPressed: () {
-                print('📊 [WorkoutUI] Add exercise button pressed');
-                _showExerciseSelection(context, workout);
+                AppLogger.debug('📊 [WorkoutUI] Add exercise button pressed');
+                _showExerciseSelection(workout);
               },
             ),
           ),
@@ -200,7 +199,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                       );
                     },
                   )
-                : _EmptyExerciseHint(onAddExercise: () => _showExerciseSelection(context, workout)),
+                : _EmptyExerciseHint(onAddExercise: () => _showExerciseSelection(workout)),
           ),
           _FinishWorkoutButton(enabled: hasSets, onFinish: () => _finishWorkout(context)),
         ],
@@ -209,14 +208,14 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
   }
 
   Widget _buildCompletedView(BuildContext context, Workout workout) {
-    print('📊 [WorkoutUI] Building completed view');
+    AppLogger.debug('📊 [WorkoutUI] Building completed view');
     final totalWorkingSets = workout.exercises.fold<int>(
       0,
       (s, e) => s + e.sets.where((set) => set.type != SetType.warmup).length,
     );
     final volumeUseCase = CalculateWorkoutVolumeUseCase();
     final totalWorkingVolume = volumeUseCase(workout);
-    print('🔍 [WorkoutUI] Total working sets: $totalWorkingSets, Working volume: $totalWorkingVolume, Duration: ${workout.duration}');
+    AppLogger.debug('🔍 [WorkoutUI] Total working sets: $totalWorkingSets, Working volume: $totalWorkingVolume, Duration: ${workout.duration}');
     
     // Watch quick feedback state to show bottom sheet
     final quickFeedback = ref.watch(globalAIProvider.select((state) => state.quickFeedback));
@@ -225,12 +224,12 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
       if (mounted) {
         // Show quick feedback bottom sheet if available
         if (quickFeedback != null) {
-          print('🎉 [WorkoutUI] Quick feedback available, showing bottom sheet...');
+          AppLogger.debug('🎉 [WorkoutUI] Quick feedback available, showing bottom sheet...');
           QuickFeedbackBottomSheet.show(context, quickFeedback);
-          print('✅ [WorkoutUI] Quick feedback bottom sheet shown');
+          AppLogger.debug('✅ [WorkoutUI] Quick feedback bottom sheet shown');
         }
         
-        print('📊 [WorkoutUI] Navigating to workout summary...');
+        AppLogger.debug('📊 [WorkoutUI] Navigating to workout summary...');
         context.go(AppRoutes.workoutSummary, extra: <String, dynamic>{
           'totalSets': totalWorkingSets,
           'totalVolume': totalWorkingVolume,
@@ -238,19 +237,19 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
           'prCount': _prCount,
           'exerciseNames': workout.exercises.map((e) => e.name).toList(),
         });
-        print('✅ [WorkoutUI] Navigation to summary completed');
+        AppLogger.debug('✅ [WorkoutUI] Navigation to summary completed');
         
-        print('📊 [WorkoutUI] Resetting workout state...');
+        AppLogger.debug('📊 [WorkoutUI] Resetting workout state...');
         ref.read(workoutNotifierProvider.notifier).reset();
-        print('✅ [WorkoutUI] Workout state reset');
+        AppLogger.debug('✅ [WorkoutUI] Workout state reset');
       }
     });
     return const Scaffold(body: Center(child: CircularProgressIndicator()));
   }
 
-  void _showExerciseSelection(BuildContext context, Workout workout) {
+  void _showExerciseSelection(Workout workout) {
     try {
-      print('📊 [WorkoutUI] Opening exercise selection sheet...');
+      AppLogger.debug('📊 [WorkoutUI] Opening exercise selection sheet...');
       showModalBottomSheet<void>(
         context: context,
         isScrollControlled: true,
@@ -262,119 +261,119 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
           builder: (sheetContext, scrollController) => ExerciseSelectionSheet(
             scrollController: scrollController,
             onExerciseSelected: (name) async {
-              print('📊 [WorkoutUI] Exercise selected: $name');
+              AppLogger.debug('📊 [WorkoutUI] Exercise selected: $name');
               Navigator.of(sheetContext).pop();
               try {
                 final exercise = Exercise(id: const Uuid().v4(), name: name, type: ExerciseType.strength, sets: const []);
-                print('🔍 [WorkoutUI] Exercise ID: ${exercise.id}, Type: ${exercise.type}');
+                AppLogger.debug('🔍 [WorkoutUI] Exercise ID: ${exercise.id}, Type: ${exercise.type}');
                 
                 await ref.read(workoutNotifierProvider.notifier).addExercise(exercise);
-                print('✅ [WorkoutUI] Exercise added successfully');
+                AppLogger.debug('✅ [WorkoutUI] Exercise added successfully');
               } catch (e, s) {
-                print('❌ [WorkoutUI] Failed to add exercise: $e');
-                print('🔍 [WorkoutUI] Stack trace: $s');
-                if (context.mounted) ErrorHandler.handleError(context, e, s);
+                AppLogger.debug('❌ [WorkoutUI] Failed to add exercise: $e');
+                AppLogger.debug('🔍 [WorkoutUI] Stack trace: $s');
+                if (mounted) ErrorHandler.handleError(context, e, s);
               }
             },
           ),
         ),
       );
-      print('✅ [WorkoutUI] Exercise selection sheet opened');
+      AppLogger.debug('✅ [WorkoutUI] Exercise selection sheet opened');
     } catch (e, s) {
-      print('❌ [WorkoutUI] Failed to open exercise selection: $e');
-      print('🔍 [WorkoutUI] Stack trace: $s');
-      if (context.mounted) ErrorHandler.handleError(context, e, s);
+      AppLogger.debug('❌ [WorkoutUI] Failed to open exercise selection: $e');
+      AppLogger.debug('🔍 [WorkoutUI] Stack trace: $s');
+      if (mounted) ErrorHandler.handleError(context, e, s);
     }
   }
 
   Future<void> _logSet(Exercise exercise, int reps, double weight, [SetType type = SetType.normal, int? rpe]) async {
     try {
-      print('📊 [WorkoutUI] Logging set for exercise: ${exercise.name}');
-      print('🔍 [WorkoutUI] Reps: $reps, Weight: ${weight}kg, Type: ${type.name}, RPE: $rpe');
+      AppLogger.debug('📊 [WorkoutUI] Logging set for exercise: ${exercise.name}');
+      AppLogger.debug('🔍 [WorkoutUI] Reps: $reps, Weight: ${weight}kg, Type: ${type.name}, RPE: $rpe');
       
       final set = SetEntry.create(reps: reps, weight: weight, type: type, rpe: rpe);
       final isPR = await ref.read(workoutNotifierProvider.notifier).logSetForExercise(exercise.id, set);
       
-      print('✅ [WorkoutUI] Set logged successfully');
+      AppLogger.debug('✅ [WorkoutUI] Set logged successfully');
       ref.read(appHapticsProvider).setLogged();
       
       if (mounted) setState(() => _animatingExerciseId = exercise.id);
       
-      print('📊 [WorkoutUI] Starting rest timer...');
+      AppLogger.debug('📊 [WorkoutUI] Starting rest timer...');
       ref.read(restTimerProvider.notifier).start(90); // 90 seconds default rest time
-      print('✅ [WorkoutUI] Rest timer started');
+      AppLogger.debug('✅ [WorkoutUI] Rest timer started');
       
       if (isPR && mounted && context.mounted) {
-        print('🎉 [WorkoutUI] New PR detected for ${exercise.name}!');
+        AppLogger.debug('🎉 [WorkoutUI] New PR detected for ${exercise.name}!');
         setState(() => _prCount++);
-        print('🔍 [WorkoutUI] Total PRs this workout: $_prCount');
+        AppLogger.debug('🔍 [WorkoutUI] Total PRs this workout: $_prCount');
         
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('New PR on ${exercise.name}!'),
           backgroundColor: AppTheme.primaryColor,
           duration: const Duration(seconds: 2),
         ));
-        print('✅ [WorkoutUI] PR notification shown');
+        AppLogger.debug('✅ [WorkoutUI] PR notification shown');
       }
     } catch (e, s) {
-      print('❌ [WorkoutUI] Failed to log set: $e');
-      print('🔍 [WorkoutUI] Stack trace: $s');
-      if (context.mounted) ErrorHandler.handleError(context, e, s);
+      AppLogger.debug('❌ [WorkoutUI] Failed to log set: $e');
+      AppLogger.debug('🔍 [WorkoutUI] Stack trace: $s');
+      if (mounted) ErrorHandler.handleError(context, e, s);
     }
   }
 
   Future<void> _finishWorkout(BuildContext context) async {
     try {
-      print('📊 [WorkoutUI] Finishing workout...');
+      AppLogger.debug('📊 [WorkoutUI] Finishing workout...');
       
       // Show calorie input dialog first
-      print('📊 [WorkoutUI] Showing calorie input dialog...');
+      AppLogger.debug('📊 [WorkoutUI] Showing calorie input dialog...');
       final caloriesBurned = await _showCalorieInputDialog(context);
       
       // If user cancelled, don't finish workout
       if (caloriesBurned == null) {
-        print('⚠️ [WorkoutUI] User cancelled calorie input');
+        AppLogger.debug('⚠️ [WorkoutUI] User cancelled calorie input');
         return;
       }
       
-      print('🔍 [WorkoutUI] Calories burned: $caloriesBurned');
+      AppLogger.debug('🔍 [WorkoutUI] Calories burned: $caloriesBurned');
       
       // Update the workout with calories burned
-      print('📊 [WorkoutUI] Updating workout with calories...');
+      AppLogger.debug('📊 [WorkoutUI] Updating workout with calories...');
       ref.read(workoutNotifierProvider.notifier).updateCalories(caloriesBurned);
       
       // Complete the current workout day in the active program
-      print('📊 [WorkoutUI] Completing current day in active program...');
+      AppLogger.debug('📊 [WorkoutUI] Completing current day in active program...');
       await ref.read(activeProgramProvider.notifier).completeCurrentDay();
-      print('✅ [WorkoutUI] Current day completed');
+      AppLogger.debug('✅ [WorkoutUI] Current day completed');
       
       // Check if program is now complete
       final activeProgramAsync = ref.read(activeProgramProvider);
       final activeProgram = activeProgramAsync.value;
       
       if (activeProgram != null && activeProgram.isProgramComplete) {
-        print('🎉 [WorkoutUI] Program completed!');
+        AppLogger.debug('🎉 [WorkoutUI] Program completed!');
         // Show program complete dialog
         if (context.mounted) {
-          print('📊 [WorkoutUI] Showing program complete dialog...');
+          AppLogger.debug('📊 [WorkoutUI] Showing program complete dialog...');
           _showProgramCompleteDialog(context, activeProgram);
         }
       } else {
-        print('📊 [WorkoutUI] Program not complete, finishing workout normally...');
+        AppLogger.debug('📊 [WorkoutUI] Program not complete, finishing workout normally...');
         // Finish the workout session normally
         await ref.read(workoutNotifierProvider.notifier).finish();
-        print('✅ [WorkoutUI] Workout finished successfully');
+        AppLogger.debug('✅ [WorkoutUI] Workout finished successfully');
       }
     } catch (e, s) {
-      print('❌ [WorkoutUI] Failed to finish workout: $e');
-      print('🔍 [WorkoutUI] Stack trace: $s');
+      AppLogger.debug('❌ [WorkoutUI] Failed to finish workout: $e');
+      AppLogger.debug('🔍 [WorkoutUI] Stack trace: $s');
       if (context.mounted) ErrorHandler.handleError(context, e, s);
     }
   }
   
   Future<double?> _showCalorieInputDialog(BuildContext context) async {
     try {
-      print('📊 [WorkoutUI] Opening calorie input dialog...');
+      AppLogger.debug('📊 [WorkoutUI] Opening calorie input dialog...');
       final controller = TextEditingController(text: '0');
       
       final result = await showDialog<double>(
@@ -445,7 +444,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
             actions: [
               TextButton(
                 onPressed: () {
-                  print('⚠️ [WorkoutUI] User cancelled calorie input dialog');
+                  AppLogger.debug('⚠️ [WorkoutUI] User cancelled calorie input dialog');
                   Navigator.of(context).pop(null);
                 },
                 child: Text('Cancel', style: TextStyle(color: tokens.textMuted)),
@@ -456,7 +455,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                 height: 40,
                 onPressed: () {
                   final value = double.tryParse(controller.text) ?? 0;
-                  print('🔍 [WorkoutUI] User entered calories: $value');
+                  AppLogger.debug('🔍 [WorkoutUI] User entered calories: $value');
                   Navigator.of(context).pop(value);
                 },
               ),
@@ -469,23 +468,23 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
       });
       
       if (result != null) {
-        print('✅ [WorkoutUI] Calorie input dialog completed with value: $result');
+        AppLogger.debug('✅ [WorkoutUI] Calorie input dialog completed with value: $result');
       } else {
-        print('⚠️ [WorkoutUI] Calorie input dialog cancelled');
+        AppLogger.debug('⚠️ [WorkoutUI] Calorie input dialog cancelled');
       }
       
       return result;
     } catch (e, s) {
-      print('❌ [WorkoutUI] Failed to show calorie input dialog: $e');
-      print('🔍 [WorkoutUI] Stack trace: $s');
+      AppLogger.debug('❌ [WorkoutUI] Failed to show calorie input dialog: $e');
+      AppLogger.debug('🔍 [WorkoutUI] Stack trace: $s');
       return null;
     }
   }
   
   void _showProgramCompleteDialog(BuildContext context, ActiveProgram activeProgram) {
     try {
-      print('📊 [WorkoutUI] Opening program complete dialog...');
-      print('🔍 [WorkoutUI] Program name: ${activeProgram.program.name}');
+      AppLogger.debug('📊 [WorkoutUI] Opening program complete dialog...');
+      AppLogger.debug('🔍 [WorkoutUI] Program name: ${activeProgram.program.name}');
       
       showDialog(
         context: context,
@@ -494,48 +493,48 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
           programName: activeProgram.program.name,
           onRestart: () async {
             try {
-              print('📊 [WorkoutUI] User chose to restart program');
+              AppLogger.debug('📊 [WorkoutUI] User chose to restart program');
               await ref.read(activeProgramProvider.notifier).restartProgram();
-              print('✅ [WorkoutUI] Program restarted successfully');
+              AppLogger.debug('✅ [WorkoutUI] Program restarted successfully');
               
               if (context.mounted) {
-                print('📊 [WorkoutUI] Finishing workout after program restart...');
+                AppLogger.debug('📊 [WorkoutUI] Finishing workout after program restart...');
                 await ref.read(workoutNotifierProvider.notifier).finish();
-                print('✅ [WorkoutUI] Workout finished after program restart');
+                AppLogger.debug('✅ [WorkoutUI] Workout finished after program restart');
               }
             } catch (e, s) {
-              print('❌ [WorkoutUI] Failed to restart program: $e');
-              print('🔍 [WorkoutUI] Stack trace: $s');
+              AppLogger.debug('❌ [WorkoutUI] Failed to restart program: $e');
+              AppLogger.debug('🔍 [WorkoutUI] Stack trace: $s');
               if (context.mounted) ErrorHandler.handleError(context, e, s);
             }
           },
           onGenerateNew: () async {
             try {
-              print('📊 [WorkoutUI] User chose to generate new program');
+              AppLogger.debug('📊 [WorkoutUI] User chose to generate new program');
               
               // Clear the current program
-              print('📊 [WorkoutUI] Clearing current program...');
+              AppLogger.debug('📊 [WorkoutUI] Clearing current program...');
               await ref.read(activeProgramProvider.notifier).clearProgram();
-              print('✅ [WorkoutUI] Program cleared successfully');
+              AppLogger.debug('✅ [WorkoutUI] Program cleared successfully');
               
               // Navigate to program selection
               if (context.mounted) {
-                print('📊 [WorkoutUI] Navigating to program selection...');
+                AppLogger.debug('📊 [WorkoutUI] Navigating to program selection...');
                 context.go(AppRoutes.workoutProgramSelection);
-                print('✅ [WorkoutUI] Navigation to program selection completed');
+                AppLogger.debug('✅ [WorkoutUI] Navigation to program selection completed');
               }
             } catch (e, s) {
-              print('❌ [WorkoutUI] Failed to generate new program: $e');
-              print('🔍 [WorkoutUI] Stack trace: $s');
+              AppLogger.debug('❌ [WorkoutUI] Failed to generate new program: $e');
+              AppLogger.debug('🔍 [WorkoutUI] Stack trace: $s');
               if (context.mounted) ErrorHandler.handleError(context, e, s);
             }
           },
         ),
       );
-      print('✅ [WorkoutUI] Program complete dialog opened');
+      AppLogger.debug('✅ [WorkoutUI] Program complete dialog opened');
     } catch (e, s) {
-      print('❌ [WorkoutUI] Failed to show program complete dialog: $e');
-      print('🔍 [WorkoutUI] Stack trace: $s');
+      AppLogger.debug('❌ [WorkoutUI] Failed to show program complete dialog: $e');
+      AppLogger.debug('🔍 [WorkoutUI] Stack trace: $s');
       if (context.mounted) ErrorHandler.handleError(context, e, s);
     }
   }

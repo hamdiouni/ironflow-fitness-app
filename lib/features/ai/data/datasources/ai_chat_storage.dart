@@ -1,3 +1,4 @@
+import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,7 +18,7 @@ class AIChatStorage {
       return await Hive.openBox(_boxName);
     } catch (e) {
       if (kDebugMode) {
-        print('⚠️ [AIChatStorage] Hive not initialized or inaccessible: $e');
+        AppLogger.debug('⚠️ [AIChatStorage] Hive not initialized or inaccessible: $e');
       }
       return null;
     }
@@ -42,7 +43,7 @@ class AIChatStorage {
             }
           } catch (e) {
             if (kDebugMode) {
-              print('⚠️ [AIChatStorage] Failed to decode single chat message: $e');
+              AppLogger.debug('⚠️ [AIChatStorage] Failed to decode single chat message: $e');
             }
           }
         }
@@ -51,7 +52,7 @@ class AIChatStorage {
       return [];
     } catch (e) {
       if (kDebugMode) {
-        print('⚠️ [AIChatStorage] Error loading chat history: $e');
+        AppLogger.debug('⚠️ [AIChatStorage] Error loading chat history: $e');
       }
       return [];
     }
@@ -66,7 +67,7 @@ class AIChatStorage {
       await box.put(_messagesKey, encodedList);
     } catch (e) {
       if (kDebugMode) {
-        print('⚠️ [AIChatStorage] Error saving chat history: $e');
+        AppLogger.debug('⚠️ [AIChatStorage] Error saving chat history: $e');
       }
     }
   }
@@ -79,7 +80,7 @@ class AIChatStorage {
       await box.delete(_messagesKey);
     } catch (e) {
       if (kDebugMode) {
-        print('⚠️ [AIChatStorage] Error clearing chat history: $e');
+        AppLogger.debug('⚠️ [AIChatStorage] Error clearing chat history: $e');
       }
     }
   }

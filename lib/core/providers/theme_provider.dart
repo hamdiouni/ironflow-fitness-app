@@ -1,3 +1,4 @@
+import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
@@ -23,53 +24,53 @@ class ThemeNotifier extends StateNotifier<ThemeMode> {
   /// Loads theme preference from Hive storage.
   Future<void> _loadTheme() async {
     try {
-      print('📊 [Theme] Loading theme from Hive...');
+      AppLogger.debug('📊 [Theme] Loading theme from Hive...');
       
       // Wait for Hive to be fully initialized
       await Future.delayed(const Duration(milliseconds: 500));
       
-      print('🔍 [Theme] Checking if box is open: $_boxName');
+      AppLogger.debug('🔍 [Theme] Checking if box is open: $_boxName');
       if (!Hive.isBoxOpen(_boxName)) {
-        print('⚠️ [Theme] Box $_boxName is not open yet, using default theme');
+        AppLogger.debug('⚠️ [Theme] Box $_boxName is not open yet, using default theme');
         state = ThemeMode.dark;
-        print('🔍 [Theme] Default theme set: ${state.name}');
+        AppLogger.debug('🔍 [Theme] Default theme set: ${state.name}');
         return;
       }
       
-      print('✅ [Theme] Box is open: $_boxName');
+      AppLogger.debug('✅ [Theme] Box is open: $_boxName');
       final box = Hive.box<String>(_boxName);
       final themeStr = box.get(_themeKey, defaultValue: 'dark');
       
-      print('✅ [Theme] Theme loaded from Hive: $themeStr');
-      print('🔍 [Theme] Current state before update: ${state.name}');
+      AppLogger.debug('✅ [Theme] Theme loaded from Hive: $themeStr');
+      AppLogger.debug('🔍 [Theme] Current state before update: ${state.name}');
       
       final theme = themeStr == 'light' ? ThemeMode.light : ThemeMode.dark;
       state = theme;
       
-      print('✅ [Theme] Theme state updated to: ${state.name}');
+      AppLogger.debug('✅ [Theme] Theme state updated to: ${state.name}');
     } catch (e, stackTrace) {
-      print('❌ [Theme] Failed to load theme: $e');
-      print('🔍 [Theme] Stack trace: $stackTrace');
+      AppLogger.debug('❌ [Theme] Failed to load theme: $e');
+      AppLogger.debug('🔍 [Theme] Stack trace: $stackTrace');
       state = ThemeMode.dark;
-      print('🔍 [Theme] Fallback theme set: ${state.name}');
+      AppLogger.debug('🔍 [Theme] Fallback theme set: ${state.name}');
     }
   }
 
   /// Toggles between dark and light mode.
   Future<void> toggleTheme() async {
     try {
-      print('📊 [Theme] Toggling theme...');
-      print('🔍 [Theme] Current theme: ${state.name}');
+      AppLogger.debug('📊 [Theme] Toggling theme...');
+      AppLogger.debug('🔍 [Theme] Current theme: ${state.name}');
       
       final newTheme = state == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
-      print('🔍 [Theme] New theme will be: ${newTheme.name}');
+      AppLogger.debug('🔍 [Theme] New theme will be: ${newTheme.name}');
       
       await setTheme(newTheme);
       
-      print('✅ [Theme] Theme toggled successfully to: ${newTheme.name}');
+      AppLogger.debug('✅ [Theme] Theme toggled successfully to: ${newTheme.name}');
     } catch (e, stackTrace) {
-      print('❌ [Theme] Failed to toggle theme: $e');
-      print('🔍 [Theme] Stack trace: $stackTrace');
+      AppLogger.debug('❌ [Theme] Failed to toggle theme: $e');
+      AppLogger.debug('🔍 [Theme] Stack trace: $stackTrace');
       rethrow;
     }
   }
@@ -77,30 +78,30 @@ class ThemeNotifier extends StateNotifier<ThemeMode> {
   /// Sets the theme to a specific mode.
   Future<void> setTheme(ThemeMode theme) async {
     try {
-      print('📊 [Theme] Setting theme...');
-      print('🔍 [Theme] Old theme: ${state.name}');
-      print('🔍 [Theme] New theme: ${theme.name}');
+      AppLogger.debug('📊 [Theme] Setting theme...');
+      AppLogger.debug('🔍 [Theme] Old theme: ${state.name}');
+      AppLogger.debug('🔍 [Theme] New theme: ${theme.name}');
       
       state = theme;
-      print('✅ [Theme] State updated to: ${state.name}');
+      AppLogger.debug('✅ [Theme] State updated to: ${state.name}');
       
-      print('🔍 [Theme] Checking if box is open: $_boxName');
+      AppLogger.debug('🔍 [Theme] Checking if box is open: $_boxName');
       if (!Hive.isBoxOpen(_boxName)) {
-        print('⚠️ [Theme] Box $_boxName is not open, cannot save theme');
+        AppLogger.debug('⚠️ [Theme] Box $_boxName is not open, cannot save theme');
         return;
       }
       
-      print('✅ [Theme] Box is open: $_boxName');
+      AppLogger.debug('✅ [Theme] Box is open: $_boxName');
       final box = Hive.box<String>(_boxName);
       final themeStr = theme == ThemeMode.light ? 'light' : 'dark';
       
-      print('📊 [Theme] Saving theme to Hive: $themeStr');
+      AppLogger.debug('📊 [Theme] Saving theme to Hive: $themeStr');
       await box.put(_themeKey, themeStr);
       
-      print('✅ [Theme] Theme saved to Hive successfully: $themeStr');
+      AppLogger.debug('✅ [Theme] Theme saved to Hive successfully: $themeStr');
     } catch (e, stackTrace) {
-      print('❌ [Theme] Failed to save theme: $e');
-      print('🔍 [Theme] Stack trace: $stackTrace');
+      AppLogger.debug('❌ [Theme] Failed to save theme: $e');
+      AppLogger.debug('🔍 [Theme] Stack trace: $stackTrace');
       rethrow;
     }
   }

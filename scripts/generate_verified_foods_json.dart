@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
-import '../lib/features/nutrition/data/verified_foods_data.dart';
+import 'package:progression_tracker/features/nutrition/data/verified_foods_data.dart';
 
 void main() {
   print('📊 Validating ${verifiedFoodsList.length} verified fitness foods...');

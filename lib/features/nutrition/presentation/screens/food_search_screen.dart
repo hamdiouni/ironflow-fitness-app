@@ -2062,7 +2062,7 @@ class _CreateCustomFoodDialogState
 
               // Category selector
               DropdownButtonFormField<FoodCategory>(
-                value: _selectedCategory,
+                initialValue: _selectedCategory,
                 dropdownColor: tokens.panel,
                 style: TextStyle(color: tokens.textPrimary, fontSize: 13),
                 decoration: _dialogInputDecoration(tokens, 'Category', ''),

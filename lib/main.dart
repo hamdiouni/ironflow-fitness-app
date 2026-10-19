@@ -1,3 +1,4 @@
+import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -29,11 +30,11 @@ void main() async {
     try {
       await dotenv.load(fileName: ".env");
       if (kDebugMode) {
-        print('✓ Local .env file loaded');
+        AppLogger.debug('✓ Local .env file loaded');
       }
     } catch (_) {
       if (kDebugMode) {
-        print('ℹ️ No .env asset bundled; using environment configuration (--dart-define)');
+        AppLogger.debug('ℹ️ No .env asset bundled; using environment configuration (--dart-define)');
       }
     }
 
@@ -57,16 +58,16 @@ void main() async {
       };
       
       if (kDebugMode) {
-        print('✓ Firebase Crashlytics initialized (mobile only)');
+        AppLogger.debug('✓ Firebase Crashlytics initialized (mobile only)');
       }
     } else {
       if (kDebugMode) {
-        print('ℹ️ Firebase Crashlytics skipped (not supported on web)');
+        AppLogger.debug('ℹ️ Firebase Crashlytics skipped (not supported on web)');
       }
     }
 
     if (kDebugMode) {
-      print('✓ Firebase Crashlytics initialized (disabled in debug mode)');
+      AppLogger.debug('✓ Firebase Crashlytics initialized (disabled in debug mode)');
     }
 
     // Initialize Firebase Analytics
@@ -74,7 +75,7 @@ void main() async {
     await analytics.setAnalyticsCollectionEnabled(!kDebugMode);
     
     if (kDebugMode) {
-      print('✓ Firebase Analytics initialized (disabled in debug mode)');
+      AppLogger.debug('✓ Firebase Analytics initialized (disabled in debug mode)');
     }
 
     // Initialize Hive
@@ -89,7 +90,7 @@ void main() async {
       onNotificationTap: (payload) {
         // Handle notification tap
         if (kDebugMode) {
-          print('Notification tapped with payload: $payload');
+          AppLogger.debug('Notification tapped with payload: $payload');
         }
         // TODO: Navigate to appropriate screen based on payload
       },
@@ -101,8 +102,8 @@ void main() async {
     // Skip food database initialization on web for faster startup
     // Food data will be loaded from local Hive database instead
     if (kDebugMode) {
-      print('✓ Skipping Firestore food upload for faster startup');
-      print('✓ Food data will be loaded from local Hive database');
+      AppLogger.debug('✓ Skipping Firestore food upload for faster startup');
+      AppLogger.debug('✓ Food data will be loaded from local Hive database');
     }
 
     // Pre-initialise the WorkoutStateManager so the Hive box is open before
@@ -161,7 +162,7 @@ class _AppWithStateRestoreState extends ConsumerState<_AppWithStateRestore>
       // Initialize Global AI Provider
       ref.read(globalAIProvider.notifier).init().catchError((e) {
         if (kDebugMode) {
-          print('⚠️ Failed to initialize Global AI Provider: $e');
+          AppLogger.debug('⚠️ Failed to initialize Global AI Provider: $e');
         }
         // Don't block app startup if AI initialization fails
       });

@@ -1,3 +1,4 @@
+import 'package:progression_tracker/core/utils/app_logger.dart';
 import '../../../onboarding/domain/entities/user_profile.dart';
 import '../entities/workout_program.dart';
 
@@ -8,11 +9,11 @@ class GenerateWorkoutProgramUseCase {
     required UserProfile userProfile,
     String? splitType,
   }) {
-    print('🎯 Generating workout program:');
-    print('   - Goal: ${userProfile.goal}');
-    print('   - Days/week: ${userProfile.workoutDaysPerWeek}');
-    print('   - Split type: ${splitType ?? "auto"}');
-    print('   - Fitness level: ${userProfile.fitnessLevel}');
+    AppLogger.debug('🎯 Generating workout program:');
+    AppLogger.debug('   - Goal: ${userProfile.goal}');
+    AppLogger.debug('   - Days/week: ${userProfile.workoutDaysPerWeek}');
+    AppLogger.debug('   - Split type: ${splitType ?? "auto"}');
+    AppLogger.debug('   - Fitness level: ${userProfile.fitnessLevel}');
     
     // If splitType is specified, use it to determine the program structure
     if (splitType != null) {
@@ -330,15 +331,15 @@ class GenerateWorkoutProgramUseCase {
     final isGym = profile.equipment == EquipmentType.gym;
     final isBeginner = profile.fitnessLevel == FitnessLevel.beginner;
 
-    print('🏋️ Generating muscle gain program for ${profile.workoutDaysPerWeek} days/week');
+    AppLogger.debug('🏋️ Generating muscle gain program for ${profile.workoutDaysPerWeek} days/week');
     
     // 5-day program
     if (profile.workoutDaysPerWeek == 5) {
-      print('✅ Generating 5-day program');
+      AppLogger.debug('✅ Generating 5-day program');
       final program = _fiveDayProgram(profile);
-      print('📊 5-day program has ${program.days.length} total days');
+      AppLogger.debug('📊 5-day program has ${program.days.length} total days');
       final trainingDays = program.days.where((d) => !d.isRestDay).length;
-      print('💪 Training days: $trainingDays, Rest days: ${program.days.length - trainingDays}');
+      AppLogger.debug('💪 Training days: $trainingDays, Rest days: ${program.days.length - trainingDays}');
       return program;
     }
 
