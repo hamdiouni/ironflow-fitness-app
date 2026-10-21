@@ -1,4 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../data/user_profile_storage.dart';
 import '../../domain/entities/user_profile.dart';
 import '../../../workout/domain/usecases/generate_workout_program_use_case.dart';
@@ -9,9 +11,10 @@ import '../../../nutrition/domain/usecases/generate_diet_plan_use_case.dart';
 import '../../../nutrition/domain/usecases/save_diet_plan_use_case.dart';
 import '../../../nutrition/presentation/providers/diet_plan_providers.dart';
 
-final userProfileStorageProvider = Provider<UserProfileStorage>(
-  (_) => UserProfileStorage(),
-);
+final userProfileStorageProvider = Provider<UserProfileStorage>((ref) {
+  final userId = ref.watch(currentUserProvider).valueOrNull?.id;
+  return UserProfileStorage(userId: userId);
+});
 
 final isOnboardedProvider = FutureProvider<bool>((ref) async {
   final storage = ref.watch(userProfileStorageProvider);

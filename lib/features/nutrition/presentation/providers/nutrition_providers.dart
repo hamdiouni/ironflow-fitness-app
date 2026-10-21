@@ -4,6 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/datasources/firestore_nutrition_datasource.dart';
 import '../../data/datasources/hive_nutrition_datasource.dart';
+import '../../data/datasources/firestore_food_datasource.dart';
+import '../../data/datasources/hive_food_datasource.dart';
+import '../../data/repositories/food_repository_impl.dart';
 import '../../data/repositories/nutrition_repository_impl.dart';
 import '../../domain/entities/daily_nutrition_summary.dart';
 import '../../domain/entities/food_item_full.dart';
@@ -13,20 +16,25 @@ import '../../domain/repositories/nutrition_repository.dart';
 import '../../domain/usecases/get_food_alternatives_use_case.dart';
 import '../../domain/usecases/get_meal_suggestions_use_case.dart';
 import '../../../../core/providers/analytics_provider.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../sync/presentation/providers/sync_provider.dart';
 
 // ---------------------------------------------------------------------------
 // Repository provider
 // ---------------------------------------------------------------------------
 
 final nutritionRepositoryProvider = Provider<NutritionRepository>((ref) {
-  final firestoreDataSource = FirestoreNutritionDatasource(FirebaseFirestore.instance);
-  final hiveDataSource = HiveNutritionDatasource();
-  // TODO: Get userId from auth provider
-  const userId = 'test-user';
+  final user = ref.watch(currentUserProvider).valueOrNull;
+  final userId = user?.id ?? '';
+  final syncService = user == null ? null : ref.watch(syncServiceProvider);
+
   return NutritionRepositoryImpl(
-    firestoreDataSource: firestoreDataSource,
-    hiveDataSource: hiveDataSource,
+    firestoreDataSource: user == null
+        ? null
+        : FirestoreNutritionDatasource(FirebaseFirestore.instance),
+    hiveDataSource: HiveNutritionDatasource(userId: user?.id),
     userId: userId,
+    syncService: syncService,
   );
 });
 
@@ -35,8 +43,11 @@ final nutritionRepositoryProvider = Provider<NutritionRepository>((ref) {
 // ---------------------------------------------------------------------------
 
 final foodRepositoryProvider = Provider<FoodRepository>((ref) {
-  final repository = ref.watch(nutritionRepositoryProvider);
-  return repository as FoodRepository;
+  final userId = ref.watch(currentUserProvider).valueOrNull?.id;
+  return FoodRepositoryImpl(
+    firestoreDataSource: FirestoreFoodDatasource(FirebaseFirestore.instance),
+    hiveDataSource: HiveFoodDataSource(userId: userId),
+  );
 });
 
 // ---------------------------------------------------------------------------

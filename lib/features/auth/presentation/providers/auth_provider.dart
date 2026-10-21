@@ -1,9 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-// Firebase - DISABLED
-// import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
-// import 'package:cloud_firestore/cloud_firestore.dart';
-// import 'package:google_sign_in/google_sign_in.dart';
-
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import '../../domain/entities/user.dart';
 import '../../domain/entities/user_profile.dart';
 import '../../domain/repositories/auth_repository.dart';
@@ -19,12 +16,28 @@ import '../../domain/usecases/sign_in_use_case.dart';
 import '../../data/datasources/mock_auth_datasource.dart';
 import '../../data/datasources/mock_user_datasource.dart';
 import '../../data/repositories/auth_repository_impl.dart';
+import '../../data/repositories/firebase_auth_repository_impl.dart';
+import '../../data/datasources/firebase_auth_datasource.dart';
+import '../../data/datasources/firestore_user_datasource.dart';
 
-// Repository Provider - Using Mock Datasources
+// Firebase Auth is the production default so Firestore rules receive a real
+// request.auth.uid. Use --dart-define=IRONFLOW_USE_MOCK_AUTH=true for a local
+// demo; tests without an initialized Firebase app also fall back to mocks.
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
-  return AuthRepositoryImpl(
-    authDataSource: MockAuthDataSourceImpl(),
-    userDataSource: MockUserDataSourceImpl(),
+  const forceMockAuth = bool.fromEnvironment('IRONFLOW_USE_MOCK_AUTH');
+  if (forceMockAuth || Firebase.apps.isEmpty) {
+    return AuthRepositoryImpl(
+      authDataSource: MockAuthDataSourceImpl(),
+      userDataSource: MockUserDataSourceImpl(),
+    );
+  }
+
+  return FirebaseAuthRepositoryImpl(
+    authDataSource: FirebaseAuthDataSourceImpl(
+      firebaseAuth: firebase_auth.FirebaseAuth.instance,
+    ),
+    userDataSource: FirestoreUserDataSourceImpl(),
+    firebaseAuth: firebase_auth.FirebaseAuth.instance,
   );
 });
 
@@ -62,19 +75,14 @@ final signInUseCaseProvider = Provider<SignInUseCase>((ref) {
   return SignInUseCase(ref.watch(authRepositoryProvider));
 });
 
-// Auth State Provider - Returns current user without polling
-final authStateProvider = StreamProvider<User?>((ref) async* {
-  final repository = ref.watch(authRepositoryProvider);
-  
-  // Just return the current state once, no polling
-  yield await repository.getCurrentUser();
+// Auth state changes drive session-dependent repositories and sync wiring.
+final authStateProvider = StreamProvider<User?>((ref) {
+  return ref.watch(authRepositoryProvider).authStateChanges;
 });
 
-// Current User Provider
-final currentUserProvider = FutureProvider<User?>((ref) async {
-  final useCase = ref.watch(getCurrentUserUseCaseProvider);
-  return await useCase();
-});
+// Current user is the same auth-state stream; consumers that need a one-time
+// value can use `.future`.
+final currentUserProvider = authStateProvider;
 
 // User Profile Provider
 final userProfileProvider = FutureProvider.family<UserProfile?, String>((ref, userId) async {

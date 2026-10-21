@@ -1,5 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
-// import 'package:google_sign_in/google_sign_in.dart'; // Temporarily disabled
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:progression_tracker/features/auth/domain/entities/user.dart';
 
@@ -31,13 +31,9 @@ abstract class FirebaseAuthDataSource {
 
 class FirebaseAuthDataSourceImpl implements FirebaseAuthDataSource {
   final firebase_auth.FirebaseAuth _firebaseAuth;
-  // final GoogleSignIn? _googleSignIn; // Temporarily disabled
-
   FirebaseAuthDataSourceImpl({
     firebase_auth.FirebaseAuth? firebaseAuth,
-    // GoogleSignIn? googleSignIn, // Temporarily disabled
-  })  : _firebaseAuth = firebaseAuth ?? firebase_auth.FirebaseAuth.instance;
-        // _googleSignIn = googleSignIn; // Temporarily disabled
+  }) : _firebaseAuth = firebaseAuth ?? firebase_auth.FirebaseAuth.instance;
 
   @override
   Future<User> signUpWithEmail({
@@ -85,16 +81,8 @@ class FirebaseAuthDataSourceImpl implements FirebaseAuthDataSource {
 
   @override
   Future<User> signInWithGoogle() async {
-    // TODO: Fix GoogleSignIn API compatibility with google_sign_in 7.x
-    throw Exception('Google Sign-In is temporarily disabled. Please use email/password authentication.');
-    
-    /* Temporarily disabled - needs google_sign_in 7.x API update
     try {
-      if (_googleSignIn == null) {
-        throw Exception('Google Sign-In is temporarily disabled. Please use email/password authentication.');
-      }
-      
-      final googleUser = await _googleSignIn!.signIn();
+      final googleUser = await GoogleSignIn().signIn();
       if (googleUser == null) {
         throw Exception('Google sign in cancelled');
       }
@@ -104,19 +92,17 @@ class FirebaseAuthDataSourceImpl implements FirebaseAuthDataSource {
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
-
       final userCredential = await _firebaseAuth.signInWithCredential(credential);
       final firebaseUser = userCredential.user;
-
       if (firebaseUser == null) {
         throw Exception('Google sign in failed');
       }
-
       return _mapFirebaseUserToUser(firebaseUser);
+    } on firebase_auth.FirebaseAuthException catch (e) {
+      throw _handleAuthException(e);
     } catch (e) {
       throw Exception('Google sign in error: $e');
     }
-    */
   }
 
   @override
@@ -151,10 +137,7 @@ class FirebaseAuthDataSourceImpl implements FirebaseAuthDataSource {
   Future<void> signOut() async {
     try {
       await _firebaseAuth.signOut();
-      // Google Sign-In temporarily disabled
-      // if (_googleSignIn != null) {
-      //   await _googleSignIn!.signOut();
-      // }
+      await GoogleSignIn().signOut();
     } catch (e) {
       throw Exception('Sign out error: $e');
     }

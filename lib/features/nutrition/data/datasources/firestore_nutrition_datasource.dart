@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+import '../../../../core/config/firestore_paths.dart';
 import '../models/meal_model.dart';
 import '../models/nutrition_targets_model.dart';
 
@@ -19,18 +20,40 @@ class FirestoreNutritionDatasource {
   CollectionReference<Map<String, dynamic>> _getNutritionCollection(
     String userId,
   ) {
-    return _firestore.collection('users').doc(userId).collection('nutrition');
+    return FirestorePaths.userCollection(
+      _firestore,
+      userId,
+      FirestorePaths.nutrition,
+    );
   }
 
   /// Get the nutrition targets document reference for a user.
+  String _utcTimestampString(DateTime timestamp) =>
+      timestamp.toUtc().toIso8601String();
+
+  MealModel _mealFromDocument(
+    QueryDocumentSnapshot<Map<String, dynamic>> document,
+  ) {
+    final data = Map<String, dynamic>.from(document.data());
+    final timestamp = data['timestamp'];
+    if (timestamp is Timestamp) {
+      data['timestamp'] = timestamp.toDate().toLocal().toIso8601String();
+    } else if (timestamp is String) {
+      data['timestamp'] = DateTime.parse(timestamp).toLocal().toIso8601String();
+    }
+    data['id'] = document.id;
+    return MealModel.fromJson(data);
+  }
+
   DocumentReference<Map<String, dynamic>> _getNutritionTargetsDoc(
     String userId,
   ) {
-    return _firestore
-        .collection('users')
-        .doc(userId)
-        .collection('nutrition')
-        .doc('targets');
+    return FirestorePaths.userDocument(
+      _firestore,
+      userId,
+      FirestorePaths.nutrition,
+      'targets',
+    );
   }
 
   /// Save a meal entry to Firestore.
@@ -40,9 +63,17 @@ class FirestoreNutritionDatasource {
   Future<void> saveMealEntry(String userId, MealModel meal) async {
     try {
       await _getNutritionCollection(userId).doc(meal.id).set(
-            meal.toJson(),
-            SetOptions(merge: true),
-          );
+        {
+          ...meal.toJson(),
+          'id': meal.id,
+          'timestamp': _utcTimestampString(DateTime.parse(meal.timestamp)),
+          'userId': userId,
+          'isDeleted': false,
+          'syncUpdatedAt': FieldValue.serverTimestamp(),
+          'syncedAt': FieldValue.serverTimestamp(),
+        },
+        SetOptions(merge: true),
+      );
     } catch (e) {
       if (kDebugMode) {
         print('Error saving meal to Firestore: $e');
@@ -64,12 +95,16 @@ class FirestoreNutritionDatasource {
       final endOfDay = startOfDay.add(const Duration(days: 1));
 
       final snapshot = await _getNutritionCollection(userId)
-          .where('timestamp', isGreaterThanOrEqualTo: startOfDay.toIso8601String())
-          .where('timestamp', isLessThan: endOfDay.toIso8601String())
+          .where(
+            'timestamp',
+            isGreaterThanOrEqualTo: _utcTimestampString(startOfDay),
+          )
+          .where('timestamp', isLessThan: _utcTimestampString(endOfDay))
           .get();
 
       return snapshot.docs
-          .map((doc) => MealModel.fromJson(doc.data()))
+          .where((document) => document.data()['isDeleted'] != true)
+          .map(_mealFromDocument)
           .toList();
     } catch (e) {
       if (kDebugMode) {
@@ -90,13 +125,17 @@ class FirestoreNutritionDatasource {
   ) async {
     try {
       final snapshot = await _getNutritionCollection(userId)
-          .where('timestamp', isGreaterThanOrEqualTo: startDate.toIso8601String())
-          .where('timestamp', isLessThan: endDate.toIso8601String())
+          .where(
+            'timestamp',
+            isGreaterThanOrEqualTo: _utcTimestampString(startDate),
+          )
+          .where('timestamp', isLessThan: _utcTimestampString(endDate))
           .orderBy('timestamp', descending: true)
           .get();
 
       return snapshot.docs
-          .map((doc) => MealModel.fromJson(doc.data()))
+          .where((document) => document.data()['isDeleted'] != true)
+          .map(_mealFromDocument)
           .toList();
     } catch (e) {
       if (kDebugMode) {
@@ -108,10 +147,19 @@ class FirestoreNutritionDatasource {
 
   /// Delete a meal entry from Firestore.
   ///
-  /// Removes the meal document from the user's nutrition collection.
+  /// Marks the meal as deleted so other devices can observe the change.
   Future<void> deleteMealEntry(String userId, String mealId) async {
     try {
-      await _getNutritionCollection(userId).doc(mealId).delete();
+      await _getNutritionCollection(userId).doc(mealId).set(
+        {
+          'id': mealId,
+          'userId': userId,
+          'isDeleted': true,
+          'syncUpdatedAt': FieldValue.serverTimestamp(),
+          'syncedAt': FieldValue.serverTimestamp(),
+        },
+        SetOptions(merge: true),
+      );
     } catch (e) {
       if (kDebugMode) {
         print('Error deleting meal from Firestore: $e');
@@ -130,9 +178,13 @@ class FirestoreNutritionDatasource {
   ) async {
     try {
       await _getNutritionTargetsDoc(userId).set(
-            targets.toJson(),
-            SetOptions(merge: true),
-          );
+        {
+          ...targets.toJson(),
+          'syncUpdatedAt': FieldValue.serverTimestamp(),
+          'syncedAt': FieldValue.serverTimestamp(),
+        },
+        SetOptions(merge: true),
+      );
     } catch (e) {
       if (kDebugMode) {
         print('Error saving nutrition targets to Firestore: $e');
@@ -257,7 +309,19 @@ class FirestoreNutritionDatasource {
       final batch = _firestore.batch();
       for (final meal in meals) {
         final docRef = _getNutritionCollection(userId).doc(meal.id);
-        batch.set(docRef, meal.toJson(), SetOptions(merge: true));
+        batch.set(
+          docRef,
+          {
+            ...meal.toJson(),
+            'id': meal.id,
+            'timestamp': _utcTimestampString(DateTime.parse(meal.timestamp)),
+            'userId': userId,
+            'isDeleted': false,
+            'syncUpdatedAt': FieldValue.serverTimestamp(),
+            'syncedAt': FieldValue.serverTimestamp(),
+          },
+          SetOptions(merge: true),
+        );
       }
       await batch.commit();
     } catch (e) {
@@ -276,7 +340,17 @@ class FirestoreNutritionDatasource {
       final batch = _firestore.batch();
       for (final mealId in mealIds) {
         final docRef = _getNutritionCollection(userId).doc(mealId);
-        batch.delete(docRef);
+        batch.set(
+          docRef,
+          {
+            'id': mealId,
+            'userId': userId,
+            'isDeleted': true,
+            'syncUpdatedAt': FieldValue.serverTimestamp(),
+            'syncedAt': FieldValue.serverTimestamp(),
+          },
+          SetOptions(merge: true),
+        );
       }
       await batch.commit();
     } catch (e) {

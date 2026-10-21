@@ -1,5 +1,6 @@
 import 'package:hive/hive.dart';
 import '../../../../core/utils/hive_manager.dart';
+import '../../../../core/utils/user_scoped_hive_key.dart';
 import '../models/food_item_full_model.dart';
 
 /// Recursively casts a [Map<dynamic, dynamic>] (as returned by Hive) to
@@ -32,6 +33,13 @@ class HiveFoodDataSource {
   static const String _cacheVersionKey = 'foods_cache_version';
   static const int _currentCacheVersion = 1;
 
+  final String? userId;
+
+  HiveFoodDataSource({this.userId});
+
+  String get _customFoodsStorageKey =>
+      UserScopedHiveKey.encode(userId, _customFoodsKey);
+
   /// Get the foods box from Hive
   Box get _box => HiveManager.getFoodsBox();
 
@@ -59,12 +67,13 @@ class HiveFoodDataSource {
       // Get existing custom foods
       final customFoods = await getCustomFoods();
       
-      // Add new food
+      // Upsert by stable food ID instead of accumulating duplicate rows.
+      customFoods.removeWhere((existing) => existing.id == food.id);
       customFoods.add(food);
       
       // Save back to Hive
       final foodsJson = customFoods.map((f) => f.toJson()).toList();
-      await _box.put(_customFoodsKey, foodsJson);
+      await _box.put(_customFoodsStorageKey, foodsJson);
     } catch (e) {
       throw Exception('Failed to save custom food: $e');
     }
@@ -73,7 +82,7 @@ class HiveFoodDataSource {
   /// Get all custom foods created by the user
   Future<List<FoodItemFullModel>> getCustomFoods() async {
     try {
-      final foodsJson = _box.get(_customFoodsKey) as List<dynamic>?;
+      final foodsJson = _box.get(_customFoodsStorageKey) as List<dynamic>?;
       if (foodsJson == null || foodsJson.isEmpty) {
         return [];
       }
@@ -93,7 +102,7 @@ class HiveFoodDataSource {
       customFoods.removeWhere((food) => food.id == id);
       
       final foodsJson = customFoods.map((f) => f.toJson()).toList();
-      await _box.put(_customFoodsKey, foodsJson);
+      await _box.put(_customFoodsStorageKey, foodsJson);
     } catch (e) {
       throw Exception('Failed to delete custom food: $e');
     }
@@ -220,7 +229,10 @@ class HiveFoodDataSource {
   /// Clear all cached foods and metadata
   Future<void> clearCache() async {
     try {
-      await _box.clear();
+      await _box.delete(_foodsKey);
+      await _box.delete(_customFoodsStorageKey);
+      await _box.delete(_cacheTimestampKey);
+      await _box.delete(_cacheVersionKey);
     } catch (e) {
       throw Exception('Failed to clear cache: $e');
     }

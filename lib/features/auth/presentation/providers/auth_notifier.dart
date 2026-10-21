@@ -123,6 +123,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         isAuthenticated: true,
         error: null,
       );
+      _invalidateAuthUserProviders();
       
       // Track sign up event
       try {
@@ -190,6 +191,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         isAuthenticated: true,
         error: null,
       );
+      _invalidateAuthUserProviders();
       
       // Track login event
       try {
@@ -251,6 +253,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         isAuthenticated: true,
         error: null,
       );
+      _invalidateAuthUserProviders();
       
       // Track login event
       try {
@@ -327,6 +330,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         isAuthenticated: false,
         error: null,
       );
+      _invalidateAuthUserProviders();
       
       // Track logout event
       try {
@@ -397,6 +401,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
     final parts = email.split('@');
     if (parts.length != 2) return '[invalid-email]';
     return '***@${parts[1]}';
+  }
+
+  void _invalidateAuthUserProviders() {
+    _ref.invalidate(currentUserProvider);
+    _ref.invalidate(authStateProvider);
   }
 
   /// Sanitize user ID for logging (show only first/last chars)
