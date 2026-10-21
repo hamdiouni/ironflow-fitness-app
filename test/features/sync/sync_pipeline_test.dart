@@ -31,10 +31,10 @@ class FakeFirestoreSyncDataSource implements FirestoreSyncDataSource {
   final List<SyncOperation> syncedBatches = [];
   final List<WorkoutModel> syncedWorkouts = [];
   final List<String> deletedWorkoutIds = [];
-  final List<WorkoutProgramModel> syncedPrograms = [];
+  final List<ActiveProgramModel> syncedPrograms = [];
   DateTime? lastWorkoutSync;
   DateTime? lastProgramSync;
-  WorkoutProgramModel? activeProgramToReturn;
+  ActiveProgramModel? activeProgramToReturn;
   DateTime? recordedSinceFilter;
 
   @override
@@ -53,17 +53,20 @@ class FakeFirestoreSyncDataSource implements FirestoreSyncDataSource {
   }
 
   @override
+  Future<List<String>> getDeletedWorkoutIds(String userId) async => [];
+
+  @override
   Future<void> deleteWorkout(String userId, String workoutId) async {
     deletedWorkoutIds.add(workoutId);
   }
 
   @override
-  Future<void> syncProgram(String userId, WorkoutProgramModel program) async {
+  Future<void> syncProgram(String userId, ActiveProgramModel program) async {
     syncedPrograms.add(program);
   }
 
   @override
-  Future<WorkoutProgramModel?> getActiveProgram(String userId, {DateTime? since}) async {
+  Future<ActiveProgramModel?> getActiveProgram(String userId, {DateTime? since}) async {
     recordedSinceFilter = since;
     return activeProgramToReturn;
   }
@@ -78,10 +81,28 @@ class FakeFirestoreSyncDataSource implements FirestoreSyncDataSource {
   Future<List<Map<String, dynamic>>> getNutritionLogs(String userId, {DateTime? since}) async => [];
 
   @override
+  Future<List<String>> getDeletedNutritionLogIds(String userId) async => [];
+
+  @override
+  Future<void> deleteNutritionLog(String userId, String mealId) async {}
+
+  @override
+  Future<void> syncNutritionTargets(String userId, Map<String, dynamic> targets) async {}
+
+  @override
+  Future<Map<String, dynamic>?> getNutritionTargets(String userId) async => null;
+
+  @override
   Future<void> syncBodyProgress(String userId, Map<String, dynamic> progress) async {}
 
   @override
   Future<List<Map<String, dynamic>>> getBodyProgress(String userId, {DateTime? since}) async => [];
+
+  @override
+  Future<List<String>> getDeletedBodyProgressIds(String userId) async => [];
+
+  @override
+  Future<void> deleteBodyProgress(String userId, String entryId) async {}
 
   @override
   Future<DateTime?> getLastSyncTime(String userId, String dataType) async {
@@ -107,14 +128,28 @@ class FakeHiveSyncQueueDataSource implements HiveSyncQueueDataSource {
 
   @override
   Future<List<SyncAction>> getPendingActions() async {
-    return actions.where((a) => a.status == SyncStatus.pending).toList();
+    return actions
+        .where((a) =>
+            a.status == SyncStatus.pending ||
+            a.status == SyncStatus.syncing ||
+            a.status == SyncStatus.failed)
+        .toList();
   }
 
   @override
-  Future<void> updateActionStatus(String id, SyncStatus status, {String? error}) async {
+  Future<void> updateActionStatus(
+    String id,
+    SyncStatus status, {
+    String? error,
+    int? retryCount,
+  }) async {
     final idx = actions.indexWhere((a) => a.id == id);
     if (idx != -1) {
-      actions[idx] = actions[idx].copyWith(status: status, error: error);
+      actions[idx] = actions[idx].copyWith(
+        status: status,
+        error: error,
+        retryCount: retryCount ?? actions[idx].retryCount,
+      );
     }
   }
 
@@ -234,13 +269,18 @@ void main() {
 
       final lastSyncDate = DateTime(2026, 4, 10);
       fakeFirestore.lastProgramSync = lastSyncDate;
-      fakeFirestore.activeProgramToReturn = const WorkoutProgramModel(
+      fakeFirestore.activeProgramToReturn = const ActiveProgramModel(
         id: 'prog1',
-        name: 'Hypertrophy 4-Day',
-        description: 'Test program',
-        durationWeeks: 8,
-        difficulty: 'intermediate',
-        days: [],
+        program: WorkoutProgramModel(
+          id: 'prog1',
+          name: 'Hypertrophy 4-Day',
+          description: 'Test program',
+          durationWeeks: 8,
+          difficulty: 'intermediate',
+          days: [],
+        ),
+        currentDayIndex: 0,
+        isActive: true,
       );
 
       final service = SyncService(

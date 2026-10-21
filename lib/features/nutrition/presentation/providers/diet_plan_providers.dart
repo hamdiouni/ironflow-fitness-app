@@ -6,6 +6,7 @@ import '../../domain/entities/diet_plan_state.dart';
 import '../../domain/repositories/diet_plan_repository.dart';
 import '../../domain/usecases/save_diet_plan_use_case.dart';
 import '../../domain/usecases/swap_diet_meal_use_case.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 
 // ---------------------------------------------------------------------------
 // Repository provider
@@ -18,7 +19,8 @@ import '../../domain/usecases/swap_diet_meal_use_case.dart';
 /// 
 /// **Validates: Requirements 7.1, 9.1**
 final dietPlanRepositoryProvider = Provider<DietPlanRepository>((ref) {
-  final dataSource = HiveDietPlanDataSource();
+  final userId = ref.watch(currentUserProvider).valueOrNull?.id;
+  final dataSource = HiveDietPlanDataSource(userId: userId);
   return DietPlanRepositoryImpl(dataSource);
 });
 

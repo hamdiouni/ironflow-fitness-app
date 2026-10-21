@@ -1,50 +1,74 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Helper function to check if user is authenticated
     function isAuthenticated() {
       return request.auth != null;
     }
-    
-    // Helper function to check if user owns the document
+
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
-    
-    // Users collection
+
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.admin == true;
+    }
+
+    function ownerFieldMatches(userId) {
+      return !('userId' in request.resource.data)
+          || request.resource.data.userId == userId;
+    }
+
+    // The UID in the path is the source of ownership truth. Every user-owned
+    // collection used by FirestorePaths / FirestoreSyncDataSource is covered
+    // here, including nutrition targets and sync metadata documents.
     match /users/{userId} {
-      allow read: if isOwner(userId);
-      allow write: if isOwner(userId);
-      
-      // User profile subcollection
+      allow read, write: if isOwner(userId);
+
       match /profile/{document=**} {
+        allow read, write: if isOwner(userId);
+      }
+
+      match /workouts/{workoutId} {
         allow read: if isOwner(userId);
-        allow write: if isOwner(userId);
+        allow create, update: if isOwner(userId) && ownerFieldMatches(userId);
+        allow delete: if isOwner(userId);
+      }
+
+      match /programs/{programId} {
+        allow read: if isOwner(userId);
+        allow create, update: if isOwner(userId) && ownerFieldMatches(userId);
+        allow delete: if isOwner(userId);
+      }
+
+      match /nutrition/{nutritionDocumentId} {
+        allow read: if isOwner(userId);
+        allow create, update: if isOwner(userId) && ownerFieldMatches(userId);
+        allow delete: if isOwner(userId);
+      }
+
+      match /body_progress/{entryId} {
+        allow read: if isOwner(userId);
+        allow create, update: if isOwner(userId) && ownerFieldMatches(userId);
+        allow delete: if isOwner(userId);
+      }
+
+      match /sync_metadata/{metadataId} {
+        allow read: if isOwner(userId);
+        allow create, update: if isOwner(userId) && ownerFieldMatches(userId);
+        allow delete: if isOwner(userId);
       }
     }
-    
-    // Workouts collection
-    match /workouts/{userId}/{document=**} {
-      allow read: if isOwner(userId);
-      allow write: if isOwner(userId);
+
+    // Shared reference data. The mobile client may read these records, while
+    // writes require an Admin SDK/privileged account (admin custom claim).
+    match /foods/{foodId} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
-    
-    // Programs collection
-    match /programs/{userId}/{document=**} {
-      allow read: if isOwner(userId);
-      allow write: if isOwner(userId);
-    }
-    
-    // Nutrition collection
-    match /nutrition/{userId}/{document=**} {
-      allow read: if isOwner(userId);
-      allow write: if isOwner(userId);
-    }
-    
-    // Body progress collection
-    match /body_progress/{userId}/{document=**} {
-      allow read: if isOwner(userId);
-      allow write: if isOwner(userId);
+
+    match /exercises/{exerciseId} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
   }
 }

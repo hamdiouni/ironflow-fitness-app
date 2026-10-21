@@ -7,6 +7,7 @@ import '../../domain/repositories/food_repository.dart';
 import '../../domain/usecases/initialize_food_cache_use_case.dart';
 import '../../domain/usecases/search_foods_use_case.dart';
 import '../../domain/entities/food_item_full.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 
 /// Firestore data source provider
 final firestoreFoodDataSourceProvider = Provider((ref) {
@@ -15,7 +16,8 @@ final firestoreFoodDataSourceProvider = Provider((ref) {
 
 /// Hive data source provider
 final hiveFoodDataSourceProvider = Provider((ref) {
-  return HiveFoodDataSource();
+  final userId = ref.watch(currentUserProvider).valueOrNull?.id;
+  return HiveFoodDataSource(userId: userId);
 });
 
 /// Food repository provider

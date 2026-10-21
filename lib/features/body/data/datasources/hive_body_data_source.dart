@@ -1,4 +1,6 @@
 import 'package:hive/hive.dart';
+
+import '../../../../core/utils/user_scoped_hive_key.dart';
 import '../models/body_entry_model.dart';
 
 /// Recursively casts a [Map<dynamic, dynamic>] (as returned by Hive) to
@@ -25,7 +27,15 @@ List<dynamic> _deepCastList(List<dynamic> list) {
 class HiveBodyDataSource {
   static const String boxName = 'body_entries';
 
+  final String? userId;
+
+  HiveBodyDataSource({this.userId});
+
   Box<Map> get _box => Hive.box<Map>(boxName);
+
+  String _storageKey(String id) => UserScopedHiveKey.encode(userId, id);
+
+  bool _ownsKey(Object? key) => UserScopedHiveKey.belongsTo(key, userId);
 
   Future<void> saveBodyEntry(BodyEntryModel entry) async {
     try {
@@ -37,7 +47,7 @@ class HiveBodyDataSource {
         throw Exception('Body entries box not open');
       }
       
-      await _box.put(entry.id, entry.toJson());
+      await _box.put(_storageKey(entry.id), entry.toJson());
       
       print('✅ [BodyData] Body measurement saved successfully');
       print('🔍 [BodyData] Weight: ${entry.weight}kg, Date: ${entry.date}, Measurements: ${entry.measurements.length}');
@@ -57,9 +67,12 @@ class HiveBodyDataSource {
         throw Exception('Body entries box not open');
       }
       
-      print('🔍 [BodyData] Box contains ${_box.length} entries');
+      final ownedKeys = _box.keys.where(_ownsKey).toList();
+      print('🔍 [BodyData] Box contains ${ownedKeys.length} entries for this user');
       
-      final entries = _box.values
+      final entries = ownedKeys
+          .map((key) => _box.get(key))
+          .whereType<Map>()
           .map((json) => BodyEntryModel.fromJson(_deepCast(json)))
           .toList();
 
@@ -87,7 +100,7 @@ class HiveBodyDataSource {
         throw Exception('Body entries box not open');
       }
       
-      await _box.delete(id);
+      await _box.delete(_storageKey(id));
       
       print('✅ [BodyData] Body measurement deleted successfully');
     } catch (e, stackTrace) {

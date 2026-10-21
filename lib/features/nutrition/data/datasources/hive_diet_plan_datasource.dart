@@ -1,4 +1,6 @@
 import 'package:hive/hive.dart';
+
+import '../../../../core/utils/user_scoped_hive_key.dart';
 import '../models/diet_plan_state_model.dart';
 
 /// Recursively casts a [Map<dynamic, dynamic>] (as returned by Hive) to
@@ -27,18 +29,24 @@ class HiveDietPlanDataSource {
   static const String boxName = 'diet_plan';
   static const String key = 'current_diet_plan';
 
+  final String? userId;
+
+  HiveDietPlanDataSource({this.userId});
+
+  String get _storageKey => UserScopedHiveKey.encode(userId, key);
+
   Future<Box<Map>> get _box async => await Hive.openBox<Map>(boxName);
 
   /// Save the diet plan to local storage
   Future<void> saveDietPlan(DietPlanStateModel planState) async {
     final box = await _box;
-    await box.put(key, planState.toJson());
+    await box.put(_storageKey, planState.toJson());
   }
 
   /// Load the diet plan from local storage
   Future<DietPlanStateModel?> loadDietPlan() async {
     final box = await _box;
-    final json = box.get(key);
+    final json = box.get(_storageKey);
     if (json == null) return null;
 
     return DietPlanStateModel.fromJson(_deepCast(json));
@@ -47,6 +55,6 @@ class HiveDietPlanDataSource {
   /// Clear the diet plan from local storage
   Future<void> clearDietPlan() async {
     final box = await _box;
-    await box.delete(key);
+    await box.delete(_storageKey);
   }
 }

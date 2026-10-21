@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/datasources/hive_active_program_datasource.dart';
 import '../../data/repositories/active_program_repository_impl.dart';
+import '../../data/repositories/synced_active_program_repository.dart';
 import '../../domain/entities/active_program.dart';
 import '../../domain/entities/workout_program.dart';
 import '../../domain/repositories/active_program_repository.dart';
@@ -13,6 +14,8 @@ import '../../domain/usecases/replace_exercise_use_case.dart';
 import '../../domain/usecases/set_active_program_use_case.dart';
 import '../../domain/usecases/update_active_program_use_case.dart';
 import '../../domain/usecases/update_exercise_parameters_use_case.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../sync/presentation/providers/sync_provider.dart';
 
 // ---------------------------------------------------------------------------
 // Repository provider
@@ -25,8 +28,17 @@ import '../../domain/usecases/update_exercise_parameters_use_case.dart';
 /// 
 /// **Validates: Requirements 7.1, 9.1**
 final activeProgramRepositoryProvider = Provider<ActiveProgramRepository>((ref) {
-  final dataSource = HiveActiveProgramDataSource();
-  return ActiveProgramRepositoryImpl(dataSource);
+  final user = ref.watch(currentUserProvider).valueOrNull;
+  final localRepository = ActiveProgramRepositoryImpl(
+    HiveActiveProgramDataSource(userId: user?.id),
+  );
+  if (user == null) return localRepository;
+
+  return SyncedActiveProgramRepository(
+    local: localRepository,
+    syncService: ref.watch(syncServiceProvider),
+    userId: user.id,
+  );
 });
 
 // ---------------------------------------------------------------------------
