@@ -1,4 +1,6 @@
 import 'package:hive/hive.dart';
+
+import '../../../../core/utils/user_scoped_hive_key.dart';
 import '../models/meal_model.dart';
 import '../models/nutrition_targets_model.dart';
 
@@ -36,9 +38,26 @@ class HiveNutritionDatasource {
   static const String targetsBoxName = 'macro_targets';
   static const String targetsKey = 'current';
 
+  final String? userId;
+
+  HiveNutritionDatasource({this.userId});
+
   Box<Map> get _mealsBox => Hive.box<Map>(mealsBoxName);
 
   Box<Map> get _targetsBox => Hive.box<Map>(targetsBoxName);
+
+  String _mealStorageKey(String mealId) =>
+      UserScopedHiveKey.encode(userId, mealId);
+
+  String get _targetsStorageKey =>
+      UserScopedHiveKey.encode(userId, targetsKey);
+
+  bool _ownsKey(Object? key) => UserScopedHiveKey.belongsTo(key, userId);
+
+  Iterable<Map> get _ownedMealValues => _mealsBox.keys
+      .where(_ownsKey)
+      .map((key) => _mealsBox.get(key))
+      .whereType<Map>();
 
   /// Save a meal entry to local storage.
   ///
@@ -54,7 +73,7 @@ class HiveNutritionDatasource {
         throw Exception('Meals box not open');
       }
       
-      await _mealsBox.put(meal.id, meal.toJson());
+      await _mealsBox.put(_mealStorageKey(meal.id), meal.toJson());
       
       print('✅ [NutritionData] Meal saved successfully');
       print('🔍 [NutritionData] Calories: ${meal.macros.calories}, Name: ${meal.name}');
@@ -79,7 +98,7 @@ class HiveNutritionDatasource {
         throw Exception('Meals box not open');
       }
       
-      final meals = _mealsBox.values
+      final meals = _ownedMealValues
           .map((json) => MealModel.fromJson(_deepCast(json)))
           .where((meal) {
             final mealDate = DateTime.parse(meal.timestamp);
@@ -117,7 +136,7 @@ class HiveNutritionDatasource {
         throw Exception('Meals box not open');
       }
       
-      final meals = _mealsBox.values
+      final meals = _ownedMealValues
           .map((json) => MealModel.fromJson(_deepCast(json)))
           .where((meal) {
             final mealDate = DateTime.parse(meal.timestamp);
@@ -148,7 +167,7 @@ class HiveNutritionDatasource {
         throw Exception('Meals box not open');
       }
       
-      final meals = _mealsBox.values
+      final meals = _ownedMealValues
           .map((json) => MealModel.fromJson(_deepCast(json)))
           .toList();
       
@@ -176,7 +195,7 @@ class HiveNutritionDatasource {
         throw Exception('Meals box not open');
       }
       
-      final json = _mealsBox.get(mealId);
+      final json = _mealsBox.get(_mealStorageKey(mealId));
       
       if (json == null) {
         print('⚠️ [NutritionData] Meal not found');
@@ -208,7 +227,7 @@ class HiveNutritionDatasource {
         throw Exception('Meals box not open');
       }
       
-      await _mealsBox.delete(mealId);
+      await _mealsBox.delete(_mealStorageKey(mealId));
       
       print('✅ [NutritionData] Meal deleted successfully');
     } catch (e, stackTrace) {
@@ -235,7 +254,7 @@ class HiveNutritionDatasource {
       print('🔍 [NutritionData] Found ${meals.length} meals to delete');
       
       for (final meal in meals) {
-        await _mealsBox.delete(meal.id);
+        await _mealsBox.delete(_mealStorageKey(meal.id));
       }
       
       print('✅ [NutritionData] Meals deleted successfully');
@@ -260,7 +279,7 @@ class HiveNutritionDatasource {
         throw Exception('Targets box not open');
       }
       
-      await _targetsBox.put(targetsKey, targets.toJson());
+      await _targetsBox.put(_targetsStorageKey, targets.toJson());
       
       print('✅ [NutritionData] Nutrition targets saved successfully');
       print('🔍 [NutritionData] Macros - Calories: ${targets.macros.calories}, Protein: ${targets.macros.protein}g, Carbs: ${targets.macros.carbs}g, Fat: ${targets.macros.fats}g');
@@ -283,7 +302,7 @@ class HiveNutritionDatasource {
         throw Exception('Targets box not open');
       }
       
-      final json = _targetsBox.get(targetsKey);
+      final json = _targetsBox.get(_targetsStorageKey);
       
       if (json == null) {
         print('⚠️ [NutritionData] No nutrition targets found');
@@ -313,16 +332,18 @@ class HiveNutritionDatasource {
       if (!_mealsBox.isOpen) {
         print('⚠️ [NutritionData] Meals box is not open');
       } else {
-        final mealsCount = _mealsBox.length;
-        await _mealsBox.clear();
-        print('✅ [NutritionData] Meals box cleared ($mealsCount meals removed)');
+        final ownedKeys = _mealsBox.keys.where(_ownsKey).toList();
+        for (final key in ownedKeys) {
+          await _mealsBox.delete(key);
+        }
+        print('✅ [NutritionData] Meals cleared (${ownedKeys.length} removed)');
       }
       
       if (!_targetsBox.isOpen) {
         print('⚠️ [NutritionData] Targets box is not open');
       } else {
-        await _targetsBox.clear();
-        print('✅ [NutritionData] Targets box cleared');
+        await _targetsBox.delete(_targetsStorageKey);
+        print('✅ [NutritionData] Targets cleared');
       }
       
       print('✅ [NutritionData] All nutrition data cleared successfully');
@@ -345,7 +366,7 @@ class HiveNutritionDatasource {
         throw Exception('Meals box not open');
       }
       
-      final count = _mealsBox.length;
+      final count = _mealsBox.keys.where(_ownsKey).length;
       print('✅ [NutritionData] Meal count retrieved successfully');
       print('🔍 [NutritionData] Total meals: $count');
       
@@ -369,7 +390,7 @@ class HiveNutritionDatasource {
         throw Exception('Meals box not open');
       }
       
-      final hasData = _mealsBox.isNotEmpty;
+      final hasData = _mealsBox.keys.any(_ownsKey);
       print('✅ [NutritionData] Meal check completed');
       print('🔍 [NutritionData] Has meals: $hasData');
       
@@ -394,7 +415,7 @@ class HiveNutritionDatasource {
       }
       
       final dates = <DateTime>{};
-      for (final json in _mealsBox.values) {
+      for (final json in _ownedMealValues) {
         final meal = MealModel.fromJson(_deepCast(json));
         final mealDate = DateTime.parse(meal.timestamp);
         dates.add(DateTime(mealDate.year, mealDate.month, mealDate.day));

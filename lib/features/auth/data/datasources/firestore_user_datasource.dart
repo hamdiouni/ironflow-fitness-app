@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../../core/config/firestore_paths.dart';
 import '../../domain/entities/user_profile.dart';
 
 abstract class FirestoreUserDataSource {
@@ -17,12 +18,12 @@ class FirestoreUserDataSourceImpl implements FirestoreUserDataSource {
   @override
   Future<UserProfile?> getUserProfile(String userId) async {
     try {
-      final doc = await _firestore
-          .collection('users')
-          .doc(userId)
-          .collection('profile')
-          .doc('data')
-          .get();
+      final doc = await FirestorePaths.userDocument(
+        _firestore,
+        userId,
+        FirestorePaths.profile,
+        'data',
+      ).get();
 
       if (!doc.exists) return null;
 
@@ -36,12 +37,12 @@ class FirestoreUserDataSourceImpl implements FirestoreUserDataSource {
   @override
   Future<void> saveUserProfile(UserProfile profile) async {
     try {
-      await _firestore
-          .collection('users')
-          .doc(profile.userId)
-          .collection('profile')
-          .doc('data')
-          .set(profile.toJson());
+      await FirestorePaths.userDocument(
+        _firestore,
+        profile.userId,
+        FirestorePaths.profile,
+        'data',
+      ).set(profile.toJson());
     } catch (e) {
       throw Exception('Failed to save user profile: $e');
     }
@@ -50,12 +51,12 @@ class FirestoreUserDataSourceImpl implements FirestoreUserDataSource {
   @override
   Future<void> updateUserProfile(UserProfile profile) async {
     try {
-      await _firestore
-          .collection('users')
-          .doc(profile.userId)
-          .collection('profile')
-          .doc('data')
-          .update(profile.toJson());
+      await FirestorePaths.userDocument(
+        _firestore,
+        profile.userId,
+        FirestorePaths.profile,
+        'data',
+      ).update(profile.toJson());
     } catch (e) {
       throw Exception('Failed to update user profile: $e');
     }
@@ -64,12 +65,12 @@ class FirestoreUserDataSourceImpl implements FirestoreUserDataSource {
   @override
   Future<void> deleteUserProfile(String userId) async {
     try {
-      await _firestore
-          .collection('users')
-          .doc(userId)
-          .collection('profile')
-          .doc('data')
-          .delete();
+      await FirestorePaths.userDocument(
+        _firestore,
+        userId,
+        FirestorePaths.profile,
+        'data',
+      ).delete();
     } catch (e) {
       throw Exception('Failed to delete user profile: $e');
     }

@@ -1,4 +1,6 @@
 import 'package:hive/hive.dart';
+
+import '../../../../core/utils/user_scoped_hive_key.dart';
 import '../models/active_program_model.dart';
 
 /// Recursively casts a [Map<dynamic, dynamic>] (as returned by Hive) to
@@ -27,18 +29,24 @@ class HiveActiveProgramDataSource {
   static const String boxName = 'active_program';
   static const String key = 'current_active_program';
 
+  final String? userId;
+
+  HiveActiveProgramDataSource({this.userId});
+
+  String get _storageKey => UserScopedHiveKey.encode(userId, key);
+
   Future<Box<Map>> get _box async => await Hive.openBox<Map>(boxName);
 
   /// Save the active program to local storage
   Future<void> saveActiveProgram(ActiveProgramModel program) async {
     final box = await _box;
-    await box.put(key, program.toJson());
+    await box.put(_storageKey, program.toJson());
   }
 
   /// Load the active program from local storage
   Future<ActiveProgramModel?> loadActiveProgram() async {
     final box = await _box;
-    final json = box.get(key);
+    final json = box.get(_storageKey);
     if (json == null) return null;
 
     return ActiveProgramModel.fromJson(_deepCast(json));
@@ -47,6 +55,6 @@ class HiveActiveProgramDataSource {
   /// Clear the active program from local storage
   Future<void> clearActiveProgram() async {
     final box = await _box;
-    await box.delete(key);
+    await box.delete(_storageKey);
   }
 }

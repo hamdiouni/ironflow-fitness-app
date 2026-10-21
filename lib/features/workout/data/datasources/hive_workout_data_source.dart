@@ -1,4 +1,6 @@
 import 'package:hive/hive.dart';
+
+import '../../../../core/utils/user_scoped_hive_key.dart';
 import '../models/workout_model.dart';
 
 /// Recursively casts a [Map<dynamic, dynamic>] (as returned by Hive) to
@@ -25,7 +27,15 @@ List<dynamic> _deepCastList(List<dynamic> list) {
 class HiveWorkoutDataSource {
   static const String boxName = 'workouts';
 
+  final String? userId;
+
+  HiveWorkoutDataSource({this.userId});
+
   Box<Map> get _box => Hive.box<Map>(boxName);
+
+  String _storageKey(String id) => UserScopedHiveKey.encode(userId, id);
+
+  bool _ownsKey(Object? key) => UserScopedHiveKey.belongsTo(key, userId);
 
   Future<void> saveWorkout(WorkoutModel workout) async {
     try {
@@ -37,7 +47,7 @@ class HiveWorkoutDataSource {
         throw Exception('Workouts box not open');
       }
       
-      await _box.put(workout.id, workout.toJson());
+      await _box.put(_storageKey(workout.id), workout.toJson());
       
       print('✅ [WorkoutData] Workout saved successfully');
       print('🔍 [WorkoutData] Exercises: ${workout.exercises.length}, Duration: ${workout.durationSeconds}s');
@@ -58,7 +68,10 @@ class HiveWorkoutDataSource {
       }
       
       print('🔍 [WorkoutData] Deserializing workout data...');
-      final workouts = _box.values
+      final workouts = _box.keys
+          .where(_ownsKey)
+          .map((key) => _box.get(key))
+          .whereType<Map>()
           .map((json) => WorkoutModel.fromJson(_deepCast(json)))
           .toList();
 
@@ -89,13 +102,8 @@ class HiveWorkoutDataSource {
         throw Exception('Workouts box not open');
       }
       
-      print('🔍 [WorkoutData] Deserializing workout data...');
-      final workouts = _box.values
-          .map((json) => WorkoutModel.fromJson(_deepCast(json)))
-          .toList();
-
-      // Sort by date descending
-      workouts.sort((a, b) => b.date.compareTo(a.date));
+      print('🔍 [WorkoutData] Loading current user's workout data...');
+      final workouts = await getAllWorkouts();
       
       // Apply pagination
       final startIndex = offset;
@@ -129,7 +137,7 @@ class HiveWorkoutDataSource {
         throw Exception('Workouts box not open');
       }
       
-      final count = _box.length;
+      final count = _box.keys.where(_ownsKey).length;
       
       print('✅ [WorkoutData] Workout count retrieved successfully');
       print('🔍 [WorkoutData] Total workouts: $count');
@@ -152,7 +160,7 @@ class HiveWorkoutDataSource {
         throw Exception('Workouts box not open');
       }
       
-      await _box.delete(id);
+      await _box.delete(_storageKey(id));
       
       print('✅ [WorkoutData] Workout deleted successfully');
     } catch (e, stackTrace) {

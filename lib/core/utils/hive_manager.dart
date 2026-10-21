@@ -6,7 +6,15 @@ class HiveManager {
   static const String _programBox = 'programs';
   static const String _userBox = 'user';
   static const String _settingsBox = 'settings';
-  static const String _syncQueueBox = 'sync_queue';
+  // Legacy SyncOperation queue; the feature SyncAction outbox uses its own
+  // `sync_queue` box and has a different serialized model.
+  static const String _syncQueueBox = 'sync_operations';
+  static const String _featureSyncQueueBox = 'sync_queue';
+  static const String _activeProgramBox = 'active_program';
+  static const String _dietPlanBox = 'diet_plan';
+  static const String _foodItemsFullBox = 'food_items_full';
+  static const String _onboardingUserProfileBox = 'user_profile';
+  static const String _activeWorkoutStateBox = 'active_workout_state';
   static const String _exercisesBox = 'exercises';
   static const String _foodsBox = 'foods';
   static const String _bodyEntriesBox = 'body_entries';
@@ -33,6 +41,10 @@ class HiveManager {
         _userBox,
         _settingsBox,
         _syncQueueBox,
+        _featureSyncQueueBox,
+        _activeProgramBox,
+        _dietPlanBox,
+        _foodItemsFullBox,
         _exercisesBox,
         _bodyEntriesBox,
         _streakBox,
@@ -47,6 +59,11 @@ class HiveManager {
         await Hive.openBox<Map>(boxName);
         print('✅ [Hive] Box opened: $boxName');
       }
+
+      // Boxes opened lazily by feature data sources are initialized here too
+      // so app startup has one explicit Hive lifecycle owner.
+      await Hive.openBox(_onboardingUserProfileBox);
+      await Hive.openBox<dynamic>(_activeWorkoutStateBox);
 
       // Open foods box (stores heterogeneous items: List, String, int)
       print('📊 [Hive] Opening box: $_foodsBox...');
@@ -63,11 +80,39 @@ class HiveManager {
       await Hive.openBox(_authSessionBox);
       print('✅ [Hive] Box opened: $_authSessionBox');
       
+      await _migrateLegacySyncOperations();
       print('✅ [Hive] All boxes opened successfully');
     } catch (e, stackTrace) {
       print('❌ [Hive] Failed to initialize: $e');
       print('🔍 [Hive] Stack trace: $stackTrace');
       throw Exception('Failed to initialize Hive: $e');
+    }
+  }
+
+  /// Moves legacy core SyncOperation maps out of `sync_queue`, where older
+  /// releases stored them alongside feature SyncAction maps.
+  static Future<void> _migrateLegacySyncOperations() async {
+    final legacyBox = Hive.box<Map>(_featureSyncQueueBox);
+    final operationsBox = Hive.box<Map>(_syncQueueBox);
+
+    for (final key in legacyBox.keys.toList()) {
+      final raw = legacyBox.get(key);
+      if (raw == null ||
+          !raw.containsKey('collection') ||
+          !raw.containsKey('documentId') ||
+          !raw.containsKey('createdAt') ||
+          raw.containsKey('dataType')) {
+        continue;
+      }
+
+      final operation = Map<String, dynamic>.from(raw);
+      final operationId = operation['id'];
+      if (operationId is! String || operationId.isEmpty) continue;
+
+      if (!operationsBox.containsKey(operationId)) {
+        await operationsBox.put(operationId, operation);
+      }
+      await legacyBox.delete(key);
     }
   }
 
@@ -203,6 +248,12 @@ class HiveManager {
         _userBox,
         _settingsBox,
         _syncQueueBox,
+        _featureSyncQueueBox,
+        _activeProgramBox,
+        _dietPlanBox,
+        _foodItemsFullBox,
+        _onboardingUserProfileBox,
+        _activeWorkoutStateBox,
         _exercisesBox,
         _foodsBox,
         _bodyEntriesBox,
@@ -224,6 +275,12 @@ class HiveManager {
         Hive.box<Map>(_userBox).clear(),
         Hive.box<Map>(_settingsBox).clear(),
         Hive.box<Map>(_syncQueueBox).clear(),
+        Hive.box<Map>(_featureSyncQueueBox).clear(),
+        Hive.box<Map>(_activeProgramBox).clear(),
+        Hive.box<Map>(_dietPlanBox).clear(),
+        Hive.box<Map>(_foodItemsFullBox).clear(),
+        Hive.box(_onboardingUserProfileBox).clear(),
+        Hive.box<dynamic>(_activeWorkoutStateBox).clear(),
         Hive.box<Map>(_exercisesBox).clear(),
         Hive.box(_foodsBox).clear(),
         Hive.box<Map>(_bodyEntriesBox).clear(),

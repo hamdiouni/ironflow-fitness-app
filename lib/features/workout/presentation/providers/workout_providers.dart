@@ -3,6 +3,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../data/datasources/hive_workout_data_source.dart';
 import '../../data/repositories/workout_repository_impl.dart';
+import '../../data/repositories/synced_workout_repository.dart';
 import '../../domain/entities/entities.dart';
 import '../../domain/repositories/workout_repository.dart';
 import '../../domain/usecases/usecases.dart';
@@ -10,6 +11,8 @@ import '../managers/workout_state_manager.dart';
 import 'active_program_providers.dart';
 import '../../../ai/presentation/providers/global_ai_provider.dart';
 import '../../../../core/providers/analytics_provider.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../sync/presentation/providers/sync_provider.dart';
 
 part 'workout_providers.freezed.dart';
 
@@ -18,8 +21,17 @@ part 'workout_providers.freezed.dart';
 // ---------------------------------------------------------------------------
 
 final workoutRepositoryProvider = Provider<WorkoutRepository>((ref) {
-  final dataSource = HiveWorkoutDataSource();
-  return WorkoutRepositoryImpl(dataSource);
+  final user = ref.watch(currentUserProvider).valueOrNull;
+  final dataSource = HiveWorkoutDataSource(userId: user?.id);
+  if (user == null) {
+    return WorkoutRepositoryImpl(dataSource);
+  }
+
+  return SyncedWorkoutRepository(
+    hiveDataSource: dataSource,
+    syncService: ref.watch(syncServiceProvider),
+    userId: user.id,
+  );
 });
 
 // ---------------------------------------------------------------------------
