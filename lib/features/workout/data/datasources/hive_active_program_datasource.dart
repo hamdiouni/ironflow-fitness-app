@@ -98,4 +98,15 @@ class HiveActiveProgramDataSource {
     if (box == null) return false;
     return box.containsKey(archivedKey);
   }
+
+  /// Reactive stream of the active program (Phase 3, F-12): emits the
+  /// current value immediately, then re-loads on every change to the
+  /// active-program key. Emits just the initial value when Hive is not
+  /// initialized yet (tests).
+  Stream<ActiveProgramModel?> watchActiveProgram() async* {
+    yield await loadActiveProgram();
+    final box = await _box;
+    if (box == null) return;
+    yield* box.watch(key: key).asyncMap((_) => loadActiveProgram());
+  }
 }

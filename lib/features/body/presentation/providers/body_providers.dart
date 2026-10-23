@@ -31,8 +31,14 @@ class DateRange with _$DateRange {
 // Repository provider
 // ---------------------------------------------------------------------------
 
+/// The single Hive body data source instance for the provider layer
+/// (Phase 3): repository and reactive stream share it.
+final hiveBodyDataSourceProvider = Provider<HiveBodyDataSource>((ref) {
+  return HiveBodyDataSource();
+});
+
 final bodyRepositoryProvider = Provider<BodyRepository>((ref) {
-  final dataSource = HiveBodyDataSource();
+  final dataSource = ref.watch(hiveBodyDataSourceProvider);
   // Phase 1: new entries are stamped with the signed-in owner.
   final userId = ref.watch(
     authNotifierProvider.select((s) => s.user?.id),
@@ -58,21 +64,27 @@ final bodyRepositoryProvider = Provider<BodyRepository>((ref) {
 });
 
 // ---------------------------------------------------------------------------
-// Refresh counter — increment this to force all body providers to re-fetch.
-// This is the single source of truth for cache invalidation.
+// Reactive stream (Phase 3, F-12) — replaces bodyRefreshCounterProvider.
+// Screens no longer bump a counter after saving; the Hive box-watch
+// stream re-emits on every write (UI, sync pull, restore).
 // ---------------------------------------------------------------------------
 
-final bodyRefreshCounterProvider = StateProvider<int>((ref) => 0);
+/// Reactive stream of all body entries, newest first.
+final bodyEntriesStreamProvider = StreamProvider<List<BodyEntry>>((ref) {
+  final dataSource = ref.watch(hiveBodyDataSourceProvider);
+  return dataSource
+      .watchAllBodyEntries()
+      .map((models) => models.map((m) => m.toEntity()).toList());
+});
 
 // ---------------------------------------------------------------------------
-// Data providers — both watch bodyRefreshCounterProvider so they rebuild
-// whenever the counter is incremented after a save.
+// Data providers — both watch bodyEntriesStreamProvider so they rebuild
+// whenever the body box changes.
 // ---------------------------------------------------------------------------
 
 /// Full body-entry history sorted by date descending.
 final bodyHistoryProvider = FutureProvider<List<BodyEntry>>((ref) async {
-  // Watch the counter so this provider re-runs when counter changes.
-  ref.watch(bodyRefreshCounterProvider);
+  ref.watch(bodyEntriesStreamProvider);
   final repository = ref.watch(bodyRepositoryProvider);
   final useCase = GetBodyHistoryUseCase(repository);
   return await useCase();
@@ -81,8 +93,7 @@ final bodyHistoryProvider = FutureProvider<List<BodyEntry>>((ref) async {
 /// Weight data points for the last 30 days.
 /// Uses a fixed 30-day window — no family parameter needed.
 final weightTrendProvider = FutureProvider<List<WeightDataPoint>>((ref) async {
-  // Watch the counter so this provider re-runs when counter changes.
-  ref.watch(bodyRefreshCounterProvider);
+  ref.watch(bodyEntriesStreamProvider);
   final repository = ref.watch(bodyRepositoryProvider);
   final useCase = GetWeightTrendUseCase(repository);
   final now = DateTime.now();

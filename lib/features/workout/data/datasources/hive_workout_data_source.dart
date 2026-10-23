@@ -77,6 +77,15 @@ class HiveWorkoutDataSource {
     }
   }
 
+  /// Reactive stream of all workouts (Phase 3, F-12): emits the current
+  /// snapshot immediately, then a fresh snapshot on every box change.
+  /// This replaces the manual refresh-counter bumps that UI code used to
+  /// make after every write.
+  Stream<List<WorkoutModel>> watchAllWorkouts() async* {
+    yield await getAllWorkouts();
+    yield* _box.watch().asyncMap((_) => getAllWorkouts());
+  }
+
   Future<List<WorkoutModel>> getWorkoutsPaginated({
     int offset = 0,
     int limit = 20,

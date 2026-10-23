@@ -5,6 +5,7 @@ export 'add_exercise_to_workout_use_case.dart';
 export 'calculate_workout_volume_use_case.dart';
 export 'clear_active_program_use_case.dart';
 export 'complete_workout_day_use_case.dart';
+export 'complete_workout_use_case.dart';
 export 'detect_personal_record_use_case.dart';
 export 'generate_workout_program_use_case.dart';
 export 'get_current_day_use_case.dart';

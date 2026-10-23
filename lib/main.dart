@@ -187,9 +187,10 @@ class _AppWithStateRestoreState extends ConsumerState<_AppWithStateRestore>
   @override
   void didChangeAppLifecycleState(AppLifecycleState lifecycleState) {
     if (lifecycleState == AppLifecycleState.resumed) {
-      // Invalidate workout history so it re-fetches when the app comes back
-      // to the foreground (e.g. after syncing data in another app).
-      ref.read(workoutRefreshCounterProvider.notifier).state++;
+      // Workout history no longer needs a manual refresh bump here
+      // (Phase 3, F-12): providers derive from the Hive box-watch
+      // stream, so any data written while backgrounded (e.g. a sync
+      // pull) already re-emitted on write.
       // Sync rest timer from absolute timestamp (TRN-02)
       ref.read(restTimerProvider.notifier).sync();
     }
