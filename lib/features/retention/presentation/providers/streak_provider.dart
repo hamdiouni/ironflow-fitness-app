@@ -35,7 +35,11 @@ class StreakNotifier extends StateNotifier<Streak> {
 
   /// Updates streak after a new workout is logged
   Future<void> updateAfterWorkout() async {
-    final updated = state.addWorkout();
+    // Always start from the persisted streak: this notifier is constructed
+    // with Streak.initial(), so using `state` here would overwrite a real
+    // stored streak with a fresh one (DATABASE_AND_SYNC_AUDIT F-06).
+    final persisted = await _dataSource.getStreak();
+    final updated = persisted.addWorkout();
     state = updated;
     await _dataSource.saveStreak(updated);
   }

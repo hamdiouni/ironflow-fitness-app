@@ -1,13 +1,15 @@
 import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-// Firebase - DISABLED
-// import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../data/datasources/firestore_food_datasource.dart';
+import '../../data/datasources/hive_food_datasource.dart';
+import '../../data/repositories/food_repository_impl.dart';
 import '../../domain/entities/food_item.dart';
 import '../../domain/entities/food_item_full.dart';
+import '../../domain/repositories/food_repository.dart';
 import '../../domain/usecases/search_food_use_case.dart';
 import '../../../nutrition/presentation/providers/nutrition_providers.dart';
-// import '../../data/datasources/firestore_food_datasource.dart';
 
 import '../../../onboarding/domain/entities/user_profile.dart' show BudgetLevel;
 
@@ -169,9 +171,14 @@ final customFoodsProvider = StateNotifierProvider<CustomFoodsNotifier, AsyncValu
 });
 
 /// Provider for food repository
-final foodRepositoryProvider = Provider((ref) {
-  final nutritionRepo = ref.watch(nutritionRepositoryProvider);
-  return nutritionRepo as dynamic; // Cast to FoodRepository
+final foodRepositoryProvider = Provider<FoodRepository>((ref) {
+  // Was `nutritionRepositoryProvider as dynamic` — that implementation has
+  // no FoodRepository methods, so custom-food calls threw NoSuchMethodError
+  // (DATABASE_AND_SYNC_AUDIT F-10). Provide the real implementation.
+  return FoodRepositoryImpl(
+    firestoreDataSource: FirestoreFoodDatasource(FirebaseFirestore.instance),
+    hiveDataSource: HiveFoodDataSource(),
+  );
 });
 
 /// Provider for Firestore instance - DISABLED

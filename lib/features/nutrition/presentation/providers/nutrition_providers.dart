@@ -3,9 +3,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/datasources/firestore_food_datasource.dart';
 import '../../data/datasources/firestore_nutrition_datasource.dart';
+import '../../data/datasources/hive_food_datasource.dart';
 import '../../data/datasources/hive_nutrition_datasource.dart';
+import '../../data/repositories/food_repository_impl.dart';
 import '../../data/repositories/nutrition_repository_impl.dart';
+import '../../../ai/presentation/providers/global_ai_provider.dart';
+import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../../domain/entities/daily_nutrition_summary.dart';
 import '../../domain/entities/food_item_full.dart';
 import '../../domain/entities/meal.dart';
@@ -22,8 +27,11 @@ import '../../../../core/providers/analytics_provider.dart';
 final nutritionRepositoryProvider = Provider<NutritionRepository>((ref) {
   final firestoreDataSource = FirestoreNutritionDatasource(FirebaseFirestore.instance);
   final hiveDataSource = HiveNutritionDatasource();
-  // TODO: Get userId from auth provider
-  const userId = 'test-user';
+  // Was hardcoded to 'test-user' for every account (DATABASE_AND_SYNC_AUDIT
+  // F-01). Watching the auth user id rebuilds the repository when the
+  // signed-in user changes; 'local-user' covers the logged-out/guest path.
+  final userId =
+      ref.watch(authNotifierProvider.select((s) => s.user?.id)) ?? 'local-user';
   return NutritionRepositoryImpl(
     firestoreDataSource: firestoreDataSource,
     hiveDataSource: hiveDataSource,
@@ -36,8 +44,13 @@ final nutritionRepositoryProvider = Provider<NutritionRepository>((ref) {
 // ---------------------------------------------------------------------------
 
 final foodRepositoryProvider = Provider<FoodRepository>((ref) {
-  final repository = ref.watch(nutritionRepositoryProvider);
-  return repository as FoodRepository;
+  // Was `nutritionRepositoryProvider as FoodRepository` — NutritionRepositoryImpl
+  // does not implement FoodRepository, so this threw a CastError at runtime
+  // (DATABASE_AND_SYNC_AUDIT F-10). Provide the real implementation.
+  return FoodRepositoryImpl(
+    firestoreDataSource: FirestoreFoodDatasource(FirebaseFirestore.instance),
+    hiveDataSource: HiveFoodDataSource(),
+  );
 });
 
 // ---------------------------------------------------------------------------
@@ -129,7 +142,19 @@ class DailyNutritionNotifier extends StateNotifier<AsyncValue<DailyNutritionSumm
         state = AsyncValue.data(updatedSummary);
       });
       _ref.invalidate(recentFoodsProvider);
-      
+
+      // Notify Global AI so nutrition insights refresh now, not at next
+      // app launch. onMealLogged previously had zero callers
+      // (DATABASE_AND_SYNC_AUDIT F-06). Fire-and-forget: failures must not
+      // block or fail meal logging.
+      try {
+        _ref.read(globalAIProvider.notifier).onMealLogged();
+      } catch (e) {
+        if (kDebugMode) {
+          AppLogger.debug('⚠️ [Nutrition] AI meal notification skipped: $e');
+        }
+      }
+
       // Track meal logged event
       try {
         final analytics = _ref.read(analyticsServiceProvider);

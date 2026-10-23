@@ -1,50 +1,109 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Helper function to check if user is authenticated
+    // ------------------------------------------------------------------
+    // Helpers
+    // ------------------------------------------------------------------
     function isAuthenticated() {
       return request.auth != null;
     }
-    
-    // Helper function to check if user owns the document
+
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
-    
-    // Users collection
+
+    // Flat top-level collections (workouts/programs/nutrition/body_progress)
+    // store ownership in a `userId` FIELD written by
+    // FirestoreSyncDataSourceImpl, not in the path. These helpers check that
+    // field. See docs/architecture/DATABASE_AND_SYNC_AUDIT.md (F-02): the
+    // previous rules expected the layout `{collection}/{userId}/**`, which
+    // no writer ever produced, so every cloud write was denied.
+    function readsOwnDoc() {
+      return isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    function writesOwnDoc() {
+      return isAuthenticated()
+          && request.resource.data.userId == request.auth.uid;
+    }
+
+    // ------------------------------------------------------------------
+    // Per-user tree: users/{uid} and ALL of its subcollections.
+    // Covers: profile/data (auth), nutrition/{mealId} + nutrition/targets
+    // (nutrition repository), backups/{id} (settings). These writers were
+    // previously denied because only `profile/**` was allowed.
+    // ------------------------------------------------------------------
     match /users/{userId} {
-      allow read: if isOwner(userId);
-      allow write: if isOwner(userId);
-      
-      // User profile subcollection
-      match /profile/{document=**} {
-        allow read: if isOwner(userId);
-        allow write: if isOwner(userId);
+      allow read, write: if isOwner(userId);
+
+      match /{subcollection}/{document=**} {
+        allow read, write: if isOwner(userId);
       }
     }
-    
-    // Workouts collection
+
+    // ------------------------------------------------------------------
+    // Flat collections written by the sync engine. Documents carry a
+    // `userId` field; list queries in code filter `where('userId', == uid)`.
+    // The nested {userId}/{document=**} layout from the old rules is kept
+    // for backwards compatibility with any data written in that shape.
+    // ------------------------------------------------------------------
+    match /workouts/{workoutId} {
+      allow read, delete: if readsOwnDoc();
+      allow create, update: if writesOwnDoc();
+    }
     match /workouts/{userId}/{document=**} {
-      allow read: if isOwner(userId);
-      allow write: if isOwner(userId);
+      allow read, write: if isOwner(userId);
     }
-    
-    // Programs collection
+
+    match /programs/{programId} {
+      allow read, delete: if readsOwnDoc();
+      allow create, update: if writesOwnDoc();
+    }
     match /programs/{userId}/{document=**} {
-      allow read: if isOwner(userId);
-      allow write: if isOwner(userId);
+      allow read, write: if isOwner(userId);
     }
-    
-    // Nutrition collection
+
+    match /nutrition/{logId} {
+      allow read, delete: if readsOwnDoc();
+      allow create, update: if writesOwnDoc();
+    }
     match /nutrition/{userId}/{document=**} {
-      allow read: if isOwner(userId);
-      allow write: if isOwner(userId);
+      allow read, write: if isOwner(userId);
     }
-    
-    // Body progress collection
+
+    match /body_progress/{progressId} {
+      allow read, delete: if readsOwnDoc();
+      allow create, update: if writesOwnDoc();
+    }
     match /body_progress/{userId}/{document=**} {
-      allow read: if isOwner(userId);
-      allow write: if isOwner(userId);
+      allow read, write: if isOwner(userId);
+    }
+
+    // ------------------------------------------------------------------
+    // Sync bookkeeping: one doc per (user, dataType), id = "{uid}_{type}",
+    // body carries `userId`. Previously there was no rule at all for this
+    // collection, so last-sync reads/writes always failed.
+    // ------------------------------------------------------------------
+    match /sync_metadata/{docId} {
+      allow read: if isAuthenticated()
+          && (resource == null || resource.data.userId == request.auth.uid);
+      allow create, update: if writesOwnDoc();
+      allow delete: if readsOwnDoc();
+    }
+
+    // ------------------------------------------------------------------
+    // Shared read-only catalogs (seeded by the upload scripts). Publicly
+    // readable so catalog screens work pre-login; writes require an
+    // authenticated user (seeding from the app).
+    // ------------------------------------------------------------------
+    match /foods/{foodId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    match /exercises/{exerciseId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
     }
   }
 }

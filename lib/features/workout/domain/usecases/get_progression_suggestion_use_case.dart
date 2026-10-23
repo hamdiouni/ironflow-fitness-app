@@ -30,9 +30,12 @@ class GetProgressionSuggestionUseCase {
       // Get all workouts
       final allWorkouts = await repository.getAllWorkouts();
       
-      // Filter workouts that contain this exercise
+      // Filter workouts that contain this exercise (case-insensitive, to
+      // match WorkoutRepository.getExerciseHistory's convention — exact ==
+      // here disagreed with it on the same data; F-05)
       final exerciseWorkouts = allWorkouts
-          .where((w) => w.exercises.any((e) => e.name == exerciseName))
+          .where((w) => w.exercises
+              .any((e) => e.name.toLowerCase() == exerciseName.toLowerCase()))
           .toList();
 
       if (exerciseWorkouts.isEmpty) {
@@ -44,7 +47,8 @@ class GetProgressionSuggestionUseCase {
 
       // Get the exercise from each workout
       final exerciseHistory = recentWorkouts
-          .map((w) => w.exercises.firstWhere((e) => e.name == exerciseName))
+          .map((w) => w.exercises.firstWhere(
+              (e) => e.name.toLowerCase() == exerciseName.toLowerCase()))
           .toList();
 
       if (exerciseHistory.isEmpty) {

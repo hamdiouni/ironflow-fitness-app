@@ -6,7 +6,12 @@ import '../../domain/entities/notification_settings.dart';
 /// Hive-based data source for notification settings persistence.
 class HiveNotificationSettingsDataSource {
   static const String _boxName = 'notification_settings';
-  static const String _settingsKey = 'settings';
+  // Was 'settings' — the same box+key used by notifications'
+  // HiveReminderSettingsDatasource with an incompatible schema
+  // (ReminderSettings). The two silently overwrote each other and both
+  // fell back to defaults on parse failure (DATABASE_AND_SYNC_AUDIT F-09).
+  // Retention settings now live under their own key.
+  static const String _settingsKey = 'retention_settings';
 
   /// Gets the notification settings from Hive storage.
   ///
