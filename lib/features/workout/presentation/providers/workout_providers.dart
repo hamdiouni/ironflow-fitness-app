@@ -201,9 +201,13 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
   Future<void> repeatWorkout(Workout previous) async {
     final freshExercises = previous.exercises.map((e) => Exercise(
       id: const Uuid().v4(),
+      // Keep the catalog link and plan hints across repeats (Phase 1).
+      exerciseDefinitionId: e.exerciseDefinitionId,
       name: e.name,
       type: e.type,
       sets: const [],
+      suggestedReps: e.suggestedReps,
+      suggestedSets: e.suggestedSets,
     )).toList();
     await start(initialExercises: freshExercises);
   }

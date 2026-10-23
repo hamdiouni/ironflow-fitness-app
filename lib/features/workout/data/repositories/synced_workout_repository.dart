@@ -24,13 +24,19 @@ class SyncedWorkoutRepository implements WorkoutRepository {
 
   @override
   Future<void> saveWorkout(Workout workout) async {
+    // Phase 1: stamp ownership + sync clock on the entity itself, so the
+    // local record and the queued payload carry a real userId/updatedAt
+    // (previously userId was injected into the sync payload only).
+    final stamped = workout.copyWith(
+      userId: workout.userId ?? _userId,
+      updatedAt: DateTime.now(),
+    );
     // Save to local Hive first (source of truth)
-    final model = WorkoutModel.fromEntity(workout);
+    final model = WorkoutModel.fromEntity(stamped);
     await _hiveDataSource.saveWorkout(model);
 
     // Queue sync action scoped to user
     final data = model.toJson();
-    data['userId'] = _userId;
     await _syncService.queueAction(
       type: SyncActionType.create,
       dataType: SyncDataType.workout,
@@ -75,7 +81,10 @@ class SyncedWorkoutRepository implements WorkoutRepository {
 
     for (final workout in workouts) {
       final matching = workout.exercises.where(
-        (e) => e.name.toLowerCase() == exerciseName.toLowerCase(),
+        // Phase 1: a definition id is accepted as well as a name.
+        (e) =>
+            e.exerciseDefinitionId == exerciseName ||
+            e.name.toLowerCase() == exerciseName.toLowerCase(),
       );
       exercises.addAll(matching);
       if (exercises.length >= limit) break;

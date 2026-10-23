@@ -102,7 +102,12 @@ class NutritionRepositoryImpl implements NutritionRepository {
   @override
   Future<void> saveMealEntry(Meal meal) async {
     try {
-      final model = MealModel.fromEntity(meal);
+      // Phase 1: stamp ownership + sync clock on every save.
+      final stamped = meal.copyWith(
+        userId: meal.userId ?? userId,
+        updatedAt: DateTime.now(),
+      );
+      final model = MealModel.fromEntity(stamped);
 
       // Save to local storage immediately (offline-first)
       await hiveDataSource.saveMealEntry(model);

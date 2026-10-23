@@ -12,7 +12,9 @@ import 'firebase_options.dart';
 import 'core/constants/app_theme.dart';
 import 'core/providers/theme_provider.dart';
 import 'core/router/app_router.dart';
+import 'core/utils/data_migration.dart';
 import 'core/utils/hive_manager.dart';
+import 'features/auth/data/datasources/auth_session_storage.dart';
 import 'features/workout/presentation/managers/workout_state_manager.dart';
 import 'features/workout/presentation/providers/workout_providers.dart';
 import 'features/workout/presentation/providers/rest_timer_provider.dart';
@@ -83,6 +85,13 @@ void main() async {
 
     // Finish any interrupted account deletion wipe before UI renders
     await DeleteAccountUseCase.checkAndExecutePendingWipe();
+
+    // One-time local schema migrations (Phase 1: backfill userId /
+    // updatedAt / exerciseDefinitionId on pre-v2 records). Never throws
+    // and never blocks startup on failure.
+    await DataMigration.runIfNeeded(
+      currentUserId: AuthSessionStorage().getUserId(),
+    );
 
     // Initialize Notification Service
     final notificationService = NotificationService();

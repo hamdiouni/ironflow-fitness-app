@@ -13,6 +13,8 @@ class BodyEntryModel with _$BodyEntryModel {
     required double weight,
     required Map<String, double> measurements, // MeasurementType.name → double
     String? photoPath,
+    // Phase 1 schema v2 — nullable so pre-v2 stored JSON still loads.
+    String? userId,
   }) = _BodyEntryModel;
 
   factory BodyEntryModel.fromJson(Map<String, dynamic> json) =>
@@ -26,6 +28,7 @@ class BodyEntryModel with _$BodyEntryModel {
       measurements: entry.measurements
           .map((type, value) => MapEntry(type.name, value)),
       photoPath: entry.photoPath,
+      userId: entry.userId,
     );
   }
 }
@@ -43,6 +46,7 @@ extension BodyEntryModelX on BodyEntryModel {
         ),
       ),
       photoPath: photoPath,
+      userId: userId,
     );
   }
 }

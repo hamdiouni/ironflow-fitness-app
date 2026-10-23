@@ -13,6 +13,7 @@ import '../../domain/usecases/replace_exercise_use_case.dart';
 import '../../domain/usecases/set_active_program_use_case.dart';
 import '../../domain/usecases/update_active_program_use_case.dart';
 import '../../domain/usecases/update_exercise_parameters_use_case.dart';
+import '../../../auth/presentation/providers/auth_notifier.dart';
 
 // ---------------------------------------------------------------------------
 // Repository provider
@@ -26,7 +27,11 @@ import '../../domain/usecases/update_exercise_parameters_use_case.dart';
 /// **Validates: Requirements 7.1, 9.1**
 final activeProgramRepositoryProvider = Provider<ActiveProgramRepository>((ref) {
   final dataSource = HiveActiveProgramDataSource();
-  return ActiveProgramRepositoryImpl(dataSource);
+  // Phase 1: saved programs are stamped with the signed-in owner.
+  final userId = ref.watch(
+    authNotifierProvider.select((s) => s.user?.id),
+  );
+  return ActiveProgramRepositoryImpl(dataSource, userId: userId);
 });
 
 // ---------------------------------------------------------------------------

@@ -20,5 +20,19 @@ class Workout with _$Workout {
     required Duration duration,
     required double totalVolume,
     @Default(0) double caloriesBurned,
+    // Schema v2 links (Phase 1, DATABASE_AND_SYNC_AUDIT §8.2). All optional
+    // so pre-v2 data/constructions keep working; populated by
+    // StartWorkoutUseCase + repositories + DataMigration backfill.
+    /// Owning user (auth uid). Null for legacy/local-only rows.
+    String? userId,
+
+    /// Program this session fulfilled, if started from a program.
+    String? programId,
+
+    /// 0-based day index within [programId]'s program at start time.
+    int? programDayIndex,
+
+    /// Last modification time — the LWW conflict key for sync.
+    DateTime? updatedAt,
   }) = _Workout;
 }

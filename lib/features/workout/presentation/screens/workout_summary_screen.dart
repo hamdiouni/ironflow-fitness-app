@@ -557,14 +557,8 @@ class _ProgressionSuggestionItem extends ConsumerWidget {
                 );
               }).toList();
 
-              final updatedProgram = WorkoutProgram(
-                id: activeProgram.program.id,
-                name: activeProgram.program.name,
-                description: activeProgram.program.description,
-                days: updatedDays,
-                durationWeeks: activeProgram.program.durationWeeks,
-                difficulty: activeProgram.program.difficulty,
-              );
+              final updatedProgram =
+                  activeProgram.program.copyWith(days: updatedDays);
 
               final updatedActiveProgram =
                   activeProgram.updateProgram(updatedProgram);

@@ -39,12 +39,14 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
     for (final workout in workouts) {
       for (final exercise in workout.exercises) {
         // Exercise.id is a fresh UUID per session (StartWorkoutUseCase), so
-        // matching by id alone yielded at most one data point per series
-        // (DATABASE_AND_SYNC_AUDIT F-05). Until exercises carry a stable
-        // exerciseDefinitionId (Phase 1), identity is the exercise name —
-        // the same convention WorkoutRepository.getExerciseHistory uses.
-        // The id check is kept for exact-instance lookups.
-        if (exercise.id == exerciseId ||
+        // it cannot identify an exercise across sessions
+        // (DATABASE_AND_SYNC_AUDIT F-05). Phase 1: identity is the stable
+        // catalog link exerciseDefinitionId when present (stamped at
+        // workout start + backfilled by the v2 migration); the name
+        // (case-insensitive) remains the fallback for unlinked entries,
+        // and the exact-instance id check is kept for direct lookups.
+        if (exercise.exerciseDefinitionId == exerciseId ||
+            exercise.id == exerciseId ||
             exercise.name.toLowerCase() == exerciseId.toLowerCase()) {
           exerciseName ??= exercise.name;
           muscleGroup ??= exercise.type.name;
@@ -126,13 +128,14 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
       endDate,
     );
 
-    // Collect unique exercises by NAME, not per-session id: each session's
-    // Exercise gets a new UUID, so grouping by id produced one single-point
-    // series per workout instead of a progression per exercise (F-05).
+    // Collect unique exercises by stable identity, not per-session id:
+    // each session's Exercise gets a new UUID, so grouping by id produced
+    // one single-point series per workout (F-05). Phase 1: group by the
+    // catalog definition id when stamped, falling back to the name.
     final exerciseIds = <String>{};
     for (final workout in workouts) {
       for (final exercise in workout.exercises) {
-        exerciseIds.add(exercise.name);
+        exerciseIds.add(exercise.exerciseDefinitionId ?? exercise.name);
       }
     }
 

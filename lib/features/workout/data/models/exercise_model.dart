@@ -19,6 +19,8 @@ class ExerciseModel with _$ExerciseModel {
     // Requires `dart run build_runner build` to regenerate the model code.
     int? suggestedReps,
     int? suggestedSets,
+    // Phase 1 schema v2: stable catalog link (ExerciseDefinition.id).
+    String? exerciseDefinitionId,
   }) = _ExerciseModel;
 
   factory ExerciseModel.fromJson(Map<String, dynamic> json) =>
@@ -32,6 +34,7 @@ class ExerciseModel with _$ExerciseModel {
       sets: exercise.sets.map(SetEntryModel.fromEntity).toList(),
       suggestedReps: exercise.suggestedReps,
       suggestedSets: exercise.suggestedSets,
+      exerciseDefinitionId: exercise.exerciseDefinitionId,
     );
   }
 }
@@ -45,6 +48,7 @@ extension ExerciseModelX on ExerciseModel {
       sets: sets.map((s) => s.toEntity()).toList(),
       suggestedReps: suggestedReps,
       suggestedSets: suggestedSets,
+      exerciseDefinitionId: exerciseDefinitionId,
     );
   }
 }

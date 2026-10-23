@@ -18,11 +18,13 @@ class WorkoutProgramModel with _$WorkoutProgramModel {
     String? hybridSplitId,
     String? hybridMode,
     int? cycleLength,
+    // Phase 1 schema v2 — nullable so pre-v2 stored JSON still loads.
+    String? userId,
   }) = _WorkoutProgramModel;
-  
+
   factory WorkoutProgramModel.fromJson(Map<String, dynamic> json) =>
       _$WorkoutProgramModelFromJson(json);
-  
+
   factory WorkoutProgramModel.fromEntity(WorkoutProgram entity) {
     return WorkoutProgramModel(
       id: entity.id,
@@ -35,6 +37,7 @@ class WorkoutProgramModel with _$WorkoutProgramModel {
       hybridSplitId: entity.hybridSplitId,
       hybridMode: entity.hybridMode,
       cycleLength: entity.cycleLength,
+      userId: entity.userId,
     );
   }
 }
@@ -52,6 +55,7 @@ extension WorkoutProgramModelX on WorkoutProgramModel {
       hybridSplitId: hybridSplitId,
       hybridMode: hybridMode,
       cycleLength: cycleLength,
+      userId: userId,
     );
   }
 }
@@ -103,11 +107,13 @@ class ProgramExerciseModel with _$ProgramExerciseModel {
     required int restSeconds,
     double? targetWeight,
     String? notes,
+    // Phase 1 schema v2: stable catalog link (ExerciseDefinition.id).
+    String? exerciseDefinitionId,
   }) = _ProgramExerciseModel;
-  
+
   factory ProgramExerciseModel.fromJson(Map<String, dynamic> json) =>
       _$ProgramExerciseModelFromJson(json);
-  
+
   factory ProgramExerciseModel.fromEntity(ProgramExercise entity) {
     return ProgramExerciseModel(
       exerciseName: entity.exerciseName,
@@ -116,6 +122,7 @@ class ProgramExerciseModel with _$ProgramExerciseModel {
       restSeconds: entity.restSeconds,
       targetWeight: entity.targetWeight,
       notes: entity.notes,
+      exerciseDefinitionId: entity.exerciseDefinitionId,
     );
   }
 }
@@ -129,6 +136,7 @@ extension ProgramExerciseModelX on ProgramExerciseModel {
       restSeconds: restSeconds,
       targetWeight: targetWeight,
       notes: notes,
+      exerciseDefinitionId: exerciseDefinitionId,
     );
   }
 }
