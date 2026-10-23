@@ -29,12 +29,16 @@ class StartWorkoutUseCase {
     // Get current day exercises
     final currentDay = activeProgram.currentDay;
     
-    // Convert program exercises to workout exercises
+    // Convert program exercises to workout exercises, carrying the planned
+    // sets/reps into the session (previously dropped here, so an in-progress
+    // workout had no record of the plan — DATABASE_AND_SYNC_AUDIT F-05).
     final exercises = currentDay.exercises.map((pe) => Exercise(
       id: const Uuid().v4(),
       name: pe.exerciseName,
       type: ExerciseType.strength,
       sets: [],
+      suggestedSets: pe.sets,
+      suggestedReps: _parseFirstRepCount(pe.reps),
     )).toList();
 
     return Workout(
@@ -44,5 +48,12 @@ class StartWorkoutUseCase {
       duration: Duration.zero,
       totalVolume: 0,
     );
+  }
+
+  /// Extracts the first rep count from a program rep scheme
+  /// ('8-12' → 8, '15' → 15, 'AMRAP' → null).
+  static int? _parseFirstRepCount(String reps) {
+    final match = RegExp(r'\d+').firstMatch(reps);
+    return match == null ? null : int.tryParse(match.group(0)!);
   }
 }

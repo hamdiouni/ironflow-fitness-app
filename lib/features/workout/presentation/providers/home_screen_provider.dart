@@ -195,7 +195,13 @@ class HomeScreenNotifier extends StateNotifier<AsyncValue<HomeScreenState>> {
     _ref.invalidate(homeWorkoutDataProvider);
     _ref.invalidate(userProfileProvider);
     _ref.invalidate(activeProgramProvider);
-    _ref.invalidate(dailyNutritionSummaryProvider(DateTime.now()));
+    // Must match the normalized-midnight family key used by the nutrition
+    // screens; invalidating with raw DateTime.now() is a no-op. See F-07 in
+    // docs/architecture/DATABASE_AND_SYNC_AUDIT.md.
+    final now = DateTime.now();
+    _ref.invalidate(
+      dailyNutritionSummaryProvider(DateTime(now.year, now.month, now.day)),
+    );
     
     // Reload data
     await _loadData();

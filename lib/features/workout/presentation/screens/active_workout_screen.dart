@@ -341,28 +341,41 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
       // Update the workout with calories burned
       AppLogger.debug('📊 [WorkoutUI] Updating workout with calories...');
       ref.read(workoutNotifierProvider.notifier).updateCalories(caloriesBurned);
-      
+
+      // Save the workout FIRST, advance the program SECOND
+      // (DATABASE_AND_SYNC_AUDIT F-06). The old order advanced and persisted
+      // the program day before saving, so a failed/interrupted save left
+      // the program advanced with no workout in history. The old
+      // program-complete branch also never called finish() at all when the
+      // user chose "generate new program" — silently losing the final
+      // workout of every program.
+      AppLogger.debug('📊 [WorkoutUI] Finishing (saving) workout session...');
+      await ref.read(workoutNotifierProvider.notifier).finish();
+      AppLogger.debug('✅ [WorkoutUI] Workout finished successfully');
+
       // Complete the current workout day in the active program
       AppLogger.debug('📊 [WorkoutUI] Completing current day in active program...');
       await ref.read(activeProgramProvider.notifier).completeCurrentDay();
       AppLogger.debug('✅ [WorkoutUI] Current day completed');
-      
+
+      // finish() switched state to completed, whose view navigates to the
+      // summary screen in a post-frame callback. If that already ran, this
+      // widget is unmounted and `ref` must not be touched again — workout
+      // and program day are already persisted, only the dialog is skipped.
+      if (!mounted) return;
+
       // Check if program is now complete
       final activeProgramAsync = ref.read(activeProgramProvider);
       final activeProgram = activeProgramAsync.value;
-      
+
       if (activeProgram != null && activeProgram.isProgramComplete) {
         AppLogger.debug('🎉 [WorkoutUI] Program completed!');
-        // Show program complete dialog
+        // Show program complete dialog (workout is already saved; the
+        // dialog's own finish() calls are now harmless no-ops)
         if (context.mounted) {
           AppLogger.debug('📊 [WorkoutUI] Showing program complete dialog...');
           _showProgramCompleteDialog(context, activeProgram);
         }
-      } else {
-        AppLogger.debug('📊 [WorkoutUI] Program not complete, finishing workout normally...');
-        // Finish the workout session normally
-        await ref.read(workoutNotifierProvider.notifier).finish();
-        AppLogger.debug('✅ [WorkoutUI] Workout finished successfully');
       }
     } catch (e, s) {
       AppLogger.debug('❌ [WorkoutUI] Failed to finish workout: $e');

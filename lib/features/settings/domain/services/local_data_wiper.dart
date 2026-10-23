@@ -26,6 +26,9 @@ class LocalDataWiper {
         _privateDocumentsDir = privateDocumentsDir;
 
   /// User-scoped Hive boxes that store user training, nutrition, biometrics, and telemetry.
+  /// Keep in sync with HiveManager's box inventory (DATABASE_AND_SYNC_AUDIT F-04):
+  /// 'active_program', 'diet_plan', 'active_workout_state' were previously missing,
+  /// leaking the previous account's program/diet/in-progress workout after a wipe.
   static const List<String> _userScopedBoxNames = [
     'workouts',
     'nutrition',
@@ -41,6 +44,10 @@ class LocalDataWiper {
     'insight_cache',
     'user_profile',
     'ai_chat_history',
+    'active_program',
+    'diet_plan',
+    'food_items_full',
+    'active_workout_state',
   ];
 
   /// Core bundled dataset boxes that MUST NEVER BE CLEARED OR DELETED.
