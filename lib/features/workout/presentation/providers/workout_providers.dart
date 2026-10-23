@@ -4,6 +4,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../data/datasources/hive_workout_data_source.dart';
+import '../../data/repositories/synced_workout_repository.dart';
 import '../../data/repositories/workout_repository_impl.dart';
 import '../../domain/entities/entities.dart';
 import '../../domain/repositories/workout_repository.dart';
@@ -11,6 +12,9 @@ import '../../domain/usecases/usecases.dart';
 import '../managers/workout_state_manager.dart';
 import 'active_program_providers.dart';
 import '../../../ai/presentation/providers/global_ai_provider.dart';
+import '../../../auth/presentation/providers/auth_notifier.dart';
+import '../../../retention/presentation/providers/streak_provider.dart';
+import '../../../sync/presentation/providers/sync_provider.dart';
 import '../../../../core/providers/analytics_provider.dart';
 
 part 'workout_providers.freezed.dart';
@@ -21,7 +25,20 @@ part 'workout_providers.freezed.dart';
 
 final workoutRepositoryProvider = Provider<WorkoutRepository>((ref) {
   final dataSource = HiveWorkoutDataSource();
-  return WorkoutRepositoryImpl(dataSource);
+  // Wire workout writes into the sync outbox when a user is signed in.
+  // SyncedWorkoutRepository was previously never instantiated, so workouts
+  // never enqueued a single sync action (DATABASE_AND_SYNC_AUDIT F-03).
+  // Watching the auth user id rebuilds this provider on login/logout.
+  // Local Hive remains the source of truth either way.
+  final userId = ref.watch(authNotifierProvider.select((s) => s.user?.id));
+  if (userId == null || userId.isEmpty) {
+    return WorkoutRepositoryImpl(dataSource);
+  }
+  return SyncedWorkoutRepository(
+    hiveDataSource: dataSource,
+    syncService: ref.watch(syncServiceProvider),
+    userId: userId,
+  );
 });
 
 // ---------------------------------------------------------------------------
@@ -406,7 +423,19 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
       AppLogger.debug('📊 [Workout] Saving workout to repository...');
       await _saveWorkout(current.workout, duration);
       AppLogger.debug('✅ [Workout] Workout saved successfully');
-      
+
+      // Update the streak from the freshly persisted workout. This link was
+      // previously missing entirely (StreakNotifier.updateAfterWorkout had
+      // zero callers), so the stored streak never moved
+      // (DATABASE_AND_SYNC_AUDIT F-06). Best-effort: must not fail finish().
+      try {
+        await _ref.read(streakNotifierProvider.notifier).updateAfterWorkout();
+        _ref.invalidate(streakProvider);
+        AppLogger.debug('✅ [Workout] Streak updated');
+      } catch (e) {
+        AppLogger.debug('⚠️ [Workout] Failed to update streak: $e');
+      }
+
       // Track workout completed
       try {
         final analytics = _ref.read(analyticsServiceProvider);

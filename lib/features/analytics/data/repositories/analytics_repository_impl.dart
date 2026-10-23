@@ -38,7 +38,14 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
 
     for (final workout in workouts) {
       for (final exercise in workout.exercises) {
-        if (exercise.id == exerciseId) {
+        // Exercise.id is a fresh UUID per session (StartWorkoutUseCase), so
+        // matching by id alone yielded at most one data point per series
+        // (DATABASE_AND_SYNC_AUDIT F-05). Until exercises carry a stable
+        // exerciseDefinitionId (Phase 1), identity is the exercise name —
+        // the same convention WorkoutRepository.getExerciseHistory uses.
+        // The id check is kept for exact-instance lookups.
+        if (exercise.id == exerciseId ||
+            exercise.name.toLowerCase() == exerciseId.toLowerCase()) {
           exerciseName ??= exercise.name;
           muscleGroup ??= exercise.type.name;
 
@@ -119,11 +126,13 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
       endDate,
     );
 
-    // Collect unique exercise IDs
+    // Collect unique exercises by NAME, not per-session id: each session's
+    // Exercise gets a new UUID, so grouping by id produced one single-point
+    // series per workout instead of a progression per exercise (F-05).
     final exerciseIds = <String>{};
     for (final workout in workouts) {
       for (final exercise in workout.exercises) {
-        exerciseIds.add(exercise.id);
+        exerciseIds.add(exercise.name);
       }
     }
 

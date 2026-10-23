@@ -24,7 +24,10 @@ class SyncQueueManager {
       );
 
       final box = HiveManager.getSyncQueueBox();
-      await box.add(operation.toJson());
+      // Key by operation id (was box.add() auto-int key) so entries are
+      // addressable the same way as HiveSyncQueueDataSource's SyncActions,
+      // which share this box (DATABASE_AND_SYNC_AUDIT F-03).
+      await box.put(operation.id, operation.toJson());
     } catch (e) {
       throw Exception('Failed to add sync operation: $e');
     }
@@ -38,9 +41,17 @@ class SyncQueueManager {
 
       for (int i = 0; i < box.length; i++) {
         final raw = box.getAt(i);
-        if (raw != null) {
-          final data = Map<String, dynamic>.from(raw);
+        if (raw == null) continue;
+        // The 'sync_queue' box is shared with features/sync's SyncAction
+        // schema (DATABASE_AND_SYNC_AUDIT F-03). A single foreign entry
+        // previously poisoned this entire call. Skip foreign/unparseable
+        // entries instead of throwing.
+        if (raw is Map && raw.containsKey('dataType')) continue;
+        try {
+          final data = Map<String, dynamic>.from(raw as Map);
           operations.add(SyncOperation.fromJson(data));
+        } catch (_) {
+          continue;
         }
       }
 

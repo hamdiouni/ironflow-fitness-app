@@ -20,6 +20,12 @@ class HiveManager {
   static const String _insightCacheBox = 'insight_cache';
   static const String _userProfileBox = 'user_profile';
   static const String _aiChatHistoryBox = 'ai_chat_history';
+  // Boxes previously opened lazily by datasources and therefore missed by
+  // clearAll()/data-wipe inventories (DATABASE_AND_SYNC_AUDIT F-04).
+  static const String _activeProgramBox = 'active_program';
+  static const String _dietPlanBox = 'diet_plan';
+  static const String _foodItemsFullBox = 'food_items_full';
+  static const String _activeWorkoutStateBox = 'active_workout_state';
 
   /// Initialize Hive
   static Future<void> initialize() async {
@@ -43,6 +49,9 @@ class HiveManager {
         _mealsBox,
         _macroTargetsBox,
         _insightCacheBox,
+        _activeProgramBox,
+        _dietPlanBox,
+        _foodItemsFullBox,
       ];
       
       for (final boxName in mapBoxes) {
@@ -75,6 +84,12 @@ class HiveManager {
       AppLogger.debug('📊 [Hive] Opening box: $_aiChatHistoryBox...');
       await Hive.openBox(_aiChatHistoryBox);
       AppLogger.debug('✅ [Hive] Box opened: $_aiChatHistoryBox');
+
+      // Open active workout state box (dynamic type, matches
+      // WorkoutStateManager's openBox<dynamic> expectation)
+      AppLogger.debug('📊 [Hive] Opening box: $_activeWorkoutStateBox...');
+      await Hive.openBox<dynamic>(_activeWorkoutStateBox);
+      AppLogger.debug('✅ [Hive] Box opened: $_activeWorkoutStateBox');
       
       AppLogger.debug('✅ [Hive] All boxes opened successfully');
     } catch (e, stackTrace) {
@@ -262,6 +277,13 @@ class HiveManager {
         Hive.box<Map>(_macroTargetsBox).clear(),
         Hive.box<String>(_appSettingsBox).clear(),
         Hive.box<Map>(_insightCacheBox).clear(),
+        Hive.box<Map>(_activeProgramBox).clear(),
+        Hive.box<Map>(_dietPlanBox).clear(),
+        Hive.box<Map>(_foodItemsFullBox).clear(),
+        Hive.box<dynamic>(_activeWorkoutStateBox).clear(),
+        Hive.box(_authSessionBox).clear(),
+        Hive.box(_userProfileBox).clear(),
+        Hive.box(_aiChatHistoryBox).clear(),
       ]);
       
       AppLogger.debug('✅ [Hive] All boxes cleared successfully');

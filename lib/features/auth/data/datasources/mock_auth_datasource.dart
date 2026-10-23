@@ -38,6 +38,23 @@ abstract class MockAuthDataSource {
 
 class MockAuthDataSourceImpl implements MockAuthDataSource {
   final AuthSessionStorage _sessionStorage = AuthSessionStorage();
+
+  /// Derives a *stable* user id from an email address.
+  ///
+  /// Previously sign-up minted `user_<timestamp>` and sign-in minted
+  /// `user_<email.hashCode>` — the same person got a different identity on
+  /// every path/restart, orphaning everything keyed by userId
+  /// (DATABASE_AND_SYNC_AUDIT F-01). This FNV-1a hash is deterministic
+  /// across runs and platforms. NOTE: mock identity only — replace with
+  /// the Firebase uid in the Phase 1/2 auth migration.
+  static String stableUserIdForEmail(String email) {
+    var hash = 0x811c9dc5;
+    for (final unit in email.toLowerCase().codeUnits) {
+      hash ^= unit;
+      hash = (hash * 0x01000193) & 0xffffffff;
+    }
+    return 'user_${hash.toRadixString(16).padLeft(8, '0')}';
+  }
   
   // Simple in-memory storage for passwords
   static final Map<String, String> _users = {
@@ -59,7 +76,7 @@ class MockAuthDataSourceImpl implements MockAuthDataSource {
     _users[email] = password;
     
     final user = User(
-      id: 'user_${DateTime.now().millisecondsSinceEpoch}',
+      id: stableUserIdForEmail(email),
       email: email,
       displayName: email.split('@')[0],
       photoUrl: null,
@@ -90,7 +107,7 @@ class MockAuthDataSourceImpl implements MockAuthDataSource {
     }
 
     final user = User(
-      id: 'user_${email.hashCode}',
+      id: stableUserIdForEmail(email),
       email: email,
       displayName: email.split('@')[0],
       photoUrl: null,
