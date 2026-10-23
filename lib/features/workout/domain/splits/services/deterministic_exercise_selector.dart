@@ -9,11 +9,16 @@ class SelectedSlotExercise {
     required this.exerciseName,
     this.notes,
     this.isSubstitute = false,
+    this.exerciseDefinitionId,
   });
 
   final String exerciseName;
   final String? notes;
   final bool isSubstitute;
+
+  /// Stable catalog link (Phase 1) — carried into ProgramExercise so
+  /// generated programs are linked by id, not only by name.
+  final String? exerciseDefinitionId;
 }
 
 /// Pure, deterministic exercise selector.
@@ -102,6 +107,7 @@ class DeterministicExerciseSelector {
     if (candidates.isNotEmpty && !usedInDay.contains(candidates.first.name)) {
       return SelectedSlotExercise(
         exerciseName: candidates.first.name,
+        exerciseDefinitionId: candidates.first.id,
         notes: slot.notes,
       );
     }
@@ -115,6 +121,7 @@ class DeterministicExerciseSelector {
       );
       return SelectedSlotExercise(
         exerciseName: gluteFallback.name,
+        exerciseDefinitionId: gluteFallback.id,
         notes: 'Home substitute: Glute/hamstring bridge for posterior chain.',
         isSubstitute: true,
       );
@@ -123,6 +130,7 @@ class DeterministicExerciseSelector {
     if (candidates.isNotEmpty) {
       return SelectedSlotExercise(
         exerciseName: candidates.first.name,
+        exerciseDefinitionId: candidates.first.id,
         notes: slot.notes,
       );
     }

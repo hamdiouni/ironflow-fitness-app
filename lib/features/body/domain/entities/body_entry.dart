@@ -23,6 +23,9 @@ class BodyEntry with _$BodyEntry {
     required double weight,
     required Map<MeasurementType, double> measurements,
     String? photoPath,
+
+    /// Owning user (auth uid), Phase 1 schema v2. Null for legacy rows.
+    String? userId,
   }) = _BodyEntry;
 
   /// Factory constructor with validation

@@ -1,6 +1,7 @@
 import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/entities/user_profile.dart';
+import 'mock_user_datasource.dart';
 
 abstract class FirestoreUserDataSource {
   Future<UserProfile?> getUserProfile(String userId);
@@ -9,7 +10,13 @@ abstract class FirestoreUserDataSource {
   Future<void> deleteUserProfile(String userId);
 }
 
-class FirestoreUserDataSourceImpl implements FirestoreUserDataSource {
+/// Firestore-backed user profiles.
+///
+/// Phase 1: also implements [MockUserDataSource] (identical surface; only
+/// `createUserProfile` vs `saveUserProfile` differ in name) so it can be
+/// swapped in behind the `USE_FIREBASE_AUTH` flag.
+class FirestoreUserDataSourceImpl
+    implements FirestoreUserDataSource, MockUserDataSource {
   final FirebaseFirestore _firestore;
 
   FirestoreUserDataSourceImpl({FirebaseFirestore? firestore})
@@ -33,6 +40,11 @@ class FirestoreUserDataSourceImpl implements FirestoreUserDataSource {
       return null;
     }
   }
+
+  /// MockUserDataSource alias — profile creation is an upsert here.
+  @override
+  Future<void> createUserProfile(UserProfile profile) =>
+      saveUserProfile(profile);
 
   @override
   Future<void> saveUserProfile(UserProfile profile) async {

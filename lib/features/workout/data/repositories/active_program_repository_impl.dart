@@ -15,12 +15,32 @@ import '../models/active_program_model.dart';
 class ActiveProgramRepositoryImpl implements ActiveProgramRepository {
   final HiveActiveProgramDataSource dataSource;
 
-  ActiveProgramRepositoryImpl(this.dataSource);
+  /// Owner stamped onto programs that don't already carry one (Phase 1).
+  /// Optional so existing single-argument constructions (tests) still work.
+  final String? userId;
+
+  ActiveProgramRepositoryImpl(this.dataSource, {this.userId});
+
+  /// Stamps userId onto the ActiveProgram and its embedded program when
+  /// missing, so workouts started from it inherit a real owner.
+  ActiveProgram _stamp(ActiveProgram program) {
+    if (userId == null) return program;
+    var result = program;
+    if (result.userId == null) {
+      result = result.copyWith(userId: userId);
+    }
+    if (result.program.userId == null) {
+      result = result.copyWith(
+        program: result.program.copyWith(userId: userId),
+      );
+    }
+    return result;
+  }
 
   @override
   Future<void> saveActiveProgram(ActiveProgram program) async {
     try {
-      final model = ActiveProgramModel.fromEntity(program);
+      final model = ActiveProgramModel.fromEntity(_stamp(program));
       await dataSource.saveActiveProgram(model);
     } on HiveError catch (e, stackTrace) {
       throw ActiveProgramException(
@@ -91,7 +111,7 @@ class ActiveProgramRepositoryImpl implements ActiveProgramRepository {
   @override
   Future<void> updateActiveProgram(ActiveProgram program) async {
     try {
-      final model = ActiveProgramModel.fromEntity(program);
+      final model = ActiveProgramModel.fromEntity(_stamp(program));
       await dataSource.saveActiveProgram(model);
     } on HiveError catch (e, stackTrace) {
       throw ActiveProgramException(

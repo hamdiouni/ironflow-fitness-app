@@ -1,4 +1,5 @@
 import 'package:uuid/uuid.dart';
+import '../../data/exercise_database.dart';
 import '../entities/entities.dart';
 import '../repositories/workout_repository.dart';
 import '../repositories/active_program_repository.dart';
@@ -32,8 +33,12 @@ class StartWorkoutUseCase {
     // Convert program exercises to workout exercises, carrying the planned
     // sets/reps into the session (previously dropped here, so an in-progress
     // workout had no record of the plan — DATABASE_AND_SYNC_AUDIT F-05).
+    // Phase 1: also carry the stable catalog link — from the program
+    // exercise when present, else resolved by name against the catalog.
     final exercises = currentDay.exercises.map((pe) => Exercise(
       id: const Uuid().v4(),
+      exerciseDefinitionId: pe.exerciseDefinitionId ??
+          ExerciseDatabase.getByName(pe.exerciseName)?.id,
       name: pe.exerciseName,
       type: ExerciseType.strength,
       sets: [],
@@ -41,12 +46,18 @@ class StartWorkoutUseCase {
       suggestedReps: _parseFirstRepCount(pe.reps),
     )).toList();
 
+    // Phase 1: the workout records which program/day it came from and who
+    // owns it; updatedAt is stamped for last-write-wins sync.
     return Workout(
       id: const Uuid().v4(),
+      userId: activeProgram.userId ?? activeProgram.program.userId,
+      programId: activeProgram.program.id,
+      programDayIndex: activeProgram.currentDayIndex,
       date: DateTime.now(),
       exercises: exercises,
       duration: Duration.zero,
       totalVolume: 0,
+      updatedAt: DateTime.now(),
     );
   }
 

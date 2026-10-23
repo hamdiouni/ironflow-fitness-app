@@ -19,5 +19,10 @@ class Exercise with _$Exercise {
     required List<SetEntry> sets,
     int? suggestedReps,
     int? suggestedSets,
+
+    /// Stable catalog link → ExerciseDefinition.id (Phase 1 schema v2).
+    /// [name] remains the display snapshot; identity/history should prefer
+    /// this id when present. Null for legacy/custom entries.
+    String? exerciseDefinitionId,
   }) = _Exercise;
 }
