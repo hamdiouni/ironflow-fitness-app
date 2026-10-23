@@ -491,6 +491,7 @@ streams instead of remembered invalidations.
 - [x] Replace the two invalid-cast `foodRepositoryProvider`s with real implementations (F-10).
 
 **Phase 1 — identity & links (schema v2 + migration)** — items 1–2 of §8, F-01/F-05/F-08/F-15.
+Implemented 2026-10-23, see §11.
 
 **Phase 2 — one cloud layout + one sync engine** — items 3–5 of §8, F-02/F-03/F-11/F-14.
 
@@ -557,3 +558,84 @@ locally. Codegen is required for the `ExerciseModel` change (steps 8).
   size in debug logs (`hiveSyncQueueDataSourceProvider`).
 - *F-07 follow-up (unchanged):* family key is normalized `DateTime(y,m,d)` at all call
   sites; migrating the family to a `yyyy-MM-dd` string key remains Phase 3.
+
+---
+
+## 11. Phase 1 implementation log (applied 2026-10-23, this branch)
+
+Static verification only (no Flutter SDK in the audit environment) — run
+`flutter pub get && dart run build_runner build --delete-conflicting-outputs && flutter analyze && flutter test`
+locally. **Codegen is required**: most entities/models changed.
+
+**Schema v2 — every new field is nullable/optional**, so pre-v2 stored JSON loads
+unchanged and no existing constructor call breaks. Fields landed:
+
+| Entity | New fields | Model mirrors |
+|---|---|---|
+| `Workout` | `userId`, `programId`, `programDayIndex`, `updatedAt` | `WorkoutModel` (`updatedAt` ISO string) |
+| `Exercise` | `exerciseDefinitionId` | `ExerciseModel` |
+| `ActiveProgram` | `userId` | `ActiveProgramModel` |
+| `WorkoutProgram` | `userId` (ctor + copyWith) | `WorkoutProgramModel` |
+| `ProgramExercise` | `exerciseDefinitionId` (ctor + copyWith) | `ProgramExerciseModel` |
+| `Meal` | `userId`, `foodItemId`, `updatedAt` (+ `foodItemId` in `Meal.create`) | `MealModel` |
+| `BodyEntry` | `userId` | `BodyEntryModel` |
+
+**Population (links are stamped at the source, not left to callers):**
+
+- `DeterministicExerciseSelector` → `SelectedSlotExercise.exerciseDefinitionId` (all 3
+  return paths) → `SplitScheduleBuilder` writes it into `ProgramExercise`. Generated
+  programs are now linked by catalog id.
+- `StartWorkoutUseCase`: `Exercise.exerciseDefinitionId = pe.exerciseDefinitionId ??
+  ExerciseDatabase.getByName(pe.exerciseName)?.id`; `Workout` records
+  `programId`/`programDayIndex`/`userId` (from the active program) + `updatedAt`.
+- Save-time stamping: `WorkoutRepositoryImpl` (`updatedAt`),
+  `SyncedWorkoutRepository` (`userId ??= owner`, `updatedAt` — the old payload-only
+  `data['userId']` injection is gone; the entity itself carries it now),
+  `NutritionRepositoryImpl.saveMealEntry` (`userId`, `updatedAt`),
+  `BodyRepositoryImpl` + `ActiveProgramRepositoryImpl` (optional `userId` constructor
+  arg, wired from `authNotifierProvider` in their providers; existing single-arg
+  constructions in tests still compile).
+- `foodItemId` wired at the three `Meal.create` sites that start from a catalog food
+  (food search, budget-swap replacement, recent-meal re-log).
+- Preservation fixes found along the way: 5 manual `WorkoutProgram(...)` rebuilds
+  (reorder/replace/update use cases + program editor + workout summary) were silently
+  dropping split/hybrid metadata (and would now drop `userId`) — all switched to
+  `program.copyWith(days: …)`. `ReplaceExercise` resolves the replacement's definition
+  id by name; `UpdateExerciseParameters`/`ReplaceExercise` no longer drop
+  `targetWeight`; `repeatWorkout` carries definition id + plan hints.
+
+**Analytics (F-05 closure):** `AnalyticsRepositoryImpl` matches/groups by
+`exerciseDefinitionId` when present, name (case-insensitive) as fallback, exact
+instance id for direct lookups. Both `getExerciseHistory` implementations accept a
+definition id as well as a name. The name-based bridge from Phase 0 remains for
+unlinked custom exercises.
+
+**Migration (`lib/core/utils/data_migration.dart`, new):** one-time, version-stamped
+(`schema_version = '2'` in `app_settings`), idempotent, never throws, runs in `main()`
+after `HiveManager.initialize()` + pending-wipe check. Works on raw stored maps
+(deep-copied; put-back only when changed): backfills `userId` from the stored auth
+session, `updatedAt` from the record's own date/timestamp, and `exerciseDefinitionId`
+by catalog name lookup across `workouts`, `meals`, `body_entries`, and both
+`active_program` records (incl. nested program days). Historical
+`programId`/`programDayIndex` are not recoverable and stay null (documented in code).
+Failure leaves the version stamp untouched → retries next launch.
+
+**Identity seam (F-01):** `USE_FIREBASE_AUTH` dart-define, **default `false`** — no
+behavior change unless explicitly enabled. `FirebaseAuthDataSourceImpl` also implements
+`MockAuthDataSource` (the two interfaces are method-identical; verified), and
+`FirestoreUserDataSourceImpl` also implements `MockUserDataSource` (`createUserProfile`
+→ `saveUserProfile` alias — the only naming difference). `authRepositoryProvider`
+selects the pair by flag; `AuthRepositoryImpl` is untouched. The two Firebase files had
+never been in the compile graph (their imports were commented out); they were fully
+read and their APIs checked against `firebase_auth ^5.1.0` / `sign_in_with_apple
+^6.1.1` — they use only current APIs, but **they are the first thing to watch on the
+first local build**. Before enabling the flag: Google sign-in in the Firebase impl
+still throws "temporarily disabled" (google_sign_in 7.x TODO), `firebase deploy --only
+firestore:rules,firestore:indexes` must have run, and uids change from mock `user_<hash>`
+to real Firebase uids (treat as a fresh account or migrate deliberately).
+
+**Deferred (unchanged from §10, still deliberate):** flipping the auth default;
+mock→Firebase uid data migration; wipe-on-sign-out (waits for verified Phase 2 sync);
+single sync schema/Firestore layout consolidation, tombstones (Phase 2); `box.watch()`
+reactive layer and full provider dedupe (Phase 3); `deletedAt`/tombstone fields wait
+for Phase 2's sync design rather than being added now and ignored.

@@ -69,6 +69,17 @@ class Meal with _$Meal {
     required MealVitamins vitamins,
     required MealMinerals minerals,
     required DateTime timestamp,
+    // Schema v2 links (Phase 1). All optional; populated by the nutrition
+    // repository / logging flows / DataMigration backfill.
+    /// Owning user (auth uid). Null for legacy rows.
+    String? userId,
+
+    /// Catalog link → FoodItemFull.id when logged from a catalog food.
+    /// Nutrient values remain a snapshot on the meal by design.
+    String? foodItemId,
+
+    /// Last modification time — the LWW conflict key for sync.
+    DateTime? updatedAt,
   }) = _Meal;
 
   const Meal._();
@@ -80,6 +91,7 @@ class Meal with _$Meal {
     required MealMicros micros,
     required MealVitamins vitamins,
     required MealMinerals minerals,
+    String? foodItemId,
   }) {
     if (!Validators.isValidMacro(macros.protein) ||
         !Validators.isValidMacro(macros.carbs) ||
@@ -95,6 +107,7 @@ class Meal with _$Meal {
       vitamins: vitamins,
       minerals: minerals,
       timestamp: DateTime.now(),
+      foodItemId: foodItemId,
     );
   }
 

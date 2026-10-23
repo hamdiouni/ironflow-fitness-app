@@ -7,11 +7,19 @@ import '../models/body_entry_model.dart';
 class BodyRepositoryImpl implements BodyRepository {
   final HiveBodyDataSource dataSource;
 
-  BodyRepositoryImpl(this.dataSource);
+  /// Owner stamped onto entries that don't already carry one (Phase 1).
+  /// Optional so existing single-argument constructions (tests) still work.
+  final String? userId;
+
+  BodyRepositoryImpl(this.dataSource, {this.userId});
 
   @override
   Future<void> saveBodyEntry(BodyEntry entry) async {
-    final model = BodyEntryModel.fromEntity(entry);
+    final stamped =
+        entry.userId == null && userId != null
+            ? entry.copyWith(userId: userId)
+            : entry;
+    final model = BodyEntryModel.fromEntity(stamped);
     await dataSource.saveBodyEntry(model);
   }
 

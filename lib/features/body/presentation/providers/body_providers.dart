@@ -8,6 +8,7 @@ import '../../domain/entities/weight_data_point.dart';
 import '../../domain/repositories/body_repository.dart';
 import '../../domain/usecases/get_body_history_use_case.dart';
 import '../../domain/usecases/get_weight_trend_use_case.dart';
+import '../../../auth/presentation/providers/auth_notifier.dart';
 
 part 'body_providers.freezed.dart';
 
@@ -29,7 +30,11 @@ class DateRange with _$DateRange {
 
 final bodyRepositoryProvider = Provider<BodyRepository>((ref) {
   final dataSource = HiveBodyDataSource();
-  return BodyRepositoryImpl(dataSource);
+  // Phase 1: new entries are stamped with the signed-in owner.
+  final userId = ref.watch(
+    authNotifierProvider.select((s) => s.user?.id),
+  );
+  return BodyRepositoryImpl(dataSource, userId: userId);
 });
 
 // ---------------------------------------------------------------------------

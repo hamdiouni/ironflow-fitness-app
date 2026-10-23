@@ -29,9 +29,11 @@ class UpdateExerciseParametersUseCase {
     
     updatedExercises[exerciseIndex] = ProgramExercise(
       exerciseName: oldExercise.exerciseName,
+      exerciseDefinitionId: oldExercise.exerciseDefinitionId,
       sets: sets ?? oldExercise.sets,
       reps: reps ?? oldExercise.reps,
       restSeconds: restSeconds ?? oldExercise.restSeconds,
+      targetWeight: oldExercise.targetWeight,
       notes: oldExercise.notes,
     );
     
@@ -46,14 +48,9 @@ class UpdateExerciseParametersUseCase {
     final updatedDays = List<ProgramDay>.from(activeProgram.program.days);
     updatedDays[dayIndex] = updatedDay;
     
-    final updatedProgram = WorkoutProgram(
-      id: activeProgram.program.id,
-      name: activeProgram.program.name,
-      description: activeProgram.program.description,
-      days: updatedDays,
-      durationWeeks: activeProgram.program.durationWeeks,
-      difficulty: activeProgram.program.difficulty,
-    );
+    // copyWith preserves split/hybrid metadata and userId (Phase 1);
+    // manual rebuilds silently dropped them.
+    final updatedProgram = activeProgram.program.copyWith(days: updatedDays);
     
     final updated = activeProgram.updateProgram(updatedProgram);
     await repository.updateActiveProgram(updated);

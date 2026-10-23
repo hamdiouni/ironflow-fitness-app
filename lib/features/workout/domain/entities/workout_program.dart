@@ -11,6 +11,7 @@ class WorkoutProgram {
     this.hybridSplitId,
     this.hybridMode,
     this.cycleLength,
+    this.userId,
   });
 
   final String id;
@@ -23,6 +24,9 @@ class WorkoutProgram {
   final String? hybridSplitId;
   final String? hybridMode;
   final int? cycleLength;
+
+  /// Owning user (auth uid), Phase 1 schema v2. Null for legacy programs.
+  final String? userId;
 
   /// Number of active training days in this program per week.
   int get daysPerWeek {
@@ -41,6 +45,7 @@ class WorkoutProgram {
     String? hybridSplitId,
     String? hybridMode,
     int? cycleLength,
+    String? userId,
   }) {
     return WorkoutProgram(
       id: id ?? this.id,
@@ -53,6 +58,7 @@ class WorkoutProgram {
       hybridSplitId: hybridSplitId ?? this.hybridSplitId,
       hybridMode: hybridMode ?? this.hybridMode,
       cycleLength: cycleLength ?? this.cycleLength,
+      userId: userId ?? this.userId,
     );
   }
 }
@@ -97,6 +103,7 @@ class ProgramExercise {
     required this.restSeconds,
     this.targetWeight,
     this.notes,
+    this.exerciseDefinitionId,
   });
 
   final String exerciseName;
@@ -106,6 +113,10 @@ class ProgramExercise {
   final double? targetWeight;
   final String? notes;
 
+  /// Stable catalog link → ExerciseDefinition.id (Phase 1 schema v2).
+  /// [exerciseName] remains the display snapshot. Null for legacy programs.
+  final String? exerciseDefinitionId;
+
   ProgramExercise copyWith({
     String? exerciseName,
     int? sets,
@@ -113,6 +124,7 @@ class ProgramExercise {
     int? restSeconds,
     double? targetWeight,
     String? notes,
+    String? exerciseDefinitionId,
   }) {
     return ProgramExercise(
       exerciseName: exerciseName ?? this.exerciseName,
@@ -121,6 +133,7 @@ class ProgramExercise {
       restSeconds: restSeconds ?? this.restSeconds,
       targetWeight: targetWeight ?? this.targetWeight,
       notes: notes ?? this.notes,
+      exerciseDefinitionId: exerciseDefinitionId ?? this.exerciseDefinitionId,
     );
   }
 }

@@ -446,6 +446,7 @@ class _NutritionBody extends StatelessWidget {
           final macros = food.macrosForGrams(grams);
           final micros = food.microsForGrams(grams);
           final meal = Meal.create(
+            foodItemId: food.id,
             name: '${food.name} (${grams.toInt()}g)',
             macros: MealMacros(
               calories: macros.calories,
@@ -737,6 +738,7 @@ class _SwapMealDialog extends ConsumerWidget {
 
                                 // Log replacement
                                 final replacement = Meal.create(
+                                  foodItemId: alt.food.id,
                                   name: '${alt.food.name} (${alt.scaledGrams.toInt()}g)',
                                   macros: MealMacros(
                                     calories: alt.scaledMacros.calories,
@@ -1752,6 +1754,7 @@ class _RecentFoodsQuickAdd extends ConsumerWidget {
   ) async {
     AppHaptics.shared.selectionChanged();
     final newMeal = Meal.create(
+      foodItemId: recentMeal.foodItemId,
       name: recentMeal.name,
       macros: recentMeal.macros,
       micros: recentMeal.micros,
