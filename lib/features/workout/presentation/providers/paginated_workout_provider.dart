@@ -97,8 +97,13 @@ class PaginatedWorkoutNotifier extends StateNotifier<PaginatedWorkoutState> {
   }
 
   /// Listen to workout changes and refresh when needed.
+  ///
+  /// Phase 3 (F-12): driven by the Hive box-watch stream, so local
+  /// writes, sync pulls and restores all refresh the first page. This
+  /// is the ONLY subscription — the provider below previously listened
+  /// to the same counter again, refreshing twice per change.
   void _listenToWorkoutChanges() {
-    _ref.listen(workoutRefreshCounterProvider, (previous, next) {
+    _ref.listen(workoutsStreamProvider, (previous, next) {
       if (previous != next) {
         refresh();
       }
@@ -118,19 +123,13 @@ final getWorkoutCountUseCaseProvider = Provider<GetWorkoutCountUseCase>((ref) {
 });
 
 /// Provider for paginated workout state.
+///
+/// Refresh-on-change is handled inside the notifier via
+/// `workoutsStreamProvider` (see `_listenToWorkoutChanges`).
 final paginatedWorkoutProvider = StateNotifierProvider<PaginatedWorkoutNotifier, PaginatedWorkoutState>((ref) {
-  final notifier = PaginatedWorkoutNotifier(
+  return PaginatedWorkoutNotifier(
     ref.watch(getWorkoutsPaginatedUseCaseProvider),
     ref.watch(getWorkoutCountUseCaseProvider),
     ref,
   );
-  
-  // Listen to workout changes and refresh when needed
-  ref.listen(workoutRefreshCounterProvider, (previous, next) {
-    if (previous != next) {
-      notifier.refresh();
-    }
-  });
-  
-  return notifier;
 });

@@ -3,9 +3,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:progression_tracker/features/auth/domain/entities/user.dart';
 import 'package:progression_tracker/features/auth/domain/entities/user_profile.dart';
 import 'package:progression_tracker/features/auth/domain/repositories/auth_repository.dart';
+import 'package:progression_tracker/features/body/data/models/body_entry_model.dart';
 import 'package:progression_tracker/features/body/domain/entities/body_entry.dart';
 import 'package:progression_tracker/features/body/domain/entities/measurement_type.dart';
 import 'package:progression_tracker/features/body/domain/repositories/body_repository.dart';
+import 'package:progression_tracker/features/nutrition/data/models/meal_model.dart';
 import 'package:progression_tracker/features/nutrition/domain/entities/daily_nutrition_summary.dart';
 import 'package:progression_tracker/features/nutrition/domain/entities/meal.dart';
 import 'package:progression_tracker/features/nutrition/domain/entities/nutrition_targets.dart';
@@ -14,6 +16,7 @@ import 'package:progression_tracker/features/settings/domain/usecases/export_all
 import 'package:progression_tracker/features/settings/domain/usecases/export_nutrition_use_case.dart';
 import 'package:progression_tracker/features/settings/domain/usecases/export_workouts_use_case.dart';
 import 'package:progression_tracker/features/settings/domain/usecases/restore_data_use_case.dart';
+import 'package:progression_tracker/features/workout/data/models/workout_model.dart';
 import 'package:progression_tracker/features/workout/domain/entities/exercise.dart';
 import 'package:progression_tracker/features/workout/domain/entities/exercise_type.dart';
 import 'package:progression_tracker/features/workout/domain/entities/set_entry.dart';
@@ -457,6 +460,135 @@ void main() {
       expect(restoredProfile, isNotNull);
       expect(restoredProfile!.name, originalProfile.name);
       expect(restoredProfile.email, originalProfile.email);
+    });
+
+    test('v2 canonical model JSON restores schema-v2 links', () async {
+      final testDate = DateTime(2026, 10, 16, 9, 15);
+      final updatedAt = testDate.add(const Duration(minutes: 5));
+
+      final workout = Workout(
+        id: 'workout-v2',
+        date: testDate,
+        duration: const Duration(minutes: 42),
+        totalVolume: 9000,
+        caloriesBurned: 310,
+        userId: 'user-v2',
+        programId: 'program-v2',
+        programDayIndex: 3,
+        updatedAt: updatedAt,
+        exercises: [
+          Exercise(
+            id: 'exercise-v2',
+            name: 'Squat',
+            type: ExerciseType.strength,
+            suggestedReps: 5,
+            suggestedSets: 3,
+            exerciseDefinitionId: 'squat-barbell',
+            sets: [
+              SetEntry(
+                id: 'set-v2',
+                reps: 5,
+                weight: 140,
+                rpe: 8,
+                timestamp: testDate,
+              ),
+            ],
+          ),
+        ],
+      );
+      final meal = Meal(
+        id: 'meal-v2',
+        name: 'Greek Yogurt',
+        macros: const MealMacros(
+          calories: 180,
+          protein: 24,
+          carbs: 12,
+          fats: 4,
+        ),
+        micros: const MealMicros(
+          fiber: 1,
+          sugar: 9,
+          sodium: 70,
+          potassium: 250,
+        ),
+        vitamins: const MealVitamins(
+          vitaminA: 10,
+          vitaminB: 1,
+          vitaminC: 2,
+          vitaminD: 0,
+          vitaminE: 0,
+        ),
+        minerals: const MealMinerals(
+          calcium: 200,
+          iron: 0.2,
+          magnesium: 20,
+          zinc: 1,
+        ),
+        timestamp: testDate,
+        userId: 'user-v2',
+        foodItemId: 'greek-yogurt',
+        updatedAt: updatedAt,
+      );
+      final bodyEntry = BodyEntry(
+        id: 'body-v2',
+        date: testDate,
+        weight: 81.2,
+        measurements: const {MeasurementType.waist: 83.5},
+        photoPath: '/photos/body-v2.jpg',
+        userId: 'user-v2',
+        updatedAt: updatedAt,
+      );
+
+      final payload = {
+        'export_info': {
+          'export_date': testDate.toIso8601String(),
+          'export_version': '2.0',
+          'app_version': '1.1.0',
+          'export_type': 'complete_backup',
+        },
+        'workouts': [WorkoutModel.fromEntity(workout).toJson()],
+        'nutrition_logs': [
+          {
+            'date': testDate.toIso8601String(),
+            'meals': [MealModel.fromEntity(meal).toJson()],
+          },
+        ],
+        'body_measurements': [
+          BodyEntryModel.fromEntity(bodyEntry).toJson(),
+        ],
+      };
+
+      final result = await restoreUseCase.restoreFromJsonString(
+        jsonEncode(payload),
+      );
+
+      expect(result.success, isTrue, reason: result.errors.join('\n'));
+      expect(result.errors, isEmpty);
+
+      final restoredWorkout = workoutRepo.workouts.single;
+      expect(restoredWorkout.userId, 'user-v2');
+      expect(restoredWorkout.programId, 'program-v2');
+      expect(restoredWorkout.programDayIndex, 3);
+      expect(restoredWorkout.updatedAt, updatedAt);
+      expect(restoredWorkout.exercises.single.suggestedReps, 5);
+      expect(restoredWorkout.exercises.single.suggestedSets, 3);
+      expect(
+        restoredWorkout.exercises.single.exerciseDefinitionId,
+        'squat-barbell',
+      );
+
+      final restoredMeal = nutritionRepo.meals.single;
+      expect(restoredMeal.userId, 'user-v2');
+      expect(restoredMeal.foodItemId, 'greek-yogurt');
+      expect(restoredMeal.updatedAt, updatedAt);
+      expect(restoredMeal.micros.potassium, 250);
+      expect(restoredMeal.vitamins.vitaminA, 10);
+      expect(restoredMeal.minerals.calcium, 200);
+
+      final restoredBodyEntry = bodyRepo.entries.single;
+      expect(restoredBodyEntry.userId, 'user-v2');
+      expect(restoredBodyEntry.updatedAt, updatedAt);
+      expect(restoredBodyEntry.photoPath, '/photos/body-v2.jpg');
     });
 
     test('Partial restore: malformed workout is surfaced and skipped without reporting false count', () async {

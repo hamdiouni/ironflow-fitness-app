@@ -38,7 +38,7 @@ class NutritionScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = AppThemeTokens.of(context);
     final today = _todayDate();
-    final summaryAsync = ref.watch(dailyNutritionSummaryProvider(today));
+    final summaryAsync = ref.watch(dailyNutritionSummaryProvider(nutritionDayKey(today)));
     final dietPlanAsync = ref.watch(dietPlanProvider);
 
     return Scaffold(
@@ -104,7 +104,7 @@ class NutritionScreen extends ConsumerWidget {
           error: error,
           stackTrace: stackTrace,
           onRetry: () {
-            ref.read(dailyNutritionSummaryProvider(today).notifier).refresh();
+            ref.read(dailyNutritionSummaryProvider(nutritionDayKey(today)).notifier).refresh();
           },
         ),
         data: (summary) => _NutritionBody(
@@ -117,7 +117,7 @@ class NutritionScreen extends ConsumerWidget {
                 AppLogger.debug('📊 [Nutrition] Deleting meal: $mealId');
               }
               await ref
-                  .read(dailyNutritionSummaryProvider(today).notifier)
+                  .read(dailyNutritionSummaryProvider(nutritionDayKey(today)).notifier)
                   .deleteMeal(mealId);
 
               if (context.mounted) {
@@ -172,7 +172,7 @@ class NutritionScreen extends ConsumerWidget {
               }
 
               await ref
-                  .read(dailyNutritionSummaryProvider(today).notifier)
+                  .read(dailyNutritionSummaryProvider(nutritionDayKey(today)).notifier)
                   .addMeal(meal);
 
               if (context.mounted) {
@@ -1764,7 +1764,7 @@ class _RecentFoodsQuickAdd extends ConsumerWidget {
 
     try {
       await ref
-          .read(dailyNutritionSummaryProvider(today).notifier)
+          .read(dailyNutritionSummaryProvider(nutritionDayKey(today)).notifier)
           .addMeal(newMeal);
 
       if (context.mounted) {
@@ -1782,7 +1782,7 @@ class _RecentFoodsQuickAdd extends ConsumerWidget {
               onPressed: () async {
                 AppHaptics.shared.buttonPress();
                 await ref
-                    .read(dailyNutritionSummaryProvider(today).notifier)
+                    .read(dailyNutritionSummaryProvider(nutritionDayKey(today)).notifier)
                     .deleteMeal(newMeal.id);
                 ref.invalidate(recentFoodsProvider);
               },

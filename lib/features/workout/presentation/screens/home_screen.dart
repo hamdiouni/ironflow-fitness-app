@@ -35,15 +35,11 @@ class HomeScreen extends ConsumerWidget {
             ref.invalidate(homeWorkoutDataProvider);
             ref.invalidate(userProfileProvider);
             ref.invalidate(activeProgramProvider);
-            // Must match the normalized-midnight family key used by
-            // NutritionScreen/_DailyFuelSummaryBar; invalidating with raw
-            // DateTime.now() targets a fresh, unused key (no-op). See F-07
-            // in docs/architecture/DATABASE_AND_SYNC_AUDIT.md.
-            final now = DateTime.now();
+            // The family is keyed by the yyyy-MM-dd day string (Phase 3),
+            // so there's exactly one canonical key for today. See F-07 in
+            // docs/architecture/DATABASE_AND_SYNC_AUDIT.md.
             ref.invalidate(
-              dailyNutritionSummaryProvider(
-                DateTime(now.year, now.month, now.day),
-              ),
+              dailyNutritionSummaryProvider(todayNutritionDayKey()),
             );
             // Wait for data to load
             await Future.wait([
@@ -901,15 +897,13 @@ class _DailyFuelSummaryBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = context.tokens;
-    final now = DateTime.now();
-    // Family key must be the normalized calendar day (midnight) so this
+    // The family is keyed by the yyyy-MM-dd day string (Phase 3), so this
     // widget shares the exact same provider instance/notifier as
-    // NutritionScreen, which keys by DateTime(y, m, d). Passing raw
-    // DateTime.now() (with time-of-day) created a new, disconnected
-    // notifier on every build. See F-07 in
-    // docs/architecture/DATABASE_AND_SYNC_AUDIT.md.
-    final today = DateTime(now.year, now.month, now.day);
-    final nutritionAsync = ref.watch(dailyNutritionSummaryProvider(today));
+    // NutritionScreen by construction. The old DateTime key let raw
+    // DateTime.now() (with time-of-day) create a new, disconnected
+    // notifier. See F-07 in docs/architecture/DATABASE_AND_SYNC_AUDIT.md.
+    final nutritionAsync =
+        ref.watch(dailyNutritionSummaryProvider(todayNutritionDayKey()));
 
     final targetCalories = profileAsync.valueOrNull?.dailyCalorieTarget ?? 2000.0;
 

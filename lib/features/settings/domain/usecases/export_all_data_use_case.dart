@@ -4,10 +4,13 @@ import 'package:path_provider/path_provider.dart';
 import 'package:archive/archive.dart';
 import 'package:progression_tracker/features/workout/domain/repositories/workout_repository.dart';
 import 'package:progression_tracker/features/workout/domain/entities/workout.dart';
+import 'package:progression_tracker/features/workout/data/models/workout_model.dart';
 import 'package:progression_tracker/features/nutrition/domain/repositories/nutrition_repository.dart';
 import 'package:progression_tracker/features/nutrition/domain/entities/daily_nutrition_summary.dart';
+import 'package:progression_tracker/features/nutrition/data/models/meal_model.dart';
 import 'package:progression_tracker/features/body/domain/repositories/body_repository.dart';
 import 'package:progression_tracker/features/body/domain/entities/body_entry.dart';
+import 'package:progression_tracker/features/body/data/models/body_entry_model.dart';
 import 'package:progression_tracker/features/auth/domain/repositories/auth_repository.dart';
 import 'package:progression_tracker/features/settings/domain/usecases/export_workouts_use_case.dart';
 import 'package:progression_tracker/features/settings/domain/usecases/export_nutrition_use_case.dart';
@@ -134,7 +137,7 @@ class ExportAllDataUseCase {
     return {
       'export_info': {
         'export_date': DateTime.now().toIso8601String(),
-        'export_version': '1.0',
+        'export_version': '2.0',
         'app_version': '1.0.0',
         'export_type': 'complete_backup',
       },
@@ -169,7 +172,7 @@ class ExportAllDataUseCase {
     return {
       'export_info': {
         'export_date': DateTime.now().toIso8601String(),
-        'export_version': '1.0',
+        'export_version': '2.0',
         'app_version': '1.0.0',
         'export_type': 'date_range',
         'date_range': {
@@ -189,25 +192,15 @@ class ExportAllDataUseCase {
     };
   }
 
-  Map<String, dynamic> _workoutToMap(Workout w) => {
-    'id': w.id,
-    'date': w.date.toIso8601String(),
-    'duration_minutes': w.duration.inMinutes,
-    'total_volume': w.totalVolume,
-    'calories_burned': w.caloriesBurned,
-    'exercises': w.exercises.map((e) => {
-      'id': e.id,
-      'name': e.name,
-      'type': e.type.name,
-      'sets': e.sets.map((s) => {
-        'id': s.id,
-        'reps': s.reps,
-        'weight': s.weight,
-        'rpe': s.rpe,
-        'timestamp': s.timestamp.toIso8601String(),
-      }).toList(),
-    }).toList(),
-  };
+  // Phase 3 (F-13): records serialize through the real data-layer
+  // models — the hand-written snake_case dialect (duration_minutes,
+  // total_volume, …) silently dropped every schema-v2 link field
+  // (userId, programId, exerciseDefinitionId, suggested reps/sets…)
+  // and drifted from the parsers. Restore reads this shape via
+  // *Model.fromJson, with the legacy dialect kept as a fallback for
+  // pre-2.0 backups.
+  Map<String, dynamic> _workoutToMap(Workout w) =>
+      WorkoutModel.fromEntity(w).toJson();
 
   Map<String, dynamic> _nutritionToMap(DailyNutritionSummary n) => {
     'date': n.date.toIso8601String(),
@@ -219,26 +212,14 @@ class ExportAllDataUseCase {
     'total_sugar': n.totalSugar,
     'total_sodium': n.totalSodium,
     'total_potassium': n.totalPotassium,
-    'meals': n.meals.map((m) => {
-      'id': m.id,
-      'name': m.name,
-      'timestamp': m.timestamp.toIso8601String(),
-      'macros': {
-        'calories': m.macros.calories,
-        'protein': m.macros.protein,
-        'carbs': m.macros.carbs,
-        'fats': m.macros.fats,
-      },
-    }).toList(),
+    // Meal records are canonical MealModel JSON (Phase 3, F-13) — the
+    // old hand map kept only macros, dropping micros/vitamins/minerals
+    // and the foodItemId link on every backup.
+    'meals': n.meals.map((m) => MealModel.fromEntity(m).toJson()).toList(),
   };
 
-  Map<String, dynamic> _bodyEntryToMap(BodyEntry b) => {
-    'id': b.id,
-    'date': b.date.toIso8601String(),
-    'weight': b.weight,
-    'measurements': b.measurements.map((k, v) => MapEntry(k.name, v)),
-    'photo_path': b.photoPath,
-  };
+  Map<String, dynamic> _bodyEntryToMap(BodyEntry b) =>
+      BodyEntryModel.fromEntity(b).toJson();
 
   Future<void> _exportWorkoutsToTemp(String tempPath) async {
     final csvPath = await _exportWorkoutsUseCase.exportToCSV();
@@ -328,7 +309,7 @@ class ExportAllDataUseCase {
   String _generateBodyJSON(List<BodyEntry> measurements) {
     final exportData = {
       'export_date': DateTime.now().toIso8601String(),
-      'export_version': '1.0',
+      'export_version': '2.0',
       'total_measurements': measurements.length,
       'body_measurements': measurements.map((m) => _bodyEntryToMap(m)).toList(),
     };

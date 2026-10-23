@@ -104,7 +104,7 @@ void main() {
         globalAIProvider.overrideWith(
           (ref) => FakeGlobalAINotifier(const GlobalAIState()),
         ),
-        dailyNutritionSummaryProvider(today).overrideWith(
+        dailyNutritionSummaryProvider(nutritionDayKey(today)).overrideWith(
           (ref) => effectiveNotifier,
         ),
         recentFoodsProvider.overrideWith(

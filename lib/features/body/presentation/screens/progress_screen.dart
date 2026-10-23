@@ -632,7 +632,8 @@ class _BodyWeightTab extends ConsumerWidget {
           // AI notification is best-effort.
         }
 
-        ref.read(bodyRefreshCounterProvider.notifier).state++;
+        // Body providers refresh reactively via the box-watch stream
+        // (Phase 3, F-12) — no manual counter bump needed.
 
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -788,8 +789,7 @@ class _BodyWeightTab extends ConsumerWidget {
         final repository = ref.read(bodyRepositoryProvider);
         final useCase = SaveBodyEntryUseCase(repository);
         await useCase(entry);
-
-        ref.read(bodyRefreshCounterProvider.notifier).state++;
+        // Reactive refresh via box-watch (Phase 3, F-12).
       } catch (e, stack) {
         if (context.mounted) ErrorHandler.handleError(context, e, stack);
       } finally {
@@ -884,7 +884,7 @@ class _PhotosTabState extends ConsumerState<_PhotosTab> {
           BodyEntry.create(weight: lastWeight, photoPath: picked.path);
       final repository = ref.read(bodyRepositoryProvider);
       await repository.saveBodyEntry(entry);
-      ref.read(bodyRefreshCounterProvider.notifier).state++;
+      // Reactive refresh via box-watch (Phase 3, F-12).
     } catch (e, stack) {
       if (mounted) ErrorHandler.handleError(context, e, stack);
     }

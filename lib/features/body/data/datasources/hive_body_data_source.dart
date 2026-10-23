@@ -78,6 +78,14 @@ class HiveBodyDataSource {
     }
   }
 
+  /// Reactive stream of all body entries (Phase 3, F-12): emits the
+  /// current snapshot immediately, then a fresh snapshot on every box
+  /// change. Replaces the manual `bodyRefreshCounterProvider` bumps.
+  Stream<List<BodyEntryModel>> watchAllBodyEntries() async* {
+    yield await getAllBodyEntries();
+    yield* _box.watch().asyncMap((_) => getAllBodyEntries());
+  }
+
   Future<void> deleteBodyEntry(String id) async {
     try {
       AppLogger.debug('📊 [BodyData] Deleting body measurement...');

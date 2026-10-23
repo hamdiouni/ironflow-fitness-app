@@ -22,14 +22,21 @@ import '../../../sync/presentation/providers/sync_provider.dart';
 // Repository provider
 // ---------------------------------------------------------------------------
 
+/// The single Hive active-program data source instance for the provider
+/// layer (Phase 3): the repository and box-watch stream share it.
+final hiveActiveProgramDataSourceProvider =
+    Provider<HiveActiveProgramDataSource>((ref) {
+  return HiveActiveProgramDataSource();
+});
+
 /// Provider for the ActiveProgramRepository.
-/// 
+///
 /// This provider creates and manages the repository instance that handles
 /// active program persistence using Hive local storage.
-/// 
+///
 /// **Validates: Requirements 7.1, 9.1**
 final activeProgramRepositoryProvider = Provider<ActiveProgramRepository>((ref) {
-  final dataSource = HiveActiveProgramDataSource();
+  final dataSource = ref.watch(hiveActiveProgramDataSourceProvider);
   // Phase 1: saved programs are stamped with the signed-in owner.
   final userId = ref.watch(
     authNotifierProvider.select((s) => s.user?.id),
@@ -167,6 +174,17 @@ class ActiveProgramNotifier extends StateNotifier<AsyncValue<ActiveProgram?>> {
     }
   }
   
+  /// Adopts program state written outside this notifier (Phase 3, F-12):
+  /// e.g. `CompleteWorkoutUseCase` advancing the program through the
+  /// repository, or a sync pull landing a newer program. The
+  /// [activeProgramStreamProvider] listener feeds box changes here;
+  /// value-equality suppresses echoes of this notifier's own writes.
+  void adoptExternalState(ActiveProgram? program) {
+    if (!mounted) return;
+    if (state.valueOrNull == program) return;
+    state = AsyncValue.data(program);
+  }
+
   /// Sets a new workout program as the active program.
   /// 
   /// Optionally archives the previous active program for undo support.
@@ -288,20 +306,38 @@ class ActiveProgramNotifier extends StateNotifier<AsyncValue<ActiveProgram?>> {
 // Active Program State Provider
 // ---------------------------------------------------------------------------
 
+/// Reactive stream of the persisted active program (Phase 3, F-12),
+/// backed by the Hive box-watch stream.
+final activeProgramStreamProvider = StreamProvider<ActiveProgram?>((ref) {
+  final dataSource = ref.watch(hiveActiveProgramDataSourceProvider);
+  return dataSource
+      .watchActiveProgram()
+      .map((model) => model?.toEntity());
+});
+
 /// StateNotifierProvider for the active workout program.
-/// 
+///
 /// This provider manages the active program state using ActiveProgramNotifier,
 /// wiring it with the repository and update use case dependencies.
-/// 
+///
 /// The state is represented as `AsyncValue<ActiveProgram?>` to handle loading,
 /// data, and error states consistently across the UI.
-/// 
+///
 /// **Validates: Requirements 7.1, 7.4**
 final activeProgramProvider = StateNotifierProvider<ActiveProgramNotifier, AsyncValue<ActiveProgram?>>(
   (ref) {
     final repository = ref.watch(activeProgramRepositoryProvider);
     final updateUseCase = ref.watch(updateActiveProgramUseCaseProvider);
-    return ActiveProgramNotifier(repository, updateUseCase);
+    final notifier = ActiveProgramNotifier(repository, updateUseCase);
+    // Phase 3 (F-12): keep the notifier in sync with writes that bypass
+    // it (program advance inside CompleteWorkoutUseCase, sync pulls).
+    ref.listen(activeProgramStreamProvider, (previous, next) {
+      final program = next.valueOrNull;
+      if (next.hasValue) {
+        notifier.adoptExternalState(program);
+      }
+    });
+    return notifier;
   },
 );
 

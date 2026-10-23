@@ -96,8 +96,13 @@ final currentUserProvider = FutureProvider<User?>((ref) async {
   return await useCase();
 });
 
-// User Profile Provider
-final userProfileProvider = FutureProvider.family<UserProfile?, String>((ref, userId) async {
+// User Profile Provider (auth account profile, keyed by user id).
+//
+// Renamed from `userProfileProvider` (Phase 3, F-10): that name
+// belongs to the onboarding profile provider every screen actually
+// uses; this auth-family one had zero callers but shadowed it in any
+// file importing both.
+final authUserProfileProvider = FutureProvider.family<UserProfile?, String>((ref, userId) async {
   final repository = ref.watch(authRepositoryProvider);
   return await repository.getUserProfile(userId);
 });
