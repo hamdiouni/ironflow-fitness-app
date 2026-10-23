@@ -2,29 +2,44 @@ import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:flutter/foundation.dart';
 import '../../domain/entities/entities.dart';
 import '../../domain/repositories/nutrition_repository.dart';
-// import '../datasources/firestore_nutrition_datasource.dart'; // Firebase disabled
 import '../datasources/hive_nutrition_datasource.dart';
 import '../models/meal_model.dart';
 import '../models/nutrition_targets_model.dart';
 
-/// Concrete implementation of [NutritionRepository]
-/// Implements offline-first caching with Firestore as source of truth
+/// Concrete implementation of [NutritionRepository].
 ///
-/// Architecture:
-/// - Local operations saved to Hive immediately for offline access
-/// - Cloud sync happens when online via Firestore (DISABLED)
-/// - Conflict resolution uses last-write-wins strategy
-/// - Sync queue integration for offline operations
+/// Phase 2 (DATABASE_AND_SYNC_AUDIT F-02/F-03): this repository is
+/// LOCAL-ONLY. The previous direct dual-write to
+/// `users/{uid}/nutrition` (a second cloud layout whose failures were
+/// swallowed, silently diverging devices) is gone; cloud sync goes
+/// through the single outbox (`SyncService`) like every other
+/// aggregate. The optional [onMealSaved]/[onMealDeleted]/
+/// [onTargetsSaved] hooks let the composition root enqueue sync actions
+/// after local writes; hook errors are swallowed so sync can never
+/// break a local save.
 class NutritionRepositoryImpl implements NutritionRepository {
-  final dynamic firestoreDataSource; // Made nullable for Firebase-disabled mode
   final HiveNutritionDatasource hiveDataSource;
   final String userId;
+  final Future<void> Function(Meal meal)? onMealSaved;
+  final Future<void> Function(String mealId)? onMealDeleted;
+  final Future<void> Function(NutritionTargetsModel targets)? onTargetsSaved;
 
   NutritionRepositoryImpl({
-    required this.firestoreDataSource,
     required this.hiveDataSource,
     required this.userId,
+    this.onMealSaved,
+    this.onMealDeleted,
+    this.onTargetsSaved,
   });
+
+  Future<void> _notify<T>(Future<void> Function(T)? callback, T arg) async {
+    if (callback == null) return;
+    try {
+      await callback(arg);
+    } catch (e) {
+      AppLogger.debug('Sync enqueue hook failed (local save kept): $e');
+    }
+  }
 
   @override
   Future<DailyNutritionSummary> getDailyNutrition(DateTime date) async {
@@ -46,45 +61,9 @@ class NutritionRepositoryImpl implements NutritionRepository {
         );
       }
 
-      // If offline or no local data, try to fetch from Firestore (DISABLED)
-      // Firebase is disabled, skip Firestore sync
-      if (firestoreDataSource != null) {
-        try {
-          final firestoreMeals = await firestoreDataSource.getMealsByDate(
-            userId,
-            date,
-          );
-          final syncedMeals = firestoreMeals.map((m) => m.toEntity()).toList();
+      // Local-only read; cloud data arrives via SyncService pulls into
+      // the same Hive boxes (Phase 2).
 
-          // Cache the meals locally
-          for (final meal in firestoreMeals) {
-            await hiveDataSource.saveMealEntry(meal);
-          }
-
-          // Get targets from Firestore if not in local storage
-          NutritionTargets? syncedTargets;
-          if (targets == null) {
-            final targetsModel = await firestoreDataSource.getNutritionTargets(
-              userId,
-            );
-            if (targetsModel != null) {
-              syncedTargets = targetsModel.toEntity();
-              await hiveDataSource.saveNutritionTargets(targetsModel);
-            }
-          }
-
-          return DailyNutritionSummary(
-            date: date,
-            meals: syncedMeals,
-            target: syncedTargets ?? targets,
-          );
-        } catch (e) {
-          if (kDebugMode) {
-            AppLogger.debug('Error fetching from Firestore, using local data: $e');
-          }
-        }
-      }
-      
       // Return local data or empty summary
       return DailyNutritionSummary(
         date: date,
@@ -109,19 +88,10 @@ class NutritionRepositoryImpl implements NutritionRepository {
       );
       final model = MealModel.fromEntity(stamped);
 
-      // Save to local storage immediately (offline-first)
+      // Save to local storage immediately (offline-first), then enqueue
+      // the cloud write through the outbox.
       await hiveDataSource.saveMealEntry(model);
-
-      // Try to sync to Firestore if online (DISABLED - Firebase not available)
-      if (firestoreDataSource != null) {
-        try {
-          await firestoreDataSource.saveMealEntry(userId, model);
-        } catch (e) {
-          if (kDebugMode) {
-            AppLogger.debug('Could not sync meal to Firestore, saved locally: $e');
-          }
-        }
-      }
+      await _notify(onMealSaved, stamped);
     } catch (e) {
       if (kDebugMode) {
         AppLogger.debug('Error saving meal entry: $e');
@@ -173,29 +143,6 @@ class NutritionRepositoryImpl implements NutritionRepository {
       // Sort by date descending
       summaries.sort((a, b) => b.date.compareTo(a.date));
 
-      // Try to fetch from Firestore to sync any missing data (DISABLED)
-      if (firestoreDataSource != null) {
-        try {
-          final firestoreMeals = await firestoreDataSource.getMealsByDateRange(
-            userId,
-            startDate,
-            endDate,
-          );
-
-          // Cache any new meals locally
-          for (final meal in firestoreMeals) {
-            final existing = await hiveDataSource.getMealById(meal.id);
-            if (existing == null) {
-              await hiveDataSource.saveMealEntry(meal);
-            }
-          }
-        } catch (e) {
-          if (kDebugMode) {
-            AppLogger.debug('Could not sync history from Firestore: $e');
-          }
-        }
-      }
-
       return summaries;
     } catch (e) {
       if (kDebugMode) {
@@ -246,34 +193,6 @@ class NutritionRepositoryImpl implements NutritionRepository {
         );
       }
       
-      // Try to sync with Firestore in background (DISABLED)
-      if (firestoreDataSource != null) {
-        try {
-          if (paginatedDates.isNotEmpty) {
-            final startDate = paginatedDates.last;
-            final endDate = paginatedDates.first.add(const Duration(days: 1));
-            
-            final firestoreMeals = await firestoreDataSource.getMealsByDateRange(
-              userId,
-              startDate,
-              endDate,
-            );
-
-            // Cache any new meals locally
-            for (final meal in firestoreMeals) {
-              final existing = await hiveDataSource.getMealById(meal.id);
-              if (existing == null) {
-                await hiveDataSource.saveMealEntry(meal);
-              }
-            }
-          }
-        } catch (e) {
-          if (kDebugMode) {
-            AppLogger.debug('Could not sync paginated history from Firestore: $e');
-          }
-        }
-      }
-      
       return summaries;
     } catch (e) {
       if (kDebugMode) {
@@ -305,24 +224,6 @@ class NutritionRepositoryImpl implements NutritionRepository {
         return localTargets.toEntity();
       }
 
-      // Try Firestore (DISABLED)
-      if (firestoreDataSource != null) {
-        try {
-          final firestoreTargets = await firestoreDataSource.getNutritionTargets(
-            userId,
-          );
-          if (firestoreTargets != null) {
-            // Cache locally
-            await hiveDataSource.saveNutritionTargets(firestoreTargets);
-            return firestoreTargets.toEntity();
-          }
-        } catch (e) {
-          if (kDebugMode) {
-            AppLogger.debug('Could not fetch targets from Firestore: $e');
-          }
-        }
-      }
-
       return null;
     } catch (e) {
       if (kDebugMode) {
@@ -337,19 +238,9 @@ class NutritionRepositoryImpl implements NutritionRepository {
     try {
       final model = NutritionTargetsModel.fromEntity(targets);
 
-      // Save to local storage immediately
+      // Save to local storage immediately, then enqueue the cloud write.
       await hiveDataSource.saveNutritionTargets(model);
-
-      // Try to sync to Firestore (DISABLED)
-      if (firestoreDataSource != null) {
-        try {
-          await firestoreDataSource.saveNutritionTargets(userId, model);
-        } catch (e) {
-          if (kDebugMode) {
-            AppLogger.debug('Could not sync targets to Firestore, saved locally: $e');
-          }
-        }
-      }
+      await _notify(onTargetsSaved, model);
     } catch (e) {
       if (kDebugMode) {
         AppLogger.debug('Error saving nutrition targets: $e');
@@ -361,19 +252,10 @@ class NutritionRepositoryImpl implements NutritionRepository {
   @override
   Future<void> deleteMealEntry(String mealId) async {
     try {
-      // Delete from local storage immediately
+      // Delete from local storage immediately, then enqueue the cloud
+      // tombstone through the outbox.
       await hiveDataSource.deleteMealEntry(mealId);
-
-      // Try to delete from Firestore (DISABLED)
-      if (firestoreDataSource != null) {
-        try {
-          await firestoreDataSource.deleteMealEntry(userId, mealId);
-        } catch (e) {
-          if (kDebugMode) {
-            AppLogger.debug('Could not delete meal from Firestore, deleted locally: $e');
-          }
-        }
-      }
+      await _notify(onMealDeleted, mealId);
     } catch (e) {
       if (kDebugMode) {
         AppLogger.debug('Error deleting meal entry: $e');
@@ -394,28 +276,6 @@ class NutritionRepositoryImpl implements NutritionRepository {
         return meals;
       }
 
-      // Try to fetch from Firestore (DISABLED)
-      if (firestoreDataSource != null) {
-        try {
-          final firestoreMeals = await firestoreDataSource.getMealsByDate(
-            userId,
-            date,
-          );
-          final syncedMeals = firestoreMeals.map((m) => m.toEntity()).toList();
-
-          // Cache locally
-          for (final meal in firestoreMeals) {
-            await hiveDataSource.saveMealEntry(meal);
-          }
-
-          return syncedMeals;
-        } catch (e) {
-          if (kDebugMode) {
-            AppLogger.debug('Could not fetch meals from Firestore: $e');
-          }
-        }
-      }
-      
       return meals;
     } catch (e) {
       if (kDebugMode) {

@@ -24,8 +24,15 @@ import 'package:progression_tracker/features/workout/data/exercise_database.dart
 /// throws — a failure leaves the stored schema version untouched so the
 /// migration retries on the next launch. Runs once, gated by
 /// `schema_version` in the `app_settings` box.
+///
+/// Schema v3 (Phase 2): the `sync_queue` box historically held TWO
+/// incompatible schemas (`SyncAction` and the retired `SyncOperation`).
+/// With the legacy engine deleted, v3 drops any entry that is not a
+/// `SyncAction` (missing `dataType`/`dataId`) so the outbox has exactly
+/// one schema. Legacy entries were never actionable by any live code
+/// path, so dropping them loses nothing syncable.
 class DataMigration {
-  static const int currentSchemaVersion = 2;
+  static const int currentSchemaVersion = 3;
   static const String _versionKey = 'schema_version';
 
   static const String _appSettingsBox = 'app_settings';
@@ -33,6 +40,7 @@ class DataMigration {
   static const String _mealsBox = 'meals';
   static const String _bodyEntriesBox = 'body_entries';
   static const String _activeProgramBox = 'active_program';
+  static const String _syncQueueBox = 'sync_queue';
 
   /// Runs pending migrations. [currentUserId] is the signed-in user's id
   /// (from the stored auth session); when null, the userId backfill is
@@ -56,10 +64,15 @@ class DataMigration {
         'v$currentSchemaVersion',
       );
 
-      await _migrateWorkouts(currentUserId);
-      await _migrateMeals(currentUserId);
-      await _migrateBodyEntries(currentUserId);
-      await _migrateActivePrograms(currentUserId);
+      if (stored < 2) {
+        await _migrateWorkouts(currentUserId);
+        await _migrateMeals(currentUserId);
+        await _migrateBodyEntries(currentUserId);
+        await _migrateActivePrograms(currentUserId);
+      }
+      if (stored < 3) {
+        await _purgeLegacySyncQueueEntries();
+      }
 
       await settings.put(_versionKey, '$currentSchemaVersion');
       AppLogger.debug('✅ [Migration] Local schema is now '
@@ -186,6 +199,28 @@ class DataMigration {
     }
     AppLogger.debug(
       '📊 [Migration] active_program: $changed records backfilled',
+    );
+  }
+
+  /// v3: drop retired `SyncOperation` entries from the outbox box,
+  /// keeping only `SyncAction`-shaped records.
+  static Future<void> _purgeLegacySyncQueueEntries() async {
+    final box = _openMapBox(_syncQueueBox);
+    if (box == null) return;
+    var removed = 0;
+    for (final key in box.keys.toList()) {
+      final raw = box.get(key);
+      final isSyncAction = raw is Map &&
+          raw['dataType'] != null &&
+          raw['dataId'] != null &&
+          raw['status'] != null;
+      if (!isSyncAction) {
+        await box.delete(key);
+        removed++;
+      }
+    }
+    AppLogger.debug(
+      '📊 [Migration] sync_queue: removed $removed legacy entries',
     );
   }
 

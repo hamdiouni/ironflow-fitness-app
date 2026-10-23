@@ -15,6 +15,9 @@ class BodyEntryModel with _$BodyEntryModel {
     String? photoPath,
     // Phase 1 schema v2 — nullable so pre-v2 stored JSON still loads.
     String? userId,
+    // Phase 2: LWW key + tombstone (ISO 8601 strings).
+    String? updatedAt,
+    String? deletedAt,
   }) = _BodyEntryModel;
 
   factory BodyEntryModel.fromJson(Map<String, dynamic> json) =>
@@ -29,6 +32,8 @@ class BodyEntryModel with _$BodyEntryModel {
           .map((type, value) => MapEntry(type.name, value)),
       photoPath: entry.photoPath,
       userId: entry.userId,
+      updatedAt: entry.updatedAt?.toIso8601String(),
+      deletedAt: entry.deletedAt?.toIso8601String(),
     );
   }
 }
@@ -47,6 +52,8 @@ extension BodyEntryModelX on BodyEntryModel {
       ),
       photoPath: photoPath,
       userId: userId,
+      updatedAt: updatedAt != null ? DateTime.parse(updatedAt!) : null,
+      deletedAt: deletedAt != null ? DateTime.parse(deletedAt!) : null,
     );
   }
 }

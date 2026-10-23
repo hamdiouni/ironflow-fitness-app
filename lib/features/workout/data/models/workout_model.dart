@@ -19,6 +19,8 @@ class WorkoutModel with _$WorkoutModel {
     String? programId,
     int? programDayIndex,
     String? updatedAt, // ISO 8601 string
+    // Phase 2 tombstone (ISO 8601 string) on cloud-deleted records.
+    String? deletedAt,
   }) = _WorkoutModel;
 
   factory WorkoutModel.fromJson(Map<String, dynamic> json) =>
@@ -36,6 +38,7 @@ class WorkoutModel with _$WorkoutModel {
       programId: workout.programId,
       programDayIndex: workout.programDayIndex,
       updatedAt: workout.updatedAt?.toIso8601String(),
+      deletedAt: workout.deletedAt?.toIso8601String(),
     );
   }
 }
@@ -53,6 +56,7 @@ extension WorkoutModelX on WorkoutModel {
       programId: programId,
       programDayIndex: programDayIndex,
       updatedAt: updatedAt != null ? DateTime.parse(updatedAt!) : null,
+      deletedAt: deletedAt != null ? DateTime.parse(deletedAt!) : null,
     );
   }
 }

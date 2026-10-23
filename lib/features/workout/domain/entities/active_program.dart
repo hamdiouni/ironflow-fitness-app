@@ -17,6 +17,10 @@ class ActiveProgram with _$ActiveProgram {
 
     /// Owning user (auth uid), Phase 1 schema v2. Null for legacy rows.
     String? userId,
+
+    /// Last modification time (Phase 2) — LWW key for program sync.
+    /// Stamped by ActiveProgramRepositoryImpl on every save/update.
+    DateTime? updatedAt,
   }) = _ActiveProgram;
   
   const ActiveProgram._();

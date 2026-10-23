@@ -26,6 +26,15 @@ class BodyEntry with _$BodyEntry {
 
     /// Owning user (auth uid), Phase 1 schema v2. Null for legacy rows.
     String? userId,
+
+    /// Last modification time (Phase 2) — the LWW conflict key for sync.
+    /// Without it, two devices editing the same entry could not be
+    /// ordered (`date` is the measurement date, not a modification time).
+    DateTime? updatedAt,
+
+    /// Tombstone (Phase 2): set when deleted on another device; pulls
+    /// apply it as a local delete.
+    DateTime? deletedAt,
   }) = _BodyEntry;
 
   /// Factory constructor with validation

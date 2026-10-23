@@ -4,11 +4,13 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/datasources/firestore_food_datasource.dart';
-import '../../data/datasources/firestore_nutrition_datasource.dart';
 import '../../data/datasources/hive_food_datasource.dart';
 import '../../data/datasources/hive_nutrition_datasource.dart';
+import '../../data/models/meal_model.dart';
 import '../../data/repositories/food_repository_impl.dart';
 import '../../data/repositories/nutrition_repository_impl.dart';
+import '../../../sync/domain/entities/sync_action.dart';
+import '../../../sync/presentation/providers/sync_provider.dart';
 import '../../../ai/presentation/providers/global_ai_provider.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../../domain/entities/daily_nutrition_summary.dart';
@@ -25,17 +27,36 @@ import '../../../../core/providers/analytics_provider.dart';
 // ---------------------------------------------------------------------------
 
 final nutritionRepositoryProvider = Provider<NutritionRepository>((ref) {
-  final firestoreDataSource = FirestoreNutritionDatasource(FirebaseFirestore.instance);
   final hiveDataSource = HiveNutritionDatasource();
   // Was hardcoded to 'test-user' for every account (DATABASE_AND_SYNC_AUDIT
   // F-01). Watching the auth user id rebuilds the repository when the
   // signed-in user changes; 'local-user' covers the logged-out/guest path.
   final userId =
       ref.watch(authNotifierProvider.select((s) => s.user?.id)) ?? 'local-user';
+  // Phase 2: cloud writes go through the single outbox instead of the
+  // repository's old direct dual-write to users/{uid}/nutrition.
+  final syncService = ref.watch(syncServiceProvider);
   return NutritionRepositoryImpl(
-    firestoreDataSource: firestoreDataSource,
     hiveDataSource: hiveDataSource,
     userId: userId,
+    onMealSaved: (meal) => syncService.queueAction(
+      type: SyncActionType.update,
+      dataType: SyncDataType.nutrition,
+      dataId: meal.id,
+      data: MealModel.fromEntity(meal).toJson(),
+    ),
+    onMealDeleted: (mealId) => syncService.queueAction(
+      type: SyncActionType.delete,
+      dataType: SyncDataType.nutrition,
+      dataId: mealId,
+      data: {'id': mealId, 'userId': userId},
+    ),
+    onTargetsSaved: (targets) => syncService.queueAction(
+      type: SyncActionType.update,
+      dataType: SyncDataType.nutritionTargets,
+      dataId: userId,
+      data: targets.toJson(),
+    ),
   );
 });
 
