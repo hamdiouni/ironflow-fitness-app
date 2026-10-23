@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../core/constants/app_theme.dart';
+import '../../../core/constants/app_theme.dart';
 import 'app_button.dart';
 
 /// Monolithic Sci-Fi modal confirmation / alert dialog.

@@ -494,6 +494,7 @@ streams instead of remembered invalidations.
 Implemented 2026-10-23, see §11.
 
 **Phase 2 — one cloud layout + one sync engine** — items 3–5 of §8, F-02/F-03/F-11/F-14.
+Implemented 2026-10-23, see §12.
 
 **Phase 3 — reactive propagation & dedupe** — items 6–7 of §8, F-06/F-10/F-12/F-13; add
 `build_runner` to CI (F-16).
@@ -639,3 +640,78 @@ mock→Firebase uid data migration; wipe-on-sign-out (waits for verified Phase 2
 single sync schema/Firestore layout consolidation, tombstones (Phase 2); `box.watch()`
 reactive layer and full provider dedupe (Phase 3); `deletedAt`/tombstone fields wait
 for Phase 2's sync design rather than being added now and ignored.
+
+---
+
+## 12. Phase 2 implementation log (applied 2026-10-23, this branch)
+
+Static verification only (no Flutter SDK in the audit environment) — run
+`flutter pub get && dart run build_runner build --delete-conflicting-outputs && flutter analyze && flutter test`
+locally, and `firebase deploy --only firestore:rules,firestore:indexes` for the rules
+changes. **Codegen is required** (entities/models/SyncAction enum changed).
+
+**One engine (F-03).** Survivor: `features/sync` `SyncService` + the `SyncAction`
+outbox. Deleted (all verified zero live references first): `core/utils/sync_queue_manager.dart`,
+`core/models/sync_operation.dart`, `core/providers/sync_provider.dart` (also removes the
+duplicated `firestoreSyncDataSourceProvider`/`syncStatusProvider` definitions),
+`sync_repository.dart` + impl, `sync_pending_operations_use_case.dart`,
+`periodic_sync_service.dart`, `background_sync_service.dart` (workmanager stub),
+`sync_offline_data_use_case.dart` (stub), the two dead widgets bound to the legacy
+provider (`shared/widgets/sync_status_widget.dart`, `shared/widgets/offline_indicator.dart`
+— note the live `core/widgets/offline_indicator.dart` is a different file and stays),
+`realtime_db_user_datasource.dart`; `firebase_database` + `workmanager` removed from
+pubspec. `DataMigration` v3 purges non-`SyncAction` entries from `sync_queue` so the
+box has one schema; the outbox also retries actions stuck in `syncing` (crash mid-push).
+
+**One layout (F-02).** `FirestoreSyncDataSource` rewritten as the single cloud layout
+(flat collections, `userId` field, server `syncedAt`): `workouts/{id}`,
+`programs/{activeProgramId}` (full `ActiveProgramModel` — the old pull filtered on an
+`isActive` field its own payload never contained and reset progress to day 0),
+`nutrition/{mealId}`, `body_progress/{id}`, `nutrition_targets/{userId}` (singleton).
+`users/{uid}/…` remains only for auth profile + backups. `NutritionRepositoryImpl`'s
+direct dual-write (and `FirestoreNutritionDatasource`) deleted — meals/targets sync via
+outbox callbacks from the provider. Bodies and programs gained the same outbox hooks
+(`onEntrySaved/Deleted`, `onProgramSaved`); program actions had never been enqueued by
+anything before. Rules tightened to match (legacy nested matches + `sync_metadata`
+removed, `nutrition_targets` added); nutrition index field fixed (`date`→`timestamp`).
+`RemoteDataPurgerImpl` now also purges the flat collections — account deletion previously
+would have left all synced records behind.
+
+**Convergence (F-11).** Tombstones: `deletedAt` added to Workout/Meal/BodyEntry
+(+models); cloud deletes merge `{deletedAt, syncedAt}` instead of removing docs; pulls
+apply them as local deletes (stub tombstones for never-synced records are skipped on
+parse). LWW on `updatedAt` everywhere (`BodyEntry`/`ActiveProgram` gained `updatedAt`,
+stamped in their repositories) with record-date fallback for legacy rows. Pulls now cover
+all aggregates (meals/body/targets previously never pulled), each leg isolated so one
+failure can't block the rest. Cursors moved from the cloud `sync_metadata` doc to
+per-device local storage (`app_settings` keys) with a 5-minute safety overlap — a shared
+cloud cursor let one device's pull hide data from another. Invalid Firestore queries
+fixed (`where(syncedAt >)` + `orderBy(date)` is rejected by Firestore; nutrition ordered
+by a nonexistent field). Triggers fixed: `SyncService` resolves the current user via a
+provider callback, so connectivity/timer/post-write syncs actually run (they previously
+called `syncAll()` with no userId, which no-oped by design); the re-entrancy guard is now
+set before the first await. Push skips other accounts' queued actions on shared devices.
+
+**Catalogs (F-14, partial).** Both Firestore catalog uploaders no longer rewrite duplicate
+IDs (`id_1`, `id_2`…) — that forked cloud identity from the `exerciseDefinitionId`/
+`foodItemId` links added in Phase 1. Duplicates now fail loudly; uploads chunk under the
+500-op batch limit. The deeper `FoodItem`/`FoodItemFull` unification remains Phase 3.
+
+**Also fixed in passing:** 12 files under `lib/shared/presentation/components/` imported
+`../../../../core/constants/app_theme.dart` (one `../` too many — resolves outside `lib/`,
+so those files could not compile); corrected to `../../../core/...`. Pre-existing, found
+by the repo-wide import check (now zero unresolvable imports).
+
+**Test updates:** `sync_pipeline_test.dart` refreshed to the consolidated interfaces; the
+legacy-pipeline test group was removed with the pipeline; the program-pull test now asserts
+cursor plumbing through the per-device store and that day-index progress survives a pull.
+
+**Deferred / known limits:** pull writes still go straight to Hive datasources (provider
+freshness via invalidation — reactive `box.watch()` is Phase 3); no initial "full push on
+first sign-in" backfill for records created while signed out (Phase 3); archived-program
+restore doesn't enqueue a sync action yet; tombstones are never garbage-collected
+(retention policy TBD); pre-Phase-2 queued *program* actions, if any existed with the old
+payload shape, fail parsing and exhaust retries (nothing enqueued them, so this is
+theoretical); everything still becomes live only when `USE_FIREBASE_AUTH=true` + rules are
+deployed — with mock auth, pushes are denied by rules and actions accumulate retry-capped,
+exactly as after Phase 1.
