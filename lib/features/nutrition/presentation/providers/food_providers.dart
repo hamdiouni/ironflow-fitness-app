@@ -1,15 +1,11 @@
 import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../data/datasources/firestore_food_datasource.dart';
-import '../../data/datasources/hive_food_datasource.dart';
-import '../../data/repositories/food_repository_impl.dart';
 import '../../domain/entities/food_item.dart';
 import '../../domain/entities/food_item_full.dart';
 import '../../domain/repositories/food_repository.dart';
 import '../../domain/usecases/search_food_use_case.dart';
-import '../../../nutrition/presentation/providers/nutrition_providers.dart';
+import 'food_repository_provider.dart';
 
 import '../../../onboarding/domain/entities/user_profile.dart' show BudgetLevel;
 
@@ -68,7 +64,9 @@ class CustomFoodsNotifier extends StateNotifier<AsyncValue<List<FoodItemFull>>> 
     _loadCustomFoods();
   }
 
-  final dynamic _repository; // FoodRepository
+  // Was `dynamic` (F-10): with a single typed foodRepositoryProvider
+  // this can be the real interface again.
+  final FoodRepository _repository;
 
   /// Load custom foods from repository
   Future<void> _loadCustomFoods() async {
@@ -170,16 +168,8 @@ final customFoodsProvider = StateNotifierProvider<CustomFoodsNotifier, AsyncValu
   return CustomFoodsNotifier(repository);
 });
 
-/// Provider for food repository
-final foodRepositoryProvider = Provider<FoodRepository>((ref) {
-  // Was `nutritionRepositoryProvider as dynamic` — that implementation has
-  // no FoodRepository methods, so custom-food calls threw NoSuchMethodError
-  // (DATABASE_AND_SYNC_AUDIT F-10). Provide the real implementation.
-  return FoodRepositoryImpl(
-    firestoreDataSource: FirestoreFoodDatasource(FirebaseFirestore.instance),
-    hiveDataSource: HiveFoodDataSource(),
-  );
-});
+// The food repository provider lives in food_repository_provider.dart
+// (Phase 3, F-10) — there used to be three same-named definitions.
 
 /// Provider for Firestore instance - DISABLED
 // final firestoreProvider = Provider<FirebaseFirestore>((ref) {

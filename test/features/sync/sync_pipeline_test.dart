@@ -129,6 +129,7 @@ class FakeFirestoreSyncDataSource implements FirestoreSyncDataSource {
 class FakeHiveSyncQueueDataSource implements HiveSyncQueueDataSource {
   final List<SyncAction> actions = [];
   final Map<String, DateTime> cursors = {};
+  final Set<String> initialPushDone = {};
 
   @override
   Future<void> addAction(SyncAction action) async {
@@ -176,6 +177,15 @@ class FakeHiveSyncQueueDataSource implements HiveSyncQueueDataSource {
     cursors[dataType] = time;
   }
 
+  @override
+  Future<bool> hasCompletedInitialPush(String userId) async =>
+      initialPushDone.contains(userId);
+
+  @override
+  Future<void> markInitialPushComplete(String userId) async {
+    initialPushDone.add(userId);
+  }
+
   Future<void> clearAll() async {
     actions.clear();
   }
@@ -191,6 +201,11 @@ class FakeHiveWorkoutDataSource implements HiveWorkoutDataSource {
 
   @override
   Future<List<WorkoutModel>> getAllWorkouts() async => storage.values.toList();
+
+  @override
+  Stream<List<WorkoutModel>> watchAllWorkouts() async* {
+    yield await getAllWorkouts();
+  }
 
   @override
   Future<void> deleteWorkout(String id) async {
@@ -231,6 +246,11 @@ class FakeHiveActiveProgramDataSource implements HiveActiveProgramDataSource {
 
   @override
   Future<bool> hasArchivedProgram() async => false;
+
+  @override
+  Stream<ActiveProgramModel?> watchActiveProgram() async* {
+    yield await loadActiveProgram();
+  }
 }
 
 void main() {
@@ -288,6 +308,144 @@ void main() {
       // Full state pulled: program AND progress (old pull reset to day 0)
       expect(fakePrograms.current?.program.id, 'prog1');
       expect(fakePrograms.current?.currentDayIndex, 2);
+      service.dispose();
+    });
+  });
+
+  group('SyncService initial full push', () {
+    test('stamps and uploads owned/guest history once, skipping foreign records', () async {
+      final fakeQueue = FakeHiveSyncQueueDataSource();
+      final fakeFirestore = FakeFirestoreSyncDataSource();
+      final fakeWorkouts = FakeHiveWorkoutDataSource();
+      final fakePrograms = FakeHiveActiveProgramDataSource();
+
+      WorkoutModel workout(
+        String id, {
+        String? userId,
+        String? deletedAt,
+      }) {
+        return WorkoutModel(
+          id: id,
+          date: '2026-04-01T12:00:00.000',
+          exercises: const [],
+          durationSeconds: 1800,
+          totalVolume: 1000,
+          userId: userId,
+          updatedAt: '2026-04-01T12:30:00.000',
+          deletedAt: deletedAt,
+        );
+      }
+
+      final ownedWorkout = workout('Alice', userId: 'Alice');
+      fakeWorkouts.storage.addAll({
+        'guest': workout('guest'),
+        'Alice': ownedWorkout,
+        'foreign': workout('foreign', userId: 'bob'),
+        'deleted': workout(
+          'deleted',
+          deletedAt: '2026-04-02T12:00:00.000',
+        ),
+      });
+      fakePrograms.current = const ActiveProgramModel(
+        id: 'active-1',
+        program: WorkoutProgramModel(
+          id: 'program-1',
+          name: 'Starter Program',
+          description: 'Test program',
+          durationWeeks: 4,
+          difficulty: 'beginner',
+          days: [],
+        ),
+        currentDayIndex: 1,
+        isActive: true,
+        updatedAt: '2026-04-01T12:30:00.000',
+      );
+
+      // A matching pending action must suppress a duplicate initial-push
+      // action for the same workout.
+      await fakeQueue.addAction(
+        SyncAction(
+          id: 'already-queued-owned',
+          type: SyncActionType.update,
+          dataType: SyncDataType.workout,
+          dataId: ownedWorkout.id,
+          data: ownedWorkout.toJson(),
+          timestamp: DateTime(2026, 4, 1),
+          status: SyncStatus.pending,
+        ),
+      );
+
+      final service = SyncService(
+        syncQueue: fakeQueue,
+        firestoreSync: fakeFirestore,
+        hiveWorkouts: fakeWorkouts,
+        hivePrograms: fakePrograms,
+        connectivity: FakeConnectivity(),
+      );
+
+      await service.syncAll(userId: 'Alice');
+
+      expect(fakeQueue.initialPushDone, contains('Alice'));
+      expect(fakeWorkouts.storage['guest']?.userId, 'Alice');
+      expect(fakeWorkouts.storage['deleted']?.userId, 'Alice');
+      expect(fakeWorkouts.storage['foreign']?.userId, 'bob');
+      expect(fakePrograms.current?.userId, 'Alice');
+
+      expect(fakeFirestore.syncedWorkouts, hasLength(2));
+      expect(
+        fakeFirestore.syncedWorkouts.map((w) => w.id),
+        containsAll(<String>['guest', 'Alice']),
+      );
+      expect(
+        fakeFirestore.syncedWorkouts.map((w) => w.id),
+        isNot(contains('foreign')),
+      );
+      expect(fakeFirestore.deletedWorkoutIds, ['deleted']);
+      expect(fakeFirestore.syncedPrograms, hasLength(1));
+      expect(fakeFirestore.syncedPrograms.single.userId, 'Alice');
+
+      await service.syncAll(userId: 'Alice');
+
+      // The per-user marker makes the scan one-time; a second sync does
+      // not re-upload the same history.
+      expect(fakeFirestore.syncedWorkouts, hasLength(2));
+      expect(fakeFirestore.deletedWorkoutIds, ['deleted']);
+      expect(fakeFirestore.syncedPrograms, hasLength(1));
+
+      service.dispose();
+    });
+
+    test('disabled scan neither stamps nor uploads local history', () async {
+      final fakeQueue = FakeHiveSyncQueueDataSource();
+      final fakeFirestore = FakeFirestoreSyncDataSource();
+      final fakeWorkouts = FakeHiveWorkoutDataSource();
+      final fakePrograms = FakeHiveActiveProgramDataSource();
+
+      fakeWorkouts.storage['guest'] = const WorkoutModel(
+        id: 'guest',
+        date: '2026-04-01T12:00:00.000',
+        exercises: [],
+        durationSeconds: 1800,
+        totalVolume: 1000,
+      );
+
+      // enableInitialPush:false is how the app runs under mock auth:
+      // local history must not be bulk-stamped with a throwaway uid.
+      final service = SyncService(
+        syncQueue: fakeQueue,
+        firestoreSync: fakeFirestore,
+        hiveWorkouts: fakeWorkouts,
+        hivePrograms: fakePrograms,
+        connectivity: FakeConnectivity(),
+        enableInitialPush: false,
+      );
+
+      await service.syncAll(userId: 'user_mock');
+
+      expect(fakeQueue.initialPushDone, isEmpty);
+      expect(fakeWorkouts.storage['guest']?.userId, isNull);
+      expect(fakeFirestore.syncedWorkouts, isEmpty);
+
       service.dispose();
     });
   });

@@ -497,7 +497,7 @@ Implemented 2026-10-23, see §11.
 Implemented 2026-10-23, see §12.
 
 **Phase 3 — reactive propagation & dedupe** — items 6–7 of §8, F-06/F-10/F-12/F-13; add
-`build_runner` to CI (F-16).
+`build_runner` to CI (F-16). Implemented 2026-10-23, see §13.
 
 **Regression tests to add with each phase:** entity↔model JSON round-trip equality for
 every model (catches F-05.4-class loss); single-schema outbox test (fails if a second
@@ -715,3 +715,96 @@ payload shape, fail parsing and exhaust retries (nothing enqueued them, so this 
 theoretical); everything still becomes live only when `USE_FIREBASE_AUTH=true` + rules are
 deployed — with mock auth, pushes are denied by rules and actions accumulate retry-capped,
 exactly as after Phase 1.
+
+---
+
+## 13. Phase 3 implementation log (applied 2026-10-23, this branch)
+
+Static verification only (no Flutter SDK in the audit environment) — run
+`flutter pub get && dart run build_runner build --delete-conflicting-outputs && flutter analyze && flutter test`
+locally before merging. No Phase 3 change alters a generated model shape, but the
+repository still requires codegen on a clean checkout.
+
+**Reactive propagation (F-12, F-07 residual).** The Hive workout, body-entry and
+active-program data sources now expose `box.watch()`-backed snapshot streams, and nutrition
+exposes a monotonically increasing change-tick stream over the meals + targets boxes.
+`workoutsStreamProvider`, `bodyEntriesStreamProvider`, `activeProgramStreamProvider` and
+`nutritionChangesProvider` feed history/home/paginated, body history/trend, the active
+program, day summaries and recent foods. `workoutRefreshCounterProvider` and
+`bodyRefreshCounterProvider` are deleted, including the app-resume bump in `main.dart`; the
+paginated workout provider's duplicate refresh subscription is also gone.
+`ActiveProgramNotifier.adoptExternalState` lets the existing notifier absorb repository or
+sync-pull writes without echoing its own. `dailyNutritionSummaryProvider` is now keyed by
+the `yyyy-MM-dd` string returned by `nutritionDayKey()` / `todayNutritionDayKey()`, so Home
+and Nutrition cannot create different notifiers for the same day. Production `HomeScreen`
+already composed the underlying providers directly; `homeScreenProvider` remains only for
+existing exploration tests and is documented as not for new UI.
+
+**Workout completion (F-06 residual).** New `CompleteWorkoutUseCase` is the single
+persistence path used by `WorkoutNotifier.finish()`: it saves the workout first, then
+advances the active program only when the workout's stamped `programId` and
+`programDayIndex` still match the program's current day. Custom, repeated, legacy or
+different-program workouts no longer advance the program (the screen's unconditional
+`completeCurrentDay()` call was removed). This is ordered and idempotently retryable, not
+a cross-box Hive transaction: if advancement fails after save, retrying re-saves the same
+workout id and re-attempts advancement. Streak, analytics and GlobalAI side effects remain
+immediately after the use case inside `WorkoutNotifier.finish()` because they need Riverpod
+`Ref`; the screen now has exactly one finish call, but those provider effects were not
+moved into the domain use case.
+
+**Provider / enum dedupe (F-10).** `food_repository_provider.dart` now contains the only
+`foodRepositoryProvider`; the nutrition providers, food search/custom-food providers and
+cache providers all use that canonical `FoodRepositoryImpl`, and `CustomFoodsNotifier` is
+statically typed instead of `dynamic`. The query-result family was renamed to
+`foodSearchResultsProvider`, leaving `foodSearchProvider` as the single search-state
+notifier. Connectivity providers have one definition in core and are re-exported by the
+sync provider file for existing imports. The unused auth profile family was renamed to
+`authUserProfileProvider`, leaving onboarding's live `userProfileProvider` as the only
+provider with that name; the two different `UserProfile` entity classes remain a deferred
+identity refactor. `MealType` is defined once, in `diet_plan.dart`.
+
+**Initial full push (Phase 2 deferral).** `SyncService.syncAll` gains a Step 0 backed by a
+per-user `sync_initial_push_done_<uid>` marker in `app_settings`: on the first sync for a
+user on a device it scans workouts, the active program, meals, nutrition targets and body
+entries; stamps unowned/`local-user` records to that uid; skips other accounts' records;
+suppresses duplicates already in the outbox; enqueues live records as updates and
+tombstones as deletes; and writes the marker only after a successful scan, so a failure
+retries safely. `syncServiceProvider` also triggers a sync when the signed-in uid changes.
+The scan is deliberately gated by `USE_FIREBASE_AUTH`: under mock auth it is disabled so
+the whole local history is not bulk-stamped with a throwaway mock uid (which would make it
+foreign-owned when a real Firebase uid arrives). It becomes active with the real-auth seam.
+
+**Export / restore (F-13).** New exports and restore safety snapshots are
+`export_version: '2.0'` and serialize workouts, meals and body entries through
+`WorkoutModel` / `MealModel` / `BodyEntryModel.toJson()`, preserving the Phase 1/2 identity
+and link fields. Restore parses canonical v2 records model-first; the old hand parsers are
+retained strictly as fallbacks for legacy backups (deliberately detected so that, e.g., a
+legacy body entry's `photo_path` is not dropped by the model parser). The hand-written
+snake_case dialect is no longer produced.
+
+**Food conversion safety (F-15, partial).** The 158-line dynamic converter in
+`food_upload_script.dart` — which fabricated vitamin/mineral values from category
+heuristics — was deleted. Conversions now live in `food_item_conversion.dart`:
+`FoodItem.toFoodItemFull()` copies only measured values and represents unmeasured required
+nutrients as `0` = unknown (upload consumers must treat those as missing data, not true
+zeroes), while `FoodItemFull.toFoodItem()` is explicitly documented as lossy. Fully
+unifying `FoodItem` and `FoodItemFull` is still deferred: the static suggestion catalogs
+genuinely lack several `FoodItemFull` nutrients, so merging the models first requires
+nullable nutrient fields and a sweep of the catalog / suggestion / upload surfaces.
+
+**Tests added/updated:** initial-full-push coverage (guest stamping, owned dedupe,
+foreign skip, tombstone delete, one-time marker, and the disabled-under-mock gate);
+`CompleteWorkoutUseCase` advancement matching/non-matching cases; measured-only food
+conversion tests; a v2 canonical restore test asserting schema-v2 links survive; and
+String day-key updates in the nutrition/AI widget tests.
+
+**Deferred / known limits:** `FoodItem`/`FoodItemFull` and the dual `UserProfile` classes
+are not yet unified; streak/AI/analytics remain notifier side effects after
+`CompleteWorkoutUseCase`; `homeScreenProvider` was retained for tests rather than deleted;
+legacy restore parsers remain for old backups; the initial push is dormant (and cloud
+sync cannot succeed) until `USE_FIREBASE_AUTH=true` and rules/indexes are deployed; mock →
+Firebase uid data migration and wipe-on-sign-out remain out of scope pending supervised
+real-auth enablement. Static checks performed here: all project imports resolve, targeted
+provider/enum symbols have single definitions, changed-file delimiter balance passes, and
+`git diff --check` is clean; compilation and test execution still require a local Flutter
+SDK.

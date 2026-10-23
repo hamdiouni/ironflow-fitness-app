@@ -18,6 +18,13 @@ abstract class HiveSyncQueueDataSource {
   /// collection) let one device's pulls hide data from another device.
   Future<DateTime?> getCursor(String dataType);
   Future<void> setCursor(String dataType, DateTime time);
+
+  /// Whether the one-time initial full-push has already been performed
+  /// for [userId] on this device (Phase 3): on first sign-in, all local
+  /// records the user owns (or that are unowned/guest) are enqueued so
+  /// pre-account local history reaches the cloud exactly once.
+  Future<bool> hasCompletedInitialPush(String userId);
+  Future<void> markInitialPushComplete(String userId);
 }
 
 class HiveSyncQueueDataSourceImpl implements HiveSyncQueueDataSource {
@@ -177,6 +184,36 @@ class HiveSyncQueueDataSourceImpl implements HiveSyncQueueDataSource {
           .put(_cursorKey(dataType), time.toIso8601String());
     } catch (e) {
       AppLogger.debug('Error saving sync cursor for $dataType: $e');
+    }
+  }
+
+  // Initial-push markers live alongside cursors in `app_settings`,
+  // one key per user, storing the completion timestamp.
+  static String _initialPushKey(String userId) =>
+      'sync_initial_push_done_$userId';
+
+  @override
+  Future<bool> hasCompletedInitialPush(String userId) async {
+    try {
+      if (!Hive.isBoxOpen(_settingsBox)) return false;
+      return Hive.box<String>(_settingsBox)
+          .containsKey(_initialPushKey(userId));
+    } catch (e) {
+      AppLogger.debug('Error reading initial-push marker: $e');
+      return false;
+    }
+  }
+
+  @override
+  Future<void> markInitialPushComplete(String userId) async {
+    try {
+      if (!Hive.isBoxOpen(_settingsBox)) return;
+      await Hive.box<String>(_settingsBox).put(
+        _initialPushKey(userId),
+        DateTime.now().toIso8601String(),
+      );
+    } catch (e) {
+      AppLogger.debug('Error saving initial-push marker: $e');
     }
   }
 }

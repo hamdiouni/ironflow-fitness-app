@@ -112,7 +112,7 @@ void main() {
               (ref) => _FakeActiveProgramNotifier(),
             ),
             dailyNutritionSummaryProvider.overrideWith(
-              (ref, date) => _FakeDailyNutritionNotifier(),
+              (ref, dayKey) => _FakeDailyNutritionNotifier(),
             ),
           ],
           child: const MaterialApp(

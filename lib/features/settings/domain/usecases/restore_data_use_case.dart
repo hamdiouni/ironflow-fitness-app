@@ -7,11 +7,14 @@ import 'package:progression_tracker/features/workout/domain/entities/workout.dar
 import 'package:progression_tracker/features/workout/domain/entities/exercise.dart';
 import 'package:progression_tracker/features/workout/domain/entities/exercise_type.dart';
 import 'package:progression_tracker/features/workout/domain/entities/set_entry.dart';
+import 'package:progression_tracker/features/workout/data/models/workout_model.dart';
 import 'package:progression_tracker/features/nutrition/domain/repositories/nutrition_repository.dart';
 import 'package:progression_tracker/features/nutrition/domain/entities/meal.dart';
+import 'package:progression_tracker/features/nutrition/data/models/meal_model.dart';
 import 'package:progression_tracker/features/body/domain/repositories/body_repository.dart';
 import 'package:progression_tracker/features/body/domain/entities/body_entry.dart';
 import 'package:progression_tracker/features/body/domain/entities/measurement_type.dart';
+import 'package:progression_tracker/features/body/data/models/body_entry_model.dart';
 import 'package:progression_tracker/features/auth/domain/repositories/auth_repository.dart';
 import 'package:progression_tracker/features/auth/domain/entities/user_profile.dart';
 import 'package:progression_tracker/features/settings/domain/usecases/backup_data_use_case.dart';
@@ -275,7 +278,7 @@ class RestoreDataUseCase {
     return {
       'export_info': {
         'export_date': DateTime.now().toIso8601String(),
-        'export_version': '1.0',
+        'export_version': '2.0',
         'app_version': '1.2.0',
         'export_type': 'safety_snapshot',
       },
@@ -562,6 +565,13 @@ class RestoreDataUseCase {
   }
 
   Workout _parseWorkout(Map<String, dynamic> data) {
+    // Phase 3 (F-13): backups from export_version 2.0 store canonical
+    // WorkoutModel JSON (marked by `durationSeconds`) — parse through
+    // the real model so link fields survive. The hand parser below
+    // remains only for pre-2.0 backups in the legacy snake_case dialect.
+    if (data.containsKey('durationSeconds')) {
+      return WorkoutModel.fromJson(data).toEntity();
+    }
     final id = data['id'] as String? ?? 'workout_${DateTime.now().millisecondsSinceEpoch}';
     final dateStr = data['date'] as String?;
     final date = dateStr != null ? DateTime.parse(dateStr) : DateTime.now();
@@ -614,6 +624,19 @@ class RestoreDataUseCase {
   }
 
   Meal _parseMeal(Map<String, dynamic> data) {
+    // Phase 3 (F-13): canonical MealModel JSON carries the full
+    // nutrient groups; parse through the real model (preserving
+    // userId/foodItemId links). Older exports kept only a `macros`
+    // map per meal and fall through to the legacy parser below.
+    if (data.containsKey('micros') &&
+        data.containsKey('vitamins') &&
+        data.containsKey('minerals')) {
+      try {
+        return MealModel.fromJson(data).toEntity();
+      } catch (_) {
+        // Not model-shaped after all — try the legacy dialect.
+      }
+    }
     final id = data['id'] as String? ?? 'meal_${DateTime.now().millisecondsSinceEpoch}';
     final name = data['name'] as String? ?? 'Meal';
     final timestamp = data.containsKey('timestamp') && data['timestamp'] != null
@@ -671,6 +694,16 @@ class RestoreDataUseCase {
   }
 
   BodyEntry _parseBodyEntry(Map<String, dynamic> data) {
+    // Phase 3 (F-13): canonical BodyEntryModel JSON uses camelCase
+    // (`photoPath`); the legacy dialect used `photo_path` and stays on
+    // the hand parser below so old backups keep their photo paths.
+    if (data.containsKey('photoPath')) {
+      try {
+        return BodyEntryModel.fromJson(data).toEntity();
+      } catch (_) {
+        // Not model-shaped after all — try the legacy dialect.
+      }
+    }
     final id = data['id'] as String? ?? 'body_${DateTime.now().millisecondsSinceEpoch}';
     final dateStr = data['date'] as String?;
     final date = dateStr != null ? DateTime.parse(dateStr) : DateTime.now();
@@ -776,62 +809,16 @@ class RestoreDataUseCase {
     }
   }
 
-  Map<String, dynamic> _workoutToMap(Workout w) => {
-    'id': w.id,
-    'date': w.date.toIso8601String(),
-    'duration_minutes': w.duration.inMinutes,
-    'total_volume': w.totalVolume,
-    'calories_burned': w.caloriesBurned,
-    'exercises': w.exercises.map((e) => {
-      'id': e.id,
-      'name': e.name,
-      'type': e.type.name,
-      'sets': e.sets.map((s) => {
-        'id': s.id,
-        'reps': s.reps,
-        'weight': s.weight,
-        'rpe': s.rpe,
-        'timestamp': s.timestamp.toIso8601String(),
-      }).toList(),
-    }).toList(),
-  };
+  // Phase 3 (F-13): safety snapshots use the same canonical model JSON
+  // as backups (previously a third hand-written copy of the dialect,
+  // which also dropped schema-v2 link fields — a rollback would have
+  // silently unlinked every restored record).
+  Map<String, dynamic> _workoutToMap(Workout w) =>
+      WorkoutModel.fromEntity(w).toJson();
 
-  Map<String, dynamic> _mealToMap(Meal m) => {
-    'id': m.id,
-    'name': m.name,
-    'timestamp': m.timestamp.toIso8601String(),
-    'macros': {
-      'calories': m.macros.calories,
-      'protein': m.macros.protein,
-      'carbs': m.macros.carbs,
-      'fats': m.macros.fats,
-    },
-    'micros': {
-      'fiber': m.micros.fiber,
-      'sugar': m.micros.sugar,
-      'sodium': m.micros.sodium,
-      'potassium': m.micros.potassium,
-    },
-    'vitamins': {
-      'vitaminA': m.vitamins.vitaminA,
-      'vitaminB': m.vitamins.vitaminB,
-      'vitaminC': m.vitamins.vitaminC,
-      'vitaminD': m.vitamins.vitaminD,
-      'vitaminE': m.vitamins.vitaminE,
-    },
-    'minerals': {
-      'calcium': m.minerals.calcium,
-      'iron': m.minerals.iron,
-      'magnesium': m.minerals.magnesium,
-      'zinc': m.minerals.zinc,
-    },
-  };
+  Map<String, dynamic> _mealToMap(Meal m) =>
+      MealModel.fromEntity(m).toJson();
 
-  Map<String, dynamic> _bodyEntryToMap(BodyEntry b) => {
-    'id': b.id,
-    'date': b.date.toIso8601String(),
-    'weight': b.weight,
-    'measurements': b.measurements.map((k, v) => MapEntry(k.name, v)),
-    'photo_path': b.photoPath,
-  };
+  Map<String, dynamic> _bodyEntryToMap(BodyEntry b) =>
+      BodyEntryModel.fromEntity(b).toJson();
 }

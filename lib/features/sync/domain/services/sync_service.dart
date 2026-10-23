@@ -48,6 +48,13 @@ class SyncService {
   /// Resolves the currently signed-in user id for internal triggers.
   final String? Function()? currentUserIdProvider;
 
+  /// Whether the one-time initial full-push scan may run (see
+  /// [_enqueueInitialPushIfNeeded]). The app enables this only with real
+  /// Firebase auth: the scan *stamps* unowned local history with the
+  /// current uid, and doing that under a throwaway mock uid would make
+  /// the whole history look foreign-owned once real auth is enabled.
+  final bool _enableInitialPush;
+
   final _syncStatusController = StreamController<SyncStatusEntity>.broadcast();
   Stream<SyncStatusEntity> get syncStatus => _syncStatusController.stream;
 
@@ -75,7 +82,9 @@ class SyncService {
     HiveBodyDataSource? hiveBody,
     Connectivity? connectivity,
     this.currentUserIdProvider,
-  })  : _syncQueue = syncQueue,
+    bool enableInitialPush = true,
+  })  : _enableInitialPush = enableInitialPush,
+        _syncQueue = syncQueue,
         _firestoreSync = firestoreSync,
         _hiveWorkouts = hiveWorkouts,
         _hivePrograms = hivePrograms,
@@ -173,6 +182,16 @@ class SyncService {
         return;
       }
 
+      // Step 0 (Phase 3): first sync for this user on this device —
+      // enqueue the full local history so pre-account data reaches the
+      // cloud. One-time per user (marker in app_settings); a failed
+      // scan leaves no marker and is retried next sync. Disabled under
+      // mock auth (see _enableInitialPush) so local history is not
+      // bulk-stamped with a throwaway mock uid.
+      if (_enableInitialPush) {
+        await _enqueueInitialPushIfNeeded(uid);
+      }
+
       // Step 1: Push local changes to cloud
       await _pushLocalChanges(uid);
 
@@ -189,6 +208,186 @@ class SyncService {
     } finally {
       _isSyncing = false;
       _emitStatus();
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Initial full push (Phase 3, deferred from Phase 2 §8.8)
+  // ---------------------------------------------------------------------------
+
+  /// Guest placeholder stamped by the nutrition repository when signed
+  /// out (see nutritionRepositoryProvider). Treated as "unowned".
+  static const String _guestUserId = 'local-user';
+
+  bool _isUnowned(String? owner) =>
+      owner == null || owner.isEmpty || owner == _guestUserId;
+
+  bool _isForeign(String? owner, String userId) =>
+      !_isUnowned(owner) && owner != userId;
+
+  /// One-time per-user scan: enqueue every local record this user owns
+  /// so a history built up before signing in (or before sync existed)
+  /// uploads in full. Unowned/guest records are first stamped with the
+  /// user's id; other accounts' records on a shared device are skipped.
+  /// Already-queued records are not duplicated, and tombstones enqueue
+  /// as deletes. Repositories' save-time stamps cover everything
+  /// written after this scan, so it only ever needs to run once.
+  Future<void> _enqueueInitialPushIfNeeded(String userId) async {
+    try {
+      if (await _syncQueue.hasCompletedInitialPush(userId)) return;
+
+      final pending = await _syncQueue.getPendingActions();
+      final queued = {
+        for (final a in pending) '${a.dataType.name}:${a.dataId}',
+      };
+
+      var enqueued = 0;
+      Future<void> enqueue({
+        required SyncActionType type,
+        required SyncDataType dataType,
+        required String dataId,
+        required Map<String, dynamic> data,
+      }) async {
+        final key = '${dataType.name}:$dataId';
+        if (queued.contains(key)) return;
+        queued.add(key);
+        enqueued++;
+        await queueAction(
+          type: type,
+          dataType: dataType,
+          dataId: dataId,
+          data: data,
+        );
+      }
+
+      // Workouts
+      for (final workout in await _hiveWorkouts.getAllWorkouts()) {
+        if (_isForeign(workout.userId, userId)) continue;
+        var effective = workout;
+        if (_isUnowned(workout.userId)) {
+          effective = workout.copyWith(userId: userId);
+          await _hiveWorkouts.saveWorkout(effective);
+        }
+        if (effective.deletedAt != null) {
+          await enqueue(
+            type: SyncActionType.delete,
+            dataType: SyncDataType.workout,
+            dataId: effective.id,
+            data: {'id': effective.id, 'userId': userId},
+          );
+        } else {
+          await enqueue(
+            type: SyncActionType.update,
+            dataType: SyncDataType.workout,
+            dataId: effective.id,
+            data: effective.toJson(),
+          );
+        }
+      }
+
+      // Active program (singleton)
+      final program = await _hivePrograms.loadActiveProgram();
+      if (program != null && !_isForeign(program.userId, userId)) {
+        var effective = program;
+        if (_isUnowned(program.userId)) {
+          effective = program.copyWith(userId: userId);
+          await _hivePrograms.saveActiveProgram(effective);
+        }
+        await enqueue(
+          type: SyncActionType.update,
+          dataType: SyncDataType.program,
+          dataId: effective.id,
+          data: effective.toJson(),
+        );
+      }
+
+      // Meals + nutrition targets
+      final nutrition = _hiveNutrition;
+      if (nutrition != null) {
+        for (final meal in await nutrition.getAllMeals()) {
+          if (_isForeign(meal.userId, userId)) continue;
+          var effective = meal;
+          if (_isUnowned(meal.userId)) {
+            effective = meal.copyWith(userId: userId);
+            await nutrition.saveMealEntry(effective);
+          }
+          if (effective.deletedAt != null) {
+            await enqueue(
+              type: SyncActionType.delete,
+              dataType: SyncDataType.nutrition,
+              dataId: effective.id,
+              data: {'id': effective.id, 'userId': userId},
+            );
+          } else {
+            await enqueue(
+              type: SyncActionType.update,
+              dataType: SyncDataType.nutrition,
+              dataId: effective.id,
+              data: effective.toJson(),
+            );
+          }
+        }
+
+        final targets = await nutrition.getNutritionTargets();
+        if (targets != null && !_isForeign(targets.userId, userId)) {
+          var effective = targets;
+          if (_isUnowned(targets.userId)) {
+            effective = NutritionTargetsModel(
+              userId: userId,
+              macros: targets.macros,
+              micros: targets.micros,
+              vitamins: targets.vitamins,
+              minerals: targets.minerals,
+              createdAt: targets.createdAt,
+              updatedAt: targets.updatedAt,
+            );
+            await nutrition.saveNutritionTargets(effective);
+          }
+          await enqueue(
+            type: SyncActionType.update,
+            dataType: SyncDataType.nutritionTargets,
+            dataId: userId,
+            data: effective.toJson(),
+          );
+        }
+      }
+
+      // Body entries
+      final body = _hiveBody;
+      if (body != null) {
+        for (final entry in await body.getAllBodyEntries()) {
+          if (_isForeign(entry.userId, userId)) continue;
+          var effective = entry;
+          if (_isUnowned(entry.userId)) {
+            effective = entry.copyWith(userId: userId);
+            await body.saveBodyEntry(effective);
+          }
+          if (effective.deletedAt != null) {
+            await enqueue(
+              type: SyncActionType.delete,
+              dataType: SyncDataType.bodyProgress,
+              dataId: effective.id,
+              data: {'id': effective.id, 'userId': userId},
+            );
+          } else {
+            await enqueue(
+              type: SyncActionType.update,
+              dataType: SyncDataType.bodyProgress,
+              dataId: effective.id,
+              data: effective.toJson(),
+            );
+          }
+        }
+      }
+
+      await _syncQueue.markInitialPushComplete(userId);
+      AppLogger.debug(
+        '✅ Initial full push for $userId: enqueued $enqueued record(s)',
+      );
+    } catch (e) {
+      // No marker is set, so the scan retries on the next sync; the
+      // pending-queue dedupe above makes a partial scan safe to redo.
+      AppLogger.debug('❌ Initial full push scan failed (will retry): $e');
     }
   }
 
