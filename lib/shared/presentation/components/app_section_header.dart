@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../core/constants/app_theme.dart';
+import '../../../core/constants/app_theme.dart';
 
 /// Monolithic Sci-Fi section header with title, optional subtitle, and action button.
 class AppSectionHeader extends StatelessWidget {

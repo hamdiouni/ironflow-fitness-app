@@ -17,6 +17,8 @@ class ActiveProgramModel with _$ActiveProgramModel {
     @Default({}) Map<String, String> completedDays,  // dayIndex as string -> ISO date
     // Phase 1 schema v2 — nullable so pre-v2 stored JSON still loads.
     String? userId,
+    // Phase 2: LWW key for program sync (ISO 8601 string).
+    String? updatedAt,
   }) = _ActiveProgramModel;
 
   factory ActiveProgramModel.fromJson(Map<String, dynamic> json) =>
@@ -33,6 +35,7 @@ class ActiveProgramModel with _$ActiveProgramModel {
         (key, value) => MapEntry(key.toString(), value.toIso8601String()),
       ),
       userId: entity.userId,
+      updatedAt: entity.updatedAt?.toIso8601String(),
     );
   }
 }
@@ -51,6 +54,7 @@ extension ActiveProgramModelX on ActiveProgramModel {
         (key, value) => MapEntry(int.parse(key), DateTime.parse(value)),
       ),
       userId: userId,
+      updatedAt: updatedAt != null ? DateTime.parse(updatedAt!) : null,
     );
   }
 }

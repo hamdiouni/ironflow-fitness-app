@@ -33,6 +33,10 @@ enum SyncDataType {
   program,
   nutrition,
   bodyProgress,
+
+  /// Singleton nutrition-targets document (Phase 2). Appended last so
+  /// previously queued actions keep their serialized values.
+  nutritionTargets,
 }
 
 enum SyncStatus {

@@ -14,6 +14,9 @@ import '../../domain/usecases/set_active_program_use_case.dart';
 import '../../domain/usecases/update_active_program_use_case.dart';
 import '../../domain/usecases/update_exercise_parameters_use_case.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
+import '../../data/models/active_program_model.dart';
+import '../../../sync/domain/entities/sync_action.dart';
+import '../../../sync/presentation/providers/sync_provider.dart';
 
 // ---------------------------------------------------------------------------
 // Repository provider
@@ -31,7 +34,19 @@ final activeProgramRepositoryProvider = Provider<ActiveProgramRepository>((ref) 
   final userId = ref.watch(
     authNotifierProvider.select((s) => s.user?.id),
   );
-  return ActiveProgramRepositoryImpl(dataSource, userId: userId);
+  // Phase 2: every save/update enqueues the full program state to the
+  // single outbox (previously nothing ever enqueued program actions).
+  final syncService = ref.watch(syncServiceProvider);
+  return ActiveProgramRepositoryImpl(
+    dataSource,
+    userId: userId,
+    onProgramSaved: (program) => syncService.queueAction(
+      type: SyncActionType.update,
+      dataType: SyncDataType.program,
+      dataId: program.id,
+      data: ActiveProgramModel.fromEntity(program).toJson(),
+    ),
+  );
 });
 
 // ---------------------------------------------------------------------------

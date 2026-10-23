@@ -80,6 +80,10 @@ class Meal with _$Meal {
 
     /// Last modification time — the LWW conflict key for sync.
     DateTime? updatedAt,
+
+    /// Tombstone (Phase 2): set when deleted on another device; pulls
+    /// apply it as a local delete. See Workout.deletedAt.
+    DateTime? deletedAt,
   }) = _Meal;
 
   const Meal._();

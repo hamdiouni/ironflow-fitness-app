@@ -153,6 +153,8 @@ class MealModel with _$MealModel {
     String? userId,
     String? foodItemId,
     String? updatedAt, // ISO 8601 string
+    // Phase 2 tombstone (ISO 8601 string) on cloud-deleted records.
+    String? deletedAt,
   }) = _MealModel;
 
   factory MealModel.fromJson(Map<String, dynamic> json) =>
@@ -170,6 +172,7 @@ class MealModel with _$MealModel {
       userId: meal.userId,
       foodItemId: meal.foodItemId,
       updatedAt: meal.updatedAt?.toIso8601String(),
+      deletedAt: meal.deletedAt?.toIso8601String(),
     );
   }
 }
@@ -187,6 +190,7 @@ extension MealModelX on MealModel {
       userId: userId,
       foodItemId: foodItemId,
       updatedAt: updatedAt != null ? DateTime.parse(updatedAt!) : null,
+      deletedAt: deletedAt != null ? DateTime.parse(deletedAt!) : null,
     );
   }
 }

@@ -6,6 +6,9 @@ import '../../data/datasources/hive_sync_queue_datasource.dart';
 import '../../data/datasources/firestore_sync_datasource.dart';
 import '../../../workout/data/datasources/hive_workout_data_source.dart';
 import '../../../workout/data/datasources/hive_active_program_datasource.dart';
+import '../../../nutrition/data/datasources/hive_nutrition_datasource.dart';
+import '../../../body/data/datasources/hive_body_data_source.dart';
+import '../../../auth/data/datasources/auth_session_storage.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 
 // Data sources
@@ -17,14 +20,20 @@ final firestoreSyncDataSourceProvider = Provider<FirestoreSyncDataSource>((ref) 
   return FirestoreSyncDataSourceImpl();
 });
 
-// Sync service
+// Sync service — the single sync engine (Phase 2).
 final syncServiceProvider = Provider<SyncService>((ref) {
+  final sessionStorage = AuthSessionStorage();
   final service = SyncService(
     syncQueue: ref.watch(hiveSyncQueueDataSourceProvider),
     firestoreSync: ref.watch(firestoreSyncDataSourceProvider),
     hiveWorkouts: HiveWorkoutDataSource(),
     hivePrograms: HiveActiveProgramDataSource(),
+    hiveNutrition: HiveNutritionDatasource(),
+    hiveBody: HiveBodyDataSource(),
     connectivity: Connectivity(),
+    // Internal triggers (connectivity/timer/post-write) resolve the
+    // signed-in user from the stored session at call time.
+    currentUserIdProvider: sessionStorage.getUserId,
   );
 
   // Initialize on creation

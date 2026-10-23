@@ -11,16 +11,29 @@ class BodyRepositoryImpl implements BodyRepository {
   /// Optional so existing single-argument constructions (tests) still work.
   final String? userId;
 
-  BodyRepositoryImpl(this.dataSource, {this.userId});
+  /// Outbox hooks (Phase 2): invoked after successful local writes so the
+  /// composition root can enqueue sync actions. Errors are swallowed —
+  /// sync must never break a local save. Optional; tests omit them.
+  final Future<void> Function(BodyEntry entry)? onEntrySaved;
+  final Future<void> Function(String entryId)? onEntryDeleted;
+
+  BodyRepositoryImpl(
+    this.dataSource, {
+    this.userId,
+    this.onEntrySaved,
+    this.onEntryDeleted,
+  });
 
   @override
   Future<void> saveBodyEntry(BodyEntry entry) async {
-    final stamped =
-        entry.userId == null && userId != null
-            ? entry.copyWith(userId: userId)
-            : entry;
+    // Stamp owner + LWW clock (Phases 1–2) on every save.
+    final stamped = entry.copyWith(
+      userId: entry.userId ?? userId,
+      updatedAt: DateTime.now(),
+    );
     final model = BodyEntryModel.fromEntity(stamped);
     await dataSource.saveBodyEntry(model);
+    await _notify(onEntrySaved, stamped);
   }
 
   @override
@@ -44,5 +57,15 @@ class BodyRepositoryImpl implements BodyRepository {
   @override
   Future<void> deleteBodyEntry(String id) async {
     await dataSource.deleteBodyEntry(id);
+    await _notify(onEntryDeleted, id);
+  }
+
+  Future<void> _notify<T>(Future<void> Function(T)? callback, T arg) async {
+    if (callback == null) return;
+    try {
+      await callback(arg);
+    } catch (_) {
+      // Best-effort: the local write already succeeded.
+    }
   }
 }

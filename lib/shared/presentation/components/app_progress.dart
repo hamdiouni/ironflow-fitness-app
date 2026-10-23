@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import '../../../../core/constants/app_theme.dart';
+import '../../../core/constants/app_theme.dart';
 
 /// Monolithic Sci-Fi linear progress bar with optional kinetic gradient.
 class AppProgressBar extends StatelessWidget {

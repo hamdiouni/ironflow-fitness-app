@@ -34,5 +34,11 @@ class Workout with _$Workout {
 
     /// Last modification time — the LWW conflict key for sync.
     DateTime? updatedAt,
+
+    /// Tombstone (Phase 2): set when this record was deleted on another
+    /// device. Local deletes are hard deletes; the cloud copy is kept as
+    /// a tombstone so pulls can propagate the deletion instead of
+    /// resurrecting the record.
+    DateTime? deletedAt,
   }) = _Workout;
 }

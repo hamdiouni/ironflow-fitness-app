@@ -9,6 +9,9 @@ import '../../domain/repositories/body_repository.dart';
 import '../../domain/usecases/get_body_history_use_case.dart';
 import '../../domain/usecases/get_weight_trend_use_case.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
+import '../../data/models/body_entry_model.dart';
+import '../../../sync/domain/entities/sync_action.dart';
+import '../../../sync/presentation/providers/sync_provider.dart';
 
 part 'body_providers.freezed.dart';
 
@@ -34,7 +37,24 @@ final bodyRepositoryProvider = Provider<BodyRepository>((ref) {
   final userId = ref.watch(
     authNotifierProvider.select((s) => s.user?.id),
   );
-  return BodyRepositoryImpl(dataSource, userId: userId);
+  // Phase 2: saves/deletes enqueue to the single outbox.
+  final syncService = ref.watch(syncServiceProvider);
+  return BodyRepositoryImpl(
+    dataSource,
+    userId: userId,
+    onEntrySaved: (entry) => syncService.queueAction(
+      type: SyncActionType.update,
+      dataType: SyncDataType.bodyProgress,
+      dataId: entry.id,
+      data: BodyEntryModel.fromEntity(entry).toJson(),
+    ),
+    onEntryDeleted: (entryId) => syncService.queueAction(
+      type: SyncActionType.delete,
+      dataType: SyncDataType.bodyProgress,
+      dataId: entryId,
+      data: {'id': entryId, 'userId': userId},
+    ),
+  );
 });
 
 // ---------------------------------------------------------------------------
