@@ -195,14 +195,26 @@ class HomeScreenNotifier extends StateNotifier<AsyncValue<HomeScreenState>> {
     _ref.invalidate(homeWorkoutDataProvider);
     _ref.invalidate(userProfileProvider);
     _ref.invalidate(activeProgramProvider);
-    _ref.invalidate(dailyNutritionSummaryProvider(DateTime.now()));
+    // The family is keyed by the yyyy-MM-dd day string (Phase 3), so
+    // there's exactly one canonical key for today. See F-07 in
+    // docs/architecture/DATABASE_AND_SYNC_AUDIT.md.
+    _ref.invalidate(
+      dailyNutritionSummaryProvider(todayNutritionDayKey()),
+    );
     
     // Reload data
     await _loadData();
   }
 }
 
-/// Provider for home screen state
+/// Provider for home screen state.
+///
+/// NOTE (Phase 3): no production screen watches this — `HomeScreen`
+/// composes the underlying watched providers directly (workouts via
+/// `workoutsStreamProvider`-backed providers, nutrition via
+/// `dailyNutritionSummaryProvider`, program via `activeProgramProvider`).
+/// Kept only because exploration tests still exercise it; do not build
+/// new UI on it.
 final homeScreenProvider = StateNotifierProvider<HomeScreenNotifier, AsyncValue<HomeScreenState>>((ref) {
   return HomeScreenNotifier(ref);
 });

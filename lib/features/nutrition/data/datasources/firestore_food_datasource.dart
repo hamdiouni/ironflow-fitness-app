@@ -10,30 +10,34 @@ class FirestoreFoodDatasource {
 
   /// Upload all foods to Firestore.
   /// This is typically called once during app initialization or via admin script.
-  /// Handles duplicate IDs by appending a counter to make them unique.
+  ///
+  /// IDs are preserved EXACTLY (Phase 2, F-14): `Meal.foodItemId`s
+  /// reference these catalog IDs, so the previous duplicate-handling
+  /// (`id`, `id_1`, `id_2`…) silently forked identity between the local
+  /// catalog and the cloud. Duplicate IDs are a source-catalog data
+  /// bug — fail loudly instead.
   Future<void> uploadFoods(List<FoodItemFull> foods) async {
-    final batch = _firestore.batch();
-    final foodsCollection = _firestore.collection('foods');
-    final idCounts = <String, int>{};
-
+    final seen = <String>{};
+    final duplicates = <String>{};
     for (final food in foods) {
-      // Handle duplicate IDs by appending a counter
-      String uniqueId = food.id;
-      if (idCounts.containsKey(food.id)) {
-        idCounts[food.id] = idCounts[food.id]! + 1;
-        uniqueId = '${food.id}_${idCounts[food.id]}';
-      } else {
-        idCounts[food.id] = 0;
-      }
-
-      final docRef = foodsCollection.doc(uniqueId);
-      final data = foodToMap(food);
-      // Update the ID in the data to match the unique ID
-      data['id'] = uniqueId;
-      batch.set(docRef, data);
+      if (!seen.add(food.id)) duplicates.add(food.id);
+    }
+    if (duplicates.isNotEmpty) {
+      throw StateError(
+        'Food catalog contains duplicate IDs $duplicates; '
+        'fix the source catalog instead of rewriting IDs on upload.',
+      );
     }
 
-    await batch.commit();
+    final foodsCollection = _firestore.collection('foods');
+    // Firestore batches are capped at 500 operations; chunk at 400.
+    for (var start = 0; start < foods.length; start += 400) {
+      final batch = _firestore.batch();
+      for (final food in foods.skip(start).take(400)) {
+        batch.set(foodsCollection.doc(food.id), foodToMap(food));
+      }
+      await batch.commit();
+    }
   }
 
   /// Get all foods from Firestore.

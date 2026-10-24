@@ -13,6 +13,14 @@ class ExerciseModel with _$ExerciseModel {
     required String name,
     required String type,
     required List<SetEntryModel> sets,
+    // Persisted since Phase 0 (DATABASE_AND_SYNC_AUDIT F-05): these used to
+    // be dropped by fromEntity/toEntity, so planned sets/reps were lost on
+    // every save/load round-trip. Nullable = old stored JSON still loads.
+    // Requires `dart run build_runner build` to regenerate the model code.
+    int? suggestedReps,
+    int? suggestedSets,
+    // Phase 1 schema v2: stable catalog link (ExerciseDefinition.id).
+    String? exerciseDefinitionId,
   }) = _ExerciseModel;
 
   factory ExerciseModel.fromJson(Map<String, dynamic> json) =>
@@ -24,6 +32,9 @@ class ExerciseModel with _$ExerciseModel {
       name: exercise.name,
       type: exercise.type.name,
       sets: exercise.sets.map(SetEntryModel.fromEntity).toList(),
+      suggestedReps: exercise.suggestedReps,
+      suggestedSets: exercise.suggestedSets,
+      exerciseDefinitionId: exercise.exerciseDefinitionId,
     );
   }
 }
@@ -35,6 +46,9 @@ extension ExerciseModelX on ExerciseModel {
       name: name,
       type: ExerciseType.values.firstWhere((e) => e.name == type),
       sets: sets.map((s) => s.toEntity()).toList(),
+      suggestedReps: suggestedReps,
+      suggestedSets: suggestedSets,
+      exerciseDefinitionId: exerciseDefinitionId,
     );
   }
 }

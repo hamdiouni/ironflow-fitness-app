@@ -35,7 +35,12 @@ class HomeScreen extends ConsumerWidget {
             ref.invalidate(homeWorkoutDataProvider);
             ref.invalidate(userProfileProvider);
             ref.invalidate(activeProgramProvider);
-            ref.invalidate(dailyNutritionSummaryProvider(DateTime.now()));
+            // The family is keyed by the yyyy-MM-dd day string (Phase 3),
+            // so there's exactly one canonical key for today. See F-07 in
+            // docs/architecture/DATABASE_AND_SYNC_AUDIT.md.
+            ref.invalidate(
+              dailyNutritionSummaryProvider(todayNutritionDayKey()),
+            );
             // Wait for data to load
             await Future.wait([
               ref.read(homeWorkoutDataProvider.future),
@@ -892,8 +897,13 @@ class _DailyFuelSummaryBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = context.tokens;
-    final now = DateTime.now();
-    final nutritionAsync = ref.watch(dailyNutritionSummaryProvider(now));
+    // The family is keyed by the yyyy-MM-dd day string (Phase 3), so this
+    // widget shares the exact same provider instance/notifier as
+    // NutritionScreen by construction. The old DateTime key let raw
+    // DateTime.now() (with time-of-day) create a new, disconnected
+    // notifier. See F-07 in docs/architecture/DATABASE_AND_SYNC_AUDIT.md.
+    final nutritionAsync =
+        ref.watch(dailyNutritionSummaryProvider(todayNutritionDayKey()));
 
     final targetCalories = profileAsync.valueOrNull?.dailyCalorieTarget ?? 2000.0;
 

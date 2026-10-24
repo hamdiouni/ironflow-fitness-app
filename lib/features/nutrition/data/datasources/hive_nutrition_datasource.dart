@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:hive/hive.dart';
 import '../models/meal_model.dart';
@@ -40,6 +42,27 @@ class HiveNutritionDatasource {
   Box<Map> get _mealsBox => Hive.box<Map>(mealsBoxName);
 
   Box<Map> get _targetsBox => Hive.box<Map>(targetsBoxName);
+
+  /// Emits an increasing tick whenever meals or nutrition targets
+  /// change (Phase 3, F-12), starting at 0 so subscribers load their
+  /// first snapshot through the same path. Nutrition state is filtered
+  /// by day, so consumers re-run their own queries on each tick rather
+  /// than receiving a full snapshot here. Ticks (not `void`) matter:
+  /// Riverpod dedupes equal `AsyncValue`s, so a `void` ping stream
+  /// would only ever notify listeners once.
+  Stream<int> watchNutritionChanges() {
+    return Stream<int>.multi((controller) {
+      var tick = 0;
+      controller.add(tick);
+      void bump() => controller.add(++tick);
+      final mealsSub = _mealsBox.watch().listen((_) => bump());
+      final targetsSub = _targetsBox.watch().listen((_) => bump());
+      controller.onCancel = () async {
+        await mealsSub.cancel();
+        await targetsSub.cancel();
+      };
+    });
+  }
 
   /// Save a meal entry to local storage.
   ///

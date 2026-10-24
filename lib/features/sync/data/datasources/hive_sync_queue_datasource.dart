@@ -11,6 +11,20 @@ abstract class HiveSyncQueueDataSource {
   Future<void> clearCompleted();
   Future<int> getPendingCount();
   Future<int> getFailedCount();
+
+  /// Per-device pull cursor for a collection (Phase 2): the `syncedAt`
+  /// watermark this device has already pulled. Cursors are local-only
+  /// state — storing them in the cloud (the old `sync_metadata`
+  /// collection) let one device's pulls hide data from another device.
+  Future<DateTime?> getCursor(String dataType);
+  Future<void> setCursor(String dataType, DateTime time);
+
+  /// Whether the one-time initial full-push has already been performed
+  /// for [userId] on this device (Phase 3): on first sign-in, all local
+  /// records the user owns (or that are unowned/guest) are enqueued so
+  /// pre-account local history reaches the cloud exactly once.
+  Future<bool> hasCompletedInitialPush(String userId);
+  Future<void> markInitialPushComplete(String userId);
 }
 
 class HiveSyncQueueDataSourceImpl implements HiveSyncQueueDataSource {
@@ -38,7 +52,12 @@ class HiveSyncQueueDataSourceImpl implements HiveSyncQueueDataSource {
     for (final entry in box.values) {
       try {
         final action = SyncAction.fromJson(Map<String, dynamic>.from(entry));
-        if (action.status == SyncStatus.pending || action.status == SyncStatus.failed) {
+        // `syncing` counts as pending: an action read in that state was
+        // interrupted (e.g. app killed mid-push) and must be retried,
+        // not stranded forever.
+        if (action.status == SyncStatus.pending ||
+            action.status == SyncStatus.failed ||
+            action.status == SyncStatus.syncing) {
           actions.add(action);
         }
       } catch (e) {
@@ -137,5 +156,64 @@ class HiveSyncQueueDataSourceImpl implements HiveSyncQueueDataSource {
     }
 
     return count;
+  }
+
+  // Cursors live in the existing `app_settings` (Box<String>) under
+  // prefixed keys — no new box to classify/wipe. Missing/unreadable
+  // cursor = full pull, which LWW merge makes idempotent.
+  static const String _settingsBox = 'app_settings';
+  static String _cursorKey(String dataType) => 'sync_cursor_$dataType';
+
+  @override
+  Future<DateTime?> getCursor(String dataType) async {
+    try {
+      if (!Hive.isBoxOpen(_settingsBox)) return null;
+      final raw = Hive.box<String>(_settingsBox).get(_cursorKey(dataType));
+      return raw == null ? null : DateTime.tryParse(raw);
+    } catch (e) {
+      AppLogger.debug('Error reading sync cursor for $dataType: $e');
+      return null;
+    }
+  }
+
+  @override
+  Future<void> setCursor(String dataType, DateTime time) async {
+    try {
+      if (!Hive.isBoxOpen(_settingsBox)) return;
+      await Hive.box<String>(_settingsBox)
+          .put(_cursorKey(dataType), time.toIso8601String());
+    } catch (e) {
+      AppLogger.debug('Error saving sync cursor for $dataType: $e');
+    }
+  }
+
+  // Initial-push markers live alongside cursors in `app_settings`,
+  // one key per user, storing the completion timestamp.
+  static String _initialPushKey(String userId) =>
+      'sync_initial_push_done_$userId';
+
+  @override
+  Future<bool> hasCompletedInitialPush(String userId) async {
+    try {
+      if (!Hive.isBoxOpen(_settingsBox)) return false;
+      return Hive.box<String>(_settingsBox)
+          .containsKey(_initialPushKey(userId));
+    } catch (e) {
+      AppLogger.debug('Error reading initial-push marker: $e');
+      return false;
+    }
+  }
+
+  @override
+  Future<void> markInitialPushComplete(String userId) async {
+    try {
+      if (!Hive.isBoxOpen(_settingsBox)) return;
+      await Hive.box<String>(_settingsBox).put(
+        _initialPushKey(userId),
+        DateTime.now().toIso8601String(),
+      );
+    } catch (e) {
+      AppLogger.debug('Error saving initial-push marker: $e');
+    }
   }
 }

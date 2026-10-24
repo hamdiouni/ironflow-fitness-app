@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/app_haptics.dart';
-import '../../../../core/constants/app_theme.dart';
+import '../../../core/constants/app_theme.dart';
 
 /// Button variant enum for [AppButton].
 enum AppButtonVariant {

@@ -98,6 +98,7 @@ class SplitScheduleBuilder {
           exercises.add(
             ProgramExercise(
               exerciseName: selected.exerciseName,
+              exerciseDefinitionId: selected.exerciseDefinitionId,
               sets: sets,
               reps: reps,
               restSeconds: restSec,

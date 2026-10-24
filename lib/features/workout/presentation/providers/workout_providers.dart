@@ -4,6 +4,8 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../data/datasources/hive_workout_data_source.dart';
+import '../../data/models/workout_model.dart';
+import '../../data/repositories/synced_workout_repository.dart';
 import '../../data/repositories/workout_repository_impl.dart';
 import '../../domain/entities/entities.dart';
 import '../../domain/repositories/workout_repository.dart';
@@ -11,6 +13,9 @@ import '../../domain/usecases/usecases.dart';
 import '../managers/workout_state_manager.dart';
 import 'active_program_providers.dart';
 import '../../../ai/presentation/providers/global_ai_provider.dart';
+import '../../../auth/presentation/providers/auth_notifier.dart';
+import '../../../retention/presentation/providers/streak_provider.dart';
+import '../../../sync/presentation/providers/sync_provider.dart';
 import '../../../../core/providers/analytics_provider.dart';
 
 part 'workout_providers.freezed.dart';
@@ -19,9 +24,28 @@ part 'workout_providers.freezed.dart';
 // Repository provider
 // ---------------------------------------------------------------------------
 
+/// The single Hive workout data source instance for the provider layer
+/// (Phase 3): repository and reactive stream share it.
+final hiveWorkoutDataSourceProvider = Provider<HiveWorkoutDataSource>((ref) {
+  return HiveWorkoutDataSource();
+});
+
 final workoutRepositoryProvider = Provider<WorkoutRepository>((ref) {
-  final dataSource = HiveWorkoutDataSource();
-  return WorkoutRepositoryImpl(dataSource);
+  final dataSource = ref.watch(hiveWorkoutDataSourceProvider);
+  // Wire workout writes into the sync outbox when a user is signed in.
+  // SyncedWorkoutRepository was previously never instantiated, so workouts
+  // never enqueued a single sync action (DATABASE_AND_SYNC_AUDIT F-03).
+  // Watching the auth user id rebuilds this provider on login/logout.
+  // Local Hive remains the source of truth either way.
+  final userId = ref.watch(authNotifierProvider.select((s) => s.user?.id));
+  if (userId == null || userId.isEmpty) {
+    return WorkoutRepositoryImpl(dataSource);
+  }
+  return SyncedWorkoutRepository(
+    hiveDataSource: dataSource,
+    syncService: ref.watch(syncServiceProvider),
+    userId: userId,
+  );
 });
 
 // ---------------------------------------------------------------------------
@@ -43,6 +67,29 @@ final saveWorkoutUseCaseProvider = Provider<SaveWorkoutUseCase>((ref) {
   final repository = ref.watch(workoutRepositoryProvider);
   final calculateVolume = ref.watch(calculateVolumeUseCaseProvider);
   return SaveWorkoutUseCase(repository, calculateVolume);
+});
+
+/// Finish-workout orchestrator (Phase 3, F-06 residual): persists the
+/// workout and advances the active program when the workout was its
+/// current day. Used by [WorkoutNotifier.finish].
+final completeWorkoutUseCaseProvider = Provider<CompleteWorkoutUseCase>((ref) {
+  return CompleteWorkoutUseCase(
+    saveWorkout: ref.watch(saveWorkoutUseCaseProvider),
+    activeProgramRepository: ref.watch(activeProgramRepositoryProvider),
+  );
+});
+
+/// Reactive stream of all workouts, newest first (Phase 3, F-12).
+///
+/// Backed by the Hive box's watch stream: any local write (UI, sync
+/// pull, restore) re-emits automatically — no manual refresh counters
+/// or invalidations needed. Providers that derive from workout data
+/// watch this to stay fresh.
+final workoutsStreamProvider = StreamProvider<List<Workout>>((ref) {
+  final dataSource = ref.watch(hiveWorkoutDataSourceProvider);
+  return dataSource
+      .watchAllWorkouts()
+      .map((models) => models.map((m) => m.toEntity()).toList());
 });
 
 final progressionSuggestionUseCaseProvider =
@@ -102,6 +149,7 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
   final AddExerciseToWorkoutUseCase _addExercise;
   final LogSetUseCase _logSet;
   final SaveWorkoutUseCase _saveWorkout;
+  final CompleteWorkoutUseCase? _completeWorkout;
   final DetectPersonalRecordUseCase _detectPR;
   final WorkoutStateManager _stateManager;
   final Ref _ref;
@@ -111,6 +159,10 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
     required AddExerciseToWorkoutUseCase addExercise,
     required LogSetUseCase logSet,
     required SaveWorkoutUseCase saveWorkout,
+    // Phase 3: when provided, finish() persists + advances the active
+    // program as one unit. Optional so existing constructions (tests)
+    // keep working with plain save semantics.
+    CompleteWorkoutUseCase? completeWorkout,
     required DetectPersonalRecordUseCase detectPR,
     required WorkoutStateManager stateManager,
     required Ref ref,
@@ -118,6 +170,7 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
         _addExercise = addExercise,
         _logSet = logSet,
         _saveWorkout = saveWorkout,
+        _completeWorkout = completeWorkout,
         _detectPR = detectPR,
         _stateManager = stateManager,
         _ref = ref,
@@ -184,9 +237,13 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
   Future<void> repeatWorkout(Workout previous) async {
     final freshExercises = previous.exercises.map((e) => Exercise(
       id: const Uuid().v4(),
+      // Keep the catalog link and plan hints across repeats (Phase 1).
+      exerciseDefinitionId: e.exerciseDefinitionId,
       name: e.name,
       type: e.type,
       sets: const [],
+      suggestedReps: e.suggestedReps,
+      suggestedSets: e.suggestedSets,
     )).toList();
     await start(initialExercises: freshExercises);
   }
@@ -404,9 +461,30 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
       AppLogger.debug('🔍 [Workout] Total exercises: ${current.workout.exercises.length}');
       
       AppLogger.debug('📊 [Workout] Saving workout to repository...');
-      await _saveWorkout(current.workout, duration);
+      // Phase 3: one orchestrated finish — persist, then advance the
+      // active program if this workout was its current day. The screen
+      // used to make a separate completeCurrentDay() call afterwards
+      // (and advanced the program for ANY finished workout).
+      final completeWorkout = _completeWorkout;
+      if (completeWorkout != null) {
+        await completeWorkout(current.workout, duration);
+      } else {
+        await _saveWorkout(current.workout, duration);
+      }
       AppLogger.debug('✅ [Workout] Workout saved successfully');
-      
+
+      // Update the streak from the freshly persisted workout. This link was
+      // previously missing entirely (StreakNotifier.updateAfterWorkout had
+      // zero callers), so the stored streak never moved
+      // (DATABASE_AND_SYNC_AUDIT F-06). Best-effort: must not fail finish().
+      try {
+        await _ref.read(streakNotifierProvider.notifier).updateAfterWorkout();
+        _ref.invalidate(streakProvider);
+        AppLogger.debug('✅ [Workout] Streak updated');
+      } catch (e) {
+        AppLogger.debug('⚠️ [Workout] Failed to update streak: $e');
+      }
+
       // Track workout completed
       try {
         final analytics = _ref.read(analyticsServiceProvider);
@@ -442,9 +520,10 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
       state = WorkoutState.completed(current.workout);
       AppLogger.debug('✅ [Workout] State updated to completed');
 
-      // Increment refresh counter so workoutHistoryProvider re-fetches
-      _ref.read(workoutRefreshCounterProvider.notifier).state++;
-      AppLogger.debug('✅ [Workout] Workout history refresh triggered');
+      // No manual history refresh needed (Phase 3, F-12): the save above
+      // wrote to the Hive workouts box, and workoutsStreamProvider
+      // re-emits on every box change, refreshing history/home/paginated
+      // providers automatically.
     } catch (e, stackTrace) {
       AppLogger.debug('❌ [Workout] Failed to finish workout: $e');
       AppLogger.debug('🔍 [Workout] Stack trace: $stackTrace');
@@ -497,6 +576,7 @@ final workoutNotifierProvider =
     addExercise: AddExerciseToWorkoutUseCase(),
     logSet: LogSetUseCase(),
     saveWorkout: ref.watch(saveWorkoutUseCaseProvider),
+    completeWorkout: ref.watch(completeWorkoutUseCaseProvider),
     detectPR: ref.watch(detectPRUseCaseProvider),
     stateManager: ref.watch(workoutStateManagerProvider),
     ref: ref,
@@ -507,12 +587,11 @@ final workoutNotifierProvider =
 // workoutHistoryProvider
 // ---------------------------------------------------------------------------
 
-/// Refresh counter — increment after saving a workout to force history reload.
-final workoutRefreshCounterProvider = StateProvider<int>((ref) => 0);
-
 final workoutHistoryProvider = FutureProvider<List<Workout>>((ref) async {
-  // Re-runs whenever workoutRefreshCounterProvider is incremented.
-  ref.watch(workoutRefreshCounterProvider);
+  // Re-runs on every workouts-box change (Phase 3, F-12) — the stream
+  // subscription is the refresh trigger; the repository read keeps the
+  // exact same filtering/sorting semantics as before.
+  ref.watch(workoutsStreamProvider);
   final repository = ref.watch(workoutRepositoryProvider);
   final useCase = GetWorkoutHistoryUseCase(repository);
   return useCase();
