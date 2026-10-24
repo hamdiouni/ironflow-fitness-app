@@ -11,9 +11,10 @@ service firebase.storage {
       return isAuthenticated() && request.auth.uid == userId;
     }
     
-    // User profile images
+    // User profile images (private by default; share via expiring/signed
+    // URLs if a future social surface needs cross-user avatars)
     match /users/{userId}/profile/{fileName} {
-      allow read: if isAuthenticated();
+      allow read: if isOwner(userId);
       allow write: if isOwner(userId) 
                    && request.resource.size < 5 * 1024 * 1024  // Max 5MB
                    && request.resource.contentType.matches('image/.*');

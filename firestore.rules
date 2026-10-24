@@ -12,6 +12,15 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
+    // Catalog seeding is an operator task (upload scripts / Admin SDK),
+    // never a normal end-user capability. Grant with a Firebase Auth
+    // custom claim: { "admin": true }.
+    function isAdmin() {
+      return isAuthenticated()
+          && 'admin' in request.auth.token
+          && request.auth.token.admin == true;
+    }
+
     // Flat top-level collections (workouts/programs/nutrition/body_progress)
     // store ownership in a `userId` FIELD written by
     // FirestoreSyncDataSourceImpl, not in the path. These helpers check that
@@ -83,18 +92,20 @@ service cloud.firestore {
     // state now. No rule => denied, as intended.
 
     // ------------------------------------------------------------------
-    // Shared read-only catalogs (seeded by the upload scripts). Publicly
-    // readable so catalog screens work pre-login; writes require an
-    // authenticated user (seeding from the app).
+    // Shared read-only catalogs (seeded by upload scripts/Admin SDK).
+    // Publicly readable so catalog screens work pre-login; writes are
+    // admin-only so any signed-in user cannot poison shared nutrition or
+    // exercise data. User custom foods are local Hive records, not writes
+    // to this shared catalog.
     // ------------------------------------------------------------------
     match /foods/{foodId} {
       allow read: if true;
-      allow write: if isAuthenticated();
+      allow write: if isAdmin();
     }
 
     match /exercises/{exerciseId} {
       allow read: if true;
-      allow write: if isAuthenticated();
+      allow write: if isAdmin();
     }
   }
 }
