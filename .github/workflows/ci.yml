@@ -2,14 +2,23 @@ name: IronFlow CI
 
 on:
   push:
-    branches: [ master, main ]
+    branches: [ master, main, 'arena/**' ]
   pull_request:
     branches: [ master, main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   validate-and-build:
-    name: Lint, Test, and Build APK
+    name: Analyze, Test, and Build Android
     runs-on: ubuntu-latest
+    timeout-minutes: 45
 
     steps:
       - name: Check out repository
@@ -53,5 +62,77 @@ jobs:
       - name: Run test suite with coverage
         run: flutter test --coverage
 
+      - name: Upload coverage artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ github.sha }}
+          path: coverage/lcov.info
+          if-no-files-found: warn
+
       - name: Build Android Debug APK
         run: flutter build apk --debug
+
+      # Optional store signing. Configure all four secrets to materialize
+      # android/key.properties; without them, Gradle intentionally uses the
+      # local debug-signing fallback and the artifact is compile-proof only,
+      # not a Play-uploadable build.
+      - name: Configure Android release signing (optional)
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -z "$ANDROID_KEYSTORE_BASE64" ] || [ -z "$ANDROID_KEYSTORE_PASSWORD" ] || [ -z "$ANDROID_KEY_ALIAS" ] || [ -z "$ANDROID_KEY_PASSWORD" ]; then
+            echo "Android signing secrets are not fully configured; release compile will use the local debug-signing fallback."
+            exit 0
+          fi
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/upload-keystore.jks
+          cat > android/key.properties <<EOF
+          storeFile=${{ github.workspace }}/android/upload-keystore.jks
+          storePassword=$ANDROID_KEYSTORE_PASSWORD
+          keyAlias=$ANDROID_KEY_ALIAS
+          keyPassword=$ANDROID_KEY_PASSWORD
+          EOF
+
+      - name: Build Android Release APK (compile proof)
+        run: flutter build apk --release
+
+  build-ios:
+    name: Build iOS (no codesign)
+    runs-on: macos-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+          cache-key: "flutter-:os:-:channel:-:version:-:arch:-:hash:"
+          cache-path: "${{ runner.tool_cache }}/flutter/:channel:-:version:-:arch:"
+
+      - name: Cache Pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+          key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pub-
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Generate code (freezed / json_serializable / riverpod)
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      # Compile proof only. Real iOS release still needs FlutterFire iOS
+      # configuration, provisioning profiles/certificates, and App Store
+      # Connect setup in the release pipeline.
+      - name: Build iOS Debug (no codesign)
+        run: flutter build ios --debug --no-codesign
