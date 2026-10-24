@@ -1,10 +1,15 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// Centralized configuration provider for environment variables and API keys.
 ///
-/// Prioritizes compile-time `--dart-define` constants (best practice for production
-/// and CI/CD builds), falling back to local `flutter_dotenv` for convenience in
-/// local development if a `.env` file is loaded.
+/// Direct provider API keys are treated as **debug-only developer
+/// credentials**: a key compiled into, or bundled with, a shipped client is
+/// extractable and must never be the production credential. Profile/release
+/// builds therefore fail closed and must use [getAiProxyUrl] (an
+/// authenticated backend proxy that owns provider keys, quotas, and cost
+/// controls). Local debug builds may still use `--dart-define` or dotenv keys
+/// for developer convenience unless `ALLOW_DIRECT_AI_KEYS=false` is set.
 class AppConfig {
   const AppConfig._();
 
@@ -12,35 +17,44 @@ class AppConfig {
   static const String _envGeminiKey = String.fromEnvironment('GEMINI_API_KEY');
   static const String _envNvidiaKey = String.fromEnvironment('NVIDIA_API_KEY');
   static const String _envAiProxyUrl = String.fromEnvironment('AI_PROXY_URL');
+  static const bool _directAiKeysOptIn = bool.fromEnvironment(
+    'ALLOW_DIRECT_AI_KEYS',
+    defaultValue: true,
+  );
 
-  /// Retrieves OpenAI API Key from `--dart-define` or local dotenv.
-  static String getOpenAIApiKey() {
-    if (_envOpenAiKey.isNotEmpty) return _envOpenAiKey;
+  /// Whether direct client-side provider keys may be used at all.
+  ///
+  /// Debug-only by design. This is intentionally not overridable in
+  /// profile/release: setting `ALLOW_DIRECT_AI_KEYS=true` there still returns
+  /// false, so a production artifact cannot accidentally ship a usable
+  /// provider key path.
+  static bool get allowDirectAiApiKeys => kDebugMode && _directAiKeysOptIn;
+
+  static String _directKey(String envValue, String dotenvKey) {
+    if (!allowDirectAiApiKeys) return '';
+    if (envValue.isNotEmpty) return envValue;
     if (dotenv.isInitialized) {
-      return dotenv.env['OPENAI_API_KEY'] ?? '';
+      return dotenv.env[dotenvKey] ?? '';
     }
     return '';
   }
 
-  /// Retrieves Google Gemini API Key from `--dart-define` or local dotenv.
-  static String getGeminiApiKey() {
-    if (_envGeminiKey.isNotEmpty) return _envGeminiKey;
-    if (dotenv.isInitialized) {
-      return dotenv.env['GEMINI_API_KEY'] ?? '';
-    }
-    return '';
-  }
+  /// Retrieves the debug-only OpenAI API key, or empty when direct keys are
+  /// disabled (including every profile/release build).
+  static String getOpenAIApiKey() =>
+      _directKey(_envOpenAiKey, 'OPENAI_API_KEY');
 
-  /// Retrieves NVIDIA API Key from `--dart-define` or local dotenv.
-  static String getNvidiaApiKey() {
-    if (_envNvidiaKey.isNotEmpty) return _envNvidiaKey;
-    if (dotenv.isInitialized) {
-      return dotenv.env['NVIDIA_API_KEY'] ?? '';
-    }
-    return '';
-  }
+  /// Retrieves the debug-only Gemini API key, or empty when direct keys are
+  /// disabled. Production Gemini traffic must use [getAiProxyUrl].
+  static String getGeminiApiKey() =>
+      _directKey(_envGeminiKey, 'GEMINI_API_KEY');
 
-  /// Retrieves AI Backend Proxy URL from `--dart-define` or local dotenv (AI-01).
+  /// Retrieves the debug-only NVIDIA API key, or empty when direct keys are
+  /// disabled.
+  static String getNvidiaApiKey() =>
+      _directKey(_envNvidiaKey, 'NVIDIA_API_KEY');
+
+  /// Retrieves AI Backend Proxy URL from `--dart-define` or local dotenv.
   static String getAiProxyUrl() {
     if (_envAiProxyUrl.isNotEmpty) return _envAiProxyUrl;
     if (dotenv.isInitialized) {
@@ -49,15 +63,18 @@ class AppConfig {
     return '';
   }
 
-  /// Whether OpenAI is configured with a non-empty key.
+  /// Whether OpenAI is configured through an allowed debug direct key.
   static bool get hasOpenAI => getOpenAIApiKey().isNotEmpty;
 
-  /// Whether Gemini is configured with a non-empty key.
-  static bool get hasGemini => getGeminiApiKey().isNotEmpty;
+  /// Whether Gemini is configured through the proxy or an allowed debug key.
+  static bool get hasGemini => hasAiProxy || getGeminiApiKey().isNotEmpty;
 
-  /// Whether NVIDIA is configured with a non-empty key.
+  /// Whether NVIDIA is configured through an allowed debug direct key.
   static bool get hasNvidia => getNvidiaApiKey().isNotEmpty;
 
   /// Whether a secure AI backend proxy URL is configured.
   static bool get hasAiProxy => getAiProxyUrl().isNotEmpty;
+
+  /// Whether any AI route is configured under the current build policy.
+  static bool get hasAnyAi => hasAiProxy || hasOpenAI || hasGemini || hasNvidia;
 }

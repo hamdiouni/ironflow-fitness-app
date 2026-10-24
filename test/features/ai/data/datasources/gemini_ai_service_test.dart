@@ -138,6 +138,26 @@ void main() {
       );
     });
 
+    test('direct key is rejected when direct-key policy is disabled', () {
+      final service = GeminiAIService(
+        apiKey: 'release_like_key',
+        proxyUrl: '',
+        allowDirectApiKey: false,
+      );
+
+      expect(service.isConfigured, isFalse);
+      expect(
+        () => service.validateConfiguration(),
+        throwsA(
+          isA<GeminiAIServiceException>().having(
+            (e) => e.code,
+            'code',
+            'DIRECT_API_KEY_DISABLED',
+          ),
+        ),
+      );
+    });
+
     test('handles HTTP 429 quota exhaustion gracefully', () async {
       final fakeClient = FakeHttpClient(
         http.Response('{"error": "Quota exceeded"}', 429),

@@ -343,7 +343,7 @@ class SettingsScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 8),
             _SettingItem(
-              label: 'GEMINI API KEY',
+              label: 'AI ROUTE',
               value: isGeminiConfigured ? 'CONFIGURED' : 'NOT SET',
               tokens: tokens,
             ),

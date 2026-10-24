@@ -19,6 +19,23 @@ void main() {
       expect(() => service.validateConfiguration(), returnsNormally);
     });
 
+    test('direct key is rejected when direct-key policy is disabled', () {
+      final service = AIService(
+        apiKey: 'test-valid-key',
+        allowDirectApiKey: false,
+      );
+      expect(
+        () => service.validateConfiguration(),
+        throwsA(
+          isA<AIServiceException>().having(
+            (e) => e.code,
+            'code',
+            'DIRECT_API_KEY_DISABLED',
+          ),
+        ),
+      );
+    });
+
     test('Should send a simple message and get response', () async {
       final mockClient = MockClient((request) async {
         expect(request.url.toString(), 'https://api.openai.com/v1/chat/completions');

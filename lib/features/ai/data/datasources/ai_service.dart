@@ -13,26 +13,42 @@ class AIServiceException implements Exception {
   String toString() => 'AIServiceException: $message${code != null ? ' (Code: $code)' : ''}';
 }
 
-/// AI Service for communicating with OpenAI API
+/// AI Service for communicating directly with the OpenAI API.
+///
+/// Direct provider keys are a local-debug convenience only. Profile/release
+/// builds must use a backend proxy instead; there is intentionally no
+/// production direct-key fallback in this service.
 class AIService {
   static const String _baseUrl = 'https://api.openai.com/v1';
   static const String _model = 'gpt-4';
   static const int _timeoutSeconds = 30;
 
   final String _apiKey;
+  final bool _allowDirectApiKey;
   final http.Client _httpClient;
 
   AIService({
     String? apiKey,
+    bool? allowDirectApiKey,
     http.Client? httpClient,
   })  : _apiKey = apiKey ?? AppConfig.getOpenAIApiKey(),
+        _allowDirectApiKey =
+            allowDirectApiKey ?? AppConfig.allowDirectAiApiKeys,
         _httpClient = httpClient ?? http.Client();
 
-  /// Validates that API key is configured
+  /// Validates that a direct API key may be used in this build.
   void validateConfiguration() {
+    if (!_allowDirectApiKey) {
+      throw AIServiceException(
+        message: 'Direct OpenAI API keys are disabled outside debug builds. '
+            'Use the AI backend proxy for profile/release.',
+        code: 'DIRECT_API_KEY_DISABLED',
+      );
+    }
     if (_apiKey.isEmpty) {
       throw AIServiceException(
-        message: 'OpenAI API key not configured. Provide it via --dart-define=OPENAI_API_KEY=... or local .env file.',
+        message: 'OpenAI API key not configured for this debug build. Provide '
+            'it via --dart-define=OPENAI_API_KEY=... or a local .env file.',
         code: 'MISSING_API_KEY',
       );
     }
