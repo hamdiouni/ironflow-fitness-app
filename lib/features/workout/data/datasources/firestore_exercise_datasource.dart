@@ -10,30 +10,37 @@ class FirestoreExerciseDatasource {
 
   /// Upload all exercises to Firestore.
   /// This is typically called once during app initialization or via admin script.
-  /// Handles duplicate IDs by appending a counter to make them unique.
+  ///
+  /// IDs are preserved EXACTLY (Phase 2, F-14): `exerciseDefinitionId`s
+  /// stored on workouts/programs reference these catalog IDs, so the
+  /// previous duplicate-handling (`id`, `id_1`, `id_2`…) silently forked
+  /// identity between the local catalog and the cloud. Duplicate IDs in
+  /// the source catalog are a data bug — fail loudly instead.
   Future<void> uploadExercises(List<ExerciseDefinition> exercises) async {
-    final batch = _firestore.batch();
-    final exercisesCollection = _firestore.collection('exercises');
-    final idCounts = <String, int>{};
-
+    final seen = <String>{};
+    final duplicates = <String>{};
     for (final exercise in exercises) {
-      // Handle duplicate IDs by appending a counter
-      String uniqueId = exercise.id;
-      if (idCounts.containsKey(exercise.id)) {
-        idCounts[exercise.id] = idCounts[exercise.id]! + 1;
-        uniqueId = '${exercise.id}_${idCounts[exercise.id]}';
-      } else {
-        idCounts[exercise.id] = 0;
-      }
-
-      final docRef = exercisesCollection.doc(uniqueId);
-      final data = exerciseToMap(exercise);
-      // Update the ID in the data to match the unique ID
-      data['id'] = uniqueId;
-      batch.set(docRef, data);
+      if (!seen.add(exercise.id)) duplicates.add(exercise.id);
+    }
+    if (duplicates.isNotEmpty) {
+      throw StateError(
+        'Exercise catalog contains duplicate IDs $duplicates; '
+        'fix the source catalog instead of rewriting IDs on upload.',
+      );
     }
 
-    await batch.commit();
+    final exercisesCollection = _firestore.collection('exercises');
+    // Firestore batches are capped at 500 operations; chunk at 400.
+    for (var start = 0; start < exercises.length; start += 400) {
+      final batch = _firestore.batch();
+      for (final exercise in exercises.skip(start).take(400)) {
+        batch.set(
+          exercisesCollection.doc(exercise.id),
+          exerciseToMap(exercise),
+        );
+      }
+      await batch.commit();
+    }
   }
 
   /// Get all exercises from Firestore.

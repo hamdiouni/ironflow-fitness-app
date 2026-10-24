@@ -12,6 +12,7 @@ import '../../../../shared/presentation/components/app_button.dart';
 import '../../../../shared/presentation/services/app_haptics.dart';
 import '../../../../shared/widgets/weight_trend_graph.dart';
 import '../../../ai/domain/entities/insight.dart';
+import '../../../ai/presentation/providers/global_ai_provider.dart';
 import '../../../ai/presentation/widgets/ai_entry_button.dart';
 import '../../../ai/presentation/widgets/contextual_insight_banner.dart';
 import '../../domain/entities/body_entry.dart';
@@ -607,7 +608,32 @@ class _BodyWeightTab extends ConsumerWidget {
         final useCase = SaveBodyEntryUseCase(repository);
         await useCase(entry);
 
-        ref.read(bodyRefreshCounterProvider.notifier).state++;
+        // Keep the onboarding profile's weight in sync with the newest body
+        // entry — every derived target (BMR/TDEE/calories/protein) is
+        // computed from profile.weightKg and was previously frozen at the
+        // onboarding value forever (DATABASE_AND_SYNC_AUDIT F-08).
+        // Best-effort: must not fail the weight log itself.
+        try {
+          final storage = ref.read(userProfileStorageProvider);
+          final profile = await storage.loadProfile();
+          if (profile != null && profile.weightKg != weight) {
+            await storage.saveProfile(profile.copyWith(weightKg: weight));
+            ref.invalidate(userProfileProvider);
+          }
+        } catch (_) {
+          // Profile sync is best-effort.
+        }
+
+        // Notify Global AI (onBodyWeightRecorded previously had zero
+        // callers — DATABASE_AND_SYNC_AUDIT F-06). Fire-and-forget.
+        try {
+          ref.read(globalAIProvider.notifier).onBodyWeightRecorded();
+        } catch (_) {
+          // AI notification is best-effort.
+        }
+
+        // Body providers refresh reactively via the box-watch stream
+        // (Phase 3, F-12) — no manual counter bump needed.
 
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -763,8 +789,7 @@ class _BodyWeightTab extends ConsumerWidget {
         final repository = ref.read(bodyRepositoryProvider);
         final useCase = SaveBodyEntryUseCase(repository);
         await useCase(entry);
-
-        ref.read(bodyRefreshCounterProvider.notifier).state++;
+        // Reactive refresh via box-watch (Phase 3, F-12).
       } catch (e, stack) {
         if (context.mounted) ErrorHandler.handleError(context, e, stack);
       } finally {
@@ -859,7 +884,7 @@ class _PhotosTabState extends ConsumerState<_PhotosTab> {
           BodyEntry.create(weight: lastWeight, photoPath: picked.path);
       final repository = ref.read(bodyRepositoryProvider);
       await repository.saveBodyEntry(entry);
-      ref.read(bodyRefreshCounterProvider.notifier).state++;
+      // Reactive refresh via box-watch (Phase 3, F-12).
     } catch (e, stack) {
       if (mounted) ErrorHandler.handleError(context, e, stack);
     }

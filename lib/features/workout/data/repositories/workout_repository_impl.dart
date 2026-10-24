@@ -12,7 +12,9 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
 
   @override
   Future<void> saveWorkout(Workout workout) async {
-    final model = WorkoutModel.fromEntity(workout);
+    // Phase 1: stamp updatedAt on every save (last-write-wins sync clock).
+    final stamped = workout.copyWith(updatedAt: DateTime.now());
+    final model = WorkoutModel.fromEntity(stamped);
     await dataSource.saveWorkout(model);
   }
 
@@ -47,7 +49,10 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
 
     for (final workout in workouts) {
       final matching = workout.exercises.where(
-        (e) => e.name.toLowerCase() == exerciseName.toLowerCase(),
+        // Phase 1: a definition id is accepted as well as a name.
+        (e) =>
+            e.exerciseDefinitionId == exerciseName ||
+            e.name.toLowerCase() == exerciseName.toLowerCase(),
       );
       exercises.addAll(matching);
       if (exercises.length >= limit) break;

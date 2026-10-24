@@ -14,6 +14,13 @@ class WorkoutModel with _$WorkoutModel {
     required int durationSeconds,
     required double totalVolume,
     @Default(0) double caloriesBurned,
+    // Schema v2 (Phase 1) — nullable so pre-v2 stored JSON still loads.
+    String? userId,
+    String? programId,
+    int? programDayIndex,
+    String? updatedAt, // ISO 8601 string
+    // Phase 2 tombstone (ISO 8601 string) on cloud-deleted records.
+    String? deletedAt,
   }) = _WorkoutModel;
 
   factory WorkoutModel.fromJson(Map<String, dynamic> json) =>
@@ -27,6 +34,11 @@ class WorkoutModel with _$WorkoutModel {
       durationSeconds: workout.duration.inSeconds,
       totalVolume: workout.totalVolume,
       caloriesBurned: workout.caloriesBurned,
+      userId: workout.userId,
+      programId: workout.programId,
+      programDayIndex: workout.programDayIndex,
+      updatedAt: workout.updatedAt?.toIso8601String(),
+      deletedAt: workout.deletedAt?.toIso8601String(),
     );
   }
 }
@@ -40,6 +52,11 @@ extension WorkoutModelX on WorkoutModel {
       duration: Duration(seconds: durationSeconds),
       totalVolume: totalVolume,
       caloriesBurned: caloriesBurned,
+      userId: userId,
+      programId: programId,
+      programDayIndex: programDayIndex,
+      updatedAt: updatedAt != null ? DateTime.parse(updatedAt!) : null,
+      deletedAt: deletedAt != null ? DateTime.parse(deletedAt!) : null,
     );
   }
 }

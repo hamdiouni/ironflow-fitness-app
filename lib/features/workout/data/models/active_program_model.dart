@@ -15,11 +15,15 @@ class ActiveProgramModel with _$ActiveProgramModel {
     required bool isActive,
     String? lastWorkoutDate,  // ISO 8601 string
     @Default({}) Map<String, String> completedDays,  // dayIndex as string -> ISO date
+    // Phase 1 schema v2 — nullable so pre-v2 stored JSON still loads.
+    String? userId,
+    // Phase 2: LWW key for program sync (ISO 8601 string).
+    String? updatedAt,
   }) = _ActiveProgramModel;
-  
+
   factory ActiveProgramModel.fromJson(Map<String, dynamic> json) =>
       _$ActiveProgramModelFromJson(json);
-  
+
   factory ActiveProgramModel.fromEntity(ActiveProgram entity) {
     return ActiveProgramModel(
       id: entity.id,
@@ -30,6 +34,8 @@ class ActiveProgramModel with _$ActiveProgramModel {
       completedDays: entity.completedDays.map(
         (key, value) => MapEntry(key.toString(), value.toIso8601String()),
       ),
+      userId: entity.userId,
+      updatedAt: entity.updatedAt?.toIso8601String(),
     );
   }
 }
@@ -41,12 +47,14 @@ extension ActiveProgramModelX on ActiveProgramModel {
       program: program.toEntity(),
       currentDayIndex: currentDayIndex,
       isActive: isActive,
-      lastWorkoutDate: lastWorkoutDate != null 
-          ? DateTime.parse(lastWorkoutDate!) 
+      lastWorkoutDate: lastWorkoutDate != null
+          ? DateTime.parse(lastWorkoutDate!)
           : null,
       completedDays: completedDays.map(
         (key, value) => MapEntry(int.parse(key), DateTime.parse(value)),
       ),
+      userId: userId,
+      updatedAt: updatedAt != null ? DateTime.parse(updatedAt!) : null,
     );
   }
 }

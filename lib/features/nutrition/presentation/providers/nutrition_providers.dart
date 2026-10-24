@@ -1,16 +1,20 @@
 import 'package:progression_tracker/core/utils/app_logger.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../data/datasources/firestore_nutrition_datasource.dart';
 import '../../data/datasources/hive_nutrition_datasource.dart';
+import '../../data/models/meal_model.dart';
 import '../../data/repositories/nutrition_repository_impl.dart';
+import '../../../sync/domain/entities/sync_action.dart';
+import '../../../sync/presentation/providers/sync_provider.dart';
+import '../../../ai/presentation/providers/global_ai_provider.dart';
+import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../../domain/entities/daily_nutrition_summary.dart';
+import '../../domain/entities/diet_plan.dart' show MealType;
 import '../../domain/entities/food_item_full.dart';
 import '../../domain/entities/meal.dart';
-import '../../domain/repositories/food_repository.dart';
 import '../../domain/repositories/nutrition_repository.dart';
+import 'food_repository_provider.dart';
 import '../../domain/usecases/get_food_alternatives_use_case.dart';
 import '../../domain/usecases/get_meal_suggestions_use_case.dart';
 import '../../../../core/providers/analytics_provider.dart';
@@ -19,15 +23,44 @@ import '../../../../core/providers/analytics_provider.dart';
 // Repository provider
 // ---------------------------------------------------------------------------
 
+/// The single Hive nutrition data source instance for the provider
+/// layer (Phase 3): repository and reactive change stream share it.
+final hiveNutritionDataSourceProvider =
+    Provider<HiveNutritionDatasource>((ref) {
+  return HiveNutritionDatasource();
+});
+
 final nutritionRepositoryProvider = Provider<NutritionRepository>((ref) {
-  final firestoreDataSource = FirestoreNutritionDatasource(FirebaseFirestore.instance);
-  final hiveDataSource = HiveNutritionDatasource();
-  // TODO: Get userId from auth provider
-  const userId = 'test-user';
+  final hiveDataSource = ref.watch(hiveNutritionDataSourceProvider);
+  // Was hardcoded to 'test-user' for every account (DATABASE_AND_SYNC_AUDIT
+  // F-01). Watching the auth user id rebuilds the repository when the
+  // signed-in user changes; 'local-user' covers the logged-out/guest path.
+  final userId =
+      ref.watch(authNotifierProvider.select((s) => s.user?.id)) ?? 'local-user';
+  // Phase 2: cloud writes go through the single outbox instead of the
+  // repository's old direct dual-write to users/{uid}/nutrition.
+  final syncService = ref.watch(syncServiceProvider);
   return NutritionRepositoryImpl(
-    firestoreDataSource: firestoreDataSource,
     hiveDataSource: hiveDataSource,
     userId: userId,
+    onMealSaved: (meal) => syncService.queueAction(
+      type: SyncActionType.update,
+      dataType: SyncDataType.nutrition,
+      dataId: meal.id,
+      data: MealModel.fromEntity(meal).toJson(),
+    ),
+    onMealDeleted: (mealId) => syncService.queueAction(
+      type: SyncActionType.delete,
+      dataType: SyncDataType.nutrition,
+      dataId: mealId,
+      data: {'id': mealId, 'userId': userId},
+    ),
+    onTargetsSaved: (targets) => syncService.queueAction(
+      type: SyncActionType.update,
+      dataType: SyncDataType.nutritionTargets,
+      dataId: userId,
+      data: targets.toJson(),
+    ),
   );
 });
 
@@ -35,10 +68,37 @@ final nutritionRepositoryProvider = Provider<NutritionRepository>((ref) {
 // Food repository provider
 // ---------------------------------------------------------------------------
 
-final foodRepositoryProvider = Provider<FoodRepository>((ref) {
-  final repository = ref.watch(nutritionRepositoryProvider);
-  return repository as FoodRepository;
+// Moved to food_repository_provider.dart (Phase 3, F-10): there used to
+// be three same-named `foodRepositoryProvider` definitions across the
+// nutrition feature. This file imports the single canonical one.
+
+// ---------------------------------------------------------------------------
+// Reactive nutrition changes + day keys (Phase 3, F-07 residual / F-12)
+// ---------------------------------------------------------------------------
+
+/// Ticks on every meals/targets box change. Day summaries and recent
+/// foods listen/watch this instead of relying on writers to remember
+/// invalidations.
+final nutritionChangesProvider = StreamProvider<int>((ref) {
+  final dataSource = ref.watch(hiveNutritionDataSourceProvider);
+  return dataSource.watchNutritionChanges();
 });
+
+/// Canonical family key for a nutrition day: `yyyy-MM-dd` (local).
+///
+/// The family used to be keyed by [DateTime], so `DateTime.now()` and
+/// `DateTime(y, m, d)` silently created different notifiers for the
+/// same day (F-07). A date-only string makes every call site agree.
+String nutritionDayKey(DateTime date) {
+  final local = DateTime(date.year, date.month, date.day);
+  final y = local.year.toString().padLeft(4, '0');
+  final m = local.month.toString().padLeft(2, '0');
+  final d = local.day.toString().padLeft(2, '0');
+  return '$y-$m-$d';
+}
+
+/// [nutritionDayKey] for today.
+String todayNutritionDayKey() => nutritionDayKey(DateTime.now());
 
 // ---------------------------------------------------------------------------
 // Use case providers
@@ -82,14 +142,19 @@ class DailyNutritionNotifier extends StateNotifier<AsyncValue<DailyNutritionSumm
       }
       
       final summary = await _repository.getDailyNutrition(_date);
-      
+
+      // The family instance may have been disposed while loading
+      // (external box-change refreshes make this more likely).
+      if (!mounted) return;
+
       if (kDebugMode) {
         AppLogger.debug('✅ [Nutrition] Daily nutrition summary retrieved successfully');
         AppLogger.debug('🔍 [Nutrition] Total calories: ${summary.totalCalories}, Meals: ${summary.meals.length}');
       }
-      
+
       state = AsyncValue.data(summary);
     } catch (e, stackTrace) {
+      if (!mounted) return;
       if (kDebugMode) {
         AppLogger.debug('❌ [Nutrition] Failed to fetch daily nutrition summary: $e');
         AppLogger.debug('🔍 [Nutrition] Stack trace: $stackTrace');
@@ -128,8 +193,21 @@ class DailyNutritionNotifier extends StateNotifier<AsyncValue<DailyNutritionSumm
         
         state = AsyncValue.data(updatedSummary);
       });
-      _ref.invalidate(recentFoodsProvider);
-      
+      // recentFoodsProvider refreshes via nutritionChangesProvider
+      // (Phase 3, F-12) — no manual invalidation needed.
+
+      // Notify Global AI so nutrition insights refresh now, not at next
+      // app launch. onMealLogged previously had zero callers
+      // (DATABASE_AND_SYNC_AUDIT F-06). Fire-and-forget: failures must not
+      // block or fail meal logging.
+      try {
+        _ref.read(globalAIProvider.notifier).onMealLogged();
+      } catch (e) {
+        if (kDebugMode) {
+          AppLogger.debug('⚠️ [Nutrition] AI meal notification skipped: $e');
+        }
+      }
+
       // Track meal logged event
       try {
         final analytics = _ref.read(analyticsServiceProvider);
@@ -186,7 +264,8 @@ class DailyNutritionNotifier extends StateNotifier<AsyncValue<DailyNutritionSumm
         
         state = AsyncValue.data(updatedSummary);
       });
-      _ref.invalidate(recentFoodsProvider);
+      // recentFoodsProvider refreshes via nutritionChangesProvider
+      // (Phase 3, F-12) — no manual invalidation needed.
     } catch (e, stackTrace) {
       if (kDebugMode) {
         AppLogger.debug('❌ [Nutrition] Failed to delete meal: $e');
@@ -201,13 +280,29 @@ class DailyNutritionNotifier extends StateNotifier<AsyncValue<DailyNutritionSumm
   }
 }
 
-/// Provides the daily nutrition summary for a specific date with instant updates.
+/// Provides the daily nutrition summary for a specific day with instant
+/// updates.
+///
+/// Keyed by the `yyyy-MM-dd` string from [nutritionDayKey] (Phase 3,
+/// F-07 residual): the old [DateTime] key let `DateTime.now()` and
+/// `DateTime(y, m, d)` create two different notifiers for the same day.
 final dailyNutritionSummaryProvider = StateNotifierProvider.family<
     DailyNutritionNotifier,
     AsyncValue<DailyNutritionSummary>,
-    DateTime>((ref, date) {
+    String>((ref, dayKey) {
   final repository = ref.watch(nutritionRepositoryProvider);
-  return DailyNutritionNotifier(repository, date, ref);
+  final notifier =
+      DailyNutritionNotifier(repository, DateTime.parse(dayKey), ref);
+  // Phase 3 (F-12): reload when meals/targets change outside this
+  // notifier (sync pull, another screen, restore). Own writes also
+  // tick the stream; the reload converges to the same summary as the
+  // optimistic in-memory patch in addMeal/deleteMeal.
+  ref.listen(nutritionChangesProvider, (previous, next) {
+    if (previous != null && next.hasValue) {
+      notifier.refresh();
+    }
+  });
+  return notifier;
 });
 
 // ---------------------------------------------------------------------------
@@ -219,6 +314,8 @@ final dailyNutritionSummaryProvider = StateNotifierProvider.family<
 /// Top distinct entries are deduplicated by meal name, sorted most recent first.
 /// Validates: Batch 5 - Fuel quick-add.
 final recentFoodsProvider = FutureProvider<List<Meal>>((ref) async {
+  // Re-runs on every meals-box change (Phase 3, F-12).
+  ref.watch(nutritionChangesProvider);
   final repository = ref.watch(nutritionRepositoryProvider);
   try {
     // 1. Fetch recent nutrition history summaries (up to 14 days)
@@ -309,7 +406,11 @@ final mealSuggestionsProvider = FutureProvider.family<
 // ---------------------------------------------------------------------------
 
 /// Provides filtered foods based on search query.
-final foodSearchProvider =
+///
+/// Renamed from `foodSearchProvider` (Phase 3, F-10): that name now
+/// belongs solely to the `StateNotifier` UI-state provider in
+/// `food_providers.dart` used by the food search screen.
+final foodSearchResultsProvider =
     FutureProvider.family<List<FoodItemFull>, String>((ref, query) async {
   try {
     AppLogger.debug('📊 [Nutrition] Searching for foods...');
@@ -340,7 +441,8 @@ final foodSearchProvider =
 // Food filter provider
 // ---------------------------------------------------------------------------
 
-enum MealType { breakfast, lunch, dinner, snack }
+// `MealType` comes from diet_plan.dart (Phase 3, F-10) — an identical
+// local enum used to shadow it here.
 
 enum DietaryPreference { vegetarian, vegan, glutenFree, dairyFree }
 

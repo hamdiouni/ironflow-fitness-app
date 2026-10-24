@@ -9,8 +9,8 @@ import 'workout_providers.dart';
 /// Only loads the most recent workouts needed for home screen display
 /// (weekly activity, recent workout card, etc.) to optimize performance.
 final homeWorkoutDataProvider = FutureProvider<List<Workout>>((ref) async {
-  // Re-runs whenever workoutRefreshCounterProvider is incremented.
-  ref.watch(workoutRefreshCounterProvider);
+  // Re-runs on every workouts-box change (Phase 3, F-12).
+  ref.watch(workoutsStreamProvider);
   
   final repository = ref.watch(workoutRepositoryProvider);
   final useCase = GetWorkoutsPaginatedUseCase(repository);

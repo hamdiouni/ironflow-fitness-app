@@ -1,33 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../data/datasources/firestore_food_datasource.dart';
-import '../../data/datasources/hive_food_datasource.dart';
-import '../../data/repositories/food_repository_impl.dart';
 import '../../domain/repositories/food_repository.dart';
 import '../../domain/usecases/initialize_food_cache_use_case.dart';
 import '../../domain/usecases/search_foods_use_case.dart';
 import '../../domain/entities/food_item_full.dart';
+import 'food_repository_provider.dart';
 
-/// Firestore data source provider
-final firestoreFoodDataSourceProvider = Provider((ref) {
-  return FirestoreFoodDatasource(FirebaseFirestore.instance);
-});
-
-/// Hive data source provider
-final hiveFoodDataSourceProvider = Provider((ref) {
-  return HiveFoodDataSource();
-});
-
-/// Food repository provider
-final foodRepositoryProvider = Provider((ref) {
-  final firestoreDataSource = ref.watch(firestoreFoodDataSourceProvider);
-  final hiveDataSource = ref.watch(hiveFoodDataSourceProvider);
-
-  return FoodRepositoryImpl(
-    firestoreDataSource: firestoreDataSource,
-    hiveDataSource: hiveDataSource,
-  );
-});
+// The untyped duplicate `foodRepositoryProvider` (and its datasource
+// providers) that used to live here were removed in Phase 3 (F-10);
+// the single canonical provider is in food_repository_provider.dart.
 
 /// Initialize food cache use case provider
 final initializeFoodCacheUseCaseProvider = Provider((ref) {

@@ -1,5 +1,6 @@
 import '../entities/workout_program.dart';
 import '../repositories/active_program_repository.dart';
+import '../../data/exercise_database.dart';
 
 /// Replace an exercise in the active program while preserving parameters.
 /// 
@@ -28,9 +29,12 @@ class ReplaceExerciseUseCase {
     // Preserve sets, reps, rest when replacing
     updatedExercises[exerciseIndex] = ProgramExercise(
       exerciseName: newExerciseName,
+      exerciseDefinitionId:
+          ExerciseDatabase.getByName(newExerciseName)?.id,
       sets: oldExercise.sets,
       reps: oldExercise.reps,
       restSeconds: oldExercise.restSeconds,
+      targetWeight: oldExercise.targetWeight,
       notes: oldExercise.notes,
     );
     
@@ -45,14 +49,9 @@ class ReplaceExerciseUseCase {
     final updatedDays = List<ProgramDay>.from(activeProgram.program.days);
     updatedDays[dayIndex] = updatedDay;
     
-    final updatedProgram = WorkoutProgram(
-      id: activeProgram.program.id,
-      name: activeProgram.program.name,
-      description: activeProgram.program.description,
-      days: updatedDays,
-      durationWeeks: activeProgram.program.durationWeeks,
-      difficulty: activeProgram.program.difficulty,
-    );
+    // copyWith preserves split/hybrid metadata and userId (Phase 1);
+    // manual rebuilds silently dropped them.
+    final updatedProgram = activeProgram.program.copyWith(days: updatedDays);
     
     final updated = activeProgram.updateProgram(updatedProgram);
     await repository.updateActiveProgram(updated);

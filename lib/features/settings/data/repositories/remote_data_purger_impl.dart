@@ -8,7 +8,9 @@ import '../../domain/repositories/remote_data_purger.dart';
 /// Concrete implementation of [RemoteDataPurger].
 ///
 /// Purges Firestore and Firebase Storage remote records associated with [userId].
-/// Fully sync-ready for Release 1.3 cloud synchronization.
+/// Covers the Phase 2 single cloud layout (flat collections keyed by the
+/// `userId` field + the `users/{uid}` tree) so account deletion cannot
+/// leave synced records behind.
 class RemoteDataPurgerImpl implements RemoteDataPurger {
   final FirebaseFirestore? _firestore;
   final FirebaseStorage? _storage;
@@ -55,6 +57,50 @@ class RemoteDataPurgerImpl implements RemoteDataPurger {
         }
       }
 
+      // Purge flat sync collections (Phase 2 layout): every document
+      // whose `userId` field matches, plus the targets singleton whose
+      // document id IS the user id. Without this, account deletion left
+      // all synced workouts/meals/programs/body entries behind.
+      for (final collection in const [
+        'workouts',
+        'programs',
+        'nutrition',
+        'body_progress',
+      ]) {
+        try {
+          await _purgeCollectionByUserId(firestore, collection, userId);
+        } catch (e) {
+          if (kDebugMode) {
+            AppLogger.debug('⚠️ [RemoteDataPurger] $collection purge note: $e');
+          }
+        }
+      }
+      try {
+        await firestore.collection('nutrition_targets').doc(userId).delete();
+      } catch (e) {
+        if (kDebugMode) {
+          AppLogger.debug('⚠️ [RemoteDataPurger] nutrition_targets purge note: $e');
+        }
+      }
+
+      // Purge known users/{uid} subcollections (backups + any orphaned
+      // pre-Phase-2 nutrition documents). Firestore does not cascade
+      // deletes into subcollections when the parent document is removed.
+      for (final subcollection in const ['backups', 'nutrition']) {
+        try {
+          final snapshot = await firestore
+              .collection('users')
+              .doc(userId)
+              .collection(subcollection)
+              .get();
+          await _batchDelete(firestore, snapshot.docs.map((d) => d.reference));
+        } catch (e) {
+          if (kDebugMode) {
+            AppLogger.debug('⚠️ [RemoteDataPurger] users/$subcollection purge note: $e');
+          }
+        }
+      }
+
       // Purge main user document
       try {
         final userDoc = firestore.collection('users').doc(userId);
@@ -86,6 +132,39 @@ class RemoteDataPurgerImpl implements RemoteDataPurger {
         AppLogger.debug('❌ [RemoteDataPurger] Remote purge failed: $e');
       }
       throw Exception('Remote data purge failed: $e');
+    }
+  }
+
+  /// Deletes every document in [collection] whose `userId` field matches.
+  Future<void> _purgeCollectionByUserId(
+    FirebaseFirestore firestore,
+    String collection,
+    String userId,
+  ) async {
+    final snapshot = await firestore
+        .collection(collection)
+        .where('userId', isEqualTo: userId)
+        .get();
+    await _batchDelete(firestore, snapshot.docs.map((d) => d.reference));
+    if (kDebugMode) {
+      AppLogger.debug(
+        '📊 [RemoteDataPurger] Deleted ${snapshot.docs.length} docs from $collection',
+      );
+    }
+  }
+
+  /// Batch-deletes in chunks (Firestore batch limit is 500 operations).
+  Future<void> _batchDelete(
+    FirebaseFirestore firestore,
+    Iterable<DocumentReference> refs,
+  ) async {
+    final list = refs.toList();
+    for (var start = 0; start < list.length; start += 400) {
+      final batch = firestore.batch();
+      for (final ref in list.skip(start).take(400)) {
+        batch.delete(ref);
+      }
+      await batch.commit();
     }
   }
 }

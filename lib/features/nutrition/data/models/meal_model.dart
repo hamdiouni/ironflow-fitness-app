@@ -149,6 +149,12 @@ class MealModel with _$MealModel {
     required MealVitaminsModel vitamins,
     required MealMineralsModel minerals,
     required String timestamp,
+    // Phase 1 schema v2 — nullable so pre-v2 stored JSON still loads.
+    String? userId,
+    String? foodItemId,
+    String? updatedAt, // ISO 8601 string
+    // Phase 2 tombstone (ISO 8601 string) on cloud-deleted records.
+    String? deletedAt,
   }) = _MealModel;
 
   factory MealModel.fromJson(Map<String, dynamic> json) =>
@@ -163,6 +169,10 @@ class MealModel with _$MealModel {
       vitamins: MealVitaminsModel.fromEntity(meal.vitamins),
       minerals: MealMineralsModel.fromEntity(meal.minerals),
       timestamp: meal.timestamp.toIso8601String(),
+      userId: meal.userId,
+      foodItemId: meal.foodItemId,
+      updatedAt: meal.updatedAt?.toIso8601String(),
+      deletedAt: meal.deletedAt?.toIso8601String(),
     );
   }
 }
@@ -177,6 +187,10 @@ extension MealModelX on MealModel {
       vitamins: vitamins.toEntity(),
       minerals: minerals.toEntity(),
       timestamp: DateTime.parse(timestamp),
+      userId: userId,
+      foodItemId: foodItemId,
+      updatedAt: updatedAt != null ? DateTime.parse(updatedAt!) : null,
+      deletedAt: deletedAt != null ? DateTime.parse(deletedAt!) : null,
     );
   }
 }

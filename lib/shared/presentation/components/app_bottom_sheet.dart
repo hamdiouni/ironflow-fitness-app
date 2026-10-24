@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../core/constants/app_theme.dart';
+import '../../../core/constants/app_theme.dart';
 
 /// Monolithic Sci-Fi modal bottom sheet container and launcher.
 class AppBottomSheet extends StatelessWidget {

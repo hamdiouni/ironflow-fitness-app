@@ -341,28 +341,39 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
       // Update the workout with calories burned
       AppLogger.debug('📊 [WorkoutUI] Updating workout with calories...');
       ref.read(workoutNotifierProvider.notifier).updateCalories(caloriesBurned);
-      
-      // Complete the current workout day in the active program
-      AppLogger.debug('📊 [WorkoutUI] Completing current day in active program...');
-      await ref.read(activeProgramProvider.notifier).completeCurrentDay();
-      AppLogger.debug('✅ [WorkoutUI] Current day completed');
-      
-      // Check if program is now complete
-      final activeProgramAsync = ref.read(activeProgramProvider);
-      final activeProgram = activeProgramAsync.value;
-      
+
+      // Persist + advance as ONE orchestrated unit (Phase 3, F-06):
+      // WorkoutNotifier.finish() runs CompleteWorkoutUseCase, which saves
+      // the workout first and then advances the active program — but only
+      // if this workout was the program's current day. The screen used to
+      // call completeCurrentDay() separately here, which advanced the
+      // program for ANY finished workout (custom/repeat sessions too).
+      AppLogger.debug('📊 [WorkoutUI] Finishing (saving) workout session...');
+      await ref.read(workoutNotifierProvider.notifier).finish();
+      AppLogger.debug('✅ [WorkoutUI] Workout finished successfully');
+
+      // finish() switched state to completed, whose view navigates to the
+      // summary screen in a post-frame callback. If that already ran, this
+      // widget is unmounted and `ref` must not be touched again — workout
+      // and program day are already persisted, only the dialog is skipped.
+      if (!mounted) return;
+
+      // Check if the program is now complete. Read from the repository,
+      // not the notifier: finish() advanced the program through the
+      // repository, and the notifier's state refreshes asynchronously
+      // via the box-watch stream — it may not have landed yet.
+      final activeProgram = await ref
+          .read(activeProgramRepositoryProvider)
+          .loadActiveProgram();
+
       if (activeProgram != null && activeProgram.isProgramComplete) {
         AppLogger.debug('🎉 [WorkoutUI] Program completed!');
-        // Show program complete dialog
+        // Show program complete dialog (workout is already saved; the
+        // dialog's own finish() calls are now harmless no-ops)
         if (context.mounted) {
           AppLogger.debug('📊 [WorkoutUI] Showing program complete dialog...');
           _showProgramCompleteDialog(context, activeProgram);
         }
-      } else {
-        AppLogger.debug('📊 [WorkoutUI] Program not complete, finishing workout normally...');
-        // Finish the workout session normally
-        await ref.read(workoutNotifierProvider.notifier).finish();
-        AppLogger.debug('✅ [WorkoutUI] Workout finished successfully');
       }
     } catch (e, s) {
       AppLogger.debug('❌ [WorkoutUI] Failed to finish workout: $e');
