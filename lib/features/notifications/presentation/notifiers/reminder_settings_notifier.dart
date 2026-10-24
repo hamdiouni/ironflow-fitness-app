@@ -104,20 +104,8 @@ class ReminderSettingsNotifier extends StateNotifier<AsyncValue<ReminderSettings
 
   /// Schedule all notifications based on settings
   Future<void> _scheduleNotifications(ReminderSettings settings) async {
-    // Check if any notifications are enabled
-    final hasEnabledNotifications = settings.workoutRemindersEnabled || 
-                                   settings.mealRemindersEnabled || 
-                                   settings.streakRemindersEnabled;
-    
-    if (hasEnabledNotifications) {
-      // Request exact alarm permission on Android (required for reliable notifications)
-      final hasExactAlarmPermission = await _notificationService.requestExactAlarmPermission();
-      
-      if (!hasExactAlarmPermission) {
-        AppLogger.debug('⚠️ [Notifications] Exact alarm permission not granted - notifications may not be reliable');
-        // Continue anyway - some notifications might still work
-      }
-    }
+    // Reminders intentionally use inexact Android scheduling; no
+    // exact-alarm special access is requested for ordinary reminders.
 
     // Schedule workout reminder
     await _notificationService.scheduleWorkoutReminder(

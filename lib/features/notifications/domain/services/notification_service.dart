@@ -169,56 +169,15 @@ class NotificationService {
     }
   }
 
-  /// Request exact alarm permission (Android 12+)
-  /// This is required for notifications to be delivered at exact times
-  Future<bool> requestExactAlarmPermission() async {
-    if (kIsWeb) return false;
-    if (!_initialized) return false;
-
-    try {
-      // On Android 12+, we need to request exact alarm permission
-      if (Platform.isAndroid) {
-        final androidPlugin = _notifications.resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
-        
-        if (androidPlugin != null) {
-          // Check if exact alarms are allowed
-          final canScheduleExactAlarms = await androidPlugin.canScheduleExactNotifications();
-          
-          if (kDebugMode) {
-            AppLogger.debug('📊 [Notifications] Can schedule exact alarms: $canScheduleExactAlarms');
-          }
-          
-          if (canScheduleExactAlarms == null || !canScheduleExactAlarms) {
-            if (kDebugMode) {
-              AppLogger.debug('⚠️ [Notifications] Requesting exact alarm permission...');
-            }
-            
-            // Request permission by opening settings
-            await androidPlugin.requestExactAlarmsPermission();
-            
-            // Check again after user returns
-            final granted = await androidPlugin.canScheduleExactNotifications();
-            
-            if (kDebugMode) {
-              AppLogger.debug('✓ [Notifications] Exact alarm permission granted: ${granted ?? false}');
-            }
-            
-            return granted ?? false;
-          }
-          
-          return true;
-        }
-      }
-      
-      return true;
-    } catch (e) {
-      if (kDebugMode) {
-        AppLogger.debug('❌ [Notifications] Failed to request exact alarm permission: $e');
-      }
-      return false;
-    }
-  }
+  /// Legacy compatibility shim for callers that previously requested
+  /// exact-alarm access before scheduling reminders.
+  ///
+  /// IronFlow reminders and the rest timer intentionally use
+  /// [AndroidScheduleMode.inexactAllowWhileIdle], so no exact-alarm special
+  /// app access is needed (and no exact-alarm permission is declared).
+  /// The rest timer's source of truth is its persisted absolute end time;
+  /// it re-syncs on resume if Android defers the inexact notification.
+  Future<bool> requestExactAlarmPermission() async => true;
 
   /// Schedule daily workout reminder
   Future<void> scheduleWorkoutReminder(TimeOfDayModel time, {bool enabled = true}) async {
@@ -265,7 +224,7 @@ class NotificationService {
             presentSound: true,
           ),
         ),
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
         uiLocalNotificationDateInterpretation:
             UILocalNotificationDateInterpretation.absoluteTime,
         matchDateTimeComponents: DateTimeComponents.time,
@@ -331,7 +290,7 @@ class NotificationService {
             presentSound: true,
           ),
         ),
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
         uiLocalNotificationDateInterpretation:
             UILocalNotificationDateInterpretation.absoluteTime,
         matchDateTimeComponents: DateTimeComponents.time,
@@ -359,7 +318,7 @@ class NotificationService {
             presentSound: true,
           ),
         ),
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
         uiLocalNotificationDateInterpretation:
             UILocalNotificationDateInterpretation.absoluteTime,
         matchDateTimeComponents: DateTimeComponents.time,
@@ -387,7 +346,7 @@ class NotificationService {
             presentSound: true,
           ),
         ),
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
         uiLocalNotificationDateInterpretation:
             UILocalNotificationDateInterpretation.absoluteTime,
         matchDateTimeComponents: DateTimeComponents.time,
@@ -449,7 +408,7 @@ class NotificationService {
             presentSound: true,
           ),
         ),
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
         uiLocalNotificationDateInterpretation:
             UILocalNotificationDateInterpretation.absoluteTime,
         matchDateTimeComponents: DateTimeComponents.time,
