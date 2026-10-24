@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 // import 'package:google_sign_in/google_sign_in.dart'; // Temporarily disabled
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:progression_tracker/features/auth/domain/entities/user.dart';
+import 'mock_auth_datasource.dart';
 
 abstract class FirebaseAuthDataSource {
   Future<User> signUpWithEmail({
@@ -33,7 +34,22 @@ abstract class FirebaseAuthDataSource {
   Future<void> resetPassword(String email);
 }
 
-class FirebaseAuthDataSourceImpl implements FirebaseAuthDataSource {
+/// Real Firebase auth implementation.
+///
+/// Phase 1 (DATABASE_AND_SYNC_AUDIT F-01): also implements
+/// [MockAuthDataSource] — the two interfaces are method-identical — so
+/// [AuthRepositoryImpl] can be pointed at real Firebase auth behind the
+/// `USE_FIREBASE_AUTH` flag (see auth_provider.dart) without changing the
+/// repository.
+///
+/// Caveat before enabling: [signInWithGoogle] currently throws
+/// "temporarily disabled" (google_sign_in 7.x migration TODO below);
+/// email/password and Apple paths are implemented. Enabling the flag
+/// also changes user ids (mock `user_<hash>` → Firebase uid), so local
+/// records stamped with mock ids should be treated as a fresh account
+/// or migrated deliberately.
+class FirebaseAuthDataSourceImpl
+    implements FirebaseAuthDataSource, MockAuthDataSource {
   final firebase_auth.FirebaseAuth _firebaseAuth;
   // final GoogleSignIn? _googleSignIn; // Temporarily disabled
 

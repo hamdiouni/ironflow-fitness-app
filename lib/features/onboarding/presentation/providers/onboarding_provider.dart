@@ -8,9 +8,12 @@ import '../../../workout/presentation/providers/workout_providers.dart';
 import '../../../workout/domain/entities/workout_program.dart';
 import '../../../workout/domain/splits/entities/split.dart';
 import '../../../nutrition/domain/entities/diet_plan.dart';
+import '../../../nutrition/domain/entities/nutrition_targets.dart';
+import '../../../nutrition/domain/repositories/nutrition_repository.dart';
 import '../../../nutrition/domain/usecases/generate_diet_plan_use_case.dart';
 import '../../../nutrition/domain/usecases/save_diet_plan_use_case.dart';
 import '../../../nutrition/presentation/providers/diet_plan_providers.dart';
+import '../../../nutrition/presentation/providers/nutrition_providers.dart';
 
 final userProfileStorageProvider = Provider<UserProfileStorage>(
   (_) => UserProfileStorage(),
@@ -42,14 +45,22 @@ class OnboardingNotifier extends StateNotifier<AsyncValue<void>> {
     this._generateProgramUseCase,
     this._setActiveProgramUseCase,
     this._generateDietPlanUseCase,
-    this._saveDietPlanUseCase,
-  ) : super(const AsyncValue.data(null));
+    this._saveDietPlanUseCase, {
+    NutritionRepository? nutritionRepository,
+  })  : _nutritionRepository = nutritionRepository,
+        super(const AsyncValue.data(null));
 
   final UserProfileStorage _storage;
   final GenerateWorkoutProgramUseCase _generateProgramUseCase;
   final SetActiveProgramUseCase _setActiveProgramUseCase;
   final GenerateDietPlanUseCase _generateDietPlanUseCase;
   final SaveDietPlanUseCase _saveDietPlanUseCase;
+
+  /// Optional so unit tests can construct this notifier without a nutrition
+  /// stack. When present, onboarding also writes the user's [NutritionTargets]
+  /// derived from the profile (DATABASE_AND_SYNC_AUDIT F-08: these previously
+  /// had no live writer at all, so every targets-based UI read null).
+  final NutritionRepository? _nutritionRepository;
 
   Future<void> completeOnboarding(
     UserProfile profile, {
@@ -86,6 +97,50 @@ class OnboardingNotifier extends StateNotifier<AsyncValue<void>> {
         await _saveDietPlanUseCase(dietPlan);
       }
 
+      // 4b. Derive and persist nutrition targets from the profile so the
+      // nutrition summary / AI deficiency checks have a real target
+      // document from day one (F-08). Best-effort: never fail onboarding.
+      final nutritionRepository = _nutritionRepository;
+      if (nutritionRepository != null) {
+        try {
+          final now = DateTime.now();
+          await nutritionRepository.saveNutritionTargets(
+            NutritionTargets(
+              userId: userId ?? 'local-user',
+              macros: MacroTargets(
+                calories: effectiveProfile.dailyCalorieTarget,
+                protein: effectiveProfile.dailyProteinTargetGrams,
+                carbs: effectiveProfile.dailyCarbTargetGrams,
+                fats: effectiveProfile.dailyFatTargetGrams,
+              ),
+              micros: const MicroTargets(
+                fiber: 30,
+                sugar: 50,
+                sodium: 2300,
+                potassium: 3500,
+              ),
+              vitamins: const VitaminTargets(
+                vitaminA: 900,
+                vitaminB: 2.4,
+                vitaminC: 90,
+                vitaminD: 20,
+                vitaminE: 15,
+              ),
+              minerals: const MineralTargets(
+                calcium: 1000,
+                iron: 18,
+                magnesium: 400,
+                zinc: 11,
+              ),
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+        } catch (_) {
+          // Targets derivation is best-effort.
+        }
+      }
+
       // 5. Mark onboarded
       await _storage.markOnboarded(userId: userId);
 
@@ -104,5 +159,6 @@ final onboardingNotifierProvider =
     ref.watch(setActiveProgramUseCaseProvider),
     GenerateDietPlanUseCase(),
     ref.watch(saveDietPlanUseCaseProvider),
+    nutritionRepository: ref.watch(nutritionRepositoryProvider),
   );
 });

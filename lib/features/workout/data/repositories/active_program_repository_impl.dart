@@ -15,13 +15,53 @@ import '../models/active_program_model.dart';
 class ActiveProgramRepositoryImpl implements ActiveProgramRepository {
   final HiveActiveProgramDataSource dataSource;
 
-  ActiveProgramRepositoryImpl(this.dataSource);
+  /// Owner stamped onto programs that don't already carry one (Phase 1).
+  /// Optional so existing single-argument constructions (tests) still work.
+  final String? userId;
+
+  /// Outbox hook (Phase 2): invoked with the stamped program after every
+  /// successful local save/update so the composition root can enqueue a
+  /// sync action. Errors are swallowed — sync must never break a local
+  /// save. Optional; tests construct without it.
+  final Future<void> Function(ActiveProgram program)? onProgramSaved;
+
+  ActiveProgramRepositoryImpl(this.dataSource, {this.userId, this.onProgramSaved});
+
+  /// Stamps userId onto the ActiveProgram and its embedded program when
+  /// missing, so workouts started from it inherit a real owner, and bumps
+  /// updatedAt (Phase 2 LWW key for program sync).
+  ActiveProgram _stamp(ActiveProgram program) {
+    var result = program.copyWith(updatedAt: DateTime.now());
+    if (userId == null) return result;
+    if (result.userId == null) {
+      result = result.copyWith(userId: userId);
+    }
+    if (result.program.userId == null) {
+      result = result.copyWith(
+        program: result.program.copyWith(userId: userId),
+      );
+    }
+    return result;
+  }
+
+  Future<void> _notifySaved(ActiveProgram program) async {
+    final callback = onProgramSaved;
+    if (callback == null) return;
+    try {
+      await callback(program);
+    } catch (_) {
+      // Outbox enqueue is best-effort relative to the local save, which
+      // has already succeeded; the next save re-enqueues full state.
+    }
+  }
 
   @override
   Future<void> saveActiveProgram(ActiveProgram program) async {
     try {
-      final model = ActiveProgramModel.fromEntity(program);
+      final stamped = _stamp(program);
+      final model = ActiveProgramModel.fromEntity(stamped);
       await dataSource.saveActiveProgram(model);
+      await _notifySaved(stamped);
     } on HiveError catch (e, stackTrace) {
       throw ActiveProgramException(
         message: 'Unable to save your workout program. Please try again.',
@@ -91,8 +131,10 @@ class ActiveProgramRepositoryImpl implements ActiveProgramRepository {
   @override
   Future<void> updateActiveProgram(ActiveProgram program) async {
     try {
-      final model = ActiveProgramModel.fromEntity(program);
+      final stamped = _stamp(program);
+      final model = ActiveProgramModel.fromEntity(stamped);
       await dataSource.saveActiveProgram(model);
+      await _notifySaved(stamped);
     } on HiveError catch (e, stackTrace) {
       throw ActiveProgramException(
         message: 'Unable to update your workout program. Please try again.',
