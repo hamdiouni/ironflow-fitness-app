@@ -15,14 +15,14 @@ class GeminiAIServiceException implements Exception {
   String toString() => 'GeminiAIServiceException: $message${code != null ? ' (Code: $code)' : ''}';
 }
 
-/// AI Service with Dual-Routing: Secure Backend Proxy (Production, AI-01)
-/// and Direct Gemini Developer API (Development / Offline Fallback).
-/// 
+/// AI Service with dual routing: secure backend proxy (production, AI-01)
+/// and direct Gemini Developer API for local debug development only.
+///
 /// Benefits:
 /// - Client-side token protection via serverless proxy
 /// - Per-user rate limiting (30 requests/day quota)
 /// - Firebase Auth JWT authentication
-/// - Direct API fallback for local development
+/// - Direct API fallback is fail-closed outside debug builds
 class GeminiAIService {
   static const String _baseUrl = 'https://generativelanguage.googleapis.com/v1beta';
   static const String _model = 'gemini-1.5-flash'; // High-speed, generous tier model
@@ -30,21 +30,27 @@ class GeminiAIService {
 
   final String _apiKey;
   final String _proxyUrl;
+  final bool _allowDirectApiKey;
   final Future<String?> Function()? _authTokenProvider;
   final http.Client _httpClient;
 
   GeminiAIService({
     String? apiKey,
     String? proxyUrl,
+    bool? allowDirectApiKey,
     Future<String?> Function()? authTokenProvider,
     http.Client? httpClient,
   })  : _apiKey = apiKey ?? AppConfig.getGeminiApiKey(),
         _proxyUrl = proxyUrl ?? AppConfig.getAiProxyUrl(),
+        _allowDirectApiKey =
+            allowDirectApiKey ?? AppConfig.allowDirectAiApiKeys,
         _authTokenProvider = authTokenProvider,
         _httpClient = httpClient ?? http.Client();
 
-  /// Whether a Gemini API key or proxy is configured
-  bool get isConfigured => _proxyUrl.isNotEmpty || _apiKey.isNotEmpty;
+  bool get _hasUsableDirectKey => _allowDirectApiKey && _apiKey.isNotEmpty;
+
+  /// Whether a usable Gemini route is configured under build policy.
+  bool get isConfigured => _proxyUrl.isNotEmpty || _hasUsableDirectKey;
 
   /// Whether requests are routed through a secure backend proxy (AI-01)
   bool get usesProxy => _proxyUrl.isNotEmpty;
@@ -54,10 +60,17 @@ class GeminiAIService {
 
   /// Validates that service is configured
   void validateConfiguration() {
+    if (_proxyUrl.isEmpty && _apiKey.isNotEmpty && !_allowDirectApiKey) {
+      throw GeminiAIServiceException(
+        message: 'Direct Gemini API keys are disabled outside debug builds. '
+            'Configure AI_PROXY_URL for profile/release.',
+        code: 'DIRECT_API_KEY_DISABLED',
+      );
+    }
     if (!isConfigured) {
       throw GeminiAIServiceException(
-        message: 'Gemini AI service not configured. Provide an AI_PROXY_URL or GEMINI_API_KEY via env.json or --dart-define.\n'
-            'Get your free key at: https://makersuite.google.com/app/apikey',
+        message: 'Gemini AI service not configured. Configure AI_PROXY_URL '
+            '(or a debug-only GEMINI_API_KEY for local development).',
         code: 'MISSING_API_KEY',
       );
     }
