@@ -1,50 +1,100 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Helper function to check if user is authenticated
+    // ------------------------------------------------------------------
+    // Helpers
+    // ------------------------------------------------------------------
     function isAuthenticated() {
       return request.auth != null;
     }
-    
-    // Helper function to check if user owns the document
+
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
-    
-    // Users collection
+
+    // Flat top-level collections (workouts/programs/nutrition/body_progress)
+    // store ownership in a `userId` FIELD written by
+    // FirestoreSyncDataSourceImpl, not in the path. These helpers check that
+    // field. See docs/architecture/DATABASE_AND_SYNC_AUDIT.md (F-02): the
+    // previous rules expected the layout `{collection}/{userId}/**`, which
+    // no writer ever produced, so every cloud write was denied.
+    function readsOwnDoc() {
+      return isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    function writesOwnDoc() {
+      return isAuthenticated()
+          && request.resource.data.userId == request.auth.uid;
+    }
+
+    // ------------------------------------------------------------------
+    // Per-user tree: users/{uid} and ALL of its subcollections.
+    // Covers: profile/data (auth) and backups/{id} (settings). Meals and
+    // targets moved OUT of this tree in Phase 2 (they sync through the
+    // flat collections below); any pre-Phase-2 documents left under
+    // users/{uid}/nutrition are orphaned history, readable by the owner
+    // but written by nothing.
+    // ------------------------------------------------------------------
     match /users/{userId} {
-      allow read: if isOwner(userId);
-      allow write: if isOwner(userId);
-      
-      // User profile subcollection
-      match /profile/{document=**} {
-        allow read: if isOwner(userId);
-        allow write: if isOwner(userId);
+      allow read, write: if isOwner(userId);
+
+      match /{subcollection}/{document=**} {
+        allow read, write: if isOwner(userId);
       }
     }
-    
-    // Workouts collection
-    match /workouts/{userId}/{document=**} {
-      allow read: if isOwner(userId);
-      allow write: if isOwner(userId);
+
+    // ------------------------------------------------------------------
+    // Flat collections written by THE sync engine (Phase 2: the single
+    // cloud layout — see FirestoreSyncDataSource). Documents carry a
+    // `userId` field; pulls filter `where('userId', == uid)` and page on
+    // the server `syncedAt` timestamp. Deletes are tombstone updates
+    // (deletedAt field), hence `update` covers them; hard `delete` is
+    // kept for the program document and account cleanup.
+    // The transitional nested `{collection}/{userId}/**` matches were
+    // removed in Phase 2 — nothing has ever written that shape.
+    // ------------------------------------------------------------------
+    match /workouts/{workoutId} {
+      allow read, delete: if readsOwnDoc();
+      allow create, update: if writesOwnDoc();
     }
-    
-    // Programs collection
-    match /programs/{userId}/{document=**} {
-      allow read: if isOwner(userId);
-      allow write: if isOwner(userId);
+
+    match /programs/{programId} {
+      allow read, delete: if readsOwnDoc();
+      allow create, update: if writesOwnDoc();
     }
-    
-    // Nutrition collection
-    match /nutrition/{userId}/{document=**} {
-      allow read: if isOwner(userId);
-      allow write: if isOwner(userId);
+
+    match /nutrition/{logId} {
+      allow read, delete: if readsOwnDoc();
+      allow create, update: if writesOwnDoc();
     }
-    
-    // Body progress collection
-    match /body_progress/{userId}/{document=**} {
-      allow read: if isOwner(userId);
-      allow write: if isOwner(userId);
+
+    match /body_progress/{progressId} {
+      allow read, delete: if readsOwnDoc();
+      allow create, update: if writesOwnDoc();
+    }
+
+    // Nutrition targets: singleton document whose ID IS the user id.
+    match /nutrition_targets/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // NOTE: the old `sync_metadata` collection (cloud-stored pull
+    // cursors) was retired in Phase 2 — cursors are per-device local
+    // state now. No rule => denied, as intended.
+
+    // ------------------------------------------------------------------
+    // Shared read-only catalogs (seeded by the upload scripts). Publicly
+    // readable so catalog screens work pre-login; writes require an
+    // authenticated user (seeding from the app).
+    // ------------------------------------------------------------------
+    match /foods/{foodId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    match /exercises/{exerciseId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
     }
   }
 }

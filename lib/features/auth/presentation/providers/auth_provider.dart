@@ -15,16 +15,36 @@ import '../../domain/usecases/sign_out_use_case.dart';
 import '../../domain/usecases/get_current_user_use_case.dart';
 import '../../domain/usecases/sign_up_use_case.dart';
 import '../../domain/usecases/sign_in_use_case.dart';
-// Mock datasources
+// Datasources
+import '../../data/datasources/firebase_auth_datasource.dart';
+import '../../data/datasources/firestore_user_datasource.dart';
 import '../../data/datasources/mock_auth_datasource.dart';
 import '../../data/datasources/mock_user_datasource.dart';
 import '../../data/repositories/auth_repository_impl.dart';
 
-// Repository Provider - Using Mock Datasources
+/// Whether the app authenticates against real Firebase (Phase 1 seam).
+///
+/// Defaults to `false` (mock auth) so behavior is unchanged. Enable with
+/// `--dart-define=USE_FIREBASE_AUTH=true` once the Firebase project is
+/// configured and `firebase deploy --only firestore:rules,firestore:indexes`
+/// has run. Before flipping the default, read the caveats on
+/// [FirebaseAuthDataSourceImpl]: Google sign-in is still stubbed out in
+/// the Firebase implementation, and uids change from mock ids to real
+/// Firebase uids.
+const bool kUseFirebaseAuth = bool.fromEnvironment(
+  'USE_FIREBASE_AUTH',
+  defaultValue: false,
+);
+
+// Repository Provider — mock by default, real Firebase behind the flag.
+// Both Firebase implementations also implement the mock interfaces, so
+// AuthRepositoryImpl is unaffected by the choice.
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepositoryImpl(
-    authDataSource: MockAuthDataSourceImpl(),
-    userDataSource: MockUserDataSourceImpl(),
+    authDataSource:
+        kUseFirebaseAuth ? FirebaseAuthDataSourceImpl() : MockAuthDataSourceImpl(),
+    userDataSource:
+        kUseFirebaseAuth ? FirestoreUserDataSourceImpl() : MockUserDataSourceImpl(),
   );
 });
 
@@ -76,8 +96,13 @@ final currentUserProvider = FutureProvider<User?>((ref) async {
   return await useCase();
 });
 
-// User Profile Provider
-final userProfileProvider = FutureProvider.family<UserProfile?, String>((ref, userId) async {
+// User Profile Provider (auth account profile, keyed by user id).
+//
+// Renamed from `userProfileProvider` (Phase 3, F-10): that name
+// belongs to the onboarding profile provider every screen actually
+// uses; this auth-family one had zero callers but shadowed it in any
+// file importing both.
+final authUserProfileProvider = FutureProvider.family<UserProfile?, String>((ref, userId) async {
   final repository = ref.watch(authRepositoryProvider);
   return await repository.getUserProfile(userId);
 });
