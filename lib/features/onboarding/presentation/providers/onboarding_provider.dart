@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../../data/user_profile_storage.dart';
 import '../../domain/entities/user_profile.dart';
 import '../../../workout/domain/usecases/generate_workout_program_use_case.dart';
@@ -20,13 +21,18 @@ final userProfileStorageProvider = Provider<UserProfileStorage>(
 );
 
 final isOnboardedProvider = FutureProvider<bool>((ref) async {
+  // Re-evaluate when the signed-in account changes: onboarding state and
+  // the onboarding profile are stored per user id, so a cached result
+  // from the previous account must never leak into the next one.
+  final userId = ref.watch(authNotifierProvider.select((s) => s.user?.id));
   final storage = ref.watch(userProfileStorageProvider);
-  return storage.isOnboarded();
+  return storage.isOnboarded(userId: userId);
 });
 
 final userProfileProvider = FutureProvider<UserProfile?>((ref) async {
+  final userId = ref.watch(authNotifierProvider.select((s) => s.user?.id));
   final storage = ref.watch(userProfileStorageProvider);
-  return storage.loadProfile();
+  return storage.loadProfile(userId: userId);
 });
 
 /// Notifier for saving the user profile during onboarding.

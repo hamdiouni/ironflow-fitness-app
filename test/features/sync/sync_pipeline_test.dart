@@ -224,32 +224,37 @@ class FakeHiveActiveProgramDataSource implements HiveActiveProgramDataSource {
   ActiveProgramModel? current;
 
   @override
-  Future<ActiveProgramModel?> loadActiveProgram() async => current;
+  Future<ActiveProgramModel?> loadActiveProgram({String? userId}) async =>
+      current;
 
   @override
-  Future<void> saveActiveProgram(ActiveProgramModel program) async {
+  Future<void> saveActiveProgram(
+    ActiveProgramModel program, {
+    String? userId,
+  }) async {
     current = program;
   }
 
   @override
-  Future<void> clearActiveProgram() async {
+  Future<void> clearActiveProgram({String? userId}) async {
     current = null;
   }
 
   @override
-  Future<void> archiveCurrentProgram() async {
+  Future<void> archiveCurrentProgram({String? userId}) async {
     // No-op for sync pipeline test
   }
 
   @override
-  Future<ActiveProgramModel?> restoreArchivedProgram() async => null;
+  Future<ActiveProgramModel?> restoreArchivedProgram({String? userId}) async =>
+      null;
 
   @override
-  Future<bool> hasArchivedProgram() async => false;
+  Future<bool> hasArchivedProgram({String? userId}) async => false;
 
   @override
-  Stream<ActiveProgramModel?> watchActiveProgram() async* {
-    yield await loadActiveProgram();
+  Stream<ActiveProgramModel?> watchActiveProgram({String? userId}) async* {
+    yield await loadActiveProgram(userId: userId);
   }
 }
 

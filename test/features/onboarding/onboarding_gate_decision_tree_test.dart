@@ -7,6 +7,7 @@ import 'package:progression_tracker/core/router/app_router.dart';
 import 'package:progression_tracker/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:progression_tracker/features/auth/data/datasources/auth_session_storage.dart';
 import 'package:progression_tracker/features/onboarding/data/user_profile_storage.dart';
+import 'package:progression_tracker/features/onboarding/domain/entities/user_profile.dart';
 
 void main() {
   late Directory tempDir;
@@ -252,6 +253,35 @@ void main() {
       await storage.clearDraft(userId: userBId);
       expect(await storage.getDraft(userId: userBId), isNull);
       expect(await storage.getDraft(userId: userAId), isNotNull);
+    });
+
+    test('Saved onboarding profile is loaded only for its own account',
+        () async {
+      final storage = UserProfileStorage();
+      const userAId = 'user_alpha_111';
+      const userBId = 'user_beta_222';
+
+      await storage.saveProfile(
+        const UserProfile(
+          goal: FitnessGoal.gainMuscle,
+          age: 31,
+          weightKg: 88,
+          heightCm: 182,
+          fitnessLevel: FitnessLevel.advanced,
+          equipment: EquipmentType.gym,
+          workoutDaysPerWeek: 5,
+          budget: BudgetLevel.high,
+        ),
+        userId: userAId,
+      );
+
+      final loadedA = await storage.loadProfile(userId: userAId);
+      expect(loadedA?.age, 31);
+      expect(loadedA?.weightKg, 88);
+
+      // The legacy global profile must not make User A's data appear
+      // as User B's profile on the same device.
+      expect(await storage.loadProfile(userId: userBId), isNull);
     });
 
     testWidgets('Returning complete user (User A) is sent to /home and cannot visit /onboarding',

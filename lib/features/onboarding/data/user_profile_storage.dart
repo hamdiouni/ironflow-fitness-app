@@ -178,9 +178,25 @@ class UserProfileStorage {
     if (resolvedUid != null && resolvedUid.isNotEmpty) {
       raw = box.get(_getDraftDataKey(resolvedUid)) as String?;
       step = box.get(_getDraftStepKey(resolvedUid), defaultValue: 0) as int;
-    }
 
-    if (raw == null) {
+      if (raw == null) {
+        // Same one-time legacy adoption rule as profiles: only when no
+        // account-scoped draft exists yet, so one account's onboarding
+        // draft is never resumed by another account.
+        final hasScopedDraft = box.keys
+            .any((key) => key.toString().startsWith(_draftDataKeyPrefix));
+        if (!hasScopedDraft) {
+          raw = box.get(_legacyDraftDataKey) as String?;
+          step = box.get(_legacyDraftStepKey, defaultValue: 0) as int;
+          if (raw != null) {
+            await box.put(_getDraftDataKey(resolvedUid), raw);
+            await box.put(_getDraftStepKey(resolvedUid), step);
+            await box.delete(_legacyDraftDataKey);
+            await box.delete(_legacyDraftStepKey);
+          }
+        }
+      }
+    } else {
       raw = box.get(_legacyDraftDataKey) as String?;
       step = box.get(_legacyDraftStepKey, defaultValue: 0) as int;
     }
@@ -211,9 +227,13 @@ class UserProfileStorage {
     final resolvedUid = _resolveCurrentUserId(userId);
     final jsonStr = jsonEncode(profile.toJson());
     if (resolvedUid != null && resolvedUid.isNotEmpty) {
+      // Account-scoped only. The legacy global key used to be overwritten
+      // on every save, which made the most recent account's profile the
+      // fallback profile for every other account on the device.
       await box.put(_getProfileKey(resolvedUid), jsonStr);
+    } else {
+      await box.put(_legacyProfileKey, jsonStr);
     }
-    await box.put(_legacyProfileKey, jsonStr);
   }
 
   Future<UserProfile?> loadProfile({String? userId}) async {
@@ -222,8 +242,24 @@ class UserProfileStorage {
     String? raw;
     if (resolvedUid != null && resolvedUid.isNotEmpty) {
       raw = box.get(_getProfileKey(resolvedUid)) as String?;
+      if (raw == null) {
+        // One-time migration for installs that predate per-account keys:
+        // adopt the legacy profile only when NO account-scoped profile
+        // exists yet. If one does, the legacy value may belong to a
+        // different account and must not be shown to this user.
+        final hasScopedProfile = box.keys
+            .any((key) => key.toString().startsWith(_profileKeyPrefix));
+        if (!hasScopedProfile) {
+          raw = box.get(_legacyProfileKey) as String?;
+          if (raw != null) {
+            await box.put(_getProfileKey(resolvedUid), raw);
+            await box.delete(_legacyProfileKey);
+          }
+        }
+      }
+    } else {
+      raw = box.get(_legacyProfileKey) as String?;
     }
-    raw ??= box.get(_legacyProfileKey) as String?;
     if (raw == null) return null;
     try {
       return UserProfile.fromJson(jsonDecode(raw) as Map<String, dynamic>);

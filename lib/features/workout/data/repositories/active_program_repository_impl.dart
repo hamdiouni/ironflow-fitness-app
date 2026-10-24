@@ -60,7 +60,7 @@ class ActiveProgramRepositoryImpl implements ActiveProgramRepository {
     try {
       final stamped = _stamp(program);
       final model = ActiveProgramModel.fromEntity(stamped);
-      await dataSource.saveActiveProgram(model);
+      await dataSource.saveActiveProgram(model, userId: userId);
       await _notifySaved(stamped);
     } on HiveError catch (e, stackTrace) {
       throw ActiveProgramException(
@@ -86,7 +86,7 @@ class ActiveProgramRepositoryImpl implements ActiveProgramRepository {
   @override
   Future<ActiveProgram?> loadActiveProgram() async {
     try {
-      final model = await dataSource.loadActiveProgram();
+      final model = await dataSource.loadActiveProgram(userId: userId);
       return model?.toEntity();
     } on HiveError catch (e, stackTrace) {
       throw ActiveProgramException(
@@ -112,7 +112,7 @@ class ActiveProgramRepositoryImpl implements ActiveProgramRepository {
   @override
   Future<void> clearActiveProgram() async {
     try {
-      await dataSource.clearActiveProgram();
+      await dataSource.clearActiveProgram(userId: userId);
     } on HiveError catch (e, stackTrace) {
       throw ActiveProgramException(
         message: 'Unable to clear your workout program. Please try again.',
@@ -133,7 +133,7 @@ class ActiveProgramRepositoryImpl implements ActiveProgramRepository {
     try {
       final stamped = _stamp(program);
       final model = ActiveProgramModel.fromEntity(stamped);
-      await dataSource.saveActiveProgram(model);
+      await dataSource.saveActiveProgram(model, userId: userId);
       await _notifySaved(stamped);
     } on HiveError catch (e, stackTrace) {
       throw ActiveProgramException(
@@ -159,14 +159,14 @@ class ActiveProgramRepositoryImpl implements ActiveProgramRepository {
   @override
   Future<void> archiveCurrentProgram() async {
     try {
-      await dataSource.archiveCurrentProgram();
+      await dataSource.archiveCurrentProgram(userId: userId);
     } catch (_) {}
   }
 
   @override
   Future<ActiveProgram?> restoreArchivedProgram() async {
     try {
-      final model = await dataSource.restoreArchivedProgram();
+      final model = await dataSource.restoreArchivedProgram(userId: userId);
       return model?.toEntity();
     } catch (_) {
       return null;
@@ -176,7 +176,7 @@ class ActiveProgramRepositoryImpl implements ActiveProgramRepository {
   @override
   Future<bool> hasArchivedProgram() async {
     try {
-      return await dataSource.hasArchivedProgram();
+      return await dataSource.hasArchivedProgram(userId: userId);
     } catch (_) {
       return false;
     }
