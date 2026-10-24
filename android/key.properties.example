@@ -1,0 +1,6 @@
+# Copy to android/key.properties (never commit the real file or keystore).
+# CI should write this file from encrypted secrets for store builds.
+storeFile=/absolute/path/to/upload-keystore.jks
+storePassword=REPLACE_ME
+keyAlias=upload
+keyPassword=REPLACE_ME
