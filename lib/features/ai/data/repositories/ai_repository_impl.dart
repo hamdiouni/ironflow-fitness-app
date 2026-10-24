@@ -4,9 +4,16 @@ import '../../domain/entities/chat_message.dart';
 import '../../domain/repositories/ai_repository.dart';
 import '../datasources/ai_service.dart';
 
-/// Implementation of AIRepository
+/// Implementation of AIRepository.
+///
+/// The repository deliberately does **not** gather personal data itself.
+/// Callers may inject a [contextBuilder] only after applying their own
+/// consent/privacy gate (for example, an adapter around
+/// `BuildAIContextUseCase`). Without a builder, [getContext] returns an
+/// empty string and prompts must not claim user-specific knowledge.
 class AIRepositoryImpl implements AIRepository {
   final AIService _aiService;
+  final Future<String> Function()? _contextBuilder;
   final List<ChatMessage> _chatHistory = [];
 
   static const String _systemPrompt = '''You are an expert fitness coach with deep knowledge of:
@@ -15,16 +22,17 @@ class AIRepositoryImpl implements AIRepository {
 - Body composition
 - Performance optimization
 
-You have access to the user's fitness data and must:
-1. Provide personalized advice based on their data
-2. Identify specific issues (e.g., "Your squat hasn't improved in 4 weeks")
-3. Give actionable recommendations
-4. Celebrate achievements
-5. Never give generic advice
+Use only facts present in the supplied user context. If no user context is
+supplied, be transparent that you do not have this user's personal history,
+avoid inventing user-specific observations, and give safe general guidance or
+ask for the missing details. When context is supplied, be specific,
+actionable, concise, and celebrate real achievements.''';
 
-Keep responses concise and actionable. When suggesting changes, be specific about what to do and why.''';
-
-  AIRepositoryImpl({required AIService aiService}) : _aiService = aiService;
+  AIRepositoryImpl({
+    required AIService aiService,
+    Future<String> Function()? contextBuilder,
+  })  : _aiService = aiService,
+        _contextBuilder = contextBuilder;
 
   @override
   Future<AIResponse> sendMessage(
@@ -145,9 +153,15 @@ Keep responses concise and actionable. When suggesting changes, be specific abou
 
   @override
   Future<String> getContext() async {
-    // TODO: Implement context building from user data
-    // This will be implemented in task 5.2
-    return '';
+    final builder = _contextBuilder;
+    if (builder == null) return '';
+    try {
+      return await builder();
+    } catch (_) {
+      // Context is optional enrichment. A failed personal-data gather must
+      // not leak partial data or break a non-personalized chat.
+      return '';
+    }
   }
 
   @override

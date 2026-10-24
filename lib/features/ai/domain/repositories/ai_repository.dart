@@ -20,9 +20,10 @@ abstract class AIRepository {
     String? context,
   });
 
-  /// Gets the AI context based on user data
-  /// 
-  /// Gathers user profile, workouts, nutrition, etc.
+  /// Gets optional AI context from a caller-supplied, consent-gated builder.
+  ///
+  /// Implementations must not gather personal data implicitly. An empty
+  /// string means "no personal context is available/authorized".
   Future<String> getContext();
 
   /// Parses a raw AI response into structured format
