@@ -310,8 +310,9 @@ class ActiveProgramNotifier extends StateNotifier<AsyncValue<ActiveProgram?>> {
 /// backed by the Hive box-watch stream.
 final activeProgramStreamProvider = StreamProvider<ActiveProgram?>((ref) {
   final dataSource = ref.watch(hiveActiveProgramDataSourceProvider);
+  final userId = ref.watch(authNotifierProvider.select((s) => s.user?.id));
   return dataSource
-      .watchActiveProgram()
+      .watchActiveProgram(userId: userId)
       .map((model) => model?.toEntity());
 });
 

@@ -285,13 +285,13 @@ class SyncService {
         }
       }
 
-      // Active program (singleton)
-      final program = await _hivePrograms.loadActiveProgram();
+      // Active program (stored per user locally)
+      final program = await _hivePrograms.loadActiveProgram(userId: userId);
       if (program != null && !_isForeign(program.userId, userId)) {
         var effective = program;
         if (_isUnowned(program.userId)) {
           effective = program.copyWith(userId: userId);
-          await _hivePrograms.saveActiveProgram(effective);
+          await _hivePrograms.saveActiveProgram(effective, userId: userId);
         }
         await enqueue(
           type: SyncActionType.update,
@@ -569,12 +569,12 @@ class SyncService {
     final since = await _syncQueue.getCursor(_programsKey);
     final cloud = await _firestoreSync.getActiveProgram(userId, since: since);
     if (cloud != null) {
-      final local = await _hivePrograms.loadActiveProgram();
+      final local = await _hivePrograms.loadActiveProgram(userId: userId);
       if (local == null ||
           _isAfter(_parse(cloud.updatedAt), _parse(local.updatedAt))) {
         // Full state (day index + completed days) comes with the model;
         // the old pull reconstructed a fresh ActiveProgram at day 0.
-        await _hivePrograms.saveActiveProgram(cloud);
+        await _hivePrograms.saveActiveProgram(cloud, userId: userId);
         AppLogger.debug('📥 Pulled active program ${cloud.id}');
       }
     }

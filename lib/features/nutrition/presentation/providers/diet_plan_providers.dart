@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../../data/datasources/hive_diet_plan_datasource.dart';
 import '../../data/repositories/diet_plan_repository_impl.dart';
 import '../../domain/entities/diet_plan_state.dart';
@@ -64,6 +65,10 @@ final clearDietPlanUseCaseProvider = Provider<ClearDietPlanUseCase>((ref) {
 /// 
 /// **Validates: Requirements 7.5, 9.3**
 final dietPlanProvider = FutureProvider<DietPlanState?>((ref) async {
+  // Plans are stored per account (see HiveDietPlanDataSource); reload
+  // when the signed-in user changes instead of serving the previous
+  // account's cached plan.
+  ref.watch(authNotifierProvider.select((s) => s.user?.id));
   final repository = ref.watch(dietPlanRepositoryProvider);
   return await repository.loadDietPlan();
 });
