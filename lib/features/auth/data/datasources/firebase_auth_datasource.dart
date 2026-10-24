@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
-// import 'package:google_sign_in/google_sign_in.dart'; // Temporarily disabled
+import 'package:flutter/foundation.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:progression_tracker/features/auth/domain/entities/user.dart';
 import 'mock_auth_datasource.dart';
@@ -42,22 +43,25 @@ abstract class FirebaseAuthDataSource {
 /// `USE_FIREBASE_AUTH` flag (see auth_provider.dart) without changing the
 /// repository.
 ///
-/// Caveat before enabling: [signInWithGoogle] currently throws
-/// "temporarily disabled" (google_sign_in 7.x migration TODO below);
-/// email/password and Apple paths are implemented. Enabling the flag
-/// also changes user ids (mock `user_<hash>` → Firebase uid), so local
-/// records stamped with mock ids should be treated as a fresh account
-/// or migrated deliberately.
+/// Caveat before enabling: Google sign-in still requires the normal
+/// Firebase/Google platform configuration (Android SHA fingerprints, web
+/// OAuth client, iOS URL scheme/client IDs). Enabling the flag also changes
+/// user ids (mock `user_<hash>` → Firebase uid), so local records stamped
+/// with mock ids should be treated as a fresh account or migrated
+/// deliberately.
 class FirebaseAuthDataSourceImpl
     implements FirebaseAuthDataSource, MockAuthDataSource {
   final firebase_auth.FirebaseAuth _firebaseAuth;
-  // final GoogleSignIn? _googleSignIn; // Temporarily disabled
+  final GoogleSignIn _googleSignIn;
 
   FirebaseAuthDataSourceImpl({
     firebase_auth.FirebaseAuth? firebaseAuth,
-    // GoogleSignIn? googleSignIn, // Temporarily disabled
-  })  : _firebaseAuth = firebaseAuth ?? firebase_auth.FirebaseAuth.instance;
-        // _googleSignIn = googleSignIn; // Temporarily disabled
+    GoogleSignIn? googleSignIn,
+  })  : _firebaseAuth = firebaseAuth ?? firebase_auth.FirebaseAuth.instance,
+        _googleSignIn = googleSignIn ??
+            GoogleSignIn(
+              scopes: const <String>['email', 'profile'],
+            );
 
   @override
   Future<User> signUpWithEmail({
@@ -105,38 +109,46 @@ class FirebaseAuthDataSourceImpl
 
   @override
   Future<User> signInWithGoogle() async {
-    // TODO: Fix GoogleSignIn API compatibility with google_sign_in 7.x
-    throw Exception('Google Sign-In is temporarily disabled. Please use email/password authentication.');
-    
-    /* Temporarily disabled - needs google_sign_in 7.x API update
     try {
-      if (_googleSignIn == null) {
-        throw Exception('Google Sign-In is temporarily disabled. Please use email/password authentication.');
-      }
-      
-      final googleUser = await _googleSignIn!.signIn();
-      if (googleUser == null) {
-        throw Exception('Google sign in cancelled');
+      firebase_auth.UserCredential userCredential;
+
+      if (kIsWeb) {
+        // google_sign_in's programmatic signIn() is not the supported web
+        // flow; FirebaseAuth popup auth is the canonical web path.
+        final provider = firebase_auth.GoogleAuthProvider()
+          ..addScope('email')
+          ..addScope('profile')
+          ..setCustomParameters(<String, String>{'prompt': 'select_account'});
+        userCredential = await _firebaseAuth.signInWithPopup(provider);
+      } else {
+        final googleUser = await _googleSignIn.signIn();
+        if (googleUser == null) {
+          throw Exception('Google sign in cancelled');
+        }
+
+        final googleAuth = await googleUser.authentication;
+        if (googleAuth.accessToken == null && googleAuth.idToken == null) {
+          throw Exception('Google sign in did not return auth tokens');
+        }
+
+        final credential = firebase_auth.GoogleAuthProvider.credential(
+          accessToken: googleAuth.accessToken,
+          idToken: googleAuth.idToken,
+        );
+        userCredential = await _firebaseAuth.signInWithCredential(credential);
       }
 
-      final googleAuth = await googleUser.authentication;
-      final credential = firebase_auth.GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
-
-      final userCredential = await _firebaseAuth.signInWithCredential(credential);
       final firebaseUser = userCredential.user;
-
       if (firebaseUser == null) {
         throw Exception('Google sign in failed');
       }
 
       return _mapFirebaseUserToUser(firebaseUser);
+    } on firebase_auth.FirebaseAuthException catch (e) {
+      throw _handleAuthException(e);
     } catch (e) {
       throw Exception('Google sign in error: $e');
     }
-    */
   }
 
   @override
@@ -171,10 +183,12 @@ class FirebaseAuthDataSourceImpl
   Future<void> signOut() async {
     try {
       await _firebaseAuth.signOut();
-      // Google Sign-In temporarily disabled
-      // if (_googleSignIn != null) {
-      //   await _googleSignIn!.signOut();
-      // }
+      try {
+        await _googleSignIn.signOut();
+      } catch (_) {
+        // Best effort: the Firebase session is already closed. Google
+        // plugin state must not turn a successful sign-out into a failure.
+      }
     } catch (e) {
       throw Exception('Sign out error: $e');
     }

@@ -27,10 +27,9 @@ import '../../data/repositories/auth_repository_impl.dart';
 /// Defaults to `false` (mock auth) so behavior is unchanged. Enable with
 /// `--dart-define=USE_FIREBASE_AUTH=true` once the Firebase project is
 /// configured and `firebase deploy --only firestore:rules,firestore:indexes`
-/// has run. Before flipping the default, read the caveats on
-/// [FirebaseAuthDataSourceImpl]: Google sign-in is still stubbed out in
-/// the Firebase implementation, and uids change from mock ids to real
-/// Firebase uids.
+/// has run. Before flipping the default, complete the platform OAuth setup
+/// (Android SHA fingerprints, web client, iOS URL scheme/client IDs) and
+/// decide the mock-id → Firebase-uid local-data migration story.
 const bool kUseFirebaseAuth = bool.fromEnvironment(
   'USE_FIREBASE_AUTH',
   defaultValue: false,
