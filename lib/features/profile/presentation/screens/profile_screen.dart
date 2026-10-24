@@ -12,11 +12,9 @@ import '../../../ai/presentation/widgets/ai_entry_button.dart';
 import '../../../ai/presentation/widgets/contextual_insight_banner.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../../../nutrition/domain/entities/diet_plan.dart';
-import '../../../nutrition/domain/usecases/generate_diet_plan_use_case.dart';
 import '../../../onboarding/domain/entities/user_profile.dart';
 import '../../../onboarding/presentation/providers/onboarding_provider.dart';
-import '../../../workout/domain/entities/workout_program.dart';
-import '../../../workout/domain/usecases/generate_workout_program_use_case.dart';
+import '../providers/profile_data_provider.dart';
 
 /// Monolithic Sci-Fi Profile & Settings screen.
 class ProfileScreen extends ConsumerWidget {
@@ -163,13 +161,18 @@ class _ProfileBody extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final program = GenerateWorkoutProgramUseCase().call(userProfile: profile);
-    final dietPlan = GenerateDietPlanUseCase().call(profile);
+    // Everything below is derived from this user's real records
+    // (account, body entries, workouts, active program, saved diet
+    // plan/targets, today's meals) — see profile_data_provider.dart.
+    // Nothing is regenerated or hardcoded per build anymore.
+    final data = ref.watch(profileDataProvider) ??
+        buildProfileData(profile: profile);
 
     return CustomScrollView(
       slivers: [
-        SliverToBoxAdapter(child: _ProfileHeader(profile: profile, tokens: tokens)),
-        SliverToBoxAdapter(child: _StatsRow(profile: profile, tokens: tokens)),
+        SliverToBoxAdapter(child: _ProfileHeader(data: data, tokens: tokens)),
+        SliverToBoxAdapter(child: _StatsRow(data: data, tokens: tokens)),
+        SliverToBoxAdapter(child: _ActivityRow(data: data, tokens: tokens)),
         const SliverToBoxAdapter(
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -177,13 +180,10 @@ class _ProfileBody extends ConsumerWidget {
           ),
         ),
         SliverToBoxAdapter(
-          child: _GoalCard(profile: profile, program: program, tokens: tokens),
+          child: _GoalCard(data: data, tokens: tokens),
         ),
         SliverToBoxAdapter(
-          child: _DietPlanCard(dietPlan: dietPlan, tokens: tokens),
-        ),
-        SliverToBoxAdapter(
-          child: _DietTipsCard(tips: dietPlan.tips, tokens: tokens),
+          child: _DietPlanCard(data: data, tokens: tokens),
         ),
         SliverToBoxAdapter(
           child: _SettingsSection(ref: ref, tokens: tokens),
@@ -197,12 +197,21 @@ class _ProfileBody extends ConsumerWidget {
 // ── Profile Header ────────────────────────────────────────────────────────────
 
 class _ProfileHeader extends StatelessWidget {
-  const _ProfileHeader({required this.profile, required this.tokens});
-  final UserProfile profile;
+  const _ProfileHeader({required this.data, required this.tokens});
+  final ProfileData data;
   final AppThemeTokens tokens;
 
   @override
   Widget build(BuildContext context) {
+    final profile = data.profile;
+    final photoUrl = data.accountUser?.photoUrl?.trim();
+    final memberSince = data.accountUser?.createdAt;
+    final memberSinceLabel =
+        memberSince == null ? '' : ' · SINCE ${memberSince.year}';
+    final protocolLabel = data.activeProgram != null
+        ? 'DAY ${data.activeProgram!.currentDayIndex + 1} · '
+            '${data.activeProgram!.program.daysPerWeek}X / WEEK'
+        : '${profile.workoutDaysPerWeek} DAYS / WEEK TARGET';
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
       child: Container(
@@ -224,10 +233,34 @@ class _ProfileHeader extends StatelessWidget {
                 border: Border.all(color: tokens.borderSubtle, width: 1),
               ),
               child: Center(
-                child: Text(
-                  profile.goal.emoji,
-                  style: const TextStyle(fontSize: 28),
-                ),
+                child: (photoUrl != null && photoUrl.isNotEmpty)
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(tokens.radiusSm),
+                        child: Image.network(
+                          photoUrl,
+                          width: 64,
+                          height: 64,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, _, _) => Text(
+                            data.initials,
+                            style: TextStyle(
+                              fontFamily: AppTypography.displayFontFamily,
+                              color: tokens.kineticAccent,
+                              fontSize: 22,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                      )
+                    : Text(
+                        data.initials,
+                        style: TextStyle(
+                          fontFamily: AppTypography.displayFontFamily,
+                          color: tokens.kineticAccent,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
               ),
             ),
             const SizedBox(width: 14),
@@ -236,7 +269,9 @@ class _ProfileHeader extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    profile.goal.displayName.toUpperCase(),
+                    data.displayName.toUpperCase(),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontFamily: AppTypography.displayFontFamily,
                       color: tokens.textPrimary,
@@ -245,9 +280,25 @@ class _ProfileHeader extends StatelessWidget {
                       letterSpacing: -0.3,
                     ),
                   ),
+                  if (data.email != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      data.email!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontFamily: AppTypography.bodyFontFamily,
+                        color: tokens.textSecondary,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 4),
                   Text(
-                    '${profile.fitnessLevel.displayName.toUpperCase()} · ${profile.equipment.displayName.toUpperCase()}',
+                    '${profile.goal.emoji} ${profile.goal.displayName.toUpperCase()} · '
+                    '${profile.fitnessLevel.displayName.toUpperCase()} · '
+                    '${profile.equipment.displayName.toUpperCase()}'
+                    '$memberSinceLabel',
                     style: TextStyle(
                       fontFamily: AppTypography.displayFontFamily,
                       color: tokens.textMuted,
@@ -268,7 +319,7 @@ class _ProfileHeader extends StatelessWidget {
                       ),
                     ),
                     child: Text(
-                      '${profile.workoutDaysPerWeek} DAYS / WEEK PROTOCOL',
+                      protocolLabel,
                       style: TextStyle(
                         fontFamily: AppTypography.displayFontFamily,
                         color: tokens.kineticAccent,
@@ -291,12 +342,13 @@ class _ProfileHeader extends StatelessWidget {
 // ── Stats Row ─────────────────────────────────────────────────────────────────
 
 class _StatsRow extends StatelessWidget {
-  const _StatsRow({required this.profile, required this.tokens});
-  final UserProfile profile;
+  const _StatsRow({required this.data, required this.tokens});
+  final ProfileData data;
   final AppThemeTokens tokens;
 
   @override
   Widget build(BuildContext context) {
+    final profile = data.profile;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Row(
@@ -314,8 +366,10 @@ class _StatsRow extends StatelessWidget {
           Expanded(
             child: _StatCard(
               label: 'WEIGHT',
-              value: profile.weightKg.toStringAsFixed(1),
-              unit: 'KG',
+              // Latest logged body entry, not the frozen onboarding
+              // weight (which is only the pre-logging fallback).
+              value: data.currentWeightKg.toStringAsFixed(1),
+              unit: data.latestBodyEntry == null ? 'KG' : 'KG · LATEST',
               color: tokens.kineticAccent,
               tokens: tokens,
             ),
@@ -334,9 +388,9 @@ class _StatsRow extends StatelessWidget {
           Expanded(
             child: _StatCard(
               label: 'BMI',
-              value: profile.bmi.toStringAsFixed(1),
+              value: data.bmi.toStringAsFixed(1),
               unit: 'INDEX',
-              color: _bmiColor(profile.bmi),
+              color: _bmiColor(data.bmi),
               tokens: tokens,
             ),
           ),
@@ -350,6 +404,70 @@ class _StatsRow extends StatelessWidget {
     if (bmi < 25) return tokens.kineticAccent;
     if (bmi < 30) return tokens.warning;
     return tokens.error;
+  }
+}
+
+/// Real training totals for this user, computed from their workout
+/// history (see [buildProfileData]) — replaces any stored/global
+/// counters on this screen.
+class _ActivityRow extends StatelessWidget {
+  const _ActivityRow({required this.data, required this.tokens});
+  final ProfileData data;
+  final AppThemeTokens tokens;
+
+  String _volumeLabel(double kg) {
+    if (kg >= 1000) return '${(kg / 1000).toStringAsFixed(1)}k';
+    return kg.toStringAsFixed(0);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: Row(
+        children: [
+          Expanded(
+            child: _StatCard(
+              label: 'WORKOUTS',
+              value: '${data.totalWorkouts}',
+              unit: 'TOTAL',
+              color: tokens.kineticAccent,
+              tokens: tokens,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: _StatCard(
+              label: 'THIS WEEK',
+              value: '${data.workoutsThisWeek}',
+              unit: 'SESSIONS',
+              color: tokens.cyanAccent,
+              tokens: tokens,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: _StatCard(
+              label: 'STREAK',
+              value: '${data.currentStreakDays}',
+              unit: 'DAYS',
+              color: tokens.violetAccent,
+              tokens: tokens,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: _StatCard(
+              label: 'VOLUME',
+              value: _volumeLabel(data.totalVolumeKg),
+              unit: 'KG LIFTED',
+              color: tokens.warning,
+              tokens: tokens,
+            ),
+          ),
+        ],
+      ),
+    ).animate().fadeIn(delay: 110.ms);
   }
 }
 
@@ -421,17 +539,89 @@ class _StatCard extends StatelessWidget {
 
 class _GoalCard extends StatelessWidget {
   const _GoalCard({
-    required this.profile,
-    required this.program,
+    required this.data,
     required this.tokens,
   });
 
-  final UserProfile profile;
-  final WorkoutProgram program;
+  final ProfileData data;
   final AppThemeTokens tokens;
 
   @override
   Widget build(BuildContext context) {
+    final profile = data.profile;
+    final active = data.activeProgram;
+    final program = active?.program;
+
+    final String badge;
+    final String title;
+    final String description;
+    final List<Widget> chips;
+
+    if (active != null && program != null) {
+      // The program this user actually has saved/active, with their
+      // real progress — not a regenerated sample program.
+      final currentDay = program.days.isEmpty
+          ? null
+          : program.days[
+              active.currentDayIndex.clamp(0, program.days.length - 1).toInt()];
+      badge = 'ACTIVE PROTOCOL';
+      title = program.name;
+      description = currentDay == null
+          ? program.description
+          : 'Next up: ${currentDay.name} · ${currentDay.focus}. '
+              '${data.completedProgramDays} of ${program.days.length} days completed.';
+      chips = [
+        _PlanChip(
+          icon: Icons.calendar_today_rounded,
+          label: '${program.durationWeeks} WEEKS',
+          tokens: tokens,
+        ),
+        _PlanChip(
+          icon: Icons.fitness_center_rounded,
+          label: program.difficulty.toUpperCase(),
+          tokens: tokens,
+        ),
+        _PlanChip(
+          icon: Icons.repeat_rounded,
+          label: '${program.daysPerWeek}X / WEEK',
+          tokens: tokens,
+        ),
+        _PlanChip(
+          icon: Icons.flag_rounded,
+          label: 'DAY ${active.currentDayIndex + 1} OF ${program.days.length}',
+          tokens: tokens,
+        ),
+        if (data.lastWorkoutDate != null)
+          _PlanChip(
+            icon: Icons.history_rounded,
+            label: 'LAST ${data.lastWorkoutDate!.day}/${data.lastWorkoutDate!.month}/${data.lastWorkoutDate!.year}',
+            tokens: tokens,
+          ),
+      ];
+    } else {
+      badge = 'NO ACTIVE PROGRAM';
+      title = 'No program started yet';
+      description = 'Your goal is ${profile.goal.displayName}. Choose or start a '
+          'program and your real plan and progress will appear here.';
+      chips = [
+        _PlanChip(
+          icon: Icons.flag_rounded,
+          label: profile.goal.displayName.toUpperCase(),
+          tokens: tokens,
+        ),
+        _PlanChip(
+          icon: Icons.repeat_rounded,
+          label: '${profile.workoutDaysPerWeek} DAYS / WEEK TARGET',
+          tokens: tokens,
+        ),
+        _PlanChip(
+          icon: Icons.fitness_center_rounded,
+          label: '${data.totalWorkouts} WORKOUTS LOGGED',
+          tokens: tokens,
+        ),
+      ];
+    }
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       child: Container(
@@ -468,7 +658,7 @@ class _GoalCard extends StatelessWidget {
                     border: Border.all(color: tokens.borderSubtle, width: 1),
                   ),
                   child: Text(
-                    'ACTIVE PROTOCOL',
+                    badge,
                     style: TextStyle(
                       fontFamily: AppTypography.displayFontFamily,
                       fontSize: 9,
@@ -482,7 +672,7 @@ class _GoalCard extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             Text(
-              program.name,
+              title,
               style: TextStyle(
                 fontFamily: AppTypography.displayFontFamily,
                 color: tokens.textPrimary,
@@ -492,7 +682,7 @@ class _GoalCard extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              program.description,
+              description,
               style: TextStyle(
                 fontFamily: AppTypography.bodyFontFamily,
                 color: tokens.textSecondary,
@@ -500,27 +690,31 @@ class _GoalCard extends StatelessWidget {
                 height: 1.4,
               ),
             ),
+            if (active != null) ...[
+              const SizedBox(height: 12),
+              Container(
+                height: 6,
+                decoration: BoxDecoration(
+                  color: tokens.card,
+                  borderRadius: BorderRadius.circular(3),
+                ),
+                child: FractionallySizedBox(
+                  alignment: Alignment.centerLeft,
+                  widthFactor: data.programProgress,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: tokens.kineticAccent,
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  ),
+                ),
+              ),
+            ],
             const SizedBox(height: 12),
             Wrap(
               spacing: 8,
               runSpacing: 6,
-              children: [
-                _PlanChip(
-                  icon: Icons.calendar_today_rounded,
-                  label: '${program.durationWeeks} WEEKS',
-                  tokens: tokens,
-                ),
-                _PlanChip(
-                  icon: Icons.fitness_center_rounded,
-                  label: program.difficulty.toUpperCase(),
-                  tokens: tokens,
-                ),
-                _PlanChip(
-                  icon: Icons.repeat_rounded,
-                  label: '${profile.workoutDaysPerWeek}X / WEEK',
-                  tokens: tokens,
-                ),
-              ],
+              children: chips,
             ),
           ],
         ),
@@ -573,13 +767,18 @@ class _PlanChip extends StatelessWidget {
 // ── Diet Plan Card ────────────────────────────────────────────────────────────
 
 class _DietPlanCard extends StatelessWidget {
-  const _DietPlanCard({required this.dietPlan, required this.tokens});
-  final DietPlan dietPlan;
+  const _DietPlanCard({required this.data, required this.tokens});
+  final ProfileData data;
   final AppThemeTokens tokens;
 
   @override
   Widget build(BuildContext context) {
-    final totalMacros = dietPlan.proteinG + dietPlan.carbsG + dietPlan.fatsG;
+    final savedPlan = data.savedDietPlan;
+    final title = savedPlan?.name ?? data.nutritionTargetSourceLabel;
+    final savedPlanDayName = data.savedDietPlanDayName;
+    final savedPlanLabel = savedPlanDayName == null
+        ? 'SAVED PLAN'
+        : 'SAVED PLAN · ${savedPlanDayName.toUpperCase()}';
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -617,7 +816,7 @@ class _DietPlanCard extends StatelessWidget {
                     border: Border.all(color: tokens.borderSubtle, width: 1),
                   ),
                   child: Text(
-                    '${dietPlan.dailyCalories.toInt()} KCAL / DAY',
+                    '${data.targetCalories.toInt()} KCAL / DAY',
                     style: TextStyle(
                       fontFamily: AppTypography.displayFontFamily,
                       color: tokens.kineticAccent,
@@ -632,7 +831,7 @@ class _DietPlanCard extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             Text(
-              dietPlan.name,
+              title,
               style: TextStyle(
                 fontFamily: AppTypography.displayFontFamily,
                 color: tokens.textPrimary,
@@ -640,48 +839,80 @@ class _DietPlanCard extends StatelessWidget {
                 fontWeight: FontWeight.w700,
               ),
             ),
+            const SizedBox(height: 4),
+            Text(
+              'TODAY: ${data.consumedCaloriesToday.toInt()} / '
+              '${data.targetCalories.toInt()} KCAL · '
+              '${data.mealsLoggedToday} MEAL${data.mealsLoggedToday == 1 ? '' : 'S'} LOGGED',
+              style: TextStyle(
+                fontFamily: AppTypography.displayFontFamily,
+                color: tokens.textMuted,
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.8,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
             const SizedBox(height: 14),
             _MacroBar(
               label: 'PROTEIN',
-              value: dietPlan.proteinG,
-              total: totalMacros,
+              value: data.consumedProteinTodayG,
+              total: data.targetProteinG,
               color: tokens.kineticAccent,
               unit: 'G',
+              valueText:
+                  '${data.consumedProteinTodayG.toInt()}/${data.targetProteinG.toInt()} G',
               tokens: tokens,
             ),
             const SizedBox(height: 8),
             _MacroBar(
               label: 'CARBS',
-              value: dietPlan.carbsG,
-              total: totalMacros,
+              value: data.consumedCarbsTodayG,
+              total: data.targetCarbsG,
               color: tokens.cyanAccent,
               unit: 'G',
+              valueText:
+                  '${data.consumedCarbsTodayG.toInt()}/${data.targetCarbsG.toInt()} G',
               tokens: tokens,
             ),
             const SizedBox(height: 8),
             _MacroBar(
               label: 'FATS',
-              value: dietPlan.fatsG,
-              total: totalMacros,
+              value: data.consumedFatsTodayG,
+              total: data.targetFatsG,
               color: tokens.violetAccent,
               unit: 'G',
+              valueText:
+                  '${data.consumedFatsTodayG.toInt()}/${data.targetFatsG.toInt()} G',
               tokens: tokens,
             ),
             const SizedBox(height: 18),
-            Text(
-              'SAMPLE CYCLE MEALS',
-              style: TextStyle(
-                fontFamily: AppTypography.displayFontFamily,
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 1.0,
-                color: tokens.textMuted,
+            if (data.savedDietPlanMeals.isNotEmpty) ...[
+              Text(
+                savedPlanLabel,
+                style: TextStyle(
+                  fontFamily: AppTypography.displayFontFamily,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.0,
+                  color: tokens.textMuted,
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            if (dietPlan.days.isNotEmpty)
-              ...dietPlan.days.first.meals
+              const SizedBox(height: 8),
+              ...data.savedDietPlanMeals
                   .map((meal) => _MealRow(meal: meal, tokens: tokens)),
+            ] else
+              Text(
+                savedPlan == null
+                    ? 'No saved diet plan yet. Your logged meals and targets above are live.'
+                    : 'Your saved diet plan has no meals for its first day yet.',
+                style: TextStyle(
+                  fontFamily: AppTypography.bodyFontFamily,
+                  color: tokens.textMuted,
+                  fontSize: 11,
+                  height: 1.4,
+                ),
+              ),
           ],
         ),
       ),
@@ -697,6 +928,7 @@ class _MacroBar extends StatelessWidget {
     required this.color,
     required this.unit,
     required this.tokens,
+    this.valueText,
   });
 
   final String label;
@@ -704,6 +936,7 @@ class _MacroBar extends StatelessWidget {
   final double total;
   final Color color;
   final String unit;
+  final String? valueText;
   final AppThemeTokens tokens;
 
   @override
@@ -751,9 +984,9 @@ class _MacroBar extends StatelessWidget {
         ),
         const SizedBox(width: 10),
         SizedBox(
-          width: 50,
+          width: 76,
           child: Text(
-            '${value.toInt()} $unit',
+            valueText ?? '${value.toInt()} $unit',
             textAlign: TextAlign.right,
             style: TextStyle(
               fontFamily: AppTypography.displayFontFamily,
@@ -827,74 +1060,6 @@ class _MealRow extends StatelessWidget {
         ],
       ),
     );
-  }
-}
-
-// ── Diet Tips ─────────────────────────────────────────────────────────────────
-
-class _DietTipsCard extends StatelessWidget {
-  const _DietTipsCard({required this.tips, required this.tokens});
-  final List<String> tips;
-  final AppThemeTokens tokens;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Container(
-        padding: const EdgeInsets.all(AppTheme.spacingMedium),
-        decoration: BoxDecoration(
-          color: tokens.panel,
-          borderRadius: BorderRadius.circular(tokens.radiusMd),
-          border: Border.all(color: tokens.borderSubtle, width: 1),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'DAILY NUTRITION TIPS',
-              style: TextStyle(
-                fontFamily: AppTypography.displayFontFamily,
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 1.0,
-                color: tokens.textMuted,
-              ),
-            ),
-            const SizedBox(height: 10),
-            ...tips.map((tip) => Padding(
-                  padding: const EdgeInsets.only(bottom: 6),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        margin: const EdgeInsets.only(top: 5),
-                        width: 5,
-                        height: 5,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: tokens.kineticAccent,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          tip,
-                          style: TextStyle(
-                            fontFamily: AppTypography.bodyFontFamily,
-                            color: tokens.textSecondary,
-                            fontSize: 12,
-                            height: 1.4,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                )),
-          ],
-        ),
-      ),
-    ).animate().fadeIn(delay: 250.ms);
   }
 }
 
