@@ -33,18 +33,18 @@
 
 ## 🎯 Overview
 
-**IronFlow** is a production-ready, cross-platform fitness application built with Flutter that combines powerful workout tracking, nutrition monitoring, and AI-powered coaching into a seamless, offline-first experience. Whether you're a beginner or an advanced athlete, IronFlow adapts to your fitness journey with intelligent insights and personalized recommendations.
+**IronFlow** is an offline-first Flutter fitness application for serious lifters, combining workout tracking, nutrition monitoring, body progress, and optional AI coaching. The app is in active production-hardening: the local-first experience is the default, while real Firebase auth/sync must be explicitly enabled after deploying rules/indexes and completing platform auth setup.
 
 ### Why IronFlow?
 
-- **🧠 AI-Powered Coaching**: Get personalized workout and nutrition advice from integrated AI coaches (OpenAI, Gemini, NVIDIA)
+- **🧠 AI-Assisted Coaching**: Optional AI explanations and chat when configured; production traffic is designed to go through a backend proxy (direct provider keys are debug-only)
 - **📊 Progressive Overload Tracking**: Automatically track your strength gains and get smart progression suggestions
 - **🥗 Comprehensive Nutrition**: Log meals with an extensive food database, track macros, and get AI-generated meal plans
 - **📱 Offline-First**: All core features work without internet connectivity
 - **⚡ Monolithic Sci-Fi UI**: High-contrast, telemetry-styled design system with dark/light tokens and smooth micro-animations
 - **📳 Tactile Telemetry**: Centralized haptic feedback on sets, countdown timers, macro milestones, and navigation with settings toggle
-- **🔄 Real-time Sync**: Cloud synchronization across all your devices via Firebase
-- **🌍 Multi-language**: Support for English, Spanish, French, German, Japanese, Portuguese, and Chinese
+- **🔄 Offline-First Sync Engine**: Firestore outbox sync is available behind `USE_FIREBASE_AUTH=true` after Firebase rules/indexes are deployed; the default build remains local/mock-auth
+- **🌍 Localization Foundation**: Generated delegates for English, Spanish, French, German, Japanese, Portuguese, and Chinese are wired at the app root; full UI string coverage is still being expanded
 
 ---
 
@@ -53,8 +53,8 @@
 ### 🏋️‍♂️ Workout Management
 
 - **Smart Workout Sessions**: Create, track, and manage workout sessions with intuitive UI
-- **Exercise Library**: 500+ pre-loaded exercises with video demonstrations (YouTube integration)
-- **Progressive Overload Engine**: AI-driven suggestions for weight and rep progression
+- **Exercise Library**: Bundled exercise catalog (about 150 definition entries in the repo today), with YouTube links where present
+- **Progressive Overload Engine**: Deterministic, history/RPE-based suggestions for weight and rep progression
 - **Rest Timer**: Visual countdown timer between sets with haptic feedback
 - **Personal Records**: Automatic PR detection with celebration animations
 - **Workout History**: Detailed analytics and performance graphs
@@ -64,11 +64,11 @@
 
 ### 🥗 Nutrition Tracking
 
-- **Extensive Food Database**: 1000+ foods with complete nutritional information
+- **Bundled Food Catalog**: Verified plus legacy food entries (hundreds, not thousands) with macros and available micros, plus user custom foods
 - **Meal Logging**: Quick meal entry with smart search and favorites
 - **Macro Tracking**: Real-time progress bars for protein, carbs, and fats
 - **Custom Foods**: Create and save your own food items
-- **AI Meal Planning**: Generate personalized meal plans based on your goals
+- **Diet Planning**: Generate and save personalized diet plans based on your goals and budget
 - **Nutrition History**: View past meals and analyze trends
 - **Calorie Goals**: Set and track daily calorie and macro targets
 
@@ -83,12 +83,12 @@
 
 ### 🤖 AI Coach
 
-- **Multi-Platform Support**: OpenAI GPT-4, Google Gemini, NVIDIA AI
-- **Context-Aware**: AI knows your workout history, nutrition, and goals
+- **Provider Configuration**: Gemini through an authenticated backend proxy in production; OpenAI direct access is debug-only until it is moved behind the proxy
+- **Context-Aware Insights**: Local deterministic engines analyze workout, nutrition, and body data; AI chat context depends on the configured provider/consent path
 - **Natural Conversations**: Chat interface for questions and advice
 - **Personalized Insights**: Automatic insights based on your data
 - **Voice Feedback**: Text-to-speech for hands-free coaching
-- **Image Generation**: Visualize exercises or meal presentations (DALL-E integration)
+- **Safety Boundary**: Training and nutrition calculations are deterministic; AI is used for explanation and conversation, not as the source of record
 
 ### 🔔 Smart Notifications
 
@@ -99,10 +99,10 @@
 
 ### ☁️ Cloud Sync & Authentication
 
-- **Firebase Integration**: Real-time data sync across devices
-- **Multi-Auth Support**: Email/password, Google Sign-In, Apple Sign-In
+- **Firebase Integration**: Firestore/Auth/Storage integration is present, but cloud sync is gated by `USE_FIREBASE_AUTH=true` plus deployed `firestore.rules`/`firestore.indexes.json`
+- **Auth Paths**: Email/password works in mock and Firebase modes; Google/Apple code paths require platform OAuth configuration before production use
 - **Offline-First**: Local storage with Hive for instant access
-- **Conflict Resolution**: Smart sync with automatic conflict handling
+- **Conflict Handling**: Last-write-wins sync with tombstones and per-device pull cursors when Firebase sync is enabled
 - **Data Export**: Export your data in JSON or CSV formats
 - **Privacy First**: Your data belongs to you
 
@@ -132,7 +132,6 @@
 - **Firebase Core**: Backend infrastructure
 - **Cloud Firestore**: NoSQL database
 - **Firebase Auth**: User authentication
-- **Firebase Realtime Database**: Real-time data sync (no billing required)
 - **Firebase Storage**: File and image storage
 - **Firebase Analytics**: Usage analytics
 - **Firebase Crashlytics**: Crash reporting
@@ -143,9 +142,8 @@
 - **Path Provider**: File system access
 
 ### AI & Machine Learning
-- **OpenAI GPT-4**: Advanced language model
-- **Google Gemini**: Free-tier AI (60 req/min, 1500 req/day)
-- **NVIDIA AI**: Embeddings and retrieval
+- **AI backend proxy**: Production Gemini route with Firebase ID-token authentication
+- **Google Gemini / OpenAI direct APIs**: Local debug development only; shipped builds fail closed without the proxy
 
 ### Networking
 - **HTTP**: REST API calls
