@@ -6,11 +6,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
-import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'firebase_options.dart';
 import 'core/constants/app_theme.dart';
+import 'core/services/telemetry_preferences.dart';
+import 'core/providers/language_provider.dart';
 import 'core/providers/theme_provider.dart';
+import 'l10n/app_localizations.dart';
 import 'core/router/app_router.dart';
 import 'core/utils/data_migration.dart';
 import 'core/utils/hive_manager.dart';
@@ -45,11 +47,14 @@ void main() async {
       options: DefaultFirebaseOptions.currentPlatform,
     );
 
-    // Initialize Firebase Crashlytics (Mobile only - not supported on web)
+    // Apply the user's stored Analytics/Crashlytics opt-outs before any
+    // telemetry can be emitted. Debug builds never collect.
+    await TelemetryPreferences.applyStoredPreferences();
+
+    // Initialize Firebase Crashlytics handlers (mobile only; collection
+    // itself was configured by TelemetryPreferences just above).
     if (!kIsWeb) {
-      // Only enable in release mode to avoid noise during development
-      await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(!kDebugMode);
-      
+
       // Pass all uncaught Flutter errors to Crashlytics
       FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
       
@@ -69,15 +74,7 @@ void main() async {
     }
 
     if (kDebugMode) {
-      AppLogger.debug('✓ Firebase Crashlytics initialized (disabled in debug mode)');
-    }
-
-    // Initialize Firebase Analytics
-    final analytics = FirebaseAnalytics.instance;
-    await analytics.setAnalyticsCollectionEnabled(!kDebugMode);
-    
-    if (kDebugMode) {
-      AppLogger.debug('✓ Firebase Analytics initialized (disabled in debug mode)');
+      AppLogger.debug('✓ Telemetry preferences applied (collection disabled in debug)');
     }
 
     // Initialize Hive
@@ -209,12 +206,16 @@ class MainApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
     final themeMode = ref.watch(themeProvider);
+    final locale = ref.watch(languageProvider);
 
     return MaterialApp.router(
       title: 'IronFlow',
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: themeMode,
+      locale: locale,
+      supportedLocales: AppLocalizations.supportedLocales,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
       routerConfig: router,
       debugShowCheckedModeBanner: false,
     );
