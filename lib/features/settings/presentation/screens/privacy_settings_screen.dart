@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/app_theme.dart';
+import '../../../../core/services/telemetry_preferences.dart';
 import '../../../../shared/presentation/services/app_haptics.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/settings_providers.dart';
@@ -55,6 +56,11 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen> {
     await prefs.setBool('crash_reporting_enabled', _crashReportingEnabled);
     await prefs.setBool('data_sharing_enabled', _dataSharing);
     await prefs.setBool('ai_personalization_consent', _aiPersonalizationConsent);
+
+    // Persisting the booleans is not enough: push the Analytics and
+    // Crashlytics choices into the Firebase SDKs immediately so an
+    // opt-out takes effect now, not only after the next app launch.
+    await TelemetryPreferences.applyStoredPreferences(prefs: prefs);
   }
 
   // --- ACTION A: PURGE LOCAL DATA ON THIS DEVICE ---
