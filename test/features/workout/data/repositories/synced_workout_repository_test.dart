@@ -347,4 +347,50 @@ void main() {
     });
     expect(syncService.syncAllCalls, <String?>['Alice']);
   });
+
+  test('reads count and pagination exclude foreign workouts', () async {
+    await seed(<WorkoutModel>[
+      model(id: 'Alice', date: DateTime(2026, 1, 4, 10)),
+      model(id: 'legacy', date: DateTime(2026, 1, 3, 10), userId: null),
+      model(
+        id: 'guest',
+        date: DateTime(2026, 1, 2, 10),
+        userId: 'local-user',
+      ),
+      model(id: 'bob', date: DateTime(2026, 1, 5, 10), userId: 'bob'),
+    ]);
+
+    final workouts = await repository.getAllWorkouts();
+    final page = await repository.getWorkoutsPaginated(offset: 1, limit: 1);
+
+    expect(
+      workouts.map((item) => item.id),
+      <String>['Alice', 'legacy', 'guest'],
+    );
+    expect(page.map((item) => item.id), <String>['legacy']);
+    expect(await repository.getWorkoutCount(), 3);
+  });
+
+  test('foreign save and delete are refused without sync side effects',
+      () async {
+    await seed(<WorkoutModel>[
+      model(id: 'bob', date: DateTime(2026, 1, 5, 10), userId: 'bob'),
+    ]);
+
+    await repository.saveWorkout(
+      workout(id: 'new-bob', date: DateTime(2026, 1, 6, 10), userId: 'bob'),
+    );
+    await repository.saveWorkout(
+      workout(id: 'bob', date: DateTime(2026, 1, 7, 10)),
+    );
+    await repository.deleteWorkout('bob');
+
+    final stored = await dataSource.getAllWorkouts();
+    expect(stored, hasLength(1));
+    expect(stored.single.id, 'bob');
+    expect(stored.single.userId, 'bob');
+    expect(stored.single.date, DateTime(2026, 1, 5, 10).toIso8601String());
+    expect(syncService.queuedActions, isEmpty);
+    expect(syncService.syncAllCalls, isEmpty);
+  });
 }
