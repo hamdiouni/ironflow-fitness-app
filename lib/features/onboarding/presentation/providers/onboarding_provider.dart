@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/utils/record_ownership.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../../data/user_profile_storage.dart';
 import '../../domain/entities/user_profile.dart';
@@ -112,7 +113,7 @@ class OnboardingNotifier extends StateNotifier<AsyncValue<void>> {
           final now = DateTime.now();
           await nutritionRepository.saveNutritionTargets(
             NutritionTargets(
-              userId: userId ?? 'local-user',
+              userId: userId ?? RecordOwnershipRules.guestUserId,
               macros: MacroTargets(
                 calories: effectiveProfile.dailyCalorieTarget,
                 protein: effectiveProfile.dailyProteinTargetGrams,
