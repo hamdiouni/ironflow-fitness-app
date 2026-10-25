@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
+import 'package:progression_tracker/features/workout/data/models/workout_model.dart';
 import 'package:progression_tracker/features/workout/domain/entities/entities.dart';
 import 'package:progression_tracker/features/workout/presentation/managers/workout_state_manager.dart';
 
@@ -104,6 +106,91 @@ void main() {
 
       await manager.clearRestTimer();
       expect(manager.getRestTimer(), isNull);
+    });
+
+    test('scoped workout and rest-timer state stays separate by user',
+        () async {
+      final startTime = DateTime(2026, 10, 16, 9, 30);
+      await manager.saveState(
+        testWorkout.copyWith(id: 'alice-workout', userId: 'Alice'),
+        startTime,
+        userId: 'Alice',
+      );
+      await manager.saveState(
+        testWorkout.copyWith(id: 'bob-workout', userId: 'bob'),
+        startTime.add(const Duration(hours: 1)),
+        userId: 'bob',
+      );
+      await manager.saveRestTimer(
+        DateTime(2026, 10, 18, 20),
+        60,
+        userId: 'Alice',
+      );
+      await manager.saveRestTimer(
+        DateTime(2026, 10, 18, 21),
+        120,
+        userId: 'bob',
+      );
+
+      expect(manager.hasSavedStateForUser('Alice'), isTrue);
+      expect(manager.hasSavedStateForUser('bob'), isTrue);
+      expect(
+        (await manager.restoreState(userId: 'Alice'))?.workout.id,
+        'alice-workout',
+      );
+      expect(
+        (await manager.restoreState(userId: 'bob'))?.workout.id,
+        'bob-workout',
+      );
+      expect(manager.getRestTimer(userId: 'Alice')?.totalSeconds, 60);
+      expect(manager.getRestTimer(userId: 'bob')?.totalSeconds, 120);
+
+      await manager.clearState(userId: 'Alice');
+
+      expect(await manager.restoreState(userId: 'Alice'), isNull);
+      expect(
+        (await manager.restoreState(userId: 'bob'))?.workout.id,
+        'bob-workout',
+      );
+      expect(manager.getRestTimer(userId: 'Alice'), isNull);
+      expect(manager.getRestTimer(userId: 'bob')?.totalSeconds, 120);
+    });
+
+    test('legacy unowned state is adopted by the first scoped restore',
+        () async {
+      final startTime = DateTime(2026, 10, 16, 9, 30);
+      await manager.saveState(testWorkout, startTime);
+      final box = Hive.box<dynamic>('active_workout_state');
+      expect(box.containsKey('current_workout'), isTrue);
+
+      final restored = await manager.restoreState(userId: 'Alice');
+
+      expect(restored?.workout.id, testWorkout.id);
+      expect(box.containsKey('current_workout_alice'), isTrue);
+      expect(box.containsKey('current_workout'), isFalse);
+      expect(await manager.restoreState(userId: 'bob'), isNull);
+    });
+
+    test('foreign legacy state is not restored for another user', () async {
+      final startTime = DateTime(2026, 10, 16, 9, 30);
+      final box = Hive.box<dynamic>('active_workout_state');
+      await box.put(
+        'current_workout',
+        jsonEncode(
+          WorkoutModel.fromEntity(
+            testWorkout.copyWith(id: 'bob-legacy', userId: 'bob'),
+          ).toJson(),
+        ),
+      );
+      await box.put('start_time', startTime.toIso8601String());
+
+      expect(await manager.restoreState(userId: 'Alice'), isNull);
+      expect(box.containsKey('current_workout_alice'), isFalse);
+      expect(
+        (await manager.restoreState(userId: 'bob'))?.workout.id,
+        'bob-legacy',
+      );
+      expect(box.containsKey('current_workout_bob'), isTrue);
     });
   });
 }
