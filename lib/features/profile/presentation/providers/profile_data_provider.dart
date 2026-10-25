@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/utils/record_ownership.dart';
 import '../../../auth/domain/entities/user.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../../../body/domain/entities/body_entry.dart';
@@ -151,11 +152,10 @@ class ProfileData {
 /// created before accounts stamped ownership); a *different* account's
 /// rows are never shown.
 bool profileRecordBelongsToUser(String? ownerId, String? userId) {
-  if (userId == null || userId.isEmpty) return true;
-  return ownerId == null ||
-      ownerId.isEmpty ||
-      ownerId == 'local-user' ||
-      ownerId == userId;
+  return RecordOwnershipRules.belongsToCurrentUser(
+    ownerId: ownerId,
+    currentUserId: userId,
+  );
 }
 
 DateTime _dateOnlyUtc(DateTime date) =>

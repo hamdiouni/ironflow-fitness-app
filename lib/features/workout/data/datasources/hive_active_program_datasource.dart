@@ -1,4 +1,5 @@
 import 'package:hive/hive.dart';
+import 'package:progression_tracker/core/utils/record_ownership.dart';
 import '../models/active_program_model.dart';
 
 /// Recursively casts a [Map<dynamic, dynamic>] (as returned by Hive) to
@@ -83,11 +84,10 @@ class HiveActiveProgramDataSource {
       userId == null ? archivedKey : '${archivedKey}_$userId';
 
   bool _ownerMatches(String? ownerId, String? userId) {
-    if (userId == null || userId.isEmpty) return true;
-    return ownerId == null ||
-        ownerId.isEmpty ||
-        ownerId == 'local-user' ||
-        ownerId == userId;
+    return RecordOwnershipRules.belongsToCurrentUser(
+      ownerId: ownerId,
+      currentUserId: userId,
+    );
   }
 
   bool _belongsTo(ActiveProgramModel model, String? userId) {

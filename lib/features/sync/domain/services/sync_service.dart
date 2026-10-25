@@ -1,4 +1,5 @@
 import 'package:progression_tracker/core/utils/app_logger.dart';
+import 'package:progression_tracker/core/utils/record_ownership.dart';
 import 'dart:async';
 import 'package:uuid/uuid.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -215,12 +216,8 @@ class SyncService {
   // Initial full push (Phase 3, deferred from Phase 2 §8.8)
   // ---------------------------------------------------------------------------
 
-  /// Guest placeholder stamped by the nutrition repository when signed
-  /// out (see nutritionRepositoryProvider). Treated as "unowned".
-  static const String _guestUserId = 'local-user';
-
   bool _isUnowned(String? owner) =>
-      owner == null || owner.isEmpty || owner == _guestUserId;
+      RecordOwnershipRules.isLegacyUnownedOwner(owner);
 
   bool _isForeign(String? owner, String userId) =>
       !_isUnowned(owner) && owner != userId;
