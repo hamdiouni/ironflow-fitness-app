@@ -6,7 +6,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/app_theme.dart';
 import '../../../../core/services/telemetry_preferences.dart';
+import '../../../../core/utils/record_ownership.dart';
 import '../../../../shared/presentation/services/app_haptics.dart';
+import '../../../ai/presentation/providers/ai_provider.dart';
+import '../../../auth/presentation/providers/auth_notifier.dart'
+    show currentUserIdProvider;
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/settings_providers.dart';
 
@@ -32,6 +36,11 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen> {
   bool _isLoading = true;
   bool _isProcessingAction = false;
 
+  String get _aiConsentKey =>
+      AIPersonalizationConsentNotifier.keyForUser(
+        ref.read(currentUserIdProvider) ?? RecordOwnershipRules.guestUserId,
+      );
+
   @override
   void initState() {
     super.initState();
@@ -40,12 +49,18 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen> {
 
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
+    final aiConsentUserId =
+        ref.read(currentUserIdProvider) ?? RecordOwnershipRules.guestUserId;
+    final aiConsent = await AIPersonalizationConsentNotifier.loadStoredConsent(
+      prefs,
+      userId: aiConsentUserId,
+    );
     if (!mounted) return;
     setState(() {
       _analyticsEnabled = prefs.getBool('analytics_enabled') ?? true;
       _crashReportingEnabled = prefs.getBool('crash_reporting_enabled') ?? true;
       _dataSharing = prefs.getBool('data_sharing_enabled') ?? false;
-      _aiPersonalizationConsent = prefs.getBool('ai_personalization_consent') ?? false;
+      _aiPersonalizationConsent = aiConsent;
       _isLoading = false;
     });
   }
@@ -55,7 +70,7 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen> {
     await prefs.setBool('analytics_enabled', _analyticsEnabled);
     await prefs.setBool('crash_reporting_enabled', _crashReportingEnabled);
     await prefs.setBool('data_sharing_enabled', _dataSharing);
-    await prefs.setBool('ai_personalization_consent', _aiPersonalizationConsent);
+    await prefs.setBool(_aiConsentKey, _aiPersonalizationConsent);
 
     // Persisting the booleans is not enough: push the Analytics and
     // Crashlytics choices into the Firebase SDKs immediately so an
@@ -888,6 +903,9 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen> {
                   activeColor: tokens.kineticAccent,
                   onChanged: (val) async {
                     setState(() => _aiPersonalizationConsent = val);
+                    await ref
+                        .read(aiPersonalizationConsentProvider.notifier)
+                        .setConsent(val);
                     await _saveSettings();
                   },
                 ),

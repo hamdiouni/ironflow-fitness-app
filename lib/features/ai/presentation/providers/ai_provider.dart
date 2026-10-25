@@ -16,6 +16,9 @@ import 'package:progression_tracker/features/nutrition/domain/entities/entities.
 import 'package:progression_tracker/features/body/presentation/providers/body_providers.dart';
 import 'package:progression_tracker/features/body/domain/entities/body_entry.dart';
 import 'package:progression_tracker/core/providers/analytics_provider.dart';
+import 'package:progression_tracker/core/utils/record_ownership.dart';
+import 'package:progression_tracker/features/auth/presentation/providers/auth_notifier.dart'
+    show currentUserIdProvider;
 
 /// Provider for local AI coach service (fallback)
 final localAICoachProvider = Provider<LocalAICoach>((ref) {
@@ -30,20 +33,60 @@ final geminiAIServiceProvider = Provider<GeminiAIService>((ref) {
 /// StateNotifier for AI personalization consent (Privacy-first: default is false)
 final aiPersonalizationConsentProvider =
     StateNotifierProvider<AIPersonalizationConsentNotifier, bool>((ref) {
-  return AIPersonalizationConsentNotifier();
+  final userId =
+      ref.watch(currentUserIdProvider) ?? RecordOwnershipRules.guestUserId;
+  return AIPersonalizationConsentNotifier(userId: userId);
 });
 
 class AIPersonalizationConsentNotifier extends StateNotifier<bool> {
   static const String key = 'ai_personalization_consent';
 
-  AIPersonalizationConsentNotifier() : super(false) {
+  /// Account that owns this consent value. Direct constructions without
+  /// a user keep using the legacy preference key.
+  final String? userId;
+
+  AIPersonalizationConsentNotifier({this.userId}) : super(false) {
     _loadConsent();
+  }
+
+  static String keyForUser(String? userId) {
+    final scopeUserId = RecordOwnershipRules.normalizeUserId(userId);
+    return scopeUserId == null ? key : '${key}_$scopeUserId';
+  }
+
+  String get _storageKey => keyForUser(userId);
+
+  /// Loads the stored consent for [userId], applying the one-time
+  /// legacy migration used by the provider and privacy screen.
+  static Future<bool> loadStoredConsent(
+    SharedPreferences prefs, {
+    String? userId,
+  }) async {
+    final storageKey = keyForUser(userId);
+    var consent = prefs.getBool(storageKey);
+
+    if (consent == null && storageKey != key) {
+      // One-time adoption of a pre-scoping choice, only when no
+      // account-scoped consent exists yet. After scoped values exist,
+      // the legacy value cannot be attributed safely to this account.
+      final hasScopedConsent = prefs
+          .getKeys()
+          .any((storedKey) => storedKey.startsWith('${key}_'));
+      final legacyConsent = prefs.getBool(key);
+      if (!hasScopedConsent && legacyConsent != null) {
+        consent = legacyConsent;
+        await prefs.setBool(storageKey, legacyConsent);
+        await prefs.remove(key);
+      }
+    }
+
+    return consent ?? false;
   }
 
   Future<void> _loadConsent() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final consent = prefs.getBool(key) ?? false;
+      final consent = await loadStoredConsent(prefs, userId: userId);
       if (mounted) state = consent;
     } catch (_) {}
   }
@@ -52,7 +95,7 @@ class AIPersonalizationConsentNotifier extends StateNotifier<bool> {
     state = consent;
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool(key, consent);
+      await prefs.setBool(_storageKey, consent);
     } catch (_) {}
   }
 
