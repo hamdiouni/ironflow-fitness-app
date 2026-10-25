@@ -2,6 +2,9 @@ import 'package:flutter/material.dart' show TimeOfDay;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/utils/record_ownership.dart';
+import '../../../auth/presentation/providers/auth_notifier.dart'
+    show currentUserIdProvider;
 import '../../domain/entities/notification_settings.dart';
 import '../../domain/usecases/schedule_workout_reminder_use_case.dart';
 import '../../data/datasources/hive_notification_settings_data_source.dart';
@@ -12,7 +15,9 @@ import '../../data/datasources/hive_notification_settings_data_source.dart';
 
 final notificationSettingsDataSourceProvider =
     Provider<HiveNotificationSettingsDataSource>((ref) {
-  return HiveNotificationSettingsDataSource();
+  final userId =
+      ref.watch(currentUserIdProvider) ?? RecordOwnershipRules.guestUserId;
+  return HiveNotificationSettingsDataSource(userId: userId);
 });
 
 // ---------------------------------------------------------------------------
