@@ -35,8 +35,7 @@ final nutritionRepositoryProvider = Provider<NutritionRepository>((ref) {
   // Was hardcoded to 'test-user' for every account (DATABASE_AND_SYNC_AUDIT
   // F-01). Watching the auth user id rebuilds the repository when the
   // signed-in user changes; 'local-user' covers the logged-out/guest path.
-  final userId =
-      ref.watch(authNotifierProvider.select((s) => s.user?.id)) ?? 'local-user';
+  final userId = ref.watch(currentUserIdProvider) ?? 'local-user';
   // Phase 2: cloud writes go through the single outbox instead of the
   // repository's old direct dual-write to users/{uid}/nutrition.
   final syncService = ref.watch(syncServiceProvider);

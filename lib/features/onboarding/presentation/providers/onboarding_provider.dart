@@ -24,13 +24,13 @@ final isOnboardedProvider = FutureProvider<bool>((ref) async {
   // Re-evaluate when the signed-in account changes: onboarding state and
   // the onboarding profile are stored per user id, so a cached result
   // from the previous account must never leak into the next one.
-  final userId = ref.watch(authNotifierProvider.select((s) => s.user?.id));
+  final userId = ref.watch(currentUserIdProvider);
   final storage = ref.watch(userProfileStorageProvider);
   return storage.isOnboarded(userId: userId);
 });
 
 final userProfileProvider = FutureProvider<UserProfile?>((ref) async {
-  final userId = ref.watch(authNotifierProvider.select((s) => s.user?.id));
+  final userId = ref.watch(currentUserIdProvider);
   final storage = ref.watch(userProfileStorageProvider);
   return storage.loadProfile(userId: userId);
 });

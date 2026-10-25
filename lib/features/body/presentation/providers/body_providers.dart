@@ -40,9 +40,7 @@ final hiveBodyDataSourceProvider = Provider<HiveBodyDataSource>((ref) {
 final bodyRepositoryProvider = Provider<BodyRepository>((ref) {
   final dataSource = ref.watch(hiveBodyDataSourceProvider);
   // Phase 1: new entries are stamped with the signed-in owner.
-  final userId = ref.watch(
-    authNotifierProvider.select((s) => s.user?.id),
-  );
+  final userId = ref.watch(currentUserIdProvider);
   // Phase 2: saves/deletes enqueue to the single outbox.
   final syncService = ref.watch(syncServiceProvider);
   return BodyRepositoryImpl(
