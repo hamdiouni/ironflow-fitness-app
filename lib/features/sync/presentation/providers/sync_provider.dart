@@ -8,7 +8,6 @@ import '../../../workout/data/datasources/hive_workout_data_source.dart';
 import '../../../workout/data/datasources/hive_active_program_datasource.dart';
 import '../../../nutrition/data/datasources/hive_nutrition_datasource.dart';
 import '../../../body/data/datasources/hive_body_data_source.dart';
-import '../../../auth/data/datasources/auth_session_storage.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 
@@ -29,7 +28,6 @@ final firestoreSyncDataSourceProvider = Provider<FirestoreSyncDataSource>((ref) 
 
 // Sync service — the single sync engine (Phase 2).
 final syncServiceProvider = Provider<SyncService>((ref) {
-  final sessionStorage = AuthSessionStorage();
   final service = SyncService(
     syncQueue: ref.watch(hiveSyncQueueDataSourceProvider),
     firestoreSync: ref.watch(firestoreSyncDataSourceProvider),
@@ -39,8 +37,8 @@ final syncServiceProvider = Provider<SyncService>((ref) {
     hiveBody: HiveBodyDataSource(),
     connectivity: Connectivity(),
     // Internal triggers (connectivity/timer/post-write) resolve the
-    // signed-in user from the stored session at call time.
-    currentUserIdProvider: sessionStorage.getUserId,
+    // signed-in user from the shared identity provider at call time.
+    currentUserIdProvider: () => ref.read(currentUserIdProvider),
     // The initial full push stamps unowned local history with the
     // current uid, so only run it under real Firebase auth — never
     // under a throwaway mock uid (Phase 3; see SyncService).
