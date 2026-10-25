@@ -18,6 +18,7 @@ import 'food_repository_provider.dart';
 import '../../domain/usecases/get_food_alternatives_use_case.dart';
 import '../../domain/usecases/get_meal_suggestions_use_case.dart';
 import '../../../../core/providers/analytics_provider.dart';
+import '../../../../core/utils/record_ownership.dart';
 
 // ---------------------------------------------------------------------------
 // Repository provider
@@ -34,8 +35,9 @@ final nutritionRepositoryProvider = Provider<NutritionRepository>((ref) {
   final hiveDataSource = ref.watch(hiveNutritionDataSourceProvider);
   // Was hardcoded to 'test-user' for every account (DATABASE_AND_SYNC_AUDIT
   // F-01). Watching the auth user id rebuilds the repository when the
-  // signed-in user changes; 'local-user' covers the logged-out/guest path.
-  final userId = ref.watch(currentUserIdProvider) ?? 'local-user';
+  // signed-in user changes; the shared guest id covers the logged-out path.
+  final userId =
+      ref.watch(currentUserIdProvider) ?? RecordOwnershipRules.guestUserId;
   // Phase 2: cloud writes go through the single outbox instead of the
   // repository's old direct dual-write to users/{uid}/nutrition.
   final syncService = ref.watch(syncServiceProvider);
