@@ -61,4 +61,47 @@ void main() {
     await signInAs('Alice');
     expect((await dataSource.loadDietPlan())?.plan.name, 'Alice plan');
   });
+
+  test('explicit user id scopes storage without a stored session', () async {
+    await dataSource.saveDietPlan(
+      planModel('Alice explicit plan'),
+      userId: 'Alice',
+    );
+    await dataSource.saveDietPlan(
+      planModel('Bob explicit plan'),
+      userId: 'bob',
+    );
+
+    expect(
+      (await dataSource.loadDietPlan(userId: 'Alice'))?.plan.name,
+      'Alice explicit plan',
+    );
+    expect(
+      (await dataSource.loadDietPlan(userId: 'bob'))?.plan.name,
+      'Bob explicit plan',
+    );
+
+    await dataSource.clearDietPlan(userId: 'Alice');
+
+    expect(await dataSource.loadDietPlan(userId: 'Alice'), isNull);
+    expect(
+      (await dataSource.loadDietPlan(userId: 'bob'))?.plan.name,
+      'Bob explicit plan',
+    );
+  });
+
+  test('explicit user id takes precedence over the stored session', () async {
+    await signInAs('Alice');
+
+    await dataSource.saveDietPlan(
+      planModel('Bob explicit plan'),
+      userId: 'bob',
+    );
+
+    expect(await dataSource.loadDietPlan(), isNull);
+    expect(
+      (await dataSource.loadDietPlan(userId: 'bob'))?.plan.name,
+      'Bob explicit plan',
+    );
+  });
 }

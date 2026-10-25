@@ -15,13 +15,18 @@ import '../../domain/exceptions/diet_plan_exceptions.dart';
 class DietPlanRepositoryImpl implements DietPlanRepository {
   final HiveDietPlanDataSource dataSource;
 
-  DietPlanRepositoryImpl(this.dataSource);
+  /// Explicit owner supplied by the composition root. Optional so
+  /// existing single-argument constructions keep using the data
+  /// source's compatibility fallback.
+  final String? userId;
+
+  DietPlanRepositoryImpl(this.dataSource, {this.userId});
 
   @override
   Future<void> saveDietPlan(DietPlanState planState) async {
     try {
       final model = DietPlanStateModel.fromEntity(planState);
-      await dataSource.saveDietPlan(model);
+      await dataSource.saveDietPlan(model, userId: userId);
     } on HiveError catch (e, stackTrace) {
       throw DietPlanException(
         message: 'Unable to save your diet plan. Please try again.',
@@ -46,7 +51,7 @@ class DietPlanRepositoryImpl implements DietPlanRepository {
   @override
   Future<DietPlanState?> loadDietPlan() async {
     try {
-      final model = await dataSource.loadDietPlan();
+      final model = await dataSource.loadDietPlan(userId: userId);
       return model?.toEntity();
     } on HiveError catch (e, stackTrace) {
       throw DietPlanException(
@@ -72,7 +77,7 @@ class DietPlanRepositoryImpl implements DietPlanRepository {
   @override
   Future<void> clearDietPlan() async {
     try {
-      await dataSource.clearDietPlan();
+      await dataSource.clearDietPlan(userId: userId);
     } on HiveError catch (e, stackTrace) {
       throw DietPlanException(
         message: 'Unable to clear your diet plan. Please try again.',

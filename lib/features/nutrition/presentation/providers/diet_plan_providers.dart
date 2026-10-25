@@ -21,7 +21,8 @@ import '../../domain/usecases/swap_diet_meal_use_case.dart';
 /// **Validates: Requirements 7.1, 9.1**
 final dietPlanRepositoryProvider = Provider<DietPlanRepository>((ref) {
   final dataSource = HiveDietPlanDataSource();
-  return DietPlanRepositoryImpl(dataSource);
+  final userId = ref.watch(currentUserIdProvider);
+  return DietPlanRepositoryImpl(dataSource, userId: userId);
 });
 
 // ---------------------------------------------------------------------------
