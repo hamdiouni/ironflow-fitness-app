@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:progression_tracker/features/nutrition/data/datasources/hive_nutrition_datasource.dart';
+import 'package:progression_tracker/features/nutrition/data/models/meal_model.dart';
 import 'package:progression_tracker/features/nutrition/data/models/nutrition_targets_model.dart';
 import 'package:progression_tracker/features/nutrition/data/repositories/nutrition_repository_impl.dart';
 import 'package:progression_tracker/features/nutrition/domain/entities/meal.dart';
@@ -272,5 +273,114 @@ void main() {
     expect(await repository.getMealsByDate(DateTime(2026, 1, 2)), isEmpty);
     expect(await repository.getNutritionTargets(), isNull);
     expect(await repository.getNutritionHistoryCount(), 0);
+  });
+
+  test('reads include legacy meals and exclude foreign meals and targets',
+      () async {
+    final dataSource = HiveNutritionDatasource();
+    final bobRepository = NutritionRepositoryImpl(
+      hiveDataSource: dataSource,
+      userId: 'bob',
+    );
+
+    await bobRepository.saveNutritionTargets(targets(userId: 'bob'));
+    await bobRepository.saveMealEntry(
+      meal(id: 'bob-jan-2', timestamp: DateTime(2026, 1, 2, 9), calories: 900),
+    );
+    await bobRepository.saveMealEntry(
+      meal(id: 'bob-jan-4', timestamp: DateTime(2026, 1, 4, 9)),
+    );
+    await repository.saveMealEntry(
+      meal(id: 'Alice-jan-2', timestamp: DateTime(2026, 1, 2, 8), calories: 300),
+    );
+    await dataSource.saveMealEntry(
+      MealModel.fromEntity(
+        meal(id: 'legacy-jan-2', timestamp: DateTime(2026, 1, 2, 12), calories: 200),
+      ),
+    );
+    await dataSource.saveMealEntry(
+      MealModel.fromEntity(
+        meal(
+          id: 'guest-jan-3',
+          timestamp: DateTime(2026, 1, 3, 9),
+          userId: 'local-user',
+        ),
+      ),
+    );
+
+    final daily =
+        await repository.getDailyNutrition(DateTime(2026, 1, 2, 23, 59));
+    final mealsForDay =
+        await repository.getMealsByDate(DateTime(2026, 1, 2, 23, 59));
+    final history = await repository.getNutritionHistory(
+      DateTime(2026, 1, 1),
+      DateTime(2026, 1, 5),
+    );
+    final firstPage =
+        await repository.getNutritionHistoryPaginated(offset: 0, limit: 1);
+    final secondPage =
+        await repository.getNutritionHistoryPaginated(offset: 1, limit: 1);
+
+    expect(daily.meals.map((item) => item.id),
+        containsAll(<String>['Alice-jan-2', 'legacy-jan-2']));
+    expect(daily.meals, hasLength(2));
+    expect(daily.totalCalories, 500);
+    expect(daily.target, isNull);
+    expect(mealsForDay.map((item) => item.id),
+        containsAll(<String>['Alice-jan-2', 'legacy-jan-2']));
+    expect(mealsForDay, hasLength(2));
+    expect(
+      history.map((item) => item.date),
+      <DateTime>[DateTime(2026, 1, 3), DateTime(2026, 1, 2)],
+    );
+    expect(await repository.getNutritionHistoryCount(), 2);
+    expect(firstPage.single.date, DateTime(2026, 1, 3));
+    expect(firstPage.single.meals.map((item) => item.id), <String>['guest-jan-3']);
+    expect(secondPage.single.date, DateTime(2026, 1, 2));
+    expect(secondPage.single.meals, hasLength(2));
+    expect(await repository.getNutritionTargets(), isNull);
+  });
+
+  test('foreign meal and target writes are refused without callbacks',
+      () async {
+    final bobRepository = NutritionRepositoryImpl(
+      hiveDataSource: HiveNutritionDatasource(),
+      userId: 'bob',
+    );
+    await bobRepository.saveNutritionTargets(targets(userId: 'bob'));
+    await bobRepository.saveMealEntry(
+      meal(id: 'bob-meal', timestamp: DateTime(2026, 1, 2, 8), calories: 400),
+    );
+
+    savedMealCallbacks.clear();
+    deletedMealCallbacks.clear();
+    savedTargetCallbacks.clear();
+
+    await repository.saveMealEntry(
+      meal(id: 'new-bob', timestamp: DateTime(2026, 1, 3, 8), userId: 'bob'),
+    );
+    await repository.saveMealEntry(
+      meal(id: 'bob-meal', timestamp: DateTime(2026, 1, 4, 8), calories: 999),
+    );
+    await repository.deleteMealEntry('bob-meal');
+    await repository.saveNutritionTargets(targets(userId: 'bob'));
+    await repository.saveNutritionTargets(targets(userId: 'Alice'));
+
+    final bobMeals = await bobRepository.getMealsByDate(DateTime(2026, 1, 2));
+    expect(bobMeals, hasLength(1));
+    expect(bobMeals.single.id, 'bob-meal');
+    expect(bobMeals.single.macros.calories, 400);
+    expect(await bobRepository.getMealsByDate(DateTime(2026, 1, 3)), isEmpty);
+    expect((await bobRepository.getNutritionTargets())?.userId, 'bob');
+    expect(savedMealCallbacks, isEmpty);
+    expect(deletedMealCallbacks, isEmpty);
+    expect(savedTargetCallbacks, isEmpty);
+  });
+
+  test('legacy target saved by a scoped repository is retagged', () async {
+    await repository.saveNutritionTargets(targets(userId: 'local-user'));
+
+    expect(savedTargetCallbacks.single.userId, 'Alice');
+    expect((await repository.getNutritionTargets())?.userId, 'Alice');
   });
 }

@@ -1,4 +1,5 @@
 import 'package:progression_tracker/core/utils/app_logger.dart';
+import 'package:progression_tracker/core/utils/record_ownership.dart';
 import 'package:flutter/foundation.dart';
 import '../../domain/entities/entities.dart';
 import '../../domain/repositories/nutrition_repository.dart';
@@ -41,15 +42,70 @@ class NutritionRepositoryImpl implements NutritionRepository {
     }
   }
 
+  String? get _currentUserId =>
+      RecordOwnershipRules.normalizeUserId(userId);
+
+  bool _belongsToCurrentUser(String? ownerId) {
+    return RecordOwnershipRules.belongsToCurrentUser(
+      ownerId: ownerId,
+      currentUserId: _currentUserId,
+    );
+  }
+
+  bool _isForeign(String? ownerId) {
+    return RecordOwnershipRules.isForeignToCurrentUser(
+      ownerId: ownerId,
+      currentUserId: _currentUserId,
+    );
+  }
+
+  String? _ownerForSave(String? ownerId) {
+    final currentUserId = _currentUserId;
+    if (currentUserId == null) return ownerId ?? userId;
+    return RecordOwnershipRules.isLegacyUnownedOwner(ownerId)
+        ? currentUserId
+        : ownerId;
+  }
+
+  String _targetOwnerForSave(String ownerId) {
+    final currentUserId = _currentUserId;
+    if (currentUserId == null) return ownerId;
+    return RecordOwnershipRules.isLegacyUnownedOwner(ownerId)
+        ? currentUserId
+        : ownerId;
+  }
+
+  Future<NutritionTargetsModel?> _visibleTargetsModel() async {
+    final targets = await hiveDataSource.getNutritionTargets();
+    if (targets == null || _belongsToCurrentUser(targets.userId)) {
+      return targets;
+    }
+    return null;
+  }
+
+  Future<List<DateTime>> _visibleMealDates() async {
+    final meals = await hiveDataSource.getAllMeals();
+    final dates = <DateTime>{};
+    for (final meal in meals) {
+      if (!_belongsToCurrentUser(meal.userId)) continue;
+      final mealDate = DateTime.parse(meal.timestamp);
+      dates.add(DateTime(mealDate.year, mealDate.month, mealDate.day));
+    }
+    return dates.toList()..sort((a, b) => b.compareTo(a));
+  }
+
   @override
   Future<DailyNutritionSummary> getDailyNutrition(DateTime date) async {
     try {
       // Get meals from local storage first (offline-first)
       final localMeals = await hiveDataSource.getMealsByDate(date);
-      final meals = localMeals.map((m) => m.toEntity()).toList();
+      final meals = localMeals
+          .where((m) => _belongsToCurrentUser(m.userId))
+          .map((m) => m.toEntity())
+          .toList();
 
       // Get targets
-      final targetsModel = await hiveDataSource.getNutritionTargets();
+      final targetsModel = await _visibleTargetsModel();
       final targets = targetsModel?.toEntity();
 
       // If we have local data, return it immediately
@@ -81,9 +137,16 @@ class NutritionRepositoryImpl implements NutritionRepository {
   @override
   Future<void> saveMealEntry(Meal meal) async {
     try {
+      if (_currentUserId != null) {
+        // Never save over, claim, or enqueue another account's meal.
+        if (_isForeign(meal.userId)) return;
+        final existing = await hiveDataSource.getMealById(meal.id);
+        if (existing != null && _isForeign(existing.userId)) return;
+      }
+
       // Phase 1: stamp ownership + sync clock on every save.
       final stamped = meal.copyWith(
-        userId: meal.userId ?? userId,
+        userId: _ownerForSave(meal.userId),
         updatedAt: DateTime.now(),
       );
       final model = MealModel.fromEntity(stamped);
@@ -115,6 +178,7 @@ class NutritionRepositoryImpl implements NutritionRepository {
       // Group meals by date
       final mealsByDate = <DateTime, List<Meal>>{};
       for (final meal in localMeals) {
+        if (!_belongsToCurrentUser(meal.userId)) continue;
         final mealEntity = meal.toEntity();
         final mealDate = DateTime(
           mealEntity.timestamp.year,
@@ -125,7 +189,7 @@ class NutritionRepositoryImpl implements NutritionRepository {
       }
 
       // Get targets
-      final targetsModel = await hiveDataSource.getNutritionTargets();
+      final targetsModel = await _visibleTargetsModel();
       final targets = targetsModel?.toEntity();
 
       // Create summaries for each date
@@ -158,32 +222,29 @@ class NutritionRepositoryImpl implements NutritionRepository {
     int limit = 20,
   }) async {
     try {
-      // Get all unique dates with meals from local storage
-      final allDates = await hiveDataSource.getAllMealDates();
-      
-      // Sort dates descending (most recent first)
-      allDates.sort((a, b) => b.compareTo(a));
-      
+      // Derive dates only from meals visible to this repository's user,
+      // then paginate the already ownership-filtered date list.
+      final allDates = await _visibleMealDates();
+
       // Apply pagination
       final startIndex = offset;
       final endIndex = (offset + limit).clamp(0, allDates.length);
-      
+
       if (startIndex >= allDates.length) {
         return [];
       }
-      
+
       final paginatedDates = allDates.sublist(startIndex, endIndex);
-      
+
       // Get targets
-      final targetsModel = await hiveDataSource.getNutritionTargets();
+      final targetsModel = await _visibleTargetsModel();
       final targets = targetsModel?.toEntity();
-      
+
       // Create summaries for paginated dates
       final summaries = <DailyNutritionSummary>[];
       for (final date in paginatedDates) {
-        final meals = await hiveDataSource.getMealsByDate(date);
-        final mealEntities = meals.map((m) => m.toEntity()).toList();
-        
+        final mealEntities = await getMealsByDate(date);
+
         summaries.add(
           DailyNutritionSummary(
             date: date,
@@ -192,7 +253,7 @@ class NutritionRepositoryImpl implements NutritionRepository {
           ),
         );
       }
-      
+
       return summaries;
     } catch (e) {
       if (kDebugMode) {
@@ -205,7 +266,7 @@ class NutritionRepositoryImpl implements NutritionRepository {
   @override
   Future<int> getNutritionHistoryCount() async {
     try {
-      final allDates = await hiveDataSource.getAllMealDates();
+      final allDates = await _visibleMealDates();
       return allDates.length;
     } catch (e) {
       if (kDebugMode) {
@@ -219,7 +280,7 @@ class NutritionRepositoryImpl implements NutritionRepository {
   Future<NutritionTargets?> getNutritionTargets() async {
     try {
       // Try local storage first
-      final localTargets = await hiveDataSource.getNutritionTargets();
+      final localTargets = await _visibleTargetsModel();
       if (localTargets != null) {
         return localTargets.toEntity();
       }
@@ -236,7 +297,16 @@ class NutritionRepositoryImpl implements NutritionRepository {
   @override
   Future<void> saveNutritionTargets(NutritionTargets targets) async {
     try {
-      final model = NutritionTargetsModel.fromEntity(targets);
+      if (_currentUserId != null) {
+        if (_isForeign(targets.userId)) return;
+        final existing = await hiveDataSource.getNutritionTargets();
+        if (existing != null && _isForeign(existing.userId)) return;
+      }
+
+      final scopedTargets = targets.copyWith(
+        userId: _targetOwnerForSave(targets.userId),
+      );
+      final model = NutritionTargetsModel.fromEntity(scopedTargets);
 
       // Save to local storage immediately, then enqueue the cloud write.
       await hiveDataSource.saveNutritionTargets(model);
@@ -252,6 +322,9 @@ class NutritionRepositoryImpl implements NutritionRepository {
   @override
   Future<void> deleteMealEntry(String mealId) async {
     try {
+      final existing = await hiveDataSource.getMealById(mealId);
+      if (existing != null && _isForeign(existing.userId)) return;
+
       // Delete from local storage immediately, then enqueue the cloud
       // tombstone through the outbox.
       await hiveDataSource.deleteMealEntry(mealId);
@@ -269,7 +342,10 @@ class NutritionRepositoryImpl implements NutritionRepository {
     try {
       // Get from local storage first
       final localMeals = await hiveDataSource.getMealsByDate(date);
-      final meals = localMeals.map((m) => m.toEntity()).toList();
+      final meals = localMeals
+          .where((m) => _belongsToCurrentUser(m.userId))
+          .map((m) => m.toEntity())
+          .toList();
 
       // If we have local data, return it
       if (meals.isNotEmpty) {
