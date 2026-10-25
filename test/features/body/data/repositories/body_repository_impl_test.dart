@@ -152,4 +152,65 @@ void main() {
     await failingCallbackRepository.deleteBodyEntry('local-only');
     expect(await failingCallbackRepository.getAllBodyEntries(), isEmpty);
   });
+
+  test('reads include legacy entries and exclude foreign entries', () async {
+    final unscopedRepository = BodyRepositoryImpl(dataSource);
+    await unscopedRepository.saveBodyEntry(
+      entry(id: 'Alice', date: DateTime(2026, 1, 4, 8), userId: 'Alice'),
+    );
+    await unscopedRepository.saveBodyEntry(
+      entry(id: 'legacy', date: DateTime(2026, 1, 3, 8)),
+    );
+    await unscopedRepository.saveBodyEntry(
+      entry(id: 'guest', date: DateTime(2026, 1, 2, 8), userId: 'local-user'),
+    );
+    await unscopedRepository.saveBodyEntry(
+      entry(id: 'bob', date: DateTime(2026, 1, 5, 8), userId: 'bob'),
+    );
+
+    final entries = await repository.getAllBodyEntries();
+    final rangedEntries = await repository.getBodyEntriesByDateRange(
+      DateTime(2026, 1, 1, 8),
+      DateTime(2026, 1, 6, 8),
+    );
+
+    expect(
+      entries.map((item) => item.id),
+      <String>['Alice', 'legacy', 'guest'],
+    );
+    expect(
+      rangedEntries.map((item) => item.id),
+      <String>['Alice', 'legacy', 'guest'],
+    );
+  });
+
+  test('foreign save and delete are refused without callbacks', () async {
+    final unscopedRepository = BodyRepositoryImpl(dataSource);
+    await unscopedRepository.saveBodyEntry(
+      entry(id: 'bob', date: DateTime(2026, 1, 5, 8), userId: 'bob'),
+    );
+    savedCallbacks.clear();
+    deletedCallbacks.clear();
+
+    await repository.saveBodyEntry(
+      entry(id: 'new-bob', date: DateTime(2026, 1, 6, 8), userId: 'bob'),
+    );
+    await repository.saveBodyEntry(
+      entry(id: 'bob', date: DateTime(2026, 1, 7, 8), weight: 99),
+    );
+    await repository.deleteBodyEntry('bob');
+
+    final stored = await unscopedRepository.getAllBodyEntries();
+    expect(stored, hasLength(1));
+    expect(stored.single.id, 'bob');
+    expect(stored.single.userId, 'bob');
+    expect(stored.single.weight, 80);
+    expect(savedCallbacks, isEmpty);
+    expect(deletedCallbacks, isEmpty);
+
+    await repository.saveBodyEntry(
+      entry(id: 'guest', date: DateTime(2026, 1, 8, 8), userId: 'local-user'),
+    );
+    expect(savedCallbacks.single.userId, 'Alice');
+  });
 }
