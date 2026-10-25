@@ -240,7 +240,7 @@ void main() {
       expect(find.text('PROFILE & WORKOUT PLAN'), findsOneWidget);
 
       // Identity comes from the auth account, not the goal.
-      expect(find.text('Alice MARTIN'), findsOneWidget);
+      expect(find.text('ALICE MARTIN'), findsOneWidget);
       expect(find.text('Alice@example.com'), findsOneWidget);
       expect(find.text('AM'), findsOneWidget);
       expect(

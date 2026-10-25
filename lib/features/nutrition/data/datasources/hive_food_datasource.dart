@@ -43,7 +43,7 @@ class HiveFoodDataSource {
   HiveFoodDataSource({this.userId});
 
   String? get _scopeUserId =>
-      RecordOwnershipRules.normalizeUserId(userId);
+      RecordOwnershipRules.storageScope(userId);
 
   String get _scopedCustomFoodsKey {
     final scopeUserId = _scopeUserId;

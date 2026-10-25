@@ -38,7 +38,7 @@ class InsightCacheServiceImpl implements InsightCacheService {
   Box<Map>? _box;
 
   String? get _scopeUserId =>
-      RecordOwnershipRules.normalizeUserId(userId);
+      RecordOwnershipRules.storageScope(userId);
 
   /// Recursively casts a [Map<dynamic, dynamic>] (as returned by Hive) to
   /// [Map<String, dynamic>] so that json_serializable can deserialize it.

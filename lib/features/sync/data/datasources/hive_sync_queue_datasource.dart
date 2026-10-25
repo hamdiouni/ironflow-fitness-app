@@ -1,4 +1,5 @@
 import 'package:progression_tracker/core/utils/app_logger.dart';
+import 'package:progression_tracker/core/utils/record_ownership.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../../domain/entities/sync_action.dart';
 
@@ -172,7 +173,7 @@ class HiveSyncQueueDataSourceImpl implements HiveSyncQueueDataSource {
   // each account starts with one safe full pull instead.
   static const String _settingsBox = 'app_settings';
   static String _cursorKey(String dataType, String userId) =>
-      'sync_cursor_${dataType}_$userId';
+      'sync_cursor_${dataType}_${RecordOwnershipRules.storageScope(userId)}';
 
   @override
   Future<DateTime?> getCursor(
@@ -208,7 +209,7 @@ class HiveSyncQueueDataSourceImpl implements HiveSyncQueueDataSource {
   // Initial-push markers live alongside cursors in `app_settings`,
   // one key per user, storing the completion timestamp.
   static String _initialPushKey(String userId) =>
-      'sync_initial_push_done_$userId';
+      'sync_initial_push_done_${RecordOwnershipRules.storageScope(userId)}';
 
   @override
   Future<bool> hasCompletedInitialPush(String userId) async {

@@ -82,7 +82,7 @@ void main() {
     expect(container.read(currentUserIdProvider), 'Alice');
   });
 
-  test('currentUserIdProvider follows account switch and sign out', () {
+  test('currentUserIdProvider follows account switch and sign out', () async {
     final seen = <String?>[];
     final subscription = container.listen<String?>(
       currentUserIdProvider,
@@ -92,8 +92,11 @@ void main() {
     addTearDown(subscription.close);
 
     authNotifier.setUser(user('Alice'));
+    await Future<void>.delayed(Duration.zero);
     authNotifier.setUser(user('bob'));
+    await Future<void>.delayed(Duration.zero);
     authNotifier.setUser(null);
+    await Future<void>.delayed(Duration.zero);
 
     expect(seen, <String?>[null, 'Alice', 'bob', null]);
     expect(container.read(currentUserIdProvider), isNull);

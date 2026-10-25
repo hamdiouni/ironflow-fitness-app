@@ -8,7 +8,7 @@ import '../../../auth/presentation/providers/auth_notifier.dart'
 const String _kDismissedBannersKey = 'ironflow_dismissed_ai_banners';
 
 String _dismissedBannersKeyForUser(String? userId) {
-  final scopeUserId = RecordOwnershipRules.normalizeUserId(userId);
+  final scopeUserId = RecordOwnershipRules.storageScope(userId);
   return scopeUserId == null
       ? _kDismissedBannersKey
       : '${_kDismissedBannersKey}_$scopeUserId';

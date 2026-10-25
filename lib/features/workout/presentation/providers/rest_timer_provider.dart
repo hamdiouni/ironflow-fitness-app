@@ -60,15 +60,18 @@ class RestTimerState {
   }
 }
 
-/// Provider for rest timer service
 final restTimerServiceProvider = Provider<RestTimerService>((ref) {
   final notificationService = ref.watch(notificationServiceProvider);
   final stateManager = ref.watch(workoutStateManagerProvider);
+  String? lastKnownUserId =
+      ref.read(currentUserIdProvider) ?? RecordOwnershipRules.guestUserId;
+  ref.listen<String?>(currentUserIdProvider, (_, next) {
+    lastKnownUserId = next ?? RecordOwnershipRules.guestUserId;
+  });
   final service = RestTimerService(
     notificationService: notificationService,
     stateManager: stateManager,
-    currentUserId: () =>
-        ref.read(currentUserIdProvider) ?? RecordOwnershipRules.guestUserId,
+    currentUserId: () => lastKnownUserId,
   );
   ref.onDispose(() => service.dispose());
   return service;

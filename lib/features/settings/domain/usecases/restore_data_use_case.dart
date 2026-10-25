@@ -126,7 +126,7 @@ class RestoreDataUseCase {
     );
   }
 
-  String _fileName(String path) => path.split('/').last;
+  String _fileName(String path) => path.split(RegExp(r'[/\\]')).last;
 
   bool _isLegacySnapshotFile(File file) {
     const prefix = 'safety_snapshot_';
@@ -152,11 +152,12 @@ class RestoreDataUseCase {
         .toList();
 
     final currentUserId = await _currentRestoreUserId();
+    final scope = RecordOwnershipRules.storageScope(currentUserId);
     List<File> scopedSnapshots;
-    if (currentUserId == null) {
+    if (scope == null) {
       scopedSnapshots = allSnapshots.where(_isLegacySnapshotFile).toList();
     } else {
-      final scopedPrefix = 'safety_snapshot_${currentUserId}_';
+      final scopedPrefix = 'safety_snapshot_${scope}_';
       scopedSnapshots = allSnapshots
           .where((file) => _fileName(file.path).startsWith(scopedPrefix))
           .toList();
@@ -311,9 +312,10 @@ class RestoreDataUseCase {
     final snapshotDir = await getSafetySnapshotDirectory();
     final timestamp = DateTime.now().millisecondsSinceEpoch;
     final currentUserId = await _currentRestoreUserId();
-    final fileName = currentUserId == null
+    final scope = RecordOwnershipRules.storageScope(currentUserId);
+    final fileName = scope == null
         ? 'safety_snapshot_$timestamp.json'
-        : 'safety_snapshot_${currentUserId}_$timestamp.json';
+        : 'safety_snapshot_${scope}_$timestamp.json';
     final file = File('${snapshotDir.path}/$fileName');
 
     final snapshotData = await _captureCurrentStateSnapshot();

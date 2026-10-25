@@ -40,7 +40,7 @@ class WorkoutStateManager {
   }
 
   String _scopedKey(String baseKey, String? userId) {
-    final scopeUserId = RecordOwnershipRules.normalizeUserId(userId);
+    final scopeUserId = RecordOwnershipRules.storageScope(userId);
     return scopeUserId == null ? baseKey : '${baseKey}_$scopeUserId';
   }
 

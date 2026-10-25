@@ -19,7 +19,7 @@ class AIChatStorage {
   AIChatStorage({this.userId});
 
   String? get _scopeUserId =>
-      RecordOwnershipRules.normalizeUserId(userId);
+      RecordOwnershipRules.storageScope(userId);
 
   String get _scopedMessagesKey {
     final scopeUserId = _scopeUserId;
