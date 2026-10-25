@@ -33,6 +33,13 @@ class RecordOwnershipRules {
     return (userId == null || userId.isEmpty) ? null : userId;
   }
 
+  /// Returns a canonical, lowercase, trimmed user ID for use in local storage
+  /// keys (Hive box keys, SharedPreferences keys, snapshot filenames).
+  static String? storageScope(String? userId) {
+    final normalized = normalizeUserId(userId);
+    return normalized?.trim().toLowerCase();
+  }
+
   /// Whether [ownerId] has no proven account owner.
   static bool isLegacyUnownedOwner(String? ownerId) {
     final normalizedOwnerId = normalizeUserId(ownerId);

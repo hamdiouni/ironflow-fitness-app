@@ -16,7 +16,7 @@ class HiveStreakDataSource {
   HiveStreakDataSource({this.userId});
 
   String? get _scopeUserId =>
-      RecordOwnershipRules.normalizeUserId(userId);
+      RecordOwnershipRules.storageScope(userId);
 
   String get _scopedStreakKey {
     final scopeUserId = _scopeUserId;

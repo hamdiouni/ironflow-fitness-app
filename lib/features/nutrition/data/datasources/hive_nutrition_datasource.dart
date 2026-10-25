@@ -44,7 +44,8 @@ class HiveNutritionDatasource {
 
   Box<Map> get _targetsBox => Hive.box<Map>(targetsBoxName);
 
-  String _targetsKeyForUser(String userId) => '${targetsKey}_$userId';
+  String _targetsKeyForUser(String userId) =>
+      '${targetsKey}_${RecordOwnershipRules.storageScope(userId)}';
 
   NutritionTargetsModel? _decodeTargets(Map? json) {
     if (json == null) return null;

@@ -28,7 +28,13 @@ class RestTimerService {
         _stateManager = stateManager,
         _currentUserId = currentUserId;
 
-  String? get _scopedUserId => _currentUserId?.call();
+  String? get _scopedUserId {
+    try {
+      return _currentUserId?.call();
+    } catch (_) {
+      return null;
+    }
+  }
 
   DateTime? get targetEndTime => _targetEndTime;
   int get totalSeconds => _totalSeconds;
