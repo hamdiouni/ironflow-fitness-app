@@ -416,3 +416,15 @@ final authNotifierProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref
     ref: ref,
   );
 });
+
+/// The signed-in user's id, or null while signed out.
+///
+/// This is the synchronous identity seam for user-scoped providers. It
+/// deliberately preserves the existing `authNotifierProvider.select`
+/// behaviour; ownership filtering remains the responsibility of the
+/// repositories and providers that consume this value.
+final currentUserIdProvider = Provider<String?>((ref) {
+  return ref.watch(
+    authNotifierProvider.select((state) => state.user?.id),
+  );
+});
