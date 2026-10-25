@@ -47,11 +47,14 @@ void main() {
     );
   }
 
-  NutritionTargetsModel targets() {
-    return const NutritionTargetsModel(
-      userId: 'Alice',
+  NutritionTargetsModel targets({
+    String userId = 'Alice',
+    double calories = 2200,
+  }) {
+    return NutritionTargetsModel(
+      userId: userId,
       macros: MacroTargetsModel(
-        calories: 2200,
+        calories: calories,
         protein: 160,
         carbs: 220,
         fats: 75,
@@ -124,5 +127,59 @@ void main() {
     final ticks = await ticksFuture.timeout(const Duration(seconds: 5));
 
     expect(ticks, <int>[0, 1, 2, 3]);
+  });
+
+  test('nutrition targets are stored separately for each user', () async {
+    await dataSource.saveNutritionTargets(
+      targets(userId: 'Alice', calories: 2200),
+      userId: 'Alice',
+    );
+    await dataSource.saveNutritionTargets(
+      targets(userId: 'bob', calories: 1800),
+      userId: 'bob',
+    );
+
+    final aliceTargets =
+        await dataSource.getNutritionTargets(userId: 'Alice');
+    final bobTargets = await dataSource.getNutritionTargets(userId: 'bob');
+
+    expect(aliceTargets?.userId, 'Alice');
+    expect(aliceTargets?.macros.calories, 2200);
+    expect(bobTargets?.userId, 'bob');
+    expect(bobTargets?.macros.calories, 1800);
+    expect(targetsBox.containsKey('current_alice'), isTrue);
+    expect(targetsBox.containsKey('current_bob'), isTrue);
+    expect(targetsBox.containsKey('current'), isFalse);
+  });
+
+  test('exact-owner legacy targets migrate to the scoped key', () async {
+    await targetsBox.put('current', targets(userId: 'Alice').toJson());
+
+    final stored = await dataSource.getNutritionTargets(userId: 'Alice');
+
+    expect(stored?.userId, 'Alice');
+    expect(targetsBox.containsKey('current_alice'), isTrue);
+    expect(targetsBox.containsKey('current'), isFalse);
+  });
+
+  test('foreign legacy targets are not adopted by another user', () async {
+    await targetsBox.put('current', targets(userId: 'bob').toJson());
+
+    final stored = await dataSource.getNutritionTargets(userId: 'Alice');
+
+    expect(stored, isNull);
+    expect(targetsBox.containsKey('current_alice'), isFalse);
+    expect(targetsBox.containsKey('current'), isTrue);
+  });
+
+  test('deleteNutritionTargets removes only the requested user target',
+      () async {
+    await dataSource.saveNutritionTargets(targets(userId: 'Alice'));
+    await dataSource.saveNutritionTargets(targets(userId: 'bob'));
+
+    await dataSource.deleteNutritionTargets(userId: 'Alice');
+
+    expect(await dataSource.getNutritionTargets(userId: 'Alice'), isNull);
+    expect((await dataSource.getNutritionTargets(userId: 'bob'))?.userId, 'bob');
   });
 }
