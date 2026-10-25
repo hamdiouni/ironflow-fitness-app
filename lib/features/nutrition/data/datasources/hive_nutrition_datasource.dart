@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:progression_tracker/core/utils/app_logger.dart';
+import 'package:progression_tracker/core/utils/record_ownership.dart';
 import 'package:hive/hive.dart';
 import '../models/meal_model.dart';
 import '../models/nutrition_targets_model.dart';
@@ -42,6 +43,13 @@ class HiveNutritionDatasource {
   Box<Map> get _mealsBox => Hive.box<Map>(mealsBoxName);
 
   Box<Map> get _targetsBox => Hive.box<Map>(targetsBoxName);
+
+  String _targetsKeyForUser(String userId) => '${targetsKey}_$userId';
+
+  NutritionTargetsModel? _decodeTargets(Map? json) {
+    if (json == null) return null;
+    return NutritionTargetsModel.fromJson(_deepCast(json));
+  }
 
   /// Emits an increasing tick whenever meals or nutrition targets
   /// change (Phase 3, F-12), starting at 0 so subscribers load their
@@ -273,8 +281,14 @@ class HiveNutritionDatasource {
 
   /// Save nutrition targets to local storage.
   ///
-  /// Stores the user's daily nutrition targets.
-  Future<void> saveNutritionTargets(NutritionTargetsModel targets) async {
+  /// Stores targets under an account-scoped key (`current_<userId>`).
+  /// The scope is [userId] when supplied, otherwise the owner carried
+  /// by [targets]. The legacy `current` key is used only when neither
+  /// value provides an account scope.
+  Future<void> saveNutritionTargets(
+    NutritionTargetsModel targets, {
+    String? userId,
+  }) async {
     try {
       AppLogger.debug('📊 [NutritionData] Saving nutrition targets...');
       AppLogger.debug('🔍 [NutritionData] Macros - Calories: ${targets.macros.calories}, Protein: ${targets.macros.protein}g');
@@ -284,7 +298,12 @@ class HiveNutritionDatasource {
         throw Exception('Targets box not open');
       }
       
-      await _targetsBox.put(targetsKey, targets.toJson());
+      final scopeUserId = RecordOwnershipRules.normalizeUserId(userId) ??
+          RecordOwnershipRules.normalizeUserId(targets.userId);
+      await _targetsBox.put(
+        scopeUserId == null ? targetsKey : _targetsKeyForUser(scopeUserId),
+        targets.toJson(),
+      );
       
       AppLogger.debug('✅ [NutritionData] Nutrition targets saved successfully');
       AppLogger.debug('🔍 [NutritionData] Macros - Calories: ${targets.macros.calories}, Protein: ${targets.macros.protein}g, Carbs: ${targets.macros.carbs}g, Fat: ${targets.macros.fats}g');
@@ -297,8 +316,12 @@ class HiveNutritionDatasource {
 
   /// Get nutrition targets from local storage.
   ///
-  /// Returns the stored targets or null if not set.
-  Future<NutritionTargetsModel?> getNutritionTargets() async {
+  /// Returns the account-scoped targets for [userId], or null if not set.
+  /// A legacy `current` value is adopted only when its stored owner
+  /// exactly matches [userId], or when it is legacy-unowned and no
+  /// account-scoped target exists yet. It is never adopted from another
+  /// account.
+  Future<NutritionTargetsModel?> getNutritionTargets({String? userId}) async {
     try {
       AppLogger.debug('📊 [NutritionData] Getting nutrition targets...');
       
@@ -307,23 +330,65 @@ class HiveNutritionDatasource {
         throw Exception('Targets box not open');
       }
       
-      final json = _targetsBox.get(targetsKey);
-      
-      if (json == null) {
+      final scopeUserId = RecordOwnershipRules.normalizeUserId(userId);
+      NutritionTargetsModel? targets;
+
+      if (scopeUserId == null) {
+        targets = _decodeTargets(_targetsBox.get(targetsKey));
+      } else {
+        final scopedKey = _targetsKeyForUser(scopeUserId);
+        targets = _decodeTargets(_targetsBox.get(scopedKey));
+
+        if (targets == null) {
+          final legacyJson = _targetsBox.get(targetsKey);
+          final legacyTargets = _decodeTargets(legacyJson);
+          if (legacyJson != null && legacyTargets != null) {
+            final ownership = RecordOwnershipRules.classify(
+              ownerId: legacyTargets.userId,
+              currentUserId: scopeUserId,
+            );
+            final hasScopedTargets = _targetsBox.keys.any(
+              (key) => key.toString().startsWith('${targetsKey}_'),
+            );
+            final canAdopt =
+                ownership == RecordOwnership.ownedByCurrentUser ||
+                    (ownership == RecordOwnership.legacyUnowned &&
+                        !hasScopedTargets);
+            if (canAdopt) {
+              await _targetsBox.put(scopedKey, legacyJson);
+              await _targetsBox.delete(targetsKey);
+              targets = legacyTargets;
+            }
+          }
+        }
+      }
+
+      if (targets == null) {
         AppLogger.debug('⚠️ [NutritionData] No nutrition targets found');
         return null;
       }
-      
-      final targets = NutritionTargetsModel.fromJson(_deepCast(json));
+
       AppLogger.debug('✅ [NutritionData] Nutrition targets retrieved successfully');
       AppLogger.debug('🔍 [NutritionData] Macros - Calories: ${targets.macros.calories}, Protein: ${targets.macros.protein}g');
-      
+
       return targets;
     } catch (e, stackTrace) {
       AppLogger.debug('❌ [NutritionData] Failed to get nutrition targets: $e');
       AppLogger.debug('🔍 [NutritionData] Stack trace: $stackTrace');
       rethrow;
     }
+  }
+
+  /// Delete the nutrition targets for [userId], or the legacy targets
+  /// when no account scope is supplied.
+  Future<void> deleteNutritionTargets({String? userId}) async {
+    if (!_targetsBox.isOpen) {
+      throw Exception('Targets box not open');
+    }
+    final scopeUserId = RecordOwnershipRules.normalizeUserId(userId);
+    await _targetsBox.delete(
+      scopeUserId == null ? targetsKey : _targetsKeyForUser(scopeUserId),
+    );
   }
 
   /// Clear all local nutrition data.

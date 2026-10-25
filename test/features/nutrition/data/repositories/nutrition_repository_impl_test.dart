@@ -341,7 +341,7 @@ void main() {
     expect(await repository.getNutritionTargets(), isNull);
   });
 
-  test('foreign meal and target writes are refused without callbacks',
+  test('foreign writes are refused and targets stay account scoped',
       () async {
     final bobRepository = NutritionRepositoryImpl(
       hiveDataSource: HiveNutritionDatasource(),
@@ -364,6 +364,10 @@ void main() {
     );
     await repository.deleteMealEntry('bob-meal');
     await repository.saveNutritionTargets(targets(userId: 'bob'));
+    expect(savedTargetCallbacks, isEmpty);
+
+    // Account-scoped target storage lets Alice save her own targets
+    // without overwriting Bob's separate target record.
     await repository.saveNutritionTargets(targets(userId: 'Alice'));
 
     final bobMeals = await bobRepository.getMealsByDate(DateTime(2026, 1, 2));
@@ -372,9 +376,11 @@ void main() {
     expect(bobMeals.single.macros.calories, 400);
     expect(await bobRepository.getMealsByDate(DateTime(2026, 1, 3)), isEmpty);
     expect((await bobRepository.getNutritionTargets())?.userId, 'bob');
+    expect((await repository.getNutritionTargets())?.userId, 'Alice');
     expect(savedMealCallbacks, isEmpty);
     expect(deletedMealCallbacks, isEmpty);
-    expect(savedTargetCallbacks, isEmpty);
+    expect(savedTargetCallbacks, hasLength(1));
+    expect(savedTargetCallbacks.single.userId, 'Alice');
   });
 
   test('legacy target saved by a scoped repository is retagged', () async {

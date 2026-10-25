@@ -325,7 +325,7 @@ class SyncService {
           }
         }
 
-        final targets = await nutrition.getNutritionTargets();
+        final targets = await nutrition.getNutritionTargets(userId: userId);
         if (targets != null && !_isForeign(targets.userId, userId)) {
           var effective = targets;
           if (_isUnowned(targets.userId)) {
@@ -338,7 +338,7 @@ class SyncService {
               createdAt: targets.createdAt,
               updatedAt: targets.updatedAt,
             );
-            await nutrition.saveNutritionTargets(effective);
+            await nutrition.saveNutritionTargets(effective, userId: userId);
           }
           await enqueue(
             type: SyncActionType.update,
@@ -631,9 +631,9 @@ class SyncService {
     final hiveNutrition = _hiveNutrition!;
     final cloud = await _firestoreSync.getNutritionTargets(userId);
     if (cloud == null) return;
-    final local = await hiveNutrition.getNutritionTargets();
+    final local = await hiveNutrition.getNutritionTargets(userId: userId);
     if (local == null || _isAfter(_parse(cloud.updatedAt), _parse(local.updatedAt))) {
-      await hiveNutrition.saveNutritionTargets(cloud);
+      await hiveNutrition.saveNutritionTargets(cloud, userId: userId);
       AppLogger.debug('📥 Pulled nutrition targets');
     }
   }

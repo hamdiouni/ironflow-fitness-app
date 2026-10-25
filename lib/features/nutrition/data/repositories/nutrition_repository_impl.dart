@@ -76,7 +76,7 @@ class NutritionRepositoryImpl implements NutritionRepository {
   }
 
   Future<NutritionTargetsModel?> _visibleTargetsModel() async {
-    final targets = await hiveDataSource.getNutritionTargets();
+    final targets = await hiveDataSource.getNutritionTargets(userId: userId);
     if (targets == null || _belongsToCurrentUser(targets.userId)) {
       return targets;
     }
@@ -299,7 +299,8 @@ class NutritionRepositoryImpl implements NutritionRepository {
     try {
       if (_currentUserId != null) {
         if (_isForeign(targets.userId)) return;
-        final existing = await hiveDataSource.getNutritionTargets();
+        final existing =
+            await hiveDataSource.getNutritionTargets(userId: userId);
         if (existing != null && _isForeign(existing.userId)) return;
       }
 
@@ -309,7 +310,7 @@ class NutritionRepositoryImpl implements NutritionRepository {
       final model = NutritionTargetsModel.fromEntity(scopedTargets);
 
       // Save to local storage immediately, then enqueue the cloud write.
-      await hiveDataSource.saveNutritionTargets(model);
+      await hiveDataSource.saveNutritionTargets(model, userId: userId);
       await _notify(onTargetsSaved, model);
     } catch (e) {
       if (kDebugMode) {
