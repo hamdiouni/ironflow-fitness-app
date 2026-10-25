@@ -1,5 +1,6 @@
 import 'package:hive/hive.dart';
 import '../../../../core/utils/hive_manager.dart';
+import '../../../../core/utils/record_ownership.dart';
 import '../models/food_item_full_model.dart';
 
 /// Recursively casts a [Map<dynamic, dynamic>] (as returned by Hive) to
@@ -32,8 +33,50 @@ class HiveFoodDataSource {
   static const String _cacheVersionKey = 'foods_cache_version';
   static const int _currentCacheVersion = 1;
 
+  /// Account that owns custom foods read/written by this instance.
+  ///
+  /// The shared catalog cache remains device-global, but custom foods
+  /// are personal records and use `custom_foods_<userId>`. Existing
+  /// direct constructions without a user keep using the legacy key.
+  final String? userId;
+
+  HiveFoodDataSource({this.userId});
+
+  String? get _scopeUserId =>
+      RecordOwnershipRules.normalizeUserId(userId);
+
+  String get _scopedCustomFoodsKey {
+    final scopeUserId = _scopeUserId;
+    return scopeUserId == null
+        ? _customFoodsKey
+        : '${_customFoodsKey}_$scopeUserId';
+  }
+
   /// Get the foods box from Hive
   Box get _box => HiveManager.getFoodsBox();
+
+  Future<List<dynamic>?> _customFoodsJson() async {
+    final scopedKey = _scopedCustomFoodsKey;
+    final scopedJson = _box.get(scopedKey) as List<dynamic>?;
+    if (scopedJson != null || scopedKey == _customFoodsKey) {
+      return scopedJson;
+    }
+
+    // One-time adoption of pre-scoping custom foods, only when no
+    // account-scoped custom-food list exists yet. Custom food records
+    // carry no owner field, so once scoped lists exist the legacy list
+    // cannot be safely attributed to the requesting account.
+    final hasScopedCustomFoods = _box.keys.any(
+      (key) => key.toString().startsWith('${_customFoodsKey}_'),
+    );
+    if (hasScopedCustomFoods) return null;
+
+    final legacyJson = _box.get(_customFoodsKey) as List<dynamic>?;
+    if (legacyJson == null) return null;
+    await _box.put(scopedKey, legacyJson);
+    await _box.delete(_customFoodsKey);
+    return legacyJson;
+  }
 
   /// Cache all foods locally
   /// Stores foods with timestamp for cache invalidation
@@ -64,7 +107,7 @@ class HiveFoodDataSource {
       
       // Save back to Hive
       final foodsJson = customFoods.map((f) => f.toJson()).toList();
-      await _box.put(_customFoodsKey, foodsJson);
+      await _box.put(_scopedCustomFoodsKey, foodsJson);
     } catch (e) {
       throw Exception('Failed to save custom food: $e');
     }
@@ -73,7 +116,7 @@ class HiveFoodDataSource {
   /// Get all custom foods created by the user
   Future<List<FoodItemFullModel>> getCustomFoods() async {
     try {
-      final foodsJson = _box.get(_customFoodsKey) as List<dynamic>?;
+      final foodsJson = await _customFoodsJson();
       if (foodsJson == null || foodsJson.isEmpty) {
         return [];
       }
@@ -93,7 +136,7 @@ class HiveFoodDataSource {
       customFoods.removeWhere((food) => food.id == id);
       
       final foodsJson = customFoods.map((f) => f.toJson()).toList();
-      await _box.put(_customFoodsKey, foodsJson);
+      await _box.put(_scopedCustomFoodsKey, foodsJson);
     } catch (e) {
       throw Exception('Failed to delete custom food: $e');
     }
@@ -217,10 +260,15 @@ class HiveFoodDataSource {
     }
   }
 
-  /// Clear all cached foods and metadata
+  /// Clear the shared catalog cache and this instance's custom foods.
+  ///
+  /// Other accounts' scoped custom-food lists are left untouched.
   Future<void> clearCache() async {
     try {
-      await _box.clear();
+      await _box.delete(_foodsKey);
+      await _box.delete(_cacheTimestampKey);
+      await _box.delete(_cacheVersionKey);
+      await _box.delete(_scopedCustomFoodsKey);
     } catch (e) {
       throw Exception('Failed to clear cache: $e');
     }
