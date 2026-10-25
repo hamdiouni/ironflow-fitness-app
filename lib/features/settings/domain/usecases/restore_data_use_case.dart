@@ -17,6 +17,7 @@ import 'package:progression_tracker/features/body/domain/entities/measurement_ty
 import 'package:progression_tracker/features/body/data/models/body_entry_model.dart';
 import 'package:progression_tracker/features/auth/domain/repositories/auth_repository.dart';
 import 'package:progression_tracker/features/auth/domain/entities/user_profile.dart';
+import 'package:progression_tracker/core/utils/record_ownership.dart';
 import 'package:progression_tracker/features/settings/domain/usecases/backup_data_use_case.dart';
 
 /// Result of a restore operation.
@@ -108,6 +109,75 @@ class RestoreDataUseCase {
     Directory? privateDocumentsDir,
   ])  : _storage = storage,
         _privateDocumentsDir = privateDocumentsDir;
+
+  Future<String?> _currentRestoreUserId() async {
+    try {
+      final currentUser = await _authRepository.getCurrentUser();
+      return RecordOwnershipRules.normalizeUserId(currentUser?.id);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  bool _isForeignRecord(String? ownerId, String? currentUserId) {
+    return RecordOwnershipRules.isForeignToCurrentUser(
+      ownerId: ownerId,
+      currentUserId: currentUserId,
+    );
+  }
+
+  String _fileName(String path) => path.split('/').last;
+
+  bool _isLegacySnapshotFile(File file) {
+    const prefix = 'safety_snapshot_';
+    const suffix = '.json';
+    final name = _fileName(file.path);
+    if (!name.startsWith(prefix) || !name.endsWith(suffix)) return false;
+    final middle = name.substring(prefix.length, name.length - suffix.length);
+    return middle.isNotEmpty && int.tryParse(middle) != null;
+  }
+
+  Future<List<File>> _snapshotFilesForCurrentScope() async {
+    final snapshotDir = await getSafetySnapshotDirectory();
+    if (!await snapshotDir.exists()) return <File>[];
+
+    final allSnapshots = snapshotDir
+        .listSync()
+        .whereType<File>()
+        .where(
+          (file) =>
+              _fileName(file.path).startsWith('safety_snapshot_') &&
+              file.path.endsWith('.json'),
+        )
+        .toList();
+
+    final currentUserId = await _currentRestoreUserId();
+    List<File> scopedSnapshots;
+    if (currentUserId == null) {
+      scopedSnapshots = allSnapshots.where(_isLegacySnapshotFile).toList();
+    } else {
+      final scopedPrefix = 'safety_snapshot_${currentUserId}_';
+      scopedSnapshots = allSnapshots
+          .where((file) => _fileName(file.path).startsWith(scopedPrefix))
+          .toList();
+      if (scopedSnapshots.isEmpty) {
+        // One-time legacy adoption only when no account-scoped
+        // snapshot exists yet. After scoped snapshots exist, a legacy
+        // snapshot cannot be safely attributed to this account.
+        final hasAnyScopedSnapshot =
+            allSnapshots.any((file) => !_isLegacySnapshotFile(file));
+        if (!hasAnyScopedSnapshot) {
+          scopedSnapshots =
+              allSnapshots.where(_isLegacySnapshotFile).toList();
+        }
+      }
+    }
+
+    scopedSnapshots.sort(
+      (a, b) => b.lastModifiedSync().compareTo(a.lastModifiedSync()),
+    );
+    return scopedSnapshots;
+  }
 
   /// Restores data from a cloud backup.
   Future<RestoreResult> restoreFromCloudBackup(
@@ -240,7 +310,11 @@ class RestoreDataUseCase {
   Future<File> createSafetySnapshot() async {
     final snapshotDir = await getSafetySnapshotDirectory();
     final timestamp = DateTime.now().millisecondsSinceEpoch;
-    final file = File('${snapshotDir.path}/safety_snapshot_$timestamp.json');
+    final currentUserId = await _currentRestoreUserId();
+    final fileName = currentUserId == null
+        ? 'safety_snapshot_$timestamp.json'
+        : 'safety_snapshot_${currentUserId}_$timestamp.json';
+    final file = File('${snapshotDir.path}/$fileName');
 
     final snapshotData = await _captureCurrentStateSnapshot();
     await file.writeAsString(const JsonEncoder.withIndent('  ').convert(snapshotData));
@@ -297,14 +371,8 @@ class RestoreDataUseCase {
   /// Prunes old snapshots to retain at most 3 snapshots in app-private storage.
   Future<void> _pruneOldSnapshots() async {
     try {
-      final snapshotDir = await getSafetySnapshotDirectory();
-      final files = snapshotDir
-          .listSync()
-          .whereType<File>()
-          .where((f) => f.path.contains('safety_snapshot_') && f.path.endsWith('.json'))
-          .toList();
+      final files = await _snapshotFilesForCurrentScope();
 
-      files.sort((a, b) => b.lastModifiedSync().compareTo(a.lastModifiedSync()));
       if (files.length > 3) {
         for (int i = 3; i < files.length; i++) {
           await files[i].delete();
@@ -316,15 +384,8 @@ class RestoreDataUseCase {
   /// Returns the most recent safety snapshot file, if one exists.
   Future<File?> getLatestSnapshot() async {
     try {
-      final snapshotDir = await getSafetySnapshotDirectory();
-      if (!await snapshotDir.exists()) return null;
-      final files = snapshotDir
-          .listSync()
-          .whereType<File>()
-          .where((f) => f.path.contains('safety_snapshot_') && f.path.endsWith('.json'))
-          .toList();
+      final files = await _snapshotFilesForCurrentScope();
       if (files.isEmpty) return null;
-      files.sort((a, b) => b.lastModifiedSync().compareTo(a.lastModifiedSync()));
       return files.first;
     } catch (_) {
       return null;
@@ -362,15 +423,13 @@ class RestoreDataUseCase {
     }
   }
 
-  /// Deletes all safety snapshot files. Used in account/data deletion (REL-01).
+  /// Deletes safety snapshot files for the current restore scope.
+  /// Used in account/data deletion (REL-01).
   Future<void> clearAllSnapshots() async {
     try {
-      final snapshotDir = await getSafetySnapshotDirectory();
-      if (await snapshotDir.exists()) {
-        final files = snapshotDir.listSync().whereType<File>().toList();
-        for (final file in files) {
-          await file.delete();
-        }
+      final files = await _snapshotFilesForCurrentScope();
+      for (final file in files) {
+        await file.delete();
       }
     } catch (_) {}
   }
@@ -466,6 +525,58 @@ class RestoreDataUseCase {
         }
       } else {
         errors.add('Body measurements section is not a list');
+      }
+    }
+
+    // Ownership preflight: when an account is signed in, records
+    // proven to belong to another account are skipped here, before a
+    // safety snapshot or any clear/write. Legacy-unowned records keep
+    // the existing local-restore behaviour and are stamped by the
+    // scoped repositories when written. This deliberately does not
+    // retag another account's backup into the current account.
+    final currentUserId = await _currentRestoreUserId();
+    if (currentUserId != null) {
+      if (parsedProfile != null &&
+          !RecordOwnershipRules.isOwnedByCurrentUser(
+            ownerId: parsedProfile.userId,
+            currentUserId: currentUserId,
+          )) {
+        errors.add('Skipped user profile from another account');
+        parsedProfile = null;
+      }
+
+      final foreignWorkouts = parsedWorkouts
+          .where((workout) => _isForeignRecord(workout.userId, currentUserId))
+          .length;
+      if (foreignWorkouts > 0) {
+        parsedWorkouts.removeWhere(
+          (workout) => _isForeignRecord(workout.userId, currentUserId),
+        );
+        errors.add(
+          'Skipped $foreignWorkouts workout(s) from another account',
+        );
+      }
+
+      final foreignMeals = parsedMeals
+          .where((meal) => _isForeignRecord(meal.userId, currentUserId))
+          .length;
+      if (foreignMeals > 0) {
+        parsedMeals.removeWhere(
+          (meal) => _isForeignRecord(meal.userId, currentUserId),
+        );
+        errors.add('Skipped $foreignMeals meal(s) from another account');
+      }
+
+      final foreignBodyEntries = parsedBodyEntries
+          .where((entry) => _isForeignRecord(entry.userId, currentUserId))
+          .length;
+      if (foreignBodyEntries > 0) {
+        parsedBodyEntries.removeWhere(
+          (entry) => _isForeignRecord(entry.userId, currentUserId),
+        );
+        errors.add(
+          'Skipped $foreignBodyEntries body measurement(s) from another account',
+        );
       }
     }
 
