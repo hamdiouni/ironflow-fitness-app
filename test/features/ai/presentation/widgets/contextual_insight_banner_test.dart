@@ -47,7 +47,7 @@ void main() {
           globalAIProvider.overrideWith((ref) => FakeGlobalAINotifier(state)),
           if (initialDismissed != null)
             bannerDismissalProvider.overrideWith(
-              (ref) => BannerDismissalNotifier(initialDismissed),
+              (ref) => BannerDismissalNotifier(initial: initialDismissed),
             ),
         ],
         child: MaterialApp(
