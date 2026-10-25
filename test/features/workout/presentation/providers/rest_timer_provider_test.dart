@@ -30,19 +30,25 @@ class FakeWorkoutStateManager implements WorkoutStateManager {
   bool cleared = false;
 
   @override
-  Future<void> saveRestTimer(DateTime targetEndTime, int totalSeconds) async {
+  Future<void> saveRestTimer(
+    DateTime targetEndTime,
+    int totalSeconds, {
+    String? userId,
+  }) async {
     savedTargetEndTime = targetEndTime;
     savedTotalSeconds = totalSeconds;
   }
 
   @override
-  ({DateTime targetEndTime, int totalSeconds})? getRestTimer() {
+  ({DateTime targetEndTime, int totalSeconds})? getRestTimer({
+    String? userId,
+  }) {
     if (savedTargetEndTime == null || savedTotalSeconds == null) return null;
     return (targetEndTime: savedTargetEndTime!, totalSeconds: savedTotalSeconds!);
   }
 
   @override
-  Future<void> clearRestTimer() async {
+  Future<void> clearRestTimer({String? userId}) async {
     savedTargetEndTime = null;
     savedTotalSeconds = null;
     cleared = true;

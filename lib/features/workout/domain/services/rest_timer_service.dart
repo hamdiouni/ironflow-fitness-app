@@ -7,6 +7,7 @@ import '../../presentation/managers/workout_state_manager.dart';
 class RestTimerService {
   final NotificationService? _notificationService;
   final WorkoutStateManager? _stateManager;
+  final String? Function()? _currentUserId;
 
   Timer? _timer;
   DateTime? _targetEndTime;
@@ -22,8 +23,12 @@ class RestTimerService {
   RestTimerService({
     NotificationService? notificationService,
     WorkoutStateManager? stateManager,
+    String? Function()? currentUserId,
   })  : _notificationService = notificationService,
-        _stateManager = stateManager;
+        _stateManager = stateManager,
+        _currentUserId = currentUserId;
+
+  String? get _scopedUserId => _currentUserId?.call();
 
   DateTime? get targetEndTime => _targetEndTime;
   int get totalSeconds => _totalSeconds;
@@ -42,7 +47,11 @@ class RestTimerService {
     _isRunning = true;
 
     // Persist timestamp and schedule inexact local notification
-    _stateManager?.saveRestTimer(_targetEndTime!, durationSeconds);
+    _stateManager?.saveRestTimer(
+      _targetEndTime!,
+      durationSeconds,
+      userId: _scopedUserId,
+    );
     _notificationService?.scheduleRestTimer(_targetEndTime!);
 
     // Notify initial state
@@ -78,7 +87,7 @@ class RestTimerService {
     _remainingSeconds = 0;
     _targetEndTime = null;
     _pausedRemainingSeconds = null;
-    _stateManager?.clearRestTimer();
+    _stateManager?.clearRestTimer(userId: _scopedUserId);
     _notificationService?.cancelRestTimer();
   }
 
@@ -102,7 +111,7 @@ class RestTimerService {
     }
 
     _targetEndTime = null;
-    _stateManager?.clearRestTimer();
+    _stateManager?.clearRestTimer(userId: _scopedUserId);
     _notificationService?.cancelRestTimer();
   }
 
@@ -125,7 +134,11 @@ class RestTimerService {
         return;
       }
       _remainingSeconds = remaining;
-      _stateManager?.saveRestTimer(_targetEndTime!, _totalSeconds);
+      _stateManager?.saveRestTimer(
+        _targetEndTime!,
+        _totalSeconds,
+        userId: _scopedUserId,
+      );
       _notificationService?.scheduleRestTimer(_targetEndTime!);
       onTick?.call(_remainingSeconds);
     } else if (_pausedRemainingSeconds != null) {
@@ -146,7 +159,7 @@ class RestTimerService {
   void sync() {
     if (_targetEndTime == null) {
       // Check if there is a saved rest timer from prior process death
-      final saved = _stateManager?.getRestTimer();
+      final saved = _stateManager?.getRestTimer(userId: _scopedUserId);
       if (saved != null) {
         final now = DateTime.now();
         if (saved.targetEndTime.isAfter(now)) {
@@ -159,7 +172,7 @@ class RestTimerService {
           return;
         } else {
           // Timer finished while dead/backgrounded
-          _stateManager?.clearRestTimer();
+          _stateManager?.clearRestTimer(userId: _scopedUserId);
           _complete();
           return;
         }

@@ -2,7 +2,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/services/rest_timer_service.dart';
 import '../../../../core/providers/analytics_provider.dart';
+import '../../../../core/utils/record_ownership.dart';
 import '../../../../shared/presentation/services/app_haptics.dart';
+import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../../../notifications/presentation/providers/notification_providers.dart';
 import 'workout_providers.dart';
 
@@ -65,6 +67,8 @@ final restTimerServiceProvider = Provider<RestTimerService>((ref) {
   final service = RestTimerService(
     notificationService: notificationService,
     stateManager: stateManager,
+    currentUserId: () =>
+        ref.read(currentUserIdProvider) ?? RecordOwnershipRules.guestUserId,
   );
   ref.onDispose(() => service.dispose());
   return service;

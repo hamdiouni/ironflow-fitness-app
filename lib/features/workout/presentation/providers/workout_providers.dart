@@ -186,6 +186,9 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
         _ref = ref,
         super(const WorkoutState.initial());
 
+  String get _activeStateUserId =>
+      _ref.read(currentUserIdProvider) ?? RecordOwnershipRules.guestUserId;
+
   /// Starts a new workout session and transitions to [WorkoutState.inProgress].
   /// If [initialExercises] are passed, uses them directly. Otherwise, loads from the active program,
   /// falling back gracefully to an empty workout if no active program exists.
@@ -223,7 +226,7 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
       state = WorkoutState.inProgress(workout, startTime);
       AppLogger.debug('✅ [Workout] State updated to inProgress');
       
-      await _stateManager.saveState(workout, startTime);
+      await _stateManager.saveState(workout, startTime, userId: _activeStateUserId);
       AppLogger.debug('✅ [Workout] Workout state saved to Hive');
       
       // Track workout started
@@ -268,7 +271,7 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
       await _stateManager.init();
       AppLogger.debug('✅ [Workout] State manager initialized');
       
-      final saved = await _stateManager.restoreState();
+      final saved = await _stateManager.restoreState(userId: _activeStateUserId);
       if (saved != null) {
         AppLogger.debug('✅ [Workout] Workout state restored from Hive');
         AppLogger.debug('🔍 [Workout] Workout ID: ${saved.workout.id}, Start time: ${saved.startTime}');
@@ -310,7 +313,7 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
       state = WorkoutState.inProgress(updated, current.startTime);
       AppLogger.debug('✅ [Workout] State updated with new exercise');
       
-      await _stateManager.saveState(updated, current.startTime);
+      await _stateManager.saveState(updated, current.startTime, userId: _activeStateUserId);
       AppLogger.debug('✅ [Workout] Workout state saved to Hive');
       
       // Track exercise added
@@ -392,7 +395,7 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
       AppLogger.debug('✅ [Workout] State updated with new set');
 
       // Persist state after each set to prevent data loss
-      await _stateManager.saveState(updatedWorkout, startTime);
+      await _stateManager.saveState(updatedWorkout, startTime, userId: _activeStateUserId);
       AppLogger.debug('✅ [Workout] Workout state saved to Hive');
       
       // Track set completed
@@ -446,7 +449,7 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
 
       final updatedWorkout = workout.copyWith(exercises: updatedExercises);
       state = WorkoutState.inProgress(updatedWorkout, startTime);
-      await _stateManager.saveState(updatedWorkout, startTime);
+      await _stateManager.saveState(updatedWorkout, startTime, userId: _activeStateUserId);
     } catch (e) {
       AppLogger.debug('❌ [Workout] Failed to update set type: $e');
     }
@@ -524,7 +527,7 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
       }
       
       AppLogger.debug('📊 [Workout] Clearing active workout state...');
-      await _stateManager.clearState();
+      await _stateManager.clearState(userId: _activeStateUserId);
       AppLogger.debug('✅ [Workout] Active state cleared from Hive');
       
       state = WorkoutState.completed(current.workout);
@@ -547,7 +550,7 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
       inProgress: (workout, startTime) {
         final updatedWorkout = workout.copyWith(caloriesBurned: caloriesBurned);
         state = WorkoutState.inProgress(updatedWorkout, startTime);
-        _stateManager.saveState(updatedWorkout, startTime);
+        _stateManager.saveState(updatedWorkout, startTime, userId: _activeStateUserId);
         AppLogger.debug('✅ [Workout] Workout updated with calories: $caloriesBurned');
       },
       orElse: () {
@@ -562,7 +565,7 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
     try {
       AppLogger.debug('📊 [Workout] Resetting workout state...');
       
-      await _stateManager.clearState();
+      await _stateManager.clearState(userId: _activeStateUserId);
       AppLogger.debug('✅ [Workout] Active state cleared from Hive');
       
       state = const WorkoutState.initial();
