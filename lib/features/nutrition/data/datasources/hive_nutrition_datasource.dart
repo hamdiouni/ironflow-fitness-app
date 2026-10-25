@@ -391,30 +391,53 @@ class HiveNutritionDatasource {
     );
   }
 
-  /// Clear all local nutrition data.
+  /// Clear local nutrition data.
   ///
-  /// Removes all meals and targets from local storage.
-  /// Used for logout or data reset.
-  Future<void> clearAllData() async {
+  /// With [userId], removes only meals visible to that account
+  /// (exact-owned and legacy-unowned) and that account's scoped
+  /// targets. Meals and targets proven to belong to another account
+  /// are preserved. Without [userId], preserves the previous
+  /// whole-box clear for direct unscoped callers.
+  Future<void> clearAllData({String? userId}) async {
     try {
-      AppLogger.debug('📊 [NutritionData] Clearing all nutrition data...');
-      
+      AppLogger.debug('📊 [NutritionData] Clearing nutrition data...');
+      final scopeUserId = RecordOwnershipRules.normalizeUserId(userId);
+
       if (!_mealsBox.isOpen) {
         AppLogger.debug('⚠️ [NutritionData] Meals box is not open');
-      } else {
+      } else if (scopeUserId == null) {
         final mealsCount = _mealsBox.length;
         await _mealsBox.clear();
         AppLogger.debug('✅ [NutritionData] Meals box cleared ($mealsCount meals removed)');
+      } else {
+        var removedCount = 0;
+        for (final meal in await getAllMeals()) {
+          if (!RecordOwnershipRules.belongsToCurrentUser(
+            ownerId: meal.userId,
+            currentUserId: scopeUserId,
+          )) {
+            continue;
+          }
+          await _mealsBox.delete(meal.id);
+          removedCount++;
+        }
+        AppLogger.debug('✅ [NutritionData] Scoped meals cleared ($removedCount meals removed)');
       }
-      
+
       if (!_targetsBox.isOpen) {
         AppLogger.debug('⚠️ [NutritionData] Targets box is not open');
-      } else {
+      } else if (scopeUserId == null) {
         await _targetsBox.clear();
         AppLogger.debug('✅ [NutritionData] Targets box cleared');
+      } else {
+        // Resolve/adopt a safely attributable legacy target first,
+        // then delete only this account's scoped target key.
+        await getNutritionTargets(userId: scopeUserId);
+        await deleteNutritionTargets(userId: scopeUserId);
+        AppLogger.debug('✅ [NutritionData] Scoped targets cleared');
       }
-      
-      AppLogger.debug('✅ [NutritionData] All nutrition data cleared successfully');
+
+      AppLogger.debug('✅ [NutritionData] Nutrition data cleared successfully');
     } catch (e, stackTrace) {
       AppLogger.debug('❌ [NutritionData] Failed to clear all data: $e');
       AppLogger.debug('🔍 [NutritionData] Stack trace: $stackTrace');
