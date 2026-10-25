@@ -22,6 +22,9 @@ import 'package:progression_tracker/features/ai/data/services/change_detection_s
 import 'package:progression_tracker/features/workout/presentation/providers/workout_providers.dart';
 import 'package:progression_tracker/features/nutrition/presentation/providers/nutrition_providers.dart';
 import 'package:progression_tracker/features/body/presentation/providers/body_providers.dart';
+import 'package:progression_tracker/core/utils/record_ownership.dart';
+import 'package:progression_tracker/features/auth/presentation/providers/auth_notifier.dart'
+    show currentUserIdProvider;
 import 'package:uuid/uuid.dart';
 
 // ---------------------------------------------------------------------------
@@ -43,7 +46,9 @@ final aiInsightsEngineProvider = Provider<AIInsightsEngine>((ref) {
 
 /// Provider for Insight Cache Service
 final insightCacheServiceProvider = Provider<InsightCacheService>((ref) {
-  return InsightCacheServiceImpl();
+  final userId =
+      ref.watch(currentUserIdProvider) ?? RecordOwnershipRules.guestUserId;
+  return InsightCacheServiceImpl(userId: userId);
 });
 
 /// Provider for Change Detection Service
