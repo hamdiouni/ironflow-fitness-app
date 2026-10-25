@@ -170,11 +170,19 @@ class FakeHiveSyncQueueDataSource implements HiveSyncQueueDataSource {
   }
 
   @override
-  Future<DateTime?> getCursor(String dataType) async => cursors[dataType];
+  Future<DateTime?> getCursor(
+    String dataType, {
+    required String userId,
+  }) async =>
+      cursors['$userId:$dataType'];
 
   @override
-  Future<void> setCursor(String dataType, DateTime time) async {
-    cursors[dataType] = time;
+  Future<void> setCursor(
+    String dataType,
+    DateTime time, {
+    required String userId,
+  }) async {
+    cursors['$userId:$dataType'] = time;
   }
 
   @override
@@ -282,7 +290,7 @@ void main() {
 
       final lastSyncDate = DateTime(2026, 4, 10);
       // Phase 2: cursors are per-device (queue data source), not cloud metadata.
-      fakeQueue.cursors['programs'] = lastSyncDate;
+      fakeQueue.cursors['user_123:programs'] = lastSyncDate;
       fakeFirestore.activeProgramToReturn = const ActiveProgramModel(
         id: 'ap1',
         program: WorkoutProgramModel(
