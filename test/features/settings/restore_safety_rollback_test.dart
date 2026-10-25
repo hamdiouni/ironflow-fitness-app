@@ -381,5 +381,36 @@ void main() {
       final remaining = snapshotDir.listSync().whereType<File>().toList();
       expect(remaining, isEmpty);
     });
+
+    test('7. Safety snapshots are scoped to the current user', () async {
+      User user(String id) {
+        return User(
+          id: id,
+          email: '$id@ironflow.com',
+          displayName: id,
+          photoUrl: null,
+          createdAt: DateTime(2026, 1, 1),
+          updatedAt: DateTime(2026, 1, 1),
+        );
+      }
+
+      authRepo.user = user('Alice');
+      final aliceSnapshot = await restoreUseCase.createSafetySnapshot();
+      expect(aliceSnapshot.path, contains('safety_snapshot_alice_'));
+      expect(await restoreUseCase.hasUndoSnapshot(), isTrue);
+
+      authRepo.user = user('bob');
+      expect(await restoreUseCase.hasUndoSnapshot(), isFalse);
+      final bobSnapshot = await restoreUseCase.createSafetySnapshot();
+      expect(bobSnapshot.path, contains('safety_snapshot_bob_'));
+      expect(await restoreUseCase.hasUndoSnapshot(), isTrue);
+
+      await restoreUseCase.clearAllSnapshots();
+      expect(await bobSnapshot.exists(), isFalse);
+      expect(await aliceSnapshot.exists(), isTrue);
+
+      authRepo.user = user('Alice');
+      expect(await restoreUseCase.hasUndoSnapshot(), isTrue);
+    });
   });
 }

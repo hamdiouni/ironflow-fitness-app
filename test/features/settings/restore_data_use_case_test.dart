@@ -799,6 +799,187 @@ void main() {
       expect(all.length, 2);
       expect(all.map((w) => w.id), containsAll(['initial-w', 'restored-w']));
     });
+
+    test('foreign-only backup fails before clearing current user data',
+        () async {
+      authRepo.currentUser = User(
+        id: 'Alice',
+        email: 'Alice@ironflow.com',
+        displayName: 'Alice',
+        photoUrl: null,
+        createdAt: DateTime(2026, 1, 1),
+        updatedAt: DateTime(2026, 1, 1),
+      );
+      await workoutRepo.saveWorkout(
+        Workout(
+          id: 'existing-Alice',
+          date: DateTime(2026, 1, 2),
+          duration: const Duration(minutes: 30),
+          totalVolume: 1000,
+          exercises: const [],
+          userId: 'Alice',
+        ),
+      );
+
+      final backupJson = jsonEncode({
+        'export_info': {'export_version': '2.0'},
+        'workouts': [
+          WorkoutModel.fromEntity(
+            Workout(
+              id: 'foreign-bob',
+              date: DateTime(2026, 1, 3),
+              duration: const Duration(minutes: 30),
+              totalVolume: 2000,
+              exercises: const [],
+              userId: 'bob',
+            ),
+          ).toJson(),
+        ],
+      });
+
+      final result = await restoreUseCase.restoreFromJsonString(
+        backupJson,
+        overwriteExisting: true,
+      );
+
+      expect(result.success, isFalse);
+      expect(
+        result.errors,
+        contains('Skipped 1 workout(s) from another account'),
+      );
+      expect(
+        workoutRepo.workouts.map((workout) => workout.id),
+        <String>['existing-Alice'],
+      );
+    });
+
+    test('mixed backup restores current records and skips foreign records',
+        () async {
+      final date = DateTime(2026, 1, 4, 12);
+      authRepo.currentUser = User(
+        id: 'Alice',
+        email: 'Alice@ironflow.com',
+        displayName: 'Alice',
+        photoUrl: null,
+        createdAt: DateTime(2026, 1, 1),
+        updatedAt: DateTime(2026, 1, 1),
+      );
+      final aliceProfile = UserProfile(
+        userId: 'Alice',
+        email: 'Alice@ironflow.com',
+        name: 'Alice',
+        age: 30,
+        gender: null,
+        fitnessLevel: null,
+        goals: null,
+        equipment: null,
+        createdAt: DateTime(2026, 1, 1),
+        updatedAt: DateTime(2026, 1, 1),
+      );
+      authRepo.userProfile = aliceProfile;
+
+      Workout ownedWorkout(String id, String userId) {
+        return Workout(
+          id: id,
+          date: date,
+          duration: const Duration(minutes: 30),
+          totalVolume: 1000,
+          exercises: const [],
+          userId: userId,
+        );
+      }
+
+      Meal ownedMeal(String id, String userId) {
+        return Meal(
+          id: id,
+          name: 'Meal $id',
+          macros: const MealMacros(
+            calories: 100,
+            protein: 10,
+            carbs: 10,
+            fats: 2,
+          ),
+          micros: const MealMicros(
+            fiber: 0,
+            sugar: 0,
+            sodium: 0,
+            potassium: 0,
+          ),
+          vitamins: const MealVitamins(
+            vitaminA: 0,
+            vitaminB: 0,
+            vitaminC: 0,
+            vitaminD: 0,
+            vitaminE: 0,
+          ),
+          minerals: const MealMinerals(
+            calcium: 0,
+            iron: 0,
+            magnesium: 0,
+            zinc: 0,
+          ),
+          timestamp: date,
+          userId: userId,
+        );
+      }
+
+      BodyEntry ownedBody(String id, String userId) {
+        return BodyEntry(
+          id: id,
+          date: date,
+          weight: 80,
+          measurements: const <MeasurementType, double>{},
+          photoPath: '',
+          userId: userId,
+        );
+      }
+
+      final backupJson = jsonEncode({
+        'export_info': {'export_version': '2.0'},
+        'user_profile': UserProfile(
+          userId: 'bob',
+          email: 'bob@ironflow.com',
+          name: 'Bob',
+          age: 31,
+          gender: null,
+          fitnessLevel: null,
+          goals: null,
+          equipment: null,
+          createdAt: DateTime(2026, 1, 1),
+          updatedAt: DateTime(2026, 1, 1),
+        ).toJson(),
+        'workouts': [
+          WorkoutModel.fromEntity(ownedWorkout('w-Alice', 'Alice')).toJson(),
+          WorkoutModel.fromEntity(ownedWorkout('w-bob', 'bob')).toJson(),
+        ],
+        'nutrition_logs': [
+          {
+            'date': date.toIso8601String(),
+            'meals': [
+              MealModel.fromEntity(ownedMeal('m-Alice', 'Alice')).toJson(),
+              MealModel.fromEntity(ownedMeal('m-bob', 'bob')).toJson(),
+            ],
+          },
+        ],
+        'body_measurements': [
+          BodyEntryModel.fromEntity(ownedBody('b-Alice', 'Alice')).toJson(),
+          BodyEntryModel.fromEntity(ownedBody('b-bob', 'bob')).toJson(),
+        ],
+      });
+
+      final result = await restoreUseCase.restoreFromJsonString(backupJson);
+
+      expect(result.success, isTrue, reason: result.errors.join('\n'));
+      expect(result.restoredCounts['workouts'], 1);
+      expect(result.restoredCounts['nutrition_logs'], 1);
+      expect(result.restoredCounts['body_measurements'], 1);
+      expect(result.restoredCounts.containsKey('user_profile'), isFalse);
+      expect(workoutRepo.workouts.map((item) => item.id), <String>['w-Alice']);
+      expect(nutritionRepo.meals.map((item) => item.id), <String>['m-Alice']);
+      expect(bodyRepo.entries.map((item) => item.id), <String>['b-Alice']);
+      expect(authRepo.userProfile, aliceProfile);
+      expect(result.errors, hasLength(4));
+    });
   });
 }
 
