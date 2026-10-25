@@ -538,7 +538,7 @@ class SyncService {
   }
 
   Future<void> _pullWorkouts(String userId) async {
-    final since = await _syncQueue.getCursor(_workoutsKey);
+    final since = await _syncQueue.getCursor(_workoutsKey, userId: userId);
     final cloudWorkouts = await _firestoreSync.getWorkouts(userId, since: since);
     if (cloudWorkouts.isNotEmpty) {
       final locals = {
@@ -559,11 +559,11 @@ class SyncService {
         }
       }
     }
-    await _advanceCursor(_workoutsKey);
+    await _advanceCursor(_workoutsKey, userId);
   }
 
   Future<void> _pullActiveProgram(String userId) async {
-    final since = await _syncQueue.getCursor(_programsKey);
+    final since = await _syncQueue.getCursor(_programsKey, userId: userId);
     final cloud = await _firestoreSync.getActiveProgram(userId, since: since);
     if (cloud != null) {
       final local = await _hivePrograms.loadActiveProgram(userId: userId);
@@ -575,12 +575,12 @@ class SyncService {
         AppLogger.debug('📥 Pulled active program ${cloud.id}');
       }
     }
-    await _advanceCursor(_programsKey);
+    await _advanceCursor(_programsKey, userId);
   }
 
   Future<void> _pullMeals(String userId) async {
     final hiveNutrition = _hiveNutrition!;
-    final since = await _syncQueue.getCursor(_nutritionKey);
+    final since = await _syncQueue.getCursor(_nutritionKey, userId: userId);
     final cloudMeals = await _firestoreSync.getMeals(userId, since: since);
     if (cloudMeals.isNotEmpty) {
       final locals = {
@@ -599,12 +599,12 @@ class SyncService {
         }
       }
     }
-    await _advanceCursor(_nutritionKey);
+    await _advanceCursor(_nutritionKey, userId);
   }
 
   Future<void> _pullBodyEntries(String userId) async {
     final hiveBody = _hiveBody!;
-    final since = await _syncQueue.getCursor(_bodyProgressKey);
+    final since = await _syncQueue.getCursor(_bodyProgressKey, userId: userId);
     final cloudEntries =
         await _firestoreSync.getBodyEntries(userId, since: since);
     if (cloudEntries.isNotEmpty) {
@@ -624,7 +624,7 @@ class SyncService {
         }
       }
     }
-    await _advanceCursor(_bodyProgressKey);
+    await _advanceCursor(_bodyProgressKey, userId);
   }
 
   Future<void> _pullNutritionTargets(String userId) async {
@@ -658,10 +658,11 @@ class SyncService {
 
   bool _isAfter(DateTime? a, DateTime? b) => (a ?? _epoch).isAfter(b ?? _epoch);
 
-  Future<void> _advanceCursor(String key) async {
+  Future<void> _advanceCursor(String key, String userId) async {
     await _syncQueue.setCursor(
       key,
       DateTime.now().subtract(_cursorSafetyMargin),
+      userId: userId,
     );
   }
 

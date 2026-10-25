@@ -12,12 +12,18 @@ abstract class HiveSyncQueueDataSource {
   Future<int> getPendingCount();
   Future<int> getFailedCount();
 
-  /// Per-device pull cursor for a collection (Phase 2): the `syncedAt`
-  /// watermark this device has already pulled. Cursors are local-only
-  /// state — storing them in the cloud (the old `sync_metadata`
-  /// collection) let one device's pulls hide data from another device.
-  Future<DateTime?> getCursor(String dataType);
-  Future<void> setCursor(String dataType, DateTime time);
+  /// Per-device, per-user pull cursor for a collection: the `syncedAt`
+  /// watermark this device has already pulled for [userId]. Cursors are
+  /// local-only state — storing them in the cloud (the old
+  /// `sync_metadata` collection) let one device's pulls hide data from
+  /// another device, and a device-global cursor would let one account's
+  /// pull hide another account's cloud changes on the same device.
+  Future<DateTime?> getCursor(String dataType, {required String userId});
+  Future<void> setCursor(
+    String dataType,
+    DateTime time, {
+    required String userId,
+  });
 
   /// Whether the one-time initial full-push has already been performed
   /// for [userId] on this device (Phase 3): on first sign-in, all local
@@ -159,16 +165,24 @@ class HiveSyncQueueDataSourceImpl implements HiveSyncQueueDataSource {
   }
 
   // Cursors live in the existing `app_settings` (Box<String>) under
-  // prefixed keys — no new box to classify/wipe. Missing/unreadable
-  // cursor = full pull, which LWW merge makes idempotent.
+  // per-user prefixed keys — no new box to classify/wipe. Missing or
+  // unreadable cursor = full pull, which LWW merge makes idempotent.
+  // The old device-global `sync_cursor_<dataType>` key is deliberately
+  // not adopted: it cannot be attributed to either account safely, so
+  // each account starts with one safe full pull instead.
   static const String _settingsBox = 'app_settings';
-  static String _cursorKey(String dataType) => 'sync_cursor_$dataType';
+  static String _cursorKey(String dataType, String userId) =>
+      'sync_cursor_${dataType}_$userId';
 
   @override
-  Future<DateTime?> getCursor(String dataType) async {
+  Future<DateTime?> getCursor(
+    String dataType, {
+    required String userId,
+  }) async {
     try {
       if (!Hive.isBoxOpen(_settingsBox)) return null;
-      final raw = Hive.box<String>(_settingsBox).get(_cursorKey(dataType));
+      final raw =
+          Hive.box<String>(_settingsBox).get(_cursorKey(dataType, userId));
       return raw == null ? null : DateTime.tryParse(raw);
     } catch (e) {
       AppLogger.debug('Error reading sync cursor for $dataType: $e');
@@ -177,11 +191,15 @@ class HiveSyncQueueDataSourceImpl implements HiveSyncQueueDataSource {
   }
 
   @override
-  Future<void> setCursor(String dataType, DateTime time) async {
+  Future<void> setCursor(
+    String dataType,
+    DateTime time, {
+    required String userId,
+  }) async {
     try {
       if (!Hive.isBoxOpen(_settingsBox)) return;
       await Hive.box<String>(_settingsBox)
-          .put(_cursorKey(dataType), time.toIso8601String());
+          .put(_cursorKey(dataType, userId), time.toIso8601String());
     } catch (e) {
       AppLogger.debug('Error saving sync cursor for $dataType: $e');
     }
