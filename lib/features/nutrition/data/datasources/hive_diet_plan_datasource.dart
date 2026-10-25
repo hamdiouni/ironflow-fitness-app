@@ -35,7 +35,7 @@ class HiveDietPlanDataSource {
 
   Future<Box<Map>> get _box async => await Hive.openBox<Map>(boxName);
 
-  String? _currentUserId() {
+  String? _sessionUserId() {
     if (!Hive.isBoxOpen('auth_session')) return null;
     final sessionBox = Hive.box('auth_session');
     final isLoggedIn =
@@ -45,26 +45,36 @@ class HiveDietPlanDataSource {
     return (userId != null && userId.isNotEmpty) ? userId : null;
   }
 
+  String? _resolveUserId(String? userId) {
+    if (userId != null && userId.isNotEmpty) return userId;
+    // Compatibility fallback for existing direct callers. Provider-wired
+    // code passes the current user id explicitly (A2).
+    return _sessionUserId();
+  }
+
   String _scopedKey(String userId) => '${key}_$userId';
 
-  /// Save the diet plan to local storage
-  Future<void> saveDietPlan(DietPlanStateModel planState) async {
+  /// Save the diet plan to local storage for [userId], when supplied.
+  Future<void> saveDietPlan(
+    DietPlanStateModel planState, {
+    String? userId,
+  }) async {
     final box = await _box;
-    final userId = _currentUserId();
+    final resolvedUserId = _resolveUserId(userId);
     await box.put(
-      userId == null ? key : _scopedKey(userId),
+      resolvedUserId == null ? key : _scopedKey(resolvedUserId),
       planState.toJson(),
     );
   }
 
-  /// Load the diet plan from local storage
-  Future<DietPlanStateModel?> loadDietPlan() async {
+  /// Load the diet plan from local storage for [userId], when supplied.
+  Future<DietPlanStateModel?> loadDietPlan({String? userId}) async {
     final box = await _box;
-    final userId = _currentUserId();
+    final resolvedUserId = _resolveUserId(userId);
 
     Map? json;
-    if (userId != null) {
-      json = box.get(_scopedKey(userId));
+    if (resolvedUserId != null) {
+      json = box.get(_scopedKey(resolvedUserId));
       if (json == null) {
         // One-time adoption of a pre-scoping plan, only when no
         // per-account plan exists yet (otherwise the legacy plan may
@@ -74,7 +84,7 @@ class HiveDietPlanDataSource {
         if (!hasScopedPlan) {
           json = box.get(key);
           if (json != null) {
-            await box.put(_scopedKey(userId), json);
+            await box.put(_scopedKey(resolvedUserId), json);
             await box.delete(key);
           }
         }
@@ -88,10 +98,12 @@ class HiveDietPlanDataSource {
     return DietPlanStateModel.fromJson(_deepCast(json));
   }
 
-  /// Clear the diet plan from local storage
-  Future<void> clearDietPlan() async {
+  /// Clear the diet plan from local storage for [userId], when supplied.
+  Future<void> clearDietPlan({String? userId}) async {
     final box = await _box;
-    final userId = _currentUserId();
-    await box.delete(userId == null ? key : _scopedKey(userId));
+    final resolvedUserId = _resolveUserId(userId);
+    await box.delete(
+      resolvedUserId == null ? key : _scopedKey(resolvedUserId),
+    );
   }
 }
