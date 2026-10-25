@@ -68,7 +68,7 @@ final dietPlanProvider = FutureProvider<DietPlanState?>((ref) async {
   // Plans are stored per account (see HiveDietPlanDataSource); reload
   // when the signed-in user changes instead of serving the previous
   // account's cached plan.
-  ref.watch(authNotifierProvider.select((s) => s.user?.id));
+  ref.watch(currentUserIdProvider);
   final repository = ref.watch(dietPlanRepositoryProvider);
   return await repository.loadDietPlan();
 });

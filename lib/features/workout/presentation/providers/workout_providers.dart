@@ -37,7 +37,7 @@ final workoutRepositoryProvider = Provider<WorkoutRepository>((ref) {
   // never enqueued a single sync action (DATABASE_AND_SYNC_AUDIT F-03).
   // Watching the auth user id rebuilds this provider on login/logout.
   // Local Hive remains the source of truth either way.
-  final userId = ref.watch(authNotifierProvider.select((s) => s.user?.id));
+  final userId = ref.watch(currentUserIdProvider);
   if (userId == null || userId.isEmpty) {
     return WorkoutRepositoryImpl(dataSource);
   }

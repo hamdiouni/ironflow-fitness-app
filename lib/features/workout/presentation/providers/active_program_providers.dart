@@ -38,9 +38,7 @@ final hiveActiveProgramDataSourceProvider =
 final activeProgramRepositoryProvider = Provider<ActiveProgramRepository>((ref) {
   final dataSource = ref.watch(hiveActiveProgramDataSourceProvider);
   // Phase 1: saved programs are stamped with the signed-in owner.
-  final userId = ref.watch(
-    authNotifierProvider.select((s) => s.user?.id),
-  );
+  final userId = ref.watch(currentUserIdProvider);
   // Phase 2: every save/update enqueues the full program state to the
   // single outbox (previously nothing ever enqueued program actions).
   final syncService = ref.watch(syncServiceProvider);
@@ -310,7 +308,7 @@ class ActiveProgramNotifier extends StateNotifier<AsyncValue<ActiveProgram?>> {
 /// backed by the Hive box-watch stream.
 final activeProgramStreamProvider = StreamProvider<ActiveProgram?>((ref) {
   final dataSource = ref.watch(hiveActiveProgramDataSourceProvider);
-  final userId = ref.watch(authNotifierProvider.select((s) => s.user?.id));
+  final userId = ref.watch(currentUserIdProvider);
   return dataSource
       .watchActiveProgram(userId: userId)
       .map((model) => model?.toEntity());

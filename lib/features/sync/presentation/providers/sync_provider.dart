@@ -55,7 +55,7 @@ final syncServiceProvider = Provider<SyncService>((ref) {
   // push of local history; later sign-ins just drain/pull. This is an
   // accelerator only — the marker check inside syncAll guarantees the
   // initial push happens on whatever trigger fires first.
-  ref.listen(authNotifierProvider.select((s) => s.user?.id),
+  ref.listen(currentUserIdProvider,
       (previous, next) {
     if (next != null && next.isNotEmpty && next != previous) {
       service.syncAll(userId: next);
