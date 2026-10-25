@@ -17,6 +17,7 @@ import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../../../retention/presentation/providers/streak_provider.dart';
 import '../../../sync/presentation/providers/sync_provider.dart';
 import '../../../../core/providers/analytics_provider.dart';
+import '../../../../core/utils/record_ownership.dart';
 
 part 'workout_providers.freezed.dart';
 
@@ -39,7 +40,7 @@ final workoutRepositoryProvider = Provider<WorkoutRepository>((ref) {
   // Local Hive remains the source of truth either way.
   final userId = ref.watch(currentUserIdProvider);
   if (userId == null || userId.isEmpty) {
-    return WorkoutRepositoryImpl(dataSource);
+    return WorkoutRepositoryImpl(dataSource, userId: userId);
   }
   return SyncedWorkoutRepository(
     hiveDataSource: dataSource,
@@ -87,9 +88,18 @@ final completeWorkoutUseCaseProvider = Provider<CompleteWorkoutUseCase>((ref) {
 /// watch this to stay fresh.
 final workoutsStreamProvider = StreamProvider<List<Workout>>((ref) {
   final dataSource = ref.watch(hiveWorkoutDataSourceProvider);
-  return dataSource
-      .watchAllWorkouts()
-      .map((models) => models.map((m) => m.toEntity()).toList());
+  final userId = ref.watch(currentUserIdProvider);
+  return dataSource.watchAllWorkouts().map(
+        (models) => models
+            .where(
+              (m) => RecordOwnershipRules.belongsToCurrentUser(
+                ownerId: m.userId,
+                currentUserId: userId,
+              ),
+            )
+            .map((m) => m.toEntity())
+            .toList(),
+      );
 });
 
 final progressionSuggestionUseCaseProvider =

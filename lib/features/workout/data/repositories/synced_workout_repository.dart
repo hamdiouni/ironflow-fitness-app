@@ -2,6 +2,7 @@ import '../../domain/entities/entities.dart';
 import '../../domain/repositories/workout_repository.dart';
 import '../datasources/hive_workout_data_source.dart';
 import '../models/workout_model.dart';
+import '../../../../core/utils/record_ownership.dart';
 import '../../../sync/domain/services/sync_service.dart';
 import '../../../sync/domain/entities/sync_action.dart';
 
@@ -22,13 +23,52 @@ class SyncedWorkoutRepository implements WorkoutRepository {
   /// The active user ID for this repository
   String get userId => _userId;
 
+  String? get _currentUserId =>
+      RecordOwnershipRules.normalizeUserId(_userId);
+
+  bool _belongsToCurrentUser(String? ownerId) {
+    return RecordOwnershipRules.belongsToCurrentUser(
+      ownerId: ownerId,
+      currentUserId: _currentUserId,
+    );
+  }
+
+  bool _isForeign(String? ownerId) {
+    return RecordOwnershipRules.isForeignToCurrentUser(
+      ownerId: ownerId,
+      currentUserId: _currentUserId,
+    );
+  }
+
+  Future<WorkoutModel?> _findExistingWorkout(String id) async {
+    for (final model in await _hiveDataSource.getAllWorkouts()) {
+      if (model.id == id) return model;
+    }
+    return null;
+  }
+
+  String? _ownerForSave(String? ownerId) {
+    final currentUserId = _currentUserId;
+    if (currentUserId == null) return ownerId ?? _userId;
+    return RecordOwnershipRules.isLegacyUnownedOwner(ownerId)
+        ? currentUserId
+        : ownerId;
+  }
+
   @override
   Future<void> saveWorkout(Workout workout) async {
+    if (_currentUserId != null) {
+      // Never save over, claim, or enqueue another account's workout.
+      if (_isForeign(workout.userId)) return;
+      final existing = await _findExistingWorkout(workout.id);
+      if (existing != null && _isForeign(existing.userId)) return;
+    }
+
     // Phase 1: stamp ownership + sync clock on the entity itself, so the
     // local record and the queued payload carry a real userId/updatedAt
     // (previously userId was injected into the sync payload only).
     final stamped = workout.copyWith(
-      userId: workout.userId ?? _userId,
+      userId: _ownerForSave(workout.userId),
       updatedAt: DateTime.now(),
     );
     // Save to local Hive first (source of truth)
@@ -51,7 +91,10 @@ class SyncedWorkoutRepository implements WorkoutRepository {
   @override
   Future<List<Workout>> getAllWorkouts() async {
     final models = await _hiveDataSource.getAllWorkouts();
-    return models.map((m) => m.toEntity()).toList();
+    return models
+        .where((m) => _belongsToCurrentUser(m.userId))
+        .map((m) => m.toEntity())
+        .toList();
   }
 
   @override
@@ -59,16 +102,15 @@ class SyncedWorkoutRepository implements WorkoutRepository {
     int offset = 0,
     int limit = 20,
   }) async {
-    final models = await _hiveDataSource.getWorkoutsPaginated(
-      offset: offset,
-      limit: limit,
-    );
-    return models.map((m) => m.toEntity()).toList();
+    final workouts = await getAllWorkouts();
+    if (offset >= workouts.length) return <Workout>[];
+    final endIndex = (offset + limit).clamp(0, workouts.length);
+    return workouts.sublist(offset, endIndex);
   }
 
   @override
   Future<int> getWorkoutCount() async {
-    return await _hiveDataSource.getWorkoutCount();
+    return (await getAllWorkouts()).length;
   }
 
   @override
@@ -106,6 +148,9 @@ class SyncedWorkoutRepository implements WorkoutRepository {
 
   @override
   Future<void> deleteWorkout(String id) async {
+    final existing = await _findExistingWorkout(id);
+    if (existing != null && _isForeign(existing.userId)) return;
+
     // Delete from local Hive first
     await _hiveDataSource.deleteWorkout(id);
 

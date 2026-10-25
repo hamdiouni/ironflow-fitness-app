@@ -183,4 +183,56 @@ void main() {
     expect(workouts.map((item) => item.id), <String>['keep']);
     expect(await repository.getWorkoutCount(), 1);
   });
+
+  test('scoped repository excludes and protects foreign workouts', () async {
+    await saveAll(<Workout>[
+      workout(id: 'Alice', date: DateTime(2026, 1, 4, 10), userId: 'Alice'),
+      workout(id: 'legacy', date: DateTime(2026, 1, 3, 10)),
+      workout(id: 'guest', date: DateTime(2026, 1, 2, 10), userId: 'local-user'),
+      workout(id: 'bob', date: DateTime(2026, 1, 5, 10), userId: 'bob'),
+    ]);
+    final scopedRepository = WorkoutRepositoryImpl(
+      HiveWorkoutDataSource(),
+      userId: 'Alice',
+    );
+
+    final workouts = await scopedRepository.getAllWorkouts();
+    final page =
+        await scopedRepository.getWorkoutsPaginated(offset: 1, limit: 1);
+
+    expect(
+      workouts.map((item) => item.id),
+      <String>['Alice', 'legacy', 'guest'],
+    );
+    expect(page.map((item) => item.id), <String>['legacy']);
+    expect(await scopedRepository.getWorkoutCount(), 3);
+
+    await scopedRepository.deleteWorkout('bob');
+    expect(
+      (await repository.getAllWorkouts()).map((item) => item.id),
+      contains('bob'),
+    );
+
+    await scopedRepository.saveWorkout(
+      workout(id: 'new-bob', date: DateTime(2026, 1, 6, 10), userId: 'bob'),
+    );
+    await scopedRepository.saveWorkout(
+      workout(id: 'bob', date: DateTime(2026, 1, 7, 10)),
+    );
+    expect(
+      (await repository.getAllWorkouts()).map((item) => item.id),
+      isNot(contains('new-bob')),
+    );
+    final bobWorkout = (await repository.getAllWorkouts())
+        .singleWhere((item) => item.id == 'bob');
+    expect(bobWorkout.userId, 'bob');
+    expect(bobWorkout.date, DateTime(2026, 1, 5, 10));
+
+    await scopedRepository.saveWorkout(
+      workout(id: 'guest', date: DateTime(2026, 1, 2, 10), userId: 'local-user'),
+    );
+    final guestWorkout = (await scopedRepository.getAllWorkouts())
+        .singleWhere((item) => item.id == 'guest');
+    expect(guestWorkout.userId, 'Alice');
+  });
 }

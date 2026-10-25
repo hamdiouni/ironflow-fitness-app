@@ -3,17 +3,67 @@ import '../../domain/repositories/workout_repository.dart';
 import '../datasources/hive_workout_data_source.dart';
 import '../models/workout_model.dart';
 import '../../../../core/error/exceptions.dart';
+import '../../../../core/utils/record_ownership.dart';
 
 /// Concrete implementation of [WorkoutRepository] backed by [HiveWorkoutDataSource].
 class WorkoutRepositoryImpl implements WorkoutRepository {
   final HiveWorkoutDataSource dataSource;
 
-  WorkoutRepositoryImpl(this.dataSource);
+  /// Current account scope. Null preserves the signed-out local-only
+  /// behaviour used by existing direct constructions.
+  final String? userId;
+
+  WorkoutRepositoryImpl(this.dataSource, {this.userId});
+
+  String? get _currentUserId =>
+      RecordOwnershipRules.normalizeUserId(userId);
+
+  bool _belongsToCurrentUser(String? ownerId) {
+    return RecordOwnershipRules.belongsToCurrentUser(
+      ownerId: ownerId,
+      currentUserId: _currentUserId,
+    );
+  }
+
+  bool _isForeign(String? ownerId) {
+    return RecordOwnershipRules.isForeignToCurrentUser(
+      ownerId: ownerId,
+      currentUserId: _currentUserId,
+    );
+  }
+
+  Future<WorkoutModel?> _findExistingWorkout(String id) async {
+    for (final model in await dataSource.getAllWorkouts()) {
+      if (model.id == id) return model;
+    }
+    return null;
+  }
+
+  String? _ownerForSave(String? ownerId) {
+    final currentUserId = _currentUserId;
+    if (currentUserId == null) return ownerId;
+    return RecordOwnershipRules.isLegacyUnownedOwner(ownerId)
+        ? currentUserId
+        : ownerId;
+  }
 
   @override
   Future<void> saveWorkout(Workout workout) async {
+    if (_currentUserId != null) {
+      // A scoped repository must not create, overwrite, or claim a
+      // record proven to belong to another account.
+      if (_isForeign(workout.userId)) return;
+      final existing = await _findExistingWorkout(workout.id);
+      if (existing != null && _isForeign(existing.userId)) return;
+    }
+
     // Phase 1: stamp updatedAt on every save (last-write-wins sync clock).
-    final stamped = workout.copyWith(updatedAt: DateTime.now());
+    // Legacy/guest records written through a scoped repository are
+    // stamped with that repository's current account.
+    final stamped = workout.copyWith(
+      userId: _ownerForSave(workout.userId),
+      updatedAt: DateTime.now(),
+    );
     final model = WorkoutModel.fromEntity(stamped);
     await dataSource.saveWorkout(model);
   }
@@ -21,7 +71,10 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
   @override
   Future<List<Workout>> getAllWorkouts() async {
     final models = await dataSource.getAllWorkouts();
-    return models.map((m) => m.toEntity()).toList();
+    return models
+        .where((m) => _belongsToCurrentUser(m.userId))
+        .map((m) => m.toEntity())
+        .toList();
   }
 
   @override
@@ -29,16 +82,15 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
     int offset = 0,
     int limit = 20,
   }) async {
-    final models = await dataSource.getWorkoutsPaginated(
-      offset: offset,
-      limit: limit,
-    );
-    return models.map((m) => m.toEntity()).toList();
+    final workouts = await getAllWorkouts();
+    if (offset >= workouts.length) return <Workout>[];
+    final endIndex = (offset + limit).clamp(0, workouts.length);
+    return workouts.sublist(offset, endIndex);
   }
 
   @override
   Future<int> getWorkoutCount() async {
-    return await dataSource.getWorkoutCount();
+    return (await getAllWorkouts()).length;
   }
 
   @override
@@ -72,6 +124,8 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
 
   @override
   Future<void> deleteWorkout(String id) async {
+    final existing = await _findExistingWorkout(id);
+    if (existing != null && _isForeign(existing.userId)) return;
     await dataSource.deleteWorkout(id);
   }
 }
