@@ -1,4 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/utils/record_ownership.dart';
+import '../../../auth/presentation/providers/auth_notifier.dart'
+    show currentUserIdProvider;
 import '../../data/datasources/hive_reminder_settings_datasource.dart';
 import '../../data/repositories/reminder_settings_repository_impl.dart';
 import '../../domain/entities/reminder_settings.dart';
@@ -8,7 +11,9 @@ import '../notifiers/reminder_settings_notifier.dart';
 
 /// Provider for Hive datasource
 final hiveReminderSettingsDatasourceProvider = Provider<HiveReminderSettingsDatasource>((ref) {
-  return HiveReminderSettingsDatasource();
+  final userId =
+      ref.watch(currentUserIdProvider) ?? RecordOwnershipRules.guestUserId;
+  return HiveReminderSettingsDatasource(userId: userId);
 });
 
 /// Provider for reminder settings repository

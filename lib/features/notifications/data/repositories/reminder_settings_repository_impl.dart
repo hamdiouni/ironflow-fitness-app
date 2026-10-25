@@ -10,7 +10,7 @@ class ReminderSettingsRepositoryImpl implements ReminderSettingsRepository {
 
   @override
   Future<ReminderSettings> getSettings() async {
-    final settings = _datasource.getSettings();
+    final settings = await _datasource.getSettings();
     
     // Return default settings if none exist
     if (settings == null) {
