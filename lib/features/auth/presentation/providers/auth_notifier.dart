@@ -7,6 +7,8 @@ import 'package:progression_tracker/features/auth/domain/usecases/sign_out_use_c
 import 'package:progression_tracker/features/auth/domain/usecases/sign_up_use_case.dart';
 import 'package:progression_tracker/features/auth/presentation/providers/auth_provider.dart';
 import 'package:progression_tracker/core/providers/analytics_provider.dart';
+import 'package:progression_tracker/features/notifications/presentation/providers/notification_providers.dart'
+    show notificationServiceProvider;
 
 /// Auth state
 class AuthState {
@@ -320,6 +322,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
       if (kDebugMode) {
         AppLogger.debug('✅ [Auth] Sign out successful');
+      }
+
+      // Cancel personal reminders on sign-out before publishing signed-out state
+      try {
+        final notifications = _ref.read(notificationServiceProvider);
+        await notifications.cancelAllNotifications();
+      } catch (e) {
+        if (kDebugMode) {
+          AppLogger.debug('⚠️ [Auth] Failed to cancel notifications on sign out: $e');
+        }
       }
 
       state = const AuthState(
