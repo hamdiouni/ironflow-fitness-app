@@ -1,18 +1,51 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../../core/utils/record_ownership.dart';
+import '../../../auth/presentation/providers/auth_notifier.dart'
+    show currentUserIdProvider;
+
 const String _kDismissedBannersKey = 'ironflow_dismissed_ai_banners';
+
+String _dismissedBannersKeyForUser(String? userId) {
+  final scopeUserId = RecordOwnershipRules.normalizeUserId(userId);
+  return scopeUserId == null
+      ? _kDismissedBannersKey
+      : '${_kDismissedBannersKey}_$scopeUserId';
+}
 
 /// State notifier managing dismissed AI insight banner IDs using local [SharedPreferences].
 class BannerDismissalNotifier extends StateNotifier<Set<String>> {
-  BannerDismissalNotifier([Set<String>? initial]) : super(initial ?? {}) {
+  /// Account that owns these dismissals. Direct constructions without a
+  /// user keep using the legacy preference key.
+  final String? userId;
+
+  BannerDismissalNotifier({Set<String>? initial, this.userId})
+      : super(initial ?? {}) {
     _loadFromPrefs();
   }
+
+  String get _storageKey => _dismissedBannersKeyForUser(userId);
 
   Future<void> _loadFromPrefs() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final list = prefs.getStringList(_kDismissedBannersKey);
+      var list = prefs.getStringList(_storageKey);
+
+      if (list == null && _storageKey != _kDismissedBannersKey) {
+        // One-time adoption of pre-scoping dismissals, only when no
+        // account-scoped dismissal list exists yet.
+        final hasScopedDismissals = prefs
+            .getKeys()
+            .any((key) => key.startsWith('${_kDismissedBannersKey}_'));
+        final legacyList = prefs.getStringList(_kDismissedBannersKey);
+        if (!hasScopedDismissals && legacyList != null) {
+          list = legacyList;
+          await prefs.setStringList(_storageKey, legacyList);
+          await prefs.remove(_kDismissedBannersKey);
+        }
+      }
+
       if (list != null && mounted) {
         state = list.toSet();
       }
@@ -28,7 +61,7 @@ class BannerDismissalNotifier extends StateNotifier<Set<String>> {
     state = updated;
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setStringList(_kDismissedBannersKey, updated.toList());
+      await prefs.setStringList(_storageKey, updated.toList());
     } catch (_) {
       // In-memory state already updated
     }
@@ -42,7 +75,7 @@ class BannerDismissalNotifier extends StateNotifier<Set<String>> {
     state = {};
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(_kDismissedBannersKey);
+      await prefs.remove(_storageKey);
     } catch (_) {}
   }
 }
@@ -50,5 +83,7 @@ class BannerDismissalNotifier extends StateNotifier<Set<String>> {
 /// Global provider for tracking dismissed AI insight banner IDs.
 final bannerDismissalProvider =
     StateNotifierProvider<BannerDismissalNotifier, Set<String>>((ref) {
-  return BannerDismissalNotifier();
+  final userId =
+      ref.watch(currentUserIdProvider) ?? RecordOwnershipRules.guestUserId;
+  return BannerDismissalNotifier(userId: userId);
 });
