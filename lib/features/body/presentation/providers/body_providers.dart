@@ -11,6 +11,7 @@ import '../../domain/usecases/get_weight_trend_use_case.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../../data/models/body_entry_model.dart';
 import '../../../sync/domain/entities/sync_action.dart';
+import '../../../../core/utils/record_ownership.dart';
 import '../../../sync/presentation/providers/sync_provider.dart';
 
 part 'body_providers.freezed.dart';
@@ -70,9 +71,18 @@ final bodyRepositoryProvider = Provider<BodyRepository>((ref) {
 /// Reactive stream of all body entries, newest first.
 final bodyEntriesStreamProvider = StreamProvider<List<BodyEntry>>((ref) {
   final dataSource = ref.watch(hiveBodyDataSourceProvider);
-  return dataSource
-      .watchAllBodyEntries()
-      .map((models) => models.map((m) => m.toEntity()).toList());
+  final userId = ref.watch(currentUserIdProvider);
+  return dataSource.watchAllBodyEntries().map(
+        (models) => models
+            .where(
+              (m) => RecordOwnershipRules.belongsToCurrentUser(
+                ownerId: m.userId,
+                currentUserId: userId,
+              ),
+            )
+            .map((m) => m.toEntity())
+            .toList(),
+      );
 });
 
 // ---------------------------------------------------------------------------

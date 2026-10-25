@@ -1,3 +1,4 @@
+import '../../../../core/utils/record_ownership.dart';
 import '../../domain/entities/body_entry.dart';
 import '../../domain/repositories/body_repository.dart';
 import '../datasources/hive_body_data_source.dart';
@@ -24,11 +25,50 @@ class BodyRepositoryImpl implements BodyRepository {
     this.onEntryDeleted,
   });
 
+  String? get _currentUserId =>
+      RecordOwnershipRules.normalizeUserId(userId);
+
+  bool _belongsToCurrentUser(String? ownerId) {
+    return RecordOwnershipRules.belongsToCurrentUser(
+      ownerId: ownerId,
+      currentUserId: _currentUserId,
+    );
+  }
+
+  bool _isForeign(String? ownerId) {
+    return RecordOwnershipRules.isForeignToCurrentUser(
+      ownerId: ownerId,
+      currentUserId: _currentUserId,
+    );
+  }
+
+  Future<BodyEntryModel?> _findExistingEntry(String id) async {
+    for (final model in await dataSource.getAllBodyEntries()) {
+      if (model.id == id) return model;
+    }
+    return null;
+  }
+
+  String? _ownerForSave(String? ownerId) {
+    final currentUserId = _currentUserId;
+    if (currentUserId == null) return ownerId ?? userId;
+    return RecordOwnershipRules.isLegacyUnownedOwner(ownerId)
+        ? currentUserId
+        : ownerId;
+  }
+
   @override
   Future<void> saveBodyEntry(BodyEntry entry) async {
+    if (_currentUserId != null) {
+      // Never save over, claim, or enqueue another account's entry.
+      if (_isForeign(entry.userId)) return;
+      final existing = await _findExistingEntry(entry.id);
+      if (existing != null && _isForeign(existing.userId)) return;
+    }
+
     // Stamp owner + LWW clock (Phases 1–2) on every save.
     final stamped = entry.copyWith(
-      userId: entry.userId ?? userId,
+      userId: _ownerForSave(entry.userId),
       updatedAt: DateTime.now(),
     );
     final model = BodyEntryModel.fromEntity(stamped);
@@ -39,7 +79,10 @@ class BodyRepositoryImpl implements BodyRepository {
   @override
   Future<List<BodyEntry>> getAllBodyEntries() async {
     final models = await dataSource.getAllBodyEntries();
-    return models.map((m) => m.toEntity()).toList();
+    return models
+        .where((m) => _belongsToCurrentUser(m.userId))
+        .map((m) => m.toEntity())
+        .toList();
   }
 
   @override
@@ -56,6 +99,8 @@ class BodyRepositoryImpl implements BodyRepository {
 
   @override
   Future<void> deleteBodyEntry(String id) async {
+    final existing = await _findExistingEntry(id);
+    if (existing != null && _isForeign(existing.userId)) return;
     await dataSource.deleteBodyEntry(id);
     await _notify(onEntryDeleted, id);
   }
