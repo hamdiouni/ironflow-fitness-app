@@ -1,4 +1,5 @@
 import 'package:progression_tracker/core/utils/app_logger.dart';
+import 'package:progression_tracker/core/utils/record_ownership.dart';
 import 'package:hive/hive.dart';
 import '../../domain/entities/insight.dart';
 import '../../domain/entities/insight_cache.dart';
@@ -28,7 +29,16 @@ class InsightCacheServiceImpl implements InsightCacheService {
   static const String boxName = 'insight_cache';
   static const Duration cacheTTL = Duration(hours: 1);
 
+  /// Account that owns cached insights read/written by this instance.
+  /// Existing constructions without a user keep legacy context keys.
+  final String? userId;
+
+  InsightCacheServiceImpl({this.userId});
+
   Box<Map>? _box;
+
+  String? get _scopeUserId =>
+      RecordOwnershipRules.normalizeUserId(userId);
 
   /// Recursively casts a [Map<dynamic, dynamic>] (as returned by Hive) to
   /// [Map<String, dynamic>] so that json_serializable can deserialize it.
@@ -72,6 +82,29 @@ class InsightCacheServiceImpl implements InsightCacheService {
     }
   }
 
+  Future<Map?> _cachedDataFor(InsightContext context) async {
+    final scopedKey = _getContextKey(context);
+    final scopedData = _box!.get(scopedKey);
+    if (scopedData != null || _scopeUserId == null) return scopedData;
+
+    final legacyKey = _legacyContextKey(context);
+    final legacyData = _box!.get(legacyKey);
+    if (legacyData == null) return null;
+
+    // One-time adoption of a pre-scoping cache entry, only when no
+    // account-scoped entry exists for this context. Insight cache
+    // records carry no owner field, so the legacy entry cannot be
+    // attributed safely after scoped entries have been created.
+    final hasScopedContext = _box!.keys.any(
+      (key) => key.toString().startsWith('${legacyKey}_'),
+    );
+    if (hasScopedContext) return null;
+
+    await _box!.put(scopedKey, legacyData);
+    await _box!.delete(legacyKey);
+    return legacyData;
+  }
+
   @override
   Future<InsightCache?> getCachedInsights(InsightContext context) async {
     try {
@@ -82,8 +115,7 @@ class InsightCacheServiceImpl implements InsightCacheService {
         await init();
       }
       
-      final key = _getContextKey(context);
-      final cachedData = _box!.get(key);
+      final cachedData = await _cachedDataFor(context);
       
       if (cachedData == null) {
         AppLogger.debug('🔍 [InsightCache] No cache found for context: ${context.name}');
@@ -163,8 +195,19 @@ class InsightCacheServiceImpl implements InsightCacheService {
         await init();
       }
       
-      await _box!.clear();
-      
+      final scopeUserId = _scopeUserId;
+      if (scopeUserId == null) {
+        await _box!.clear();
+      } else {
+        final scopedSuffix = '_$scopeUserId';
+        final keysToDelete = _box!.keys
+            .where((key) => key.toString().endsWith(scopedSuffix))
+            .toList();
+        for (final key in keysToDelete) {
+          await _box!.delete(key);
+        }
+      }
+
       AppLogger.debug('✅ [InsightCache] All cached insights cleared successfully');
     } catch (e, stackTrace) {
       AppLogger.debug('❌ [InsightCache] Failed to clear all cached insights: $e');
@@ -192,8 +235,14 @@ class InsightCacheServiceImpl implements InsightCacheService {
     }
   }
 
-  /// Generate cache key for a specific context
-  String _getContextKey(InsightContext context) {
+  String _legacyContextKey(InsightContext context) {
     return 'insights_${context.name}';
+  }
+
+  /// Generate the account-scoped cache key for a specific context.
+  String _getContextKey(InsightContext context) {
+    final scopeUserId = _scopeUserId;
+    final legacyKey = _legacyContextKey(context);
+    return scopeUserId == null ? legacyKey : '${legacyKey}_$scopeUserId';
   }
 }
