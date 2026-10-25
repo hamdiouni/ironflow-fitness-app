@@ -365,7 +365,7 @@ class NutritionRepositoryImpl implements NutritionRepository {
   @override
   Future<void> clearAllData() async {
     try {
-      await hiveDataSource.clearAllData();
+      await hiveDataSource.clearAllData(userId: userId);
     } catch (e) {
       if (kDebugMode) {
         AppLogger.debug('Error clearing all nutrition data: $e');

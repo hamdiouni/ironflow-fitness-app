@@ -275,6 +275,34 @@ void main() {
     expect(await repository.getNutritionHistoryCount(), 0);
   });
 
+  test('clearAllData removes only the scoped user meals and targets',
+      () async {
+    final bobRepository = NutritionRepositoryImpl(
+      hiveDataSource: HiveNutritionDatasource(),
+      userId: 'bob',
+    );
+    await repository.saveNutritionTargets(targets(userId: 'Alice'));
+    await bobRepository.saveNutritionTargets(targets(userId: 'bob'));
+    await repository.saveMealEntry(
+      meal(id: 'Alice-meal', timestamp: DateTime(2026, 1, 2, 8)),
+    );
+    await bobRepository.saveMealEntry(
+      meal(id: 'bob-meal', timestamp: DateTime(2026, 1, 2, 9)),
+    );
+
+    await repository.clearAllData();
+
+    expect(await repository.getMealsByDate(DateTime(2026, 1, 2)), isEmpty);
+    expect(await repository.getNutritionTargets(), isNull);
+    expect(
+      (await bobRepository.getMealsByDate(DateTime(2026, 1, 2)))
+          .single
+          .id,
+      'bob-meal',
+    );
+    expect((await bobRepository.getNutritionTargets())?.userId, 'bob');
+  });
+
   test('reads include legacy meals and exclude foreign meals and targets',
       () async {
     final dataSource = HiveNutritionDatasource();
