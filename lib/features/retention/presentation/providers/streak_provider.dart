@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/utils/record_ownership.dart';
+import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../../domain/entities/streak.dart';
 import '../../data/datasources/hive_streak_data_source.dart';
 
@@ -8,7 +10,9 @@ import '../../data/datasources/hive_streak_data_source.dart';
 // ---------------------------------------------------------------------------
 
 final streakDataSourceProvider = Provider<HiveStreakDataSource>((ref) {
-  return HiveStreakDataSource();
+  final userId =
+      ref.watch(currentUserIdProvider) ?? RecordOwnershipRules.guestUserId;
+  return HiveStreakDataSource(userId: userId);
 });
 
 // ---------------------------------------------------------------------------
