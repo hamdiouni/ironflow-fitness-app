@@ -119,36 +119,6 @@ class _AIChatScreenState extends ConsumerState<AIChatScreen> {
     Future.delayed(const Duration(milliseconds: 100), _scrollToBottom);
   }
 
-  void _sendQuickAction(String action) {
-    AppHaptics.shared.selectionChanged();
-    String message;
-    switch (action) {
-      case 'generate_workout':
-        message = 'Create a detailed workout program for me';
-        break;
-      case 'adjust_diet':
-        message = 'Suggest nutrition changes based on my goals';
-        break;
-      case 'analyze_progress':
-        message = 'Analyze my recent workout performance';
-        break;
-      case 'whats_next':
-        message = 'What should I focus on next?';
-        break;
-      case 'plateau_tactics':
-        message = 'How do I break through a strength plateau?';
-        break;
-      case 'form_cues':
-        message = 'Give me form cues for standard compound lifts';
-        break;
-      default:
-        return;
-    }
-
-    _messageController.text = message;
-    _sendMessage(message);
-  }
-
   void _showTTSSettings(BuildContext context) {
     AppHaptics.shared.selectionChanged();
     showModalBottomSheet(
@@ -786,56 +756,6 @@ class _AIChatScreenState extends ConsumerState<AIChatScreen> {
                     : () => _sendMessage(_messageController.text),
                 color: Colors.black,
                 iconSize: 20,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Quick action button widget with Monolithic Sci-Fi styling
-class _QuickActionButton extends StatelessWidget {
-  final String code;
-  final String label;
-  final IconData icon;
-  final VoidCallback onPressed;
-
-  const _QuickActionButton({
-    required this.code,
-    required this.label,
-    required this.icon,
-    required this.onPressed,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = AppThemeTokens.of(context);
-
-    return InkWell(
-      onTap: onPressed,
-      borderRadius: BorderRadius.circular(6),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-        decoration: BoxDecoration(
-          color: tokens.card,
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: tokens.borderSubtle),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 14, color: tokens.kineticAccent),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                fontFamily: AppTypography.displayFontFamily,
-                color: tokens.textPrimary,
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.3,
               ),
             ),
           ],

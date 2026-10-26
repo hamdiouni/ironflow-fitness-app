@@ -77,9 +77,10 @@ class GeminiAIService {
   }
 
   Future<String?> _getAuthToken() async {
-    if (_authTokenProvider != null) {
+    final tokenProvider = _authTokenProvider;
+    if (tokenProvider != null) {
       try {
-        return await _authTokenProvider!();
+        return await tokenProvider();
       } catch (_) {}
     }
     try {

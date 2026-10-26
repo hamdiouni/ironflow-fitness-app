@@ -322,7 +322,7 @@ class AIChatNotifier extends StateNotifier<AIChatState> {
           AppLogger.debug('✅ [AI CHAT] Gemini response received!');
           AppLogger.debug('📝 [AI CHAT] Response length: ${responseText.length} chars');
           AppLogger.debug('═══════════════════════════════════════');
-        } catch (e, stackTrace) {
+        } catch (e) {
           AppLogger.debug('═══════════════════════════════════════');
           AppLogger.debug('❌ [AI CHAT ERROR] Gemini API failed!');
           AppLogger.debug('🔴 [AI CHAT ERROR] Error message: $e');
