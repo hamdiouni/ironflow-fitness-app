@@ -291,8 +291,9 @@ class RestoreDataUseCase {
   /// Directory where safety snapshots are securely stored in app-private storage.
   Future<Directory> getSafetySnapshotDirectory() async {
     Directory baseDir;
-    if (_privateDocumentsDir != null) {
-      baseDir = _privateDocumentsDir!;
+    final privateDocs = _privateDocumentsDir;
+    if (privateDocs != null) {
+      baseDir = privateDocs;
     } else {
       try {
         baseDir = await getApplicationDocumentsDirectory();
