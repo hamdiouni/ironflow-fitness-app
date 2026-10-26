@@ -40,6 +40,10 @@ class ActiveWorkoutScreen extends ConsumerStatefulWidget {
 
 class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
   String? _animatingExerciseId;
+  // Note: Deliberate product decision: PR celebration count is event-based from
+  // when a set is first logged. Editing or removing that set does not recalculate
+  // the live session celebration count. Saved workout data, history, and progression
+  // remain correct and canonical.
   int _prCount = 0;
 
   @override
