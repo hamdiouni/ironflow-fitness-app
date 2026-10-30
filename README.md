@@ -277,10 +277,7 @@ Haptic feedback is managed centrally through [`AppHaptics`](lib/shared/presentat
 - Android Studio / Xcode (for mobile development)
 - Firebase account (free tier works)
 - AI API keys (optional but recommended):
-  - [OpenAI API Key](https://platform.openai.com/api-keys)
-  - [Google Gemini API Key](https://makersuite.google.com/app/apikey) (FREE)
-  - [NVIDIA API Key](https://build.nvidia.com/) (FREE)
-
+  
 ### Installation
 
 1. **Clone the repository**
