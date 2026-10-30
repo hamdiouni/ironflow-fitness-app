@@ -41,7 +41,7 @@
 - **📊 Progressive Overload Tracking**: Automatically track your strength gains and get smart progression suggestions
 - **🥗 Comprehensive Nutrition**: Log meals with an extensive food database, track macros, and get AI-generated meal plans
 - **📱 Offline-First**: All core features work without internet connectivity
-- **⚡ Monolithic Sci-Fi UI**: High-contrast, telemetry-styled design system with dark/light tokens and smooth micro-animations
+- **🎨 Slate Teal Refined Design System**: Dual-mode architectural slate surfaces with kinetic teal accents, frame-light elevation, 3-tier standardized radii, and WCAG AA/AAA contrast compliance
 - **📳 Tactile Telemetry**: Centralized haptic feedback on sets, countdown timers, macro milestones, and navigation with settings toggle
 - **🔄 Offline-First Sync Engine**: Firestore outbox sync is available behind `USE_FIREBASE_AUTH=true` after Firebase rules/indexes are deployed; the default build remains local/mock-auth
 - **🌍 Localization Foundation**: Generated delegates for English, Spanish, French, German, Japanese, Portuguese, and Chinese are wired at the app root; full UI string coverage is still being expanded
@@ -108,12 +108,14 @@
 
 ### 🎨 UI/UX Features
 
-- **Dark/Light Themes**: Eye-friendly themes with smooth transitions
-- **Glassmorphism Design**: Modern frosted glass UI elements
+- **Dual-Mode Slate Teal Themes**: Eye-friendly architectural dark (`#0B1218`) and light (`#F4F7F9`) palettes passing WCAG AA/AAA contrast ratios
+- **Frame-Light Elevation**: Clean flat surface fills on canvas with borders reserved strictly for active selection, keyboard focus, and validation
+- **Standardized 3-Tier Radius Scale**: Disciplined 8dp (chips), 12dp (inputs, buttons), and 14dp (cards, sheets, dialogs) rounding
+- **Ergonomic Buttons**: 3 standardized touch-friendly sizes (Sm 36dp, Md 44dp, Lg 50dp) with primary, secondary, tertiary, and destructive variants
+- **Responsive Multi-Device Shell**: Adaptive desktop left `NavigationRail` and 1120dp max-width centered container for screens ≥ 840dp; mobile bottom dock
+- **Plain English Copy**: Clean, human-centered tone following `docs/COPY_GUIDE.md` without robotic jargon
 - **Smooth Animations**: Lottie and Flutter Animate for engaging transitions
-- **Responsive Layout**: Optimized for all screen sizes
-- **Gesture Controls**: Swipe, drag, and tap for intuitive navigation
-- **Material 3**: Latest Material Design guidelines
+- **Material 3**: Latest Material Design guidelines integrated via custom `ThemeExtension` tokens
 
 ---
 
@@ -223,32 +225,38 @@ lib/
 
 ---
 
-## 🎨 Monolithic Sci-Fi Design System & Telemetry
+## 🎨 Slate Teal Refined Design System & Visual Architecture
 
-IronFlow v1.1.0 introduces a cohesive, high-contrast **Monolithic Sci-Fi** aesthetic built directly into Flutter's `ThemeExtension` architecture.
+IronFlow features a cohesive, professional **Slate Teal Refined (`01-slate-teal`)** design system built directly into Flutter's `ThemeExtension` architecture, balancing calm architectural slate surfaces with vibrant, focused kinetic teal accents.
 
 ### Architectural Tokens
-- **`AppThemeTokens`** (`context.tokens`): Light and dark color palettes adhering strictly to WCAG AAA contrast ratios.
-  - Dark Mode: Obsidian Canvas (`0xFF090A0C`), Panel Glass (`0xFF11141A`), Kinetic Cyan (`0xFF00E5FF`), Laser Amber (`0xFFFF9100`), Plasma Green (`0xFF00E676`), Neon Crimson (`0xFFFF1744`).
-  - Light Mode: Architectural Titanium (`0xFFF0F2F5`), Crisp Panels (`0xFFFFFFFF`), High-Contrast Dark Slate text (`0xFF0F172A`).
-- **`AppTypography`**: Two-tiered typography scale:
-  - Display Font: `SpaceGrotesk` for titles, metrics, HUD readouts, and numerical telemetry.
-  - Body Font: `Inter` for long-form workout notes, body descriptions, and guides.
+- **`AppThemeTokens`** (`context.tokens`): Dual-mode color palette built for WCAG AA/AAA contrast compliance:
+  - **Dark Mode**: Architectural Slate Canvas (`0xFF0B1218`), Deep Slate Panel (`0xFF131D26`), Elevated Card (`0xFF1C2A36`), Kinetic Teal Accent (`0xFF2DD4BF`), and High-Contrast Deep Ink text on accent (`0xFF042F2E`, 7.92:1 AAA ratio).
+  - **Light Mode**: Cool Light Canvas (`0xFFF4F7F9`), Pure White Panels (`0xFFFFFFFF`), Soft Elevated Surfaces (`0xFFE9EFF3`), Deep Teal Accent (`0xFF0F766E`), and Pure White text on accent (`0xFFFFFFFF`, 5.31:1 AA ratio).
+- **Frame-Light Elevation**: Default `AppCard` surfaces render without nested border clutter (`hasBorder = false`), reserving borders exclusively for active selections, keyboard focus rings, and validation errors.
+- **Standardized 3-Tier Radius Scale**:
+  - `tokens.chipRadius` (`8.0dp`): Filter tags, chips, status pills.
+  - `tokens.buttonRadius` / `inputRadius` (`12.0dp`): Buttons, text fields, selectors.
+  - `tokens.cardRadius` (`14.0dp`): Cards, bottom sheets, dialog modals.
+  - `tokens.radiusPill` (`999.0dp`): Progress bars, floating pills, avatar badges.
+- **`AppTypography`**: Two-tiered typography scale with open-license bundled fonts:
+  - Display Font: `SpaceGrotesk` for headers, key metrics, and numerical values.
+  - Body Font: `Inter` for exercise instructions, workout logs, nutrition cards, and chat bubbles.
 - **`AppSpacings`**: 4px modular spacing grid (`xs: 4`, `sm: 8`, `md: 12`, `lg: 16`, `xl: 24`, `xxl: 32`).
 
 ### Shared Component Library (`lib/shared/presentation/components/`)
-- **`AppCard`**: Panel container with subtle borders and optional kinetic glowing halos (`isGlowing: true`).
-- **`AppButton`**: Tactical buttons supporting primary, secondary, outline, ghost, and danger variants with automatic loading spinners and a guaranteed minimum 48dp touch target.
-- **`AppStatTile`**: Modular HUD metric readout with title, large numerical metric, unit, and delta status badge.
-- **`AppProgress`**: Circular progress rings and segmented progress bars with kinetic gradient fills.
-- **`AppChip`**: Filter and status tags with active highlight states.
-- **`AppStateViews`**: Unified state feedback views for offline mode, sync errors, and empty states.
-- **`AppSectionHeader`**: High-contrast category dividers with uppercase display typography and optional action CTA.
+- **`AppCard`**: Frame-light panel container with flat fill on canvas and optional active highlight border.
+- **`AppButton`**: 3 standardized sizes (`sm: 36dp`, `md: 44dp`, `lg: 50dp`) supporting `primary`, `secondary`, `tertiary`, `outline`, and `destructive` variants with guaranteed 48×48dp accessible touch bounds.
+- **`AppDialog` & `AppBottomSheet`**: Constrained, responsive modal windows (dialog max 440dp width, sheet max 560dp width) with consistent action buttons.
+- **`AppStatTile`**: Modular metric readout with title, large numerical metric, unit, and status badge.
+- **`AppProgress`**: Circular progress rings and segmented bars with kinetic fills.
+- **`AppChip`**: Standardized 8dp radius filter and status tags.
+- **`AppStateViews`**: Unified state feedback views for empty, loading, offline, and error states.
 
-### Interactive Debug Design Gallery
-In debug mode (`kDebugMode`), developers can explore, test, and audit every design token and shared component live:
-- Navigate to **Profile → Settings → Design System Gallery (Debug Only)** or navigate to route `/design-gallery`.
-- Includes live theme switching, component variant showcases, interactive states, and typography stress tests.
+### Interactive Live Design Gallery
+In debug mode (`kDebugMode`), developers and testers can audit every design token and shared component live:
+- Navigate to **Profile → Settings → Design System Gallery (Debug Only)** or route `/design-gallery`.
+- Includes live dark/light mode switching, component states (normal, pressed, loading, disabled), typography scales, and modal previews.
 
 ### 📳 Tactile Telemetry (`AppHaptics`)
 Haptic feedback is managed centrally through [`AppHaptics`](lib/shared/presentation/services/app_haptics.dart):
@@ -427,7 +435,7 @@ Data Sources (Hive, Firestore, APIs)
 
 ## 🧪 Testing
 
-IronFlow has a comprehensive test suite of **438 automated tests** covering unit, widget, domain logic, and property-based regression suites. All tests pass cleanly with **0 static analysis errors and 0 warnings**.
+IronFlow has a comprehensive test suite of **over 700 automated tests** covering unit, widget, domain logic, design token contrast verification, and property-based regression suites. All tests pass cleanly with **0 static analysis errors and 0 warnings**.
 
 ### Run all tests
 ```bash
@@ -511,8 +519,10 @@ flutter build web --release
 
 ## 🎨 Screenshots
 
-<!-- Add screenshots here when available -->
-Coming soon!
+A full before-and-after screenshot audit and visual comparison catalog across mobile, desktop, dark mode, and light mode is documented in:
+- **[Design Upgrade Report](docs/DESIGN_UPGRADE_REPORT.md)**: Full metrics, contrast ratios, and screen inventory.
+- **[Before Screenshots](docs/screenshots/before/)**: 35 pre-upgrade mobile and desktop captures.
+- **[After Screenshots (Direction 1)](docs/screenshots/after/)**: 35 post-upgrade mobile, desktop, and Chrome live captures.
 
 ---
 
