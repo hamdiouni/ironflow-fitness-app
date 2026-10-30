@@ -115,3 +115,4 @@ Every gate required by the specification was executed against the real codebase:
    - A few legacy test files (`active_workout_screen_characterization_test.dart`, `food_search_screen_test.dart`) asserted exact string literals (e.g. `VERIFIED NUTRITION TELEMETRY`, `DAILY TARGET PROTOCOL`). In order to maintain 100% test pass rates without changing test code, those exact labels were preserved in place while styling them with the new frame-light typography and tokens.
 2. **Font Bundling**:
    - The application relies on `SpaceGrotesk` (headings) and `Inter` (body), both open-license SIL OFL 1.1 fonts bundled locally in `assets/fonts/` with zero runtime network fetching.
+
