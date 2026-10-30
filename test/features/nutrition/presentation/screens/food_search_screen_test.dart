@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:progression_tracker/features/nutrition/domain/entities/food_item.dart';
 import 'package:progression_tracker/features/nutrition/presentation/screens/food_search_screen.dart';
 import 'package:progression_tracker/features/onboarding/presentation/providers/onboarding_provider.dart';
+import 'package:progression_tracker/shared/presentation/components/app_card.dart';
 
 void main() {
   Widget buildTestableWidget({
@@ -133,6 +134,20 @@ void main() {
       expect(loggedFood, isNotNull);
       expect(loggedFood!.id, isNot(equals('usda_chicken_breast_raw')));
       expect(loggedGrams, greaterThan(0));
+    });
+
+    testWidgets('renders food list tiles using shared AppCard surface',
+        (tester) async {
+      tester.view.physicalSize = const Size(800, 1200);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      await tester.pumpWidget(
+        buildTestableWidget(onFoodLogged: (_, _) {}),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AppCard), findsWidgets);
     });
   });
 }

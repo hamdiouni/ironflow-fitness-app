@@ -388,5 +388,169 @@ void main() {
       expect(find.text('SET 1: 120.0KG × 5'), findsOneWidget);
       expect(find.text('SET 2: 120.0KG × 5'), findsOneWidget);
     });
+
+    testWidgets('7. Warm-up-only workout keeps FINISH WORKOUT disabled (zero working sets guard)', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(800, 1200));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final warmupOnlyWorkout = Workout(
+        id: 'w_warmup',
+        date: DateTime.now(),
+        exercises: [
+          Exercise(
+            id: 'ex_bench',
+            name: 'Bench Press',
+            type: ExerciseType.strength,
+            sets: [
+              SetEntry(
+                id: 's_w1',
+                reps: 10,
+                weight: 40.0,
+                type: SetType.warmup,
+                timestamp: DateTime.now(),
+              ),
+            ],
+          ),
+        ],
+        duration: Duration.zero,
+        totalVolume: 0,
+      );
+      final notifier = TestWorkoutNotifier(
+        WorkoutState.inProgress(warmupOnlyWorkout, DateTime.now()),
+      );
+
+      await tester.pumpWidget(buildTestWidget(notifier: notifier));
+      await tester.pumpAndSettle();
+
+      final finishBtn = tester.widget<AppButton>(
+        find.widgetWithText(AppButton, 'FINISH WORKOUT'),
+      );
+      expect(
+        finishBtn.onPressed,
+        isNull,
+        reason: 'Warm-up sets alone must not allow finishing/saving an empty workout',
+      );
+    });
+
+    testWidgets('8. Discard workout opens confirmation dialog and resets session', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(800, 1200));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final workout = Workout(
+        id: 'w_discard',
+        date: DateTime.now(),
+        exercises: const [
+          Exercise(
+            id: 'ex_bench',
+            name: 'Bench Press',
+            type: ExerciseType.strength,
+            sets: [],
+          ),
+        ],
+        duration: Duration.zero,
+        totalVolume: 0,
+      );
+      final notifier = TestWorkoutNotifier(
+        WorkoutState.inProgress(workout, DateTime.now()),
+      );
+
+      await tester.pumpWidget(buildTestWidget(notifier: notifier));
+      await tester.pumpAndSettle();
+
+      final discardBtn = find.byKey(const Key('discard_workout_button'));
+      expect(discardBtn, findsOneWidget);
+      await tester.tap(discardBtn);
+      await tester.pumpAndSettle();
+
+      expect(find.text('DISCARD WORKOUT?'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('confirm_discard_workout_button')));
+      await tester.pumpAndSettle();
+
+      expect(notifier.resetCalled, isTrue);
+    });
+
+    testWidgets('9. Toggling KG/LB converts entered lb weight to canonical kg and formats display', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(800, 1200));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final workout = Workout(
+        id: 'w_unit',
+        date: DateTime.now(),
+        exercises: const [
+          Exercise(
+            id: 'ex_bench',
+            name: 'Bench Press',
+            type: ExerciseType.strength,
+            sets: [],
+          ),
+        ],
+        duration: Duration.zero,
+        totalVolume: 0,
+      );
+      final notifier = TestWorkoutNotifier(
+        WorkoutState.inProgress(workout, DateTime.now()),
+      );
+
+      await tester.pumpWidget(buildTestWidget(notifier: notifier));
+      await tester.pumpAndSettle();
+
+      // Toggle from KG to LB
+      await tester.tap(find.byKey(const Key('weight_unit_toggle')));
+      await tester.pumpAndSettle();
+
+      expect(find.widgetWithText(TextField, 'WEIGHT (LB)'), findsOneWidget);
+
+      await tester.enterText(find.widgetWithText(TextField, 'REPS'), '5');
+      await tester.enterText(find.widgetWithText(TextField, 'WEIGHT (LB)'), '225');
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(AppButton, 'LOG SET'));
+      await tester.pumpAndSettle();
+
+      expect(notifier.loggedSets, hasLength(1));
+      expect(notifier.loggedSets.first.value.reps, equals(5));
+      // 225 lb in canonical kg is ~102.058 kg
+      expect(notifier.loggedSets.first.value.weight, closeTo(102.058, 0.05));
+      expect(find.text('SET 1: 225.0LB × 5'), findsOneWidget);
+    });
+
+    testWidgets('10. Narrow 320px layout and long workout list render without overflow', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(320, 568));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final longExercises = List.generate(
+        8,
+        (i) => Exercise(
+          id: 'ex_$i',
+          name: 'Compound Exercise ${i + 1}',
+          type: ExerciseType.strength,
+          sets: List.generate(
+            4,
+            (s) => SetEntry(
+              id: 'set_${i}_$s',
+              reps: 8,
+              weight: 60.0 + i * 5,
+              timestamp: DateTime.now(),
+            ),
+          ),
+        ),
+      );
+      final workout = Workout(
+        id: 'w_narrow_long',
+        date: DateTime.now(),
+        exercises: longExercises,
+        duration: const Duration(minutes: 75),
+        totalVolume: 12000,
+      );
+      final notifier = TestWorkoutNotifier(
+        WorkoutState.inProgress(workout, DateTime.now()),
+      );
+
+      await tester.pumpWidget(buildTestWidget(notifier: notifier));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Compound Exercise 1'), findsOneWidget);
+    });
   });
 }

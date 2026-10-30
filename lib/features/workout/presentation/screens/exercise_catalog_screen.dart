@@ -350,86 +350,69 @@ class _ExerciseCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return AppCard(
+      padding: EdgeInsets.zero,
       onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(tokens.radiusMd),
-          color: tokens.card,
-          border: Border.all(
-            color: tokens.borderSubtle,
-            width: 1,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Image
+          Expanded(
+            child: CachedNetworkImage(
+              imageUrl: exercise.imageUrl,
+              fit: BoxFit.cover,
+              width: double.infinity,
+              placeholder: (_, _) => Container(
+                color: tokens.panel,
+                child: Center(
+                  child: Icon(
+                    Icons.fitness_center_rounded,
+                    color: tokens.kineticAccent.withValues(alpha: 0.3),
+                    size: 28,
+                  ),
+                ),
+              ),
+              errorWidget: (_, _, _) => Container(
+                color: tokens.panel,
+                child: Center(
+                  child: Icon(
+                    Icons.fitness_center_rounded,
+                    color: tokens.kineticAccent.withValues(alpha: 0.3),
+                    size: 28,
+                  ),
+                ),
+              ),
+            ),
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.25),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Image
-            Expanded(
-              child: CachedNetworkImage(
-                imageUrl: exercise.imageUrl,
-                fit: BoxFit.cover,
-                width: double.infinity,
-                placeholder: (_, _) => Container(
-                  color: tokens.panel,
-                  child: Center(
-                    child: Icon(
-                      Icons.fitness_center_rounded,
-                      color: tokens.kineticAccent.withValues(alpha: 0.3),
-                      size: 28,
-                    ),
+          // Info
+          Padding(
+            padding: const EdgeInsets.all(10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  exercise.name,
+                  style: TextStyle(
+                    color: tokens.textPrimary,
+                    fontWeight: FontWeight.w700,
+                    fontFamily: AppTypography.fontFamilyHeadings,
+                    fontSize: 13,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                errorWidget: (_, _, _) => Container(
-                  color: tokens.panel,
-                  child: Center(
-                    child: Icon(
-                      Icons.fitness_center_rounded,
-                      color: tokens.kineticAccent.withValues(alpha: 0.3),
-                      size: 28,
-                    ),
-                  ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    _MuscleTag(exercise.muscleGroup, tokens: tokens),
+                    const Spacer(),
+                    _DifficultyDots(exercise.difficulty, tokens: tokens),
+                  ],
                 ),
-              ),
+              ],
             ),
-            // Info
-            Padding(
-              padding: const EdgeInsets.all(10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    exercise.name,
-                    style: TextStyle(
-                      color: tokens.textPrimary,
-                      fontWeight: FontWeight.w700,
-                      fontFamily: AppTypography.fontFamilyHeadings,
-                      fontSize: 13,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      _MuscleTag(exercise.muscleGroup, tokens: tokens),
-                      const Spacer(),
-                      _DifficultyDots(exercise.difficulty, tokens: tokens),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

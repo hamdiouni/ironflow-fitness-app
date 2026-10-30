@@ -167,13 +167,15 @@ class _PRCelebrationAnimationState extends State<PRCelebrationAnimation>
                           ),
                         ),
                         const SizedBox(width: 6),
-                        Text(
-                          'TELEMETRY // MILESTONE',
-                          style: TextStyle(
-                            fontSize: 10,
-                            letterSpacing: 1.5,
-                            fontWeight: FontWeight.w700,
-                            color: AppTheme.accentColor.withValues(alpha: 0.9),
+                        Flexible(
+                          child: Text(
+                            'TELEMETRY // MILESTONE',
+                            style: TextStyle(
+                              fontSize: 10,
+                              letterSpacing: 1.5,
+                              fontWeight: FontWeight.w700,
+                              color: AppTheme.accentColor.withValues(alpha: 0.9),
+                            ),
                           ),
                         ),
                       ],

@@ -718,13 +718,8 @@ class _TodayDirectiveCard extends ConsumerWidget {
         if (isRest) {
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppSpacings.lg, vertical: AppSpacings.xs),
-            child: Container(
+            child: AppCard(
               padding: const EdgeInsets.all(AppSpacings.md),
-              decoration: BoxDecoration(
-                color: tokens.panel,
-                borderRadius: BorderRadius.circular(tokens.radiusMd),
-                border: Border.all(color: tokens.cyanAccent.withValues(alpha: 0.4)),
-              ),
               child: Row(
                 children: [
                   Container(
@@ -794,20 +789,8 @@ class _TodayDirectiveCard extends ConsumerWidget {
         // Active workout day
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacings.lg, vertical: AppSpacings.xs),
-          child: Container(
+          child: AppCard(
             padding: const EdgeInsets.all(AppSpacings.md),
-            decoration: BoxDecoration(
-              color: tokens.panel,
-              borderRadius: BorderRadius.circular(tokens.radiusMd),
-              border: Border.all(color: tokens.kineticAccent.withValues(alpha: 0.5)),
-              boxShadow: [
-                BoxShadow(
-                  color: tokens.kineticAccent.withValues(alpha: 0.12),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -909,20 +892,13 @@ class _DailyFuelSummaryBar extends ConsumerWidget {
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacings.lg, vertical: AppSpacings.xs),
-      child: InkWell(
+      child: AppCard(
         onTap: () {
           AppHaptics.shared.selectionChanged();
           context.go(AppRoutes.nutrition);
         },
-        borderRadius: BorderRadius.circular(tokens.radiusMd),
-        child: Container(
-          padding: const EdgeInsets.all(AppSpacings.md),
-          decoration: BoxDecoration(
-            color: tokens.card,
-            borderRadius: BorderRadius.circular(tokens.radiusMd),
-            border: Border.all(color: tokens.borderSubtle, width: 1),
-          ),
-          child: nutritionAsync.when(
+        padding: const EdgeInsets.all(AppSpacings.md),
+        child: nutritionAsync.when(
             data: (summary) {
               final consumed = summary.totalCalories;
               final progress = (consumed / targetCalories).clamp(0.0, 1.0);
@@ -1042,7 +1018,6 @@ class _DailyFuelSummaryBar extends ConsumerWidget {
             error: (_, _) => const SizedBox.shrink(),
           ),
         ),
-      ),
     );
   }
 }
@@ -1339,7 +1314,9 @@ class _RecentWorkoutCard extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: AppSpacings.md),
-            Row(
+            Wrap(
+              spacing: AppSpacings.lg,
+              runSpacing: AppSpacings.xs,
               children: [
                 _WorkoutStat(
                   icon: Icons.fitness_center,
@@ -1347,14 +1324,12 @@ class _RecentWorkoutCard extends ConsumerWidget {
                   label: 'Volume',
                   accentColor: tokens.cyanAccent,
                 ),
-                const SizedBox(width: AppSpacings.xl),
                 _WorkoutStat(
                   icon: Icons.timer_outlined,
                   value: duration,
                   label: 'Duration',
                   accentColor: tokens.kineticAccent,
                 ),
-                const SizedBox(width: AppSpacings.xl),
                 _WorkoutStat(
                   icon: Icons.repeat,
                   value: '${workout.exercises.fold<int>(0, (s, e) => s + e.sets.length)}',

@@ -7,6 +7,7 @@ import 'package:uuid/uuid.dart';
 import '../../../../core/theme/app_theme_tokens.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../shared/presentation/components/app_button.dart';
+import '../../../../shared/presentation/components/app_card.dart';
 import '../../../../shared/presentation/services/app_haptics.dart';
 import '../../../onboarding/domain/entities/user_profile.dart' show BudgetLevel;
 import '../../../onboarding/presentation/providers/onboarding_provider.dart';
@@ -521,16 +522,11 @@ class _FoodListTile extends StatelessWidget {
     final tokens = AppThemeTokens.of(context);
     final isUsda = food.id.startsWith('usda_') || food.fdcId != null;
 
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: AppCard(
+        onTap: onTap,
         padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: tokens.panel,
-          borderRadius: BorderRadius.circular(tokens.radiusMd),
-          border: Border.all(color: tokens.borderSubtle, width: 1),
-        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -671,7 +667,6 @@ class _FoodListTile extends StatelessWidget {
               decoration: BoxDecoration(
                 color: tokens.card.withValues(alpha: 0.6),
                 borderRadius: BorderRadius.circular(tokens.radiusSm),
-                border: Border.all(color: tokens.borderSubtle.withValues(alpha: 0.5), width: 1),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,

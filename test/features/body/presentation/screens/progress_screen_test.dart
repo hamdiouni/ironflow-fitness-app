@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:progression_tracker/core/theme/app_theme_tokens.dart';
+import 'package:progression_tracker/shared/presentation/components/app_card.dart';
 import 'package:progression_tracker/features/ai/presentation/providers/global_ai_provider.dart';
 import 'package:progression_tracker/features/ai/presentation/providers/global_ai_state.dart';
 import 'package:progression_tracker/features/body/domain/entities/body_entry.dart';
@@ -175,6 +176,17 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('NO PROGRESS PHOTOS YET'), findsOneWidget);
+    });
+
+    testWidgets('BODY WEIGHT tab renders weight trend, recent logs, and telemetry on shared AppCard surfaces',
+        (tester) async {
+      await tester.binding.setSurfaceSize(const Size(430, 932));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(createWidgetUnderTest(initialTab: 'weight'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AppCard), findsAtLeastNWidgets(3));
     });
   });
 }

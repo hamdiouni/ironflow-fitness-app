@@ -315,5 +315,85 @@ void main() {
 
       await tester.pump(const Duration(seconds: 3));
     });
+
+    test('AppRoutes.resolvePostAuthRedirect validates internal return paths safely', () {
+      expect(AppRoutes.resolvePostAuthRedirect(null), equals(AppRoutes.home));
+      expect(AppRoutes.resolvePostAuthRedirect(''), equals(AppRoutes.home));
+      expect(AppRoutes.resolvePostAuthRedirect('https://evil.example/phish'),
+          equals(AppRoutes.home));
+      expect(AppRoutes.resolvePostAuthRedirect('//evil.example/phish'),
+          equals(AppRoutes.home));
+      expect(AppRoutes.resolvePostAuthRedirect(AppRoutes.login),
+          equals(AppRoutes.home));
+      expect(AppRoutes.resolvePostAuthRedirect(AppRoutes.signup),
+          equals(AppRoutes.home));
+      expect(AppRoutes.resolvePostAuthRedirect(AppRoutes.onboarding),
+          equals(AppRoutes.home));
+      expect(AppRoutes.resolvePostAuthRedirect('/workout'),
+          equals('/workout'));
+      expect(AppRoutes.resolvePostAuthRedirect('/progress?tab=lifts'),
+          equals('/progress?tab=lifts'));
+      expect(
+        AppRoutes.resolvePostAuthRedirect('/workout/summary?workoutId=w-42'),
+        equals('/workout/summary?workoutId=w-42'),
+      );
+    });
+
+    testWidgets('Unauthenticated deep link preserves ?from= and restores target route on login',
+        (tester) async {
+      final originalOnError = FlutterError.onError;
+      FlutterError.onError = (details) {
+        if (details.exception.toString().contains('[core/no-app]')) {
+          return;
+        }
+        originalOnError?.call(details);
+      };
+      addTearDown(() => FlutterError.onError = originalOnError);
+
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      final router = container.read(routerProvider);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp.router(
+            routerConfig: router,
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 900));
+
+      // Attempt to access a protected route while unauthenticated
+      router.go('/progress?tab=lifts');
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      final loginUri = router.routerDelegate.currentConfiguration.uri;
+      expect(loginUri.path, equals(AppRoutes.login));
+      expect(loginUri.queryParameters['from'], equals('/progress?tab=lifts'));
+
+      // Authenticate and mark onboarded, then trigger redirect from /login?from=...
+      await tester.runAsync(() async {
+        await container.read(authNotifierProvider.notifier).signInWithEmail(
+              email: 'demo@ironflow.com',
+              password: 'password123',
+            );
+        await UserProfileStorage().markOnboarded();
+      });
+
+      router.go(loginUri.toString());
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(
+        router.routerDelegate.currentConfiguration.uri.toString(),
+        equals('/progress?tab=lifts'),
+      );
+
+      await tester.pump(const Duration(seconds: 3));
+    });
   });
 }

@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:progression_tracker/core/theme/app_theme_tokens.dart';
+import 'package:progression_tracker/shared/presentation/components/app_card.dart';
+import 'package:progression_tracker/shared/widgets/macro_wheel_chart.dart';
 import 'package:progression_tracker/features/ai/presentation/providers/global_ai_provider.dart';
 import 'package:progression_tracker/features/ai/presentation/providers/global_ai_state.dart';
 import 'package:progression_tracker/features/nutrition/domain/entities/daily_nutrition_summary.dart';
@@ -278,6 +280,27 @@ void main() {
       // Verify meal was deleted
       expect(notifier.deletedMealIds.length, equals(1));
       expect(notifier.deletedMealIds.first, equals(notifier.addedMeals.first.id));
+    });
+
+    testWidgets('uses shared AppCard surfaces for macro wheel, target protocol, and remaining fuel', (tester) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(createWidgetUnderTest());
+      await tester.pumpAndSettle();
+
+      // MacroWheelChart, _DefaultTargetsDisplay, and _RemainingMacrosCard all render via AppCard
+      expect(find.byType(MacroWheelChart), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(MacroWheelChart),
+          matching: find.byType(AppCard),
+        ),
+        findsOneWidget,
+      );
+      expect(find.byType(AppCard), findsAtLeastNWidgets(3));
     });
   });
 }

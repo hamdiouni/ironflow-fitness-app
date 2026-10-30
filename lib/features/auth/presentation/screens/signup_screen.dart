@@ -37,6 +37,25 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     super.dispose();
   }
 
+  String _resolvePostSignUpRoute() {
+    try {
+      final from = GoRouterState.of(context).uri.queryParameters['from'];
+      return AppRoutes.resolvePostAuthRedirect(from);
+    } catch (_) {
+      return AppRoutes.home;
+    }
+  }
+
+  String _withFromQuery(String baseRoute) {
+    try {
+      final from = GoRouterState.of(context).uri.queryParameters['from'];
+      if (from != null && from.isNotEmpty) {
+        return Uri(path: baseRoute, queryParameters: {'from': from}).toString();
+      }
+    } catch (_) {}
+    return baseRoute;
+  }
+
   Future<void> _handleSignUp() async {
     if (_isProcessingGoogleSignIn) return;
     if (!_formKey.currentState!.validate()) return;
@@ -53,7 +72,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       final isOnboarded = await ref.read(isOnboardedProvider.future);
       if (!mounted) return;
       if (isOnboarded) {
-        context.go(AppRoutes.home);
+        context.go(_resolvePostSignUpRoute());
       } else {
         context.go(AppRoutes.onboarding);
       }
@@ -75,7 +94,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       final isOnboarded = await ref.read(isOnboardedProvider.future);
       if (!mounted) return;
       if (isOnboarded) {
-        context.go(AppRoutes.home);
+        context.go(_resolvePostSignUpRoute());
       } else {
         context.go(AppRoutes.onboarding);
       }
@@ -108,7 +127,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
           tooltip: 'Back to Authentication',
           onPressed: () {
             AppHaptics.shared.selectionChanged();
-            context.go(AppRoutes.login);
+            context.go(_withFromQuery(AppRoutes.login));
           },
         ),
         title: Column(
@@ -663,7 +682,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                       InkWell(
                         onTap: () {
                           AppHaptics.shared.selectionChanged();
-                          context.go(AppRoutes.login);
+                          context.go(_withFromQuery(AppRoutes.login));
                         },
                         child: Text(
                           'LOG IN',

@@ -354,6 +354,10 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
         AppLogger.debug('⚠️ [Workout] Cannot log set: workout not in progress');
         return false;
       }
+      if (!WorkoutMetrics.isValidSet(set)) {
+        AppLogger.debug('⚠️ [Workout] Cannot log set: invalid reps or weight');
+        return false;
+      }
 
       final workout = current.workout;
       final startTime = current.startTime;
@@ -468,8 +472,16 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
         AppLogger.debug('⚠️ [Workout] Cannot finish: workout not in progress');
         return;
       }
+      if (!WorkoutMetrics.hasWorkingSets(current.workout)) {
+        AppLogger.debug('⚠️ [Workout] Cannot finish: workout has zero working sets');
+        return;
+      }
 
       final duration = DateTime.now().difference(current.startTime);
+      final completedWorkout = current.workout.copyWith(
+        duration: duration,
+        totalVolume: WorkoutMetrics.calculateWorkoutVolume(current.workout),
+      );
       AppLogger.debug('🔍 [Workout] Workout duration: ${duration.inMinutes} minutes');
       AppLogger.debug('🔍 [Workout] Total exercises: ${current.workout.exercises.length}');
       
@@ -480,9 +492,9 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
       // (and advanced the program for ANY finished workout).
       final completeWorkout = _completeWorkout;
       if (completeWorkout != null) {
-        await completeWorkout(current.workout, duration);
+        await completeWorkout(completedWorkout, duration);
       } else {
-        await _saveWorkout(current.workout, duration);
+        await _saveWorkout(completedWorkout, duration);
       }
       AppLogger.debug('✅ [Workout] Workout saved successfully');
 
@@ -501,14 +513,11 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
       // Track workout completed
       try {
         final analytics = _ref.read(analyticsServiceProvider);
-        final totalSets = current.workout.exercises.fold<int>(
-          0,
-          (sum, exercise) => sum + exercise.sets.length,
-        );
+        final totalSets = WorkoutMetrics.workingSetCount(completedWorkout);
         await analytics.logWorkoutCompleted(
-          workoutId: current.workout.id,
+          workoutId: completedWorkout.id,
           durationMinutes: duration.inMinutes,
-          exerciseCount: current.workout.exercises.length,
+          exerciseCount: completedWorkout.exercises.length,
           setCount: totalSets,
         );
         AppLogger.debug('📊 [Analytics] Workout completed event logged');
@@ -519,7 +528,7 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
       // Notify Global AI Provider about workout completion for insights and quick feedback
       AppLogger.debug('📊 [Workout] Notifying Global AI Provider about workout completion...');
       try {
-        await _ref.read(globalAIProvider.notifier).onWorkoutCompleted(current.workout);
+        await _ref.read(globalAIProvider.notifier).onWorkoutCompleted(completedWorkout);
         AppLogger.debug('✅ [Workout] Global AI Provider notified successfully');
       } catch (e) {
         AppLogger.debug('⚠️ [Workout] Failed to notify Global AI Provider: $e');
@@ -530,7 +539,7 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
       await _stateManager.clearState(userId: _activeStateUserId);
       AppLogger.debug('✅ [Workout] Active state cleared from Hive');
       
-      state = WorkoutState.completed(current.workout);
+      state = WorkoutState.completed(completedWorkout);
       AppLogger.debug('✅ [Workout] State updated to completed');
 
       // No manual history refresh needed (Phase 3, F-12): the save above

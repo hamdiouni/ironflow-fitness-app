@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_theme.dart';
 import '../../../../core/utils/error_handler.dart';
 import '../../../../shared/presentation/components/app_button.dart';
+import '../../../../shared/presentation/components/app_card.dart';
 import '../../../../shared/presentation/services/app_haptics.dart';
 import '../../../../shared/widgets/macro_wheel_chart.dart';
 import '../../../../shared/widgets/swipeable_meal_cards.dart';
@@ -836,12 +837,7 @@ class _DefaultTargetsDisplay extends ConsumerWidget {
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacingMedium),
-      child: Container(
-        decoration: BoxDecoration(
-          color: tokens.panel,
-          borderRadius: BorderRadius.circular(tokens.radiusMd),
-          border: Border.all(color: tokens.borderSubtle, width: 1),
-        ),
+      child: AppCard(
         padding: const EdgeInsets.all(AppTheme.spacingMedium),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -986,12 +982,7 @@ class _DietPlanTargetsDisplay extends ConsumerWidget {
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacingMedium),
-      child: Container(
-        decoration: BoxDecoration(
-          color: tokens.panel,
-          borderRadius: BorderRadius.circular(tokens.radiusMd),
-          border: Border.all(color: tokens.borderSubtle, width: 1),
-        ),
+      child: AppCard(
         padding: const EdgeInsets.all(AppTheme.spacingMedium),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1143,7 +1134,6 @@ class _TargetTelemetryChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: tokens.card,
         borderRadius: BorderRadius.circular(tokens.radiusSm),
-        border: Border.all(color: tokens.borderSubtle, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -1309,12 +1299,7 @@ class _RemainingMacrosCard extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacingMedium),
-      child: Container(
-        decoration: BoxDecoration(
-          color: tokens.panel,
-          borderRadius: BorderRadius.circular(tokens.radiusMd),
-          border: Border.all(color: tokens.borderSubtle, width: 1),
-        ),
+      child: AppCard(
         padding: const EdgeInsets.all(AppTheme.spacingMedium),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

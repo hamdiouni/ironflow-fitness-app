@@ -262,20 +262,8 @@ class _ActiveProgramHeader extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Container(
+      child: AppCard(
         padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          color: tokens.card,
-          borderRadius: BorderRadius.circular(tokens.radiusLg),
-          border: Border.all(color: tokens.borderSubtle, width: 1),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.25),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -580,13 +568,8 @@ class _CurrentDayContent extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Day Header
-          Container(
+          AppCard(
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: tokens.card,
-              borderRadius: BorderRadius.circular(tokens.radiusMd),
-              border: Border.all(color: tokens.borderSubtle, width: 1),
-            ),
             child: Row(
               children: [
                 Expanded(
@@ -674,14 +657,8 @@ class _RestDayMessage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
+    return AppCard(
       padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
-      decoration: BoxDecoration(
-        color: tokens.card,
-        borderRadius: BorderRadius.circular(tokens.radiusLg),
-        border: Border.all(color: tokens.borderSubtle, width: 1),
-      ),
       child: Column(
         children: [
           Container(
@@ -796,13 +773,8 @@ class _HistoryItem extends StatelessWidget {
     final m = (workout.duration.inMinutes as int).remainder(60);
     final duration = h > 0 ? '${h}h ${m}m' : '${m}m';
 
-    return Container(
+    return AppCard(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: tokens.card,
-        borderRadius: BorderRadius.circular(tokens.radiusMd),
-        border: Border.all(color: tokens.borderSubtle, width: 1),
-      ),
       child: Row(
         children: [
           Container(

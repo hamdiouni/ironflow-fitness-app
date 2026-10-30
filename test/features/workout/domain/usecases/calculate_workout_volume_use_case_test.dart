@@ -100,5 +100,35 @@ void main() {
       final volume = useCase(workout);
       expect(volume, equals(0.0));
     });
+
+    test('filters negative and non-finite weights while preserving valid 0 kg bodyweight sets', () {
+      final now = DateTime.now();
+      final workout = Workout(
+        id: 'w4',
+        date: now,
+        duration: const Duration(minutes: 25),
+        totalVolume: 0,
+        exercises: [
+          Exercise(
+            id: 'e1',
+            name: 'Pull Ups & Weighted Dips',
+            type: ExerciseType.strength,
+            sets: [
+              // Valid 0 kg bodyweight working set -> 0.0 volume
+              SetEntry(id: 's1', reps: 12, weight: 0.0, timestamp: now),
+              // Valid weighted working set -> 400.0 volume
+              SetEntry(id: 's2', reps: 10, weight: 40.0, timestamp: now),
+              // Corrupted/unvalidated negative and non-finite sets -> must be filtered out
+              SetEntry(id: 's3', reps: 10, weight: -50.0, timestamp: now),
+              SetEntry(id: 's4', reps: 10, weight: double.infinity, timestamp: now),
+              SetEntry(id: 's5', reps: 10, weight: double.nan, timestamp: now),
+            ],
+          ),
+        ],
+      );
+
+      final volume = useCase(workout);
+      expect(volume, equals(400.0));
+    });
   });
 }

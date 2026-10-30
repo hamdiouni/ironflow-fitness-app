@@ -2,6 +2,7 @@ import '../entities/entities.dart';
 import '../repositories/active_program_repository.dart';
 import 'complete_workout_day_use_case.dart';
 import 'save_workout_use_case.dart';
+import 'workout_metrics.dart';
 
 /// Finishes a workout as one orchestrated unit (Phase 3, F-06 residual):
 ///
@@ -33,6 +34,9 @@ class CompleteWorkoutUseCase {
             completeWorkoutDay ?? CompleteWorkoutDayUseCase(activeProgramRepository);
 
   Future<void> call(Workout workout, Duration duration) async {
+    if (!WorkoutMetrics.hasWorkingSets(workout)) {
+      return;
+    }
     await _saveWorkout(workout, duration);
     await _advanceActiveProgramIfCurrent(workout);
   }

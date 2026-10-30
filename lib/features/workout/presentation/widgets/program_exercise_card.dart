@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_theme_tokens.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../shared/presentation/components/app_card.dart';
 import '../../domain/entities/workout_program.dart';
 
 /// A card widget displaying a program exercise with its parameters.
@@ -28,26 +29,11 @@ class ProgramExerciseCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = AppThemeTokens.of(context);
 
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: AppCard(
+        onTap: onTap,
         padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(tokens.radiusMd),
-          color: tokens.card,
-          border: Border.all(
-            color: tokens.borderSubtle,
-            width: 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.25),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

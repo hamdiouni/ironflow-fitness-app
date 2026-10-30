@@ -9,6 +9,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/constants/app_theme.dart';
 import '../../../../core/utils/error_handler.dart';
 import '../../../../shared/presentation/components/app_button.dart';
+import '../../../../shared/presentation/components/app_card.dart';
 import '../../../../shared/presentation/services/app_haptics.dart';
 import '../../../../shared/widgets/weight_trend_graph.dart';
 import '../../../ai/domain/entities/insight.dart';
@@ -212,12 +213,7 @@ class _BodyWeightTab extends ConsumerWidget {
           const SizedBox(height: 14),
 
           // Graph card
-          Container(
-            decoration: BoxDecoration(
-              color: tokens.panel,
-              borderRadius: BorderRadius.circular(tokens.radiusMd),
-              border: Border.all(color: tokens.borderSubtle, width: 1),
-            ),
+          AppCard(
             padding: const EdgeInsets.all(AppTheme.spacingMedium),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -309,12 +305,7 @@ class _BodyWeightTab extends ConsumerWidget {
                 );
               }
               final recent = points.reversed.take(5).toList();
-              return Container(
-                decoration: BoxDecoration(
-                  color: tokens.panel,
-                  borderRadius: BorderRadius.circular(tokens.radiusMd),
-                  border: Border.all(color: tokens.borderSubtle, width: 1),
-                ),
+              return AppCard(
                 padding: const EdgeInsets.all(AppTheme.spacingMedium),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -355,13 +346,8 @@ class _BodyWeightTab extends ConsumerWidget {
                   entries.where((e) => e.measurements.isNotEmpty).toList();
 
               if (withMeasurements.isEmpty) {
-                return Container(
+                return AppCard(
                   padding: const EdgeInsets.all(AppTheme.spacingLarge),
-                  decoration: BoxDecoration(
-                    color: tokens.panel,
-                    borderRadius: BorderRadius.circular(tokens.radiusMd),
-                    border: Border.all(color: tokens.borderSubtle, width: 1),
-                  ),
                   child: Center(
                     child: Text(
                       'No body measurements logged yet.\nCalibrate your dimensions below.',
@@ -377,13 +363,8 @@ class _BodyWeightTab extends ConsumerWidget {
               }
 
               final latest = withMeasurements.first;
-              return Container(
+              return AppCard(
                 padding: const EdgeInsets.all(AppTheme.spacingMedium),
-                decoration: BoxDecoration(
-                  color: tokens.panel,
-                  borderRadius: BorderRadius.circular(tokens.radiusMd),
-                  border: Border.all(color: tokens.borderSubtle, width: 1),
-                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -421,8 +402,6 @@ class _BodyWeightTab extends ConsumerWidget {
                         decoration: BoxDecoration(
                           color: tokens.card,
                           borderRadius: BorderRadius.circular(tokens.radiusSm),
-                          border: Border.all(
-                              color: tokens.borderSubtle, width: 1),
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1073,13 +1052,8 @@ class _PhotoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(tokens.radiusMd),
-        color: tokens.panel,
-        border: Border.all(color: tokens.borderSubtle, width: 1),
-      ),
-      clipBehavior: Clip.antiAlias,
+    return AppCard(
+      padding: EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
