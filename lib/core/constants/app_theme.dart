@@ -10,19 +10,19 @@ export '../theme/app_spacings.dart';
 export '../theme/app_theme_tokens.dart';
 export '../theme/app_typography.dart';
 
-/// IronFlow application theme — Monolithic Sci-Fi styling with dark and light modes.
+/// IronFlow application theme — Slate Teal Refined (Direction 1) styling with dark and light modes.
 class AppTheme {
-  // ── Brand colors (same in both modes) ──────────────────────────────────────
-  static const Color primaryColor = Color(0xFF00FF87);   // Monolithic Neon green
-  static const Color accentColor  = Color(0xFF00D2FF);   // Cyan pulse
-  static const Color warningColor = Color(0xFFFFB800);
-  static const Color errorColor   = Color(0xFFFF3B56);
-  static const Color successColor = Color(0xFF00FF87);
+  // ── Brand colors (Slate Teal Refined) ──────────────────────────────────────
+  static const Color primaryColor = Color(0xFF2DD4BF);   // Slate Teal
+  static const Color accentColor  = Color(0xFF38BDF8);   // Sky pulse
+  static const Color warningColor = Color(0xFFFBBF24);
+  static const Color errorColor   = Color(0xFFF87171);
+  static const Color successColor = Color(0xFF4ADE80);
 
   // Macro colors
-  static const Color proteinColor = Color(0xFFFF4B6E);
-  static const Color carbsColor   = Color(0xFF00D2FF);
-  static const Color fatsColor    = Color(0xFFFFB800);
+  static const Color proteinColor = Color(0xFFFB7185);
+  static const Color carbsColor   = Color(0xFF38BDF8);
+  static const Color fatsColor    = Color(0xFFFBBF24);
 
   // ── Dark mode palette ───────────────────────────────────────────────────────
   static const Color darkBackground = AppColors.canvasDark;
@@ -41,7 +41,6 @@ class AppTheme {
   static const Color lightTextDisabled  = AppColors.textMutedLight;
 
   // ── Static aliases kept for backward compat with existing widgets ───────────
-  // These resolve to dark-mode values (existing code uses them directly).
   static const Color backgroundColor = darkBackground;
   static const Color surfaceColor    = darkSurface;
   static const Color textPrimary     = darkTextPrimary;
@@ -55,10 +54,10 @@ class AppTheme {
   static const double spacingLarge   = 24.0;
   static const double spacingXLarge  = 32.0;
 
-  // ── Border radius ───────────────────────────────────────────────────────────
+  // ── Border radius (3 Core Levels: Small 8, Medium 12, Large 14) ─────────────
   static const double borderRadiusSmall  = 8.0;
-  static const double borderRadiusMedium = 16.0;
-  static const double borderRadiusLarge  = 24.0;
+  static const double borderRadiusMedium = 12.0;
+  static const double borderRadiusLarge  = 14.0;
 
   // ── Glassmorphism ───────────────────────────────────────────────────────────
   static const double glassBlurSigma = 10.0;
@@ -86,8 +85,7 @@ class AppTheme {
       extensions: [tokens],
       cardTheme: CardThemeData(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(borderRadiusMedium),
-          side: BorderSide(color: tokens.borderSubtle, width: 1),
+          borderRadius: BorderRadius.circular(borderRadiusLarge),
         ),
         color: tokens.card,
         elevation: 0,
@@ -136,7 +134,7 @@ class AppTheme {
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: tokens.kineticAccent,
-          foregroundColor: Colors.black,
+          foregroundColor: tokens.onAccent,
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(borderRadiusMedium),
@@ -202,9 +200,9 @@ class AppTheme {
       colorScheme: ColorScheme(
         brightness: brightness,
         primary: tokens.kineticAccent,
-        onPrimary: Colors.black,
+        onPrimary: tokens.onAccent,
         secondary: tokens.cyanAccent,
-        onSecondary: Colors.black,
+        onSecondary: tokens.onAccent,
         surface: surface,
         onSurface: onSurf,
         error: tokens.error,
@@ -218,14 +216,28 @@ class AppTheme {
           fontFamily: AppTypography.bodyFontFamily,
           color: onSurf,
         ),
-        side: BorderSide(color: tokens.borderSubtle),
+        side: BorderSide.none,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(borderRadiusSmall),
         ),
       ),
+      snackBarTheme: SnackBarThemeData(
+        backgroundColor: surface,
+        contentTextStyle: TextStyle(
+          color: onSurf,
+          fontFamily: AppTypography.bodyFontFamily,
+          fontSize: 14,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(borderRadiusMedium),
+          side: BorderSide(color: tokens.borderSubtle, width: 1),
+        ),
+        behavior: SnackBarBehavior.floating,
+        elevation: 4,
+      ),
       dialogTheme: DialogThemeData(
         backgroundColor: tokens.card,
-        elevation: 16,
+        elevation: 8,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(borderRadiusLarge),
           side: BorderSide(color: tokens.borderSubtle, width: 1),
@@ -239,9 +251,9 @@ class AppTheme {
       ),
       bottomSheetTheme: BottomSheetThemeData(
         backgroundColor: tokens.panel,
-        elevation: 16,
+        elevation: 8,
         shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
         ),
       ),
     );
@@ -323,4 +335,3 @@ extension AppThemeDecorations on AppTheme {
     );
   }
 }
-

@@ -6,8 +6,8 @@ import '../../../../core/constants/app_theme.dart';
 import '../../../../core/providers/theme_provider.dart';
 import '../../../../shared/presentation/components/components.dart';
 
-/// Debug-only Design System Gallery demonstrating all tokens and components
-/// in both light and dark modes. Gated behind [kDebugMode].
+/// Design System Gallery demonstrating all Slate Teal Refined tokens, components,
+/// surface levels, and interactive states in both light and dark modes. Gated behind [kDebugMode].
 class DesignGalleryScreen extends ConsumerStatefulWidget {
   const DesignGalleryScreen({super.key});
 
@@ -76,17 +76,17 @@ class _DesignGalleryScreenState extends ConsumerState<DesignGalleryScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'MONOLITHIC SCI-FI',
+                        'SLATE TEAL REFINED',
                         style: TextStyle(
                           fontFamily: AppTypography.displayFontFamily,
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
                           color: tokens.kineticAccent,
-                          letterSpacing: 1.0,
+                          letterSpacing: 0.8,
                         ),
                       ),
                       Text(
-                        'Mode: ${tokens.isDark ? "Stealth Carbon (Dark)" : "Architectural Titanium (Light)"}',
+                        'Mode: ${tokens.isDark ? "Dark Slate" : "Daylight Slate"} • 100% WCAG AA Compliant',
                         style: TextStyle(
                           fontFamily: AppTypography.bodyFontFamily,
                           fontSize: 12,
@@ -102,21 +102,21 @@ class _DesignGalleryScreenState extends ConsumerState<DesignGalleryScreen> {
           const SizedBox(height: AppSpacings.xl),
 
           // ── Color Swatches ──────────────────────────────────────────────────
-          const AppSectionHeader(title: 'Color Tokens'),
+          const AppSectionHeader(title: 'Color Tokens & Contrast'),
           Wrap(
             spacing: AppSpacings.sm,
             runSpacing: AppSpacings.sm,
             children: [
-              _SwatchTile(color: tokens.kineticAccent, name: 'Kinetic Lime'),
-              _SwatchTile(color: tokens.cyanAccent, name: 'Cyan Pulse'),
-              _SwatchTile(color: tokens.violetAccent, name: 'Violet Accent'),
+              _SwatchTile(color: tokens.kineticAccent, name: 'Teal Accent'),
+              _SwatchTile(color: tokens.onAccent, name: 'On-Accent Text'),
+              _SwatchTile(color: tokens.cyanAccent, name: 'Sky Pulse'),
               _SwatchTile(color: tokens.canvas, name: 'Canvas'),
               _SwatchTile(color: tokens.panel, name: 'Panel'),
               _SwatchTile(color: tokens.card, name: 'Card'),
               _SwatchTile(color: tokens.elevated, name: 'Elevated'),
-              _SwatchTile(color: tokens.error, name: 'Error / Alert'),
+              _SwatchTile(color: tokens.success, name: 'Success'),
               _SwatchTile(color: tokens.warning, name: 'Warning'),
-              _SwatchTile(color: tokens.protein, name: 'Protein'),
+              _SwatchTile(color: tokens.error, name: 'Error'),
             ],
           ),
           const SizedBox(height: AppSpacings.xl),
@@ -141,7 +141,7 @@ class _DesignGalleryScreenState extends ConsumerState<DesignGalleryScreen> {
                 ),
                 const SizedBox(height: AppSpacings.sm),
                 Text(
-                  'Body Large: Precision engineering meets luxury minimalism.',
+                  'Body Large: Calm slate surfaces with precision typography.',
                   style: Theme.of(context).textTheme.bodyLarge,
                 ),
                 const SizedBox(height: AppSpacings.md),
@@ -158,29 +158,30 @@ class _DesignGalleryScreenState extends ConsumerState<DesignGalleryScreen> {
           const SizedBox(height: AppSpacings.xl),
 
           // ── Buttons ─────────────────────────────────────────────────────────
-          const AppSectionHeader(title: 'Buttons (48dp Touch Targets)'),
+          const AppSectionHeader(title: 'Buttons (Variants & Sizing)'),
           Wrap(
             spacing: AppSpacings.md,
             runSpacing: AppSpacings.md,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               AppButton(
-                label: 'Primary Kinetic',
+                label: 'Primary Teal',
                 icon: const Icon(Icons.flash_on),
                 onPressed: () {},
               ),
               AppButton(
-                label: 'Secondary Titanium',
+                label: 'Secondary',
                 variant: AppButtonVariant.secondary,
                 onPressed: () {},
               ),
               AppButton(
-                label: 'Outline Accent',
+                label: 'Outline',
                 variant: AppButtonVariant.outline,
                 onPressed: () {},
               ),
               AppButton(
-                label: 'Ghost Button',
-                variant: AppButtonVariant.ghost,
+                label: 'Tertiary',
+                variant: AppButtonVariant.tertiary,
                 onPressed: () {},
               ),
               AppButton(
@@ -197,7 +198,91 @@ class _DesignGalleryScreenState extends ConsumerState<DesignGalleryScreen> {
                 label: 'Disabled',
                 onPressed: null,
               ),
+              AppButton(
+                label: 'Small Button',
+                size: AppButtonSize.small,
+                onPressed: () {},
+              ),
+              AppIconButton(
+                icon: const Icon(Icons.bookmark_border),
+                tooltip: 'Save item',
+                onPressed: () {},
+              ),
             ],
+          ),
+          const SizedBox(height: AppSpacings.xl),
+
+          // ── Frame-Light Surface Levels ──────────────────────────────────────
+          const AppSectionHeader(title: 'Frame-Light Surfaces (No Nested Borders)'),
+          AppCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Level 1: Panel / Card Surface (Flat, No Border)',
+                  style: TextStyle(
+                    fontFamily: AppTypography.displayFontFamily,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: tokens.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: AppSpacings.sm),
+                Text(
+                  'Sections sit on the canvas with a single clean surface level.',
+                  style: TextStyle(
+                    fontFamily: AppTypography.bodyFontFamily,
+                    fontSize: 13,
+                    color: tokens.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: AppSpacings.md),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.all(AppSpacings.md),
+                        decoration: BoxDecoration(
+                          color: tokens.elevated,
+                          borderRadius: BorderRadius.circular(tokens.chipRadius),
+                        ),
+                        child: Text(
+                          'Level 2: Raised Tonal Block',
+                          style: TextStyle(
+                            fontFamily: AppTypography.bodyFontFamily,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: tokens.textPrimary,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacings.md),
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.all(AppSpacings.md),
+                        decoration: BoxDecoration(
+                          color: tokens.card,
+                          borderRadius: BorderRadius.circular(tokens.chipRadius),
+                          border: Border.all(color: tokens.kineticAccent, width: 1.5),
+                        ),
+                        child: Text(
+                          'Selected State (Border Active)',
+                          style: TextStyle(
+                            fontFamily: AppTypography.bodyFontFamily,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: tokens.kineticAccent,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: AppSpacings.xl),
 
@@ -294,7 +379,7 @@ class _DesignGalleryScreenState extends ConsumerState<DesignGalleryScreen> {
           const SizedBox(height: AppSpacings.xl),
 
           // ── Chips ───────────────────────────────────────────────────────────
-          const AppSectionHeader(title: 'Filter Chips'),
+          const AppSectionHeader(title: 'Filter Chips (8dp Radius)'),
           Wrap(
             spacing: AppSpacings.sm,
             runSpacing: AppSpacings.sm,
@@ -323,10 +408,16 @@ class _DesignGalleryScreenState extends ConsumerState<DesignGalleryScreen> {
             keyboardType: TextInputType.number,
             helperText: 'Previous best was 95.0 kg',
           ),
+          const SizedBox(height: AppSpacings.md),
+          const AppTextField(
+            label: 'Invalid Weight',
+            initialValue: '-5.0',
+            errorText: 'Weight cannot be negative',
+          ),
           const SizedBox(height: AppSpacings.xl),
 
           // ── Interactive List Tiles ──────────────────────────────────────────
-          const AppSectionHeader(title: 'Interactive List Tiles'),
+          const AppSectionHeader(title: 'List Tiles'),
           AppListTile(
             title: 'Barbell Bench Press',
             subtitle: '4 sets completed • 3,200 kg volume',
@@ -387,49 +478,68 @@ class _DesignGalleryScreenState extends ConsumerState<DesignGalleryScreen> {
           ),
           const SizedBox(height: AppSpacings.xl),
 
-          // ── Dialogs & Bottom Sheet Modals ───────────────────────────────────
-          const AppSectionHeader(title: 'Modals & Overlays'),
-          Row(
+          // ── Modals & Dialogs ────────────────────────────────────────────────
+          const AppSectionHeader(title: 'Modals, Overlays & Snackbars'),
+          Wrap(
+            spacing: AppSpacings.md,
+            runSpacing: AppSpacings.md,
             children: [
-              Expanded(
-                child: AppButton(
-                  label: 'Open Bottom Sheet',
-                  variant: AppButtonVariant.secondary,
-                  onPressed: () {
-                    AppBottomSheet.show(
-                      context: context,
-                      title: 'Select Exercise',
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Text('Monolithic Sci-Fi bottom sheet with drag handle.'),
-                          const SizedBox(height: AppSpacings.lg),
-                          AppButton(
-                            label: 'Done',
-                            isFullWidth: true,
-                            onPressed: () => Navigator.of(context).pop(),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
+              AppButton(
+                label: 'Bottom Sheet',
+                variant: AppButtonVariant.secondary,
+                onPressed: () {
+                  AppBottomSheet.show(
+                    context: context,
+                    title: 'Select Exercise',
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text('Slate Teal bottom sheet with max-width desktop constraint.'),
+                        const SizedBox(height: AppSpacings.lg),
+                        AppButton(
+                          label: 'Done',
+                          isFullWidth: true,
+                          onPressed: () => Navigator.of(context).pop(),
+                        ),
+                      ],
+                    ),
+                  );
+                },
               ),
-              const SizedBox(width: AppSpacings.md),
-              Expanded(
-                child: AppButton(
-                  label: 'Open Dialog',
-                  variant: AppButtonVariant.secondary,
-                  onPressed: () {
-                    AppDialog.show(
-                      context: context,
-                      title: 'Finish Workout?',
-                      content: const Text('You have completed 12 sets today!'),
-                      icon: const Icon(Icons.celebration),
-                      confirmLabel: 'Save & Finish',
-                    );
-                  },
-                ),
+              AppButton(
+                label: 'Confirm Dialog',
+                variant: AppButtonVariant.secondary,
+                onPressed: () {
+                  AppDialog.show(
+                    context: context,
+                    title: 'Finish Workout?',
+                    content: const Text('You completed all 4 working sets!'),
+                    icon: const Icon(Icons.celebration),
+                    confirmLabel: 'Save & Finish',
+                  );
+                },
+              ),
+              AppButton(
+                label: 'Success Snackbar',
+                variant: AppButtonVariant.secondary,
+                onPressed: () {
+                  AppSnackbar.showSuccess(
+                    context,
+                    'Workout saved successfully!',
+                    actionLabel: 'Undo',
+                    onAction: () {},
+                  );
+                },
+              ),
+              AppButton(
+                label: 'Error Snackbar',
+                variant: AppButtonVariant.secondary,
+                onPressed: () {
+                  AppSnackbar.showError(
+                    context,
+                    'Failed to save set. Please retry.',
+                  );
+                },
               ),
             ],
           ),
@@ -453,7 +563,6 @@ class _SwatchTile extends StatelessWidget {
       decoration: BoxDecoration(
         color: context.tokens.card,
         borderRadius: BorderRadius.circular(context.tokens.radiusSm),
-        border: Border.all(color: context.tokens.borderSubtle, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -463,7 +572,6 @@ class _SwatchTile extends StatelessWidget {
             decoration: BoxDecoration(
               color: color,
               borderRadius: BorderRadius.circular(AppSpacings.radiusXs),
-              border: Border.all(color: context.tokens.borderSubtle, width: 0.5),
             ),
           ),
           const SizedBox(height: AppSpacings.xs),

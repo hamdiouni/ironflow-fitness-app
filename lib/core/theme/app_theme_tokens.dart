@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'app_colors.dart';
 import 'app_spacings.dart';
 
-/// Extension tokens exposing the Monolithic Sci-Fi design system through Flutter's [ThemeExtension].
+/// Extension tokens exposing the Slate Teal design system through Flutter's [ThemeExtension].
 @immutable
 class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
   const AppThemeTokens({
@@ -14,6 +14,8 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
     required this.borderSubtle,
     required this.borderGlow,
     required this.kineticAccent,
+    required this.onAccent,
+    required this.accentText,
     required this.cyanAccent,
     required this.violetAccent,
     required this.textPrimary,
@@ -42,6 +44,13 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
 
   // Accents
   final Color kineticAccent;
+
+  /// High-contrast text & icon color on primary accent (WCAG AA guaranteed)
+  final Color onAccent;
+
+  /// Contrast-safe accent for text/links on surfaces (WCAG AA guaranteed)
+  final Color accentText;
+
   final Color cyanAccent;
   final Color violetAccent;
 
@@ -65,17 +74,21 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
   final BoxDecoration cardDecoration;
   final BoxDecoration glowDecoration;
 
-  // Spacing & Radii references
+  // Spacing & Radii references (3 Core Levels: Small 8, Medium 12, Large 14 + Pill)
   double get radiusXs => AppSpacings.radiusXs;
   double get radiusSm => AppSpacings.radiusSm;
   double get radiusMd => AppSpacings.radiusMd;
   double get radiusLg => AppSpacings.radiusLg;
   double get radiusPill => AppSpacings.radiusPill;
 
+  double get cardRadius => AppSpacings.radiusLg;
+  double get buttonRadius => AppSpacings.radiusMd;
+  double get chipRadius => AppSpacings.radiusSm;
+
   // Convenient alias
   Color get textTertiary => textMuted;
 
-  /// Monolithic Sci-Fi Dark Tokens.
+  /// Slate Teal Refined Dark Tokens.
   static final AppThemeTokens dark = AppThemeTokens(
     isDark: true,
     canvas: AppColors.canvasDark,
@@ -85,6 +98,8 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
     borderSubtle: AppColors.borderSubtleDark,
     borderGlow: AppColors.borderGlowDark,
     kineticAccent: AppColors.kineticAccentDark,
+    onAccent: AppColors.onAccentDark,
+    accentText: AppColors.kineticAccentDark,
     cyanAccent: AppColors.cyanAccentDark,
     violetAccent: AppColors.violetAccentDark,
     textPrimary: AppColors.textPrimaryDark,
@@ -99,16 +114,15 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
     fats: AppColors.fats,
     cardDecoration: BoxDecoration(
       color: AppColors.cardDark,
-      borderRadius: BorderRadius.circular(AppSpacings.radiusMd),
-      border: Border.all(color: AppColors.borderSubtleDark, width: 1),
+      borderRadius: BorderRadius.circular(AppSpacings.radiusLg),
     ),
     glowDecoration: BoxDecoration(
       color: AppColors.cardDark,
-      borderRadius: BorderRadius.circular(AppSpacings.radiusMd),
+      borderRadius: BorderRadius.circular(AppSpacings.radiusLg),
       border: Border.all(color: AppColors.kineticAccentDark, width: 1.5),
       boxShadow: const [
         BoxShadow(
-          color: Color(0x3300FF87),
+          color: Color(0x332DD4BF),
           blurRadius: 10,
           spreadRadius: 1,
         ),
@@ -116,7 +130,7 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
     ),
   );
 
-  /// Architectural Titanium Light Tokens.
+  /// Slate Teal Daylight Light Tokens.
   static final AppThemeTokens light = AppThemeTokens(
     isDark: false,
     canvas: AppColors.canvasLight,
@@ -126,6 +140,8 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
     borderSubtle: AppColors.borderSubtleLight,
     borderGlow: AppColors.borderGlowLight,
     kineticAccent: AppColors.kineticAccentLight,
+    onAccent: AppColors.onAccentLight,
+    accentText: AppColors.kineticAccentLight,
     cyanAccent: AppColors.cyanAccentLight,
     violetAccent: AppColors.violetAccentLight,
     textPrimary: AppColors.textPrimaryLight,
@@ -140,23 +156,22 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
     fats: AppColors.fats,
     cardDecoration: BoxDecoration(
       color: AppColors.cardLight,
-      borderRadius: BorderRadius.circular(AppSpacings.radiusMd),
-      border: Border.all(color: AppColors.borderSubtleLight, width: 1),
+      borderRadius: BorderRadius.circular(AppSpacings.radiusLg),
       boxShadow: const [
         BoxShadow(
-          color: Color(0x0A000000),
-          blurRadius: 8,
+          color: Color(0x08000000),
+          blurRadius: 6,
           offset: Offset(0, 2),
         ),
       ],
     ),
     glowDecoration: BoxDecoration(
       color: AppColors.cardLight,
-      borderRadius: BorderRadius.circular(AppSpacings.radiusMd),
+      borderRadius: BorderRadius.circular(AppSpacings.radiusLg),
       border: Border.all(color: AppColors.kineticAccentLight, width: 1.5),
       boxShadow: const [
         BoxShadow(
-          color: Color(0x2600A855),
+          color: Color(0x260F766E),
           blurRadius: 8,
           spreadRadius: 1,
         ),
@@ -174,6 +189,8 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
     Color? borderSubtle,
     Color? borderGlow,
     Color? kineticAccent,
+    Color? onAccent,
+    Color? accentText,
     Color? cyanAccent,
     Color? violetAccent,
     Color? textPrimary,
@@ -198,6 +215,8 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
       borderSubtle: borderSubtle ?? this.borderSubtle,
       borderGlow: borderGlow ?? this.borderGlow,
       kineticAccent: kineticAccent ?? this.kineticAccent,
+      onAccent: onAccent ?? this.onAccent,
+      accentText: accentText ?? this.accentText,
       cyanAccent: cyanAccent ?? this.cyanAccent,
       violetAccent: violetAccent ?? this.violetAccent,
       textPrimary: textPrimary ?? this.textPrimary,
@@ -227,6 +246,8 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
       borderSubtle: Color.lerp(borderSubtle, other.borderSubtle, t)!,
       borderGlow: Color.lerp(borderGlow, other.borderGlow, t)!,
       kineticAccent: Color.lerp(kineticAccent, other.kineticAccent, t)!,
+      onAccent: Color.lerp(onAccent, other.onAccent, t)!,
+      accentText: Color.lerp(accentText, other.accentText, t)!,
       cyanAccent: Color.lerp(cyanAccent, other.cyanAccent, t)!,
       violetAccent: Color.lerp(violetAccent, other.violetAccent, t)!,
       textPrimary: Color.lerp(textPrimary, other.textPrimary, t)!,
@@ -259,4 +280,3 @@ extension AppThemeContextExtension on BuildContext {
         : AppThemeTokens.light;
   }
 }
-

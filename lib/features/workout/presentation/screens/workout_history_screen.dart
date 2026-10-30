@@ -243,35 +243,29 @@ class _WorkoutHistoryItemState extends State<_WorkoutHistoryItem> {
                           ),
                         ),
                         const SizedBox(height: AppTheme.spacingXSmall),
-                        Row(
+                        Wrap(
+                          spacing: AppTheme.spacingMedium,
+                          runSpacing: 4,
                           children: [
                             _Stat(
                               icon: Icons.fitness_center,
                               label: '$exerciseCount exercise${exerciseCount == 1 ? '' : 's'}',
                             ),
-                            const SizedBox(width: AppTheme.spacingMedium),
                             _Stat(
                               icon: Icons.monitor_weight_outlined,
                               label: volumeLabel,
                             ),
-                            const SizedBox(width: AppTheme.spacingMedium),
                             _Stat(
                               icon: Icons.timer_outlined,
                               label: durationLabel,
                             ),
-                          ],
-                        ),
-                        if (widget.workout.caloriesBurned > 0) ...[
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
+                            if (widget.workout.caloriesBurned > 0)
                               _Stat(
                                 icon: Icons.local_fire_department,
                                 label: '${widget.workout.caloriesBurned.toInt()} kcal',
                               ),
-                            ],
-                          ),
-                        ],
+                          ],
+                        ),
                       ],
                     ),
                   ),

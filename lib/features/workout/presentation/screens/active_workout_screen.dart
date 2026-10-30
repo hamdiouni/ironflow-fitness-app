@@ -1356,7 +1356,7 @@ class _EmptyExerciseHint extends StatelessWidget {
         padding: const EdgeInsets.all(24),
         child: AppStateView.empty(
           title: 'NO EXERCISES YET',
-          message: 'Add exercises to this workout protocol to begin logging sets.',
+          message: 'Add exercises to this workout to begin logging sets.',
           actionLabel: '+ ADD EXERCISE',
           onAction: onAddExercise,
         ),

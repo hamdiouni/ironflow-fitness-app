@@ -157,91 +157,69 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
         ),
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-          child: AutofillGroup(
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const SizedBox(height: 8),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 440),
+            child: SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+              child: AutofillGroup(
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const SizedBox(height: 12),
 
-                  // Monolithic Header & Icon Badge
-                  Center(
-                    child: Container(
-                      width: 72,
-                      height: 72,
-                      decoration: BoxDecoration(
-                        color: tokens.panel,
-                        borderRadius: BorderRadius.circular(tokens.radiusMd),
-                        border: Border.all(
-                          color: tokens.kineticAccent.withValues(alpha: 0.35),
-                          width: 1.5,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: tokens.kineticAccent.withValues(alpha: 0.08),
-                            blurRadius: 20,
-                            spreadRadius: 1,
-                          ),
-                        ],
-                      ),
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          Positioned(
-                            top: 6,
-                            left: 6,
-                            child: Container(
-                              width: 6,
-                              height: 6,
-                              decoration: BoxDecoration(
-                                border: Border(
-                                  top: BorderSide(color: tokens.kineticAccent, width: 1.2),
-                                  left: BorderSide(color: tokens.kineticAccent, width: 1.2),
-                                ),
-                              ),
+                      // Brand Icon Badge
+                      Center(
+                        child: Container(
+                          width: 68,
+                          height: 68,
+                          decoration: BoxDecoration(
+                            color: tokens.panel,
+                            borderRadius: BorderRadius.circular(tokens.radiusMd),
+                            border: Border.all(
+                              color: tokens.kineticAccent.withValues(alpha: 0.25),
+                              width: 1.5,
                             ),
                           ),
-                          Icon(
+                          alignment: Alignment.center,
+                          child: Icon(
                             Icons.person_add_alt_1_outlined,
-                            size: 36,
+                            size: 34,
                             color: tokens.kineticAccent,
                           ),
-                        ],
+                        ),
                       ),
-                    ),
-                  ),
 
-                  const SizedBox(height: 18),
+                      const SizedBox(height: 18),
 
-                  Text(
-                    'INITIALIZE IDENTITY',
-                    style: TextStyle(
-                      fontFamily: AppTypography.displayFontFamily,
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1.0,
-                      color: tokens.textPrimary,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
+                      Text(
+                        'Create Account',
+                        style: TextStyle(
+                          fontFamily: AppTypography.displayFontFamily,
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -0.3,
+                          color: tokens.textPrimary,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
 
-                  const SizedBox(height: 6),
+                      const SizedBox(height: 6),
 
-                  Text(
-                    'Establish new biometric telemetry profile and training data records',
-                    style: TextStyle(
-                      fontFamily: AppTypography.bodyFontFamily,
-                      fontSize: 12,
-                      color: tokens.textSecondary,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
+                      Text(
+                        'Join IronFlow to track your workouts, nutrition, and strength progress',
+                        style: TextStyle(
+                          fontFamily: AppTypography.bodyFontFamily,
+                          fontSize: 13,
+                          color: tokens.textSecondary,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
 
-                  const SizedBox(height: 24),
+                      const SizedBox(height: 24),
 
                   // Error Banner
                   if (authState.error != null) ...[
@@ -617,8 +595,9 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
                   // Submit Button
                   AppButton(
-                    label: 'CREATE ACCOUNT',
+                    label: 'Create Account',
                     variant: AppButtonVariant.primary,
+                    size: AppButtonSize.large,
                     isLoading: authState.isLoading,
                     isFullWidth: true,
                     onPressed: authState.isLoading ? null : _handleSignUp,
@@ -633,12 +612,12 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 14),
                         child: Text(
-                          'OR SIGN UP WITH',
+                          'OR CONTINUE WITH',
                           style: TextStyle(
                             fontFamily: AppTypography.displayFontFamily,
-                            fontSize: 9,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 1.0,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.8,
                             color: tokens.textMuted,
                           ),
                         ),
@@ -651,8 +630,9 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
                   // Google Sign-In Button
                   AppButton(
-                    label: 'CONTINUE WITH GOOGLE',
+                    label: 'Continue with Google',
                     variant: AppButtonVariant.secondary,
+                    size: AppButtonSize.large,
                     isLoading: _isProcessingGoogleSignIn,
                     isFullWidth: true,
                     icon: Icon(
@@ -672,10 +652,10 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        'ALREADY HAVE AN ACCOUNT? ',
+                        'Already have an account? ',
                         style: TextStyle(
                           fontFamily: AppTypography.bodyFontFamily,
-                          fontSize: 12,
+                          fontSize: 13,
                           color: tokens.textSecondary,
                         ),
                       ),
@@ -685,12 +665,11 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                           context.go(_withFromQuery(AppRoutes.login));
                         },
                         child: Text(
-                          'LOG IN',
+                          'Sign In',
                           style: TextStyle(
                             fontFamily: AppTypography.displayFontFamily,
-                            fontSize: 12,
+                            fontSize: 13,
                             fontWeight: FontWeight.w700,
-                            letterSpacing: 0.5,
                             color: tokens.kineticAccent,
                           ),
                         ),
@@ -705,6 +684,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  ),
+);
+}
 }

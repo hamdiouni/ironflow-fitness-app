@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_theme.dart';
 
-/// Monolithic Sci-Fi modal bottom sheet container and launcher.
+/// Slate Teal modal bottom sheet container and launcher.
+///
+/// Features consistent drag handle, optional header & actions, and max-width 560dp
+/// centering on wide desktop web displays.
 class AppBottomSheet extends StatelessWidget {
   /// Creates an [AppBottomSheet].
   const AppBottomSheet({
@@ -48,68 +51,73 @@ class AppBottomSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = context.tokens;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: tokens.panel,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border(
-          top: BorderSide(color: tokens.borderSubtle, width: 1),
-          left: BorderSide(color: tokens.borderSubtle, width: 1),
-          right: BorderSide(color: tokens.borderSubtle, width: 1),
-        ),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Drag Handle
-            Center(
-              child: Container(
-                margin: const EdgeInsets.only(top: AppSpacings.md, bottom: AppSpacings.sm),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: tokens.borderSubtle,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 560),
+        child: Container(
+          decoration: BoxDecoration(
+            color: tokens.panel,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+            border: Border(
+              top: BorderSide(color: tokens.borderSubtle, width: 1),
+              left: BorderSide(color: tokens.borderSubtle, width: 1),
+              right: BorderSide(color: tokens.borderSubtle, width: 1),
             ),
-            // Header if title or action present
-            if (title != null || action != null) ...[
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacings.lg,
-                  vertical: AppSpacings.xs,
+          ),
+          child: SafeArea(
+            top: false,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Drag Handle
+                Center(
+                  child: Container(
+                    margin: const EdgeInsets.only(top: AppSpacings.md, bottom: AppSpacings.sm),
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: tokens.borderSubtle,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    if (title != null)
-                      Text(
-                        title!,
-                        style: TextStyle(
-                          fontFamily: AppTypography.displayFontFamily,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: tokens.textPrimary,
-                          letterSpacing: -0.2,
-                        ),
-                      )
-                    else
-                    ?action,
-                  ],
+                // Header if title or action present
+                if (title != null || action != null) ...[
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacings.lg,
+                      vertical: AppSpacings.xs,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        if (title != null)
+                          Text(
+                            title!,
+                            style: TextStyle(
+                              fontFamily: AppTypography.displayFontFamily,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              color: tokens.textPrimary,
+                              letterSpacing: -0.2,
+                            ),
+                          )
+                        else
+                          const SizedBox.shrink(),
+                        if (action case final act?) act,
+                      ],
+                    ),
+                  ),
+                  const Divider(height: 1),
+                ],
+                Padding(
+                  padding: padding,
+                  child: child,
                 ),
-              ),
-              Divider(color: tokens.borderSubtle, height: 16),
-            ],
-            // Main content
-            Padding(
-              padding: padding,
-              child: child,
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

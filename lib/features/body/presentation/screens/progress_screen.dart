@@ -1012,10 +1012,10 @@ class _PhotosTabState extends ConsumerState<_PhotosTab> {
                         child: GridView.builder(
                           padding: const EdgeInsets.all(16),
                           gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            crossAxisSpacing: 10,
-                            mainAxisSpacing: 10,
+                              const SliverGridDelegateWithMaxCrossAxisExtent(
+                            maxCrossAxisExtent: 260,
+                            crossAxisSpacing: 12,
+                            mainAxisSpacing: 12,
                             childAspectRatio: 0.75,
                           ),
                           itemCount: photoEntries.length,
@@ -1032,7 +1032,7 @@ class _PhotosTabState extends ConsumerState<_PhotosTab> {
               right: 24,
               child: FloatingActionButton(
                 backgroundColor: tokens.kineticAccent,
-                foregroundColor: Colors.black,
+                foregroundColor: tokens.onAccent,
                 elevation: 4,
                 onPressed: _pickPhoto,
                 child: const Icon(Icons.add_a_photo_rounded),

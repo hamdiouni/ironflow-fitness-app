@@ -242,6 +242,98 @@ class MainScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     final currentIndex = navigationShell.currentIndex;
     final tokens = context.tokens;
+    final isWide = MediaQuery.sizeOf(context).width >= 840;
+
+    if (isWide) {
+      return Scaffold(
+        backgroundColor: tokens.canvas,
+        body: Row(
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                color: tokens.panel,
+                border: Border(
+                  right: BorderSide(
+                    color: tokens.borderSubtle,
+                    width: 1,
+                  ),
+                ),
+              ),
+              child: NavigationRail(
+                selectedIndex: currentIndex,
+                onDestinationSelected: (index) {
+                  if (index != currentIndex) {
+                    AppHaptics.shared.selectionChanged();
+                    navigationShell.goBranch(
+                      index,
+                      initialLocation: index == navigationShell.currentIndex,
+                    );
+                  }
+                },
+                backgroundColor: Colors.transparent,
+                labelType: NavigationRailLabelType.all,
+                indicatorColor: tokens.kineticAccent.withValues(alpha: 0.15),
+                indicatorShape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(tokens.chipRadius),
+                ),
+                selectedIconTheme: IconThemeData(
+                  color: tokens.kineticAccent,
+                  size: 24,
+                ),
+                unselectedIconTheme: IconThemeData(
+                  color: tokens.textTertiary,
+                  size: 24,
+                ),
+                selectedLabelTextStyle: TextStyle(
+                  fontFamily: AppTypography.displayFontFamily,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.5,
+                  color: tokens.kineticAccent,
+                ),
+                unselectedLabelTextStyle: TextStyle(
+                  fontFamily: AppTypography.displayFontFamily,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.5,
+                  color: tokens.textTertiary,
+                ),
+                destinations: const [
+                  NavigationRailDestination(
+                    icon: Icon(Icons.home_outlined),
+                    selectedIcon: Icon(Icons.home),
+                    label: Text('TODAY'),
+                  ),
+                  NavigationRailDestination(
+                    icon: Icon(Icons.fitness_center_outlined),
+                    selectedIcon: Icon(Icons.fitness_center),
+                    label: Text('TRAIN'),
+                  ),
+                  NavigationRailDestination(
+                    icon: Icon(Icons.restaurant_outlined),
+                    selectedIcon: Icon(Icons.restaurant),
+                    label: Text('FUEL'),
+                  ),
+                  NavigationRailDestination(
+                    icon: Icon(Icons.show_chart_outlined),
+                    selectedIcon: Icon(Icons.show_chart),
+                    label: Text('PROGRESS'),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 1120),
+                  child: navigationShell,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
 
     return PopScope(
       canPop: currentIndex == 0,
@@ -250,6 +342,7 @@ class MainScaffold extends StatelessWidget {
         navigationShell.goBranch(0);
       },
       child: Scaffold(
+        backgroundColor: tokens.canvas,
         body: navigationShell,
         bottomNavigationBar: Container(
           decoration: BoxDecoration(

@@ -698,7 +698,7 @@ class _AIChatScreenState extends ConsumerState<AIChatScreen> {
               child: Container(
                 decoration: BoxDecoration(
                   color: tokens.card,
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(tokens.radiusMd),
                   border: Border.all(color: tokens.borderSubtle),
                 ),
                 child: TextField(
@@ -739,12 +739,12 @@ class _AIChatScreenState extends ConsumerState<AIChatScreen> {
                 color: chatState.isLoading
                     ? tokens.borderSubtle
                     : tokens.kineticAccent,
-                borderRadius: BorderRadius.circular(6),
+                borderRadius: BorderRadius.circular(tokens.radiusMd),
                 boxShadow: chatState.isLoading
                     ? null
                     : [
                         BoxShadow(
-                          color: tokens.kineticAccent.withValues(alpha: 0.35),
+                          color: tokens.kineticAccent.withValues(alpha: 0.25),
                           blurRadius: 8,
                         ),
                       ],
@@ -754,7 +754,7 @@ class _AIChatScreenState extends ConsumerState<AIChatScreen> {
                 onPressed: chatState.isLoading
                     ? null
                     : () => _sendMessage(_messageController.text),
-                color: Colors.black,
+                color: tokens.onAccent,
                 iconSize: 20,
               ),
             ),
@@ -844,21 +844,14 @@ class _ChatBubble extends ConsumerWidget {
               constraints: const BoxConstraints(maxWidth: 580),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
-                color: isUser ? tokens.card : tokens.panel,
-                borderRadius: BorderRadius.circular(8),
+                color: isUser ? tokens.elevated : tokens.panel,
+                borderRadius: BorderRadius.circular(tokens.radiusMd),
                 border: Border.all(
                   color: isUser
-                      ? tokens.kineticAccent.withValues(alpha: 0.3)
+                      ? tokens.kineticAccent.withValues(alpha: 0.25)
                       : tokens.borderSubtle,
                   width: 1,
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.2),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

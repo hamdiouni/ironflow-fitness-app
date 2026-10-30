@@ -242,11 +242,11 @@ class _ExerciseCatalogScreenState extends ConsumerState<ExerciseCatalogScreen>
                 : GridView.builder(
                     padding: const EdgeInsets.all(12),
                     gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      childAspectRatio: 0.80,
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10,
+                        const SliverGridDelegateWithMaxCrossAxisExtent(
+                      maxCrossAxisExtent: 320,
+                      childAspectRatio: 0.85,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
                     ),
                     itemCount: exercises.length,
                     itemBuilder: (context, index) {

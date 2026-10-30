@@ -416,12 +416,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'SET UP YOUR PROFILE',
+                    'Profile Setup',
                     style: TextStyle(
                       fontFamily: AppTypography.displayFontFamily,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.2,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.5,
                       color: tokens.textSecondary,
                     ),
                   ),
@@ -433,16 +433,16 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
                       color: tokens.card,
-                      borderRadius: BorderRadius.circular(4),
+                      borderRadius: BorderRadius.circular(tokens.chipRadius),
                       border: Border.all(color: tokens.borderSubtle),
                     ),
                     child: Text(
-                      'STEP $stepNumber // $totalSteps',
+                      'Step $stepNumber of $totalSteps',
                       style: TextStyle(
                         fontFamily: AppTypography.displayFontFamily,
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
-                        letterSpacing: 0.8,
+                        letterSpacing: 0.5,
                         color: tokens.kineticAccent,
                       ),
                     ),
@@ -2311,8 +2311,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
             color: tokens.panel,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: tokens.kineticAccent.withValues(alpha: 0.5)),
+            borderRadius: BorderRadius.circular(tokens.radiusLg),
+            border: Border.all(color: tokens.kineticAccent.withValues(alpha: 0.3)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -2327,12 +2327,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               ),
               const SizedBox(height: 16),
               Text(
-                'INITIALIZING PROTOCOL',
+                'Setting Up Your Plan',
                 style: TextStyle(
                   fontFamily: AppTypography.displayFontFamily,
-                  fontSize: 12,
+                  fontSize: 14,
                   fontWeight: FontWeight.w700,
-                  letterSpacing: 1.0,
+                  letterSpacing: -0.2,
                   color: tokens.textPrimary,
                 ),
               ),
@@ -2342,7 +2342,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontFamily: AppTypography.bodyFontFamily,
-                  fontSize: 11,
+                  fontSize: 12,
                   color: tokens.textMuted,
                 ),
               ),

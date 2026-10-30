@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-/// Standard layout, geometry, and motion tokens for the Monolithic Sci-Fi design system.
+/// Standard layout, geometry, and motion tokens for the Slate Teal design system.
 class AppSpacings {
   AppSpacings._();
 
-  // ── Spacing Scale (4dp base unit) ──────────────────────────────────────────
+  // ── Spacing Scale (4dp / 8dp base rhythm) ──────────────────────────────────
   static const double xxs = 2.0;
   static const double xs = 4.0;
   static const double sm = 8.0;
@@ -15,12 +15,12 @@ class AppSpacings {
   static const double xxxl = 32.0;
   static const double huge = 48.0;
 
-  // ── Radii Scale ────────────────────────────────────────────────────────────
+  // ── Radii Scale (3 Core Levels: Small 8, Medium 12, Large 14 + Pill) ───────
   static const double radiusXs = 6.0;
-  static const double radiusSm = 10.0;
-  static const double radiusMd = 14.0;
-  static const double radiusLg = 18.0;
-  static const double radiusXl = 24.0;
+  static const double radiusSm = 8.0;   // Chips, small tags, sub-pills
+  static const double radiusMd = 12.0;  // Buttons, text inputs, action controls
+  static const double radiusLg = 14.0;  // Section cards, sheets, dialog surfaces
+  static const double radiusXl = 20.0;
   static const double radiusPill = 999.0;
 
   // ── Touch Target Standards (Accessibility) ─────────────────────────────────
@@ -29,8 +29,8 @@ class AppSpacings {
 
   // ── Motion Tokens ──────────────────────────────────────────────────────────
   static const Duration durationFast = Duration(milliseconds: 120);
-  static const Duration durationMedium = Duration(milliseconds: 220);
-  static const Duration durationSlow = Duration(milliseconds: 350);
+  static const Duration durationMedium = Duration(milliseconds: 180);
+  static const Duration durationSlow = Duration(milliseconds: 260);
   static const Duration durationShimmer = Duration(milliseconds: 1400);
 
   static const Curve curveEnter = Curves.easeOutCubic;

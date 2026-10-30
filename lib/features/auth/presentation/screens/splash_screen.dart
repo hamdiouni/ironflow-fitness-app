@@ -80,71 +80,38 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
               children: [
                 const Spacer(),
 
-                // Monolithic Sci-Fi Logo Icon
+                // Brand Logo Icon
                 AnimatedBuilder(
                   animation: _pulseAnimation,
                   builder: (context, child) {
                     final glow = _pulseAnimation.value;
                     return Container(
-                      width: 110,
-                      height: 110,
+                      width: 100,
+                      height: 100,
                       decoration: BoxDecoration(
                         color: tokens.panel,
                         borderRadius: BorderRadius.circular(tokens.radiusLg),
                         border: Border.all(
                           color: tokens.kineticAccent.withValues(
-                            alpha: 0.3 + (glow * 0.4),
+                            alpha: 0.3 + (glow * 0.3),
                           ),
                           width: 1.5,
                         ),
                         boxShadow: [
                           BoxShadow(
                             color: tokens.kineticAccent.withValues(
-                              alpha: 0.12 * glow,
+                              alpha: 0.10 * glow,
                             ),
-                            blurRadius: 28,
-                            spreadRadius: 2,
+                            blurRadius: 20,
+                            spreadRadius: 1,
                           ),
                         ],
                       ),
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          // Corner bracket accents
-                          Positioned(
-                            top: 8,
-                            left: 8,
-                            child: Container(
-                              width: 8,
-                              height: 8,
-                              decoration: BoxDecoration(
-                                border: Border(
-                                  top: BorderSide(color: tokens.kineticAccent, width: 1.5),
-                                  left: BorderSide(color: tokens.kineticAccent, width: 1.5),
-                                ),
-                              ),
-                            ),
-                          ),
-                          Positioned(
-                            bottom: 8,
-                            right: 8,
-                            child: Container(
-                              width: 8,
-                              height: 8,
-                              decoration: BoxDecoration(
-                                border: Border(
-                                  bottom: BorderSide(color: tokens.kineticAccent, width: 1.5),
-                                  right: BorderSide(color: tokens.kineticAccent, width: 1.5),
-                                ),
-                              ),
-                            ),
-                          ),
-                          Icon(
-                            Icons.fitness_center_rounded,
-                            size: 52,
-                            color: tokens.kineticAccent,
-                          ),
-                        ],
+                      alignment: Alignment.center,
+                      child: Icon(
+                        Icons.fitness_center_rounded,
+                        size: 48,
+                        color: tokens.kineticAccent,
                       ),
                     );
                   },
@@ -157,32 +124,32 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                   'IRONFLOW',
                   style: TextStyle(
                     fontFamily: AppTypography.displayFontFamily,
-                    fontSize: 34,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 2.5,
+                    fontSize: 32,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 2.0,
                     color: tokens.textPrimary,
                   ),
                 ),
 
                 const SizedBox(height: 8),
 
-                // Protocol subtitle
+                // Subtitle
                 Text(
-                  'BIOMETRIC TELEMETRY & TRAINING SYSTEM',
+                  'STRENGTH & WORKOUT TRACKER',
                   style: TextStyle(
                     fontFamily: AppTypography.displayFontFamily,
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
-                    letterSpacing: 1.6,
+                    letterSpacing: 1.4,
                     color: tokens.textMuted,
                   ),
                 ),
 
                 const Spacer(),
 
-                // Futuristic Loading Bar
+                // Loading Bar
                 SizedBox(
-                  width: 180,
+                  width: 160,
                   child: Column(
                     children: [
                       ClipRRect(
@@ -197,12 +164,11 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        '// INITIALIZING TERMINAL',
+                        'Loading...',
                         style: TextStyle(
-                          fontFamily: AppTypography.displayFontFamily,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 1.2,
+                          fontFamily: AppTypography.bodyFontFamily,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
                           color: tokens.textMuted,
                         ),
                       ),

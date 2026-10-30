@@ -155,7 +155,7 @@ class _ErrorState extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: AppStateView.error(
-          title: 'TELEMETRY ERROR',
+          title: 'Could Not Load Workouts',
           message: error.toString(),
           onRetry: onRetry,
         ),

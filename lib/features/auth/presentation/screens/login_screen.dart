@@ -122,132 +122,69 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return Scaffold(
       backgroundColor: tokens.canvas,
       body: SafeArea(
-        child: SingleChildScrollView(
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
-          child: AutofillGroup(
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const SizedBox(height: 12),
-
-                  // Top Telemetry Header
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 440),
+            child: SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
+              child: AutofillGroup(
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Row(
-                        children: [
-                          Container(
-                            width: 6,
-                            height: 6,
-                            decoration: BoxDecoration(
-                              color: tokens.kineticAccent,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'ACCOUNT LOGIN',
-                            style: TextStyle(
-                              fontFamily: AppTypography.displayFontFamily,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 1.4,
-                              color: tokens.textMuted,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Text(
-                        'SECURE',
-                        style: TextStyle(
-                          fontFamily: AppTypography.displayFontFamily,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                          color: tokens.kineticAccent.withValues(alpha: 0.8),
-                        ),
-                      ),
-                    ],
-                  ),
+                      const SizedBox(height: 24),
 
-                  const SizedBox(height: 32),
-
-                  // Monolithic Header & Icon Badge
-                  Center(
-                    child: Container(
-                      width: 76,
-                      height: 76,
-                      decoration: BoxDecoration(
-                        color: tokens.panel,
-                        borderRadius: BorderRadius.circular(tokens.radiusMd),
-                        border: Border.all(
-                          color: tokens.kineticAccent.withValues(alpha: 0.35),
-                          width: 1.5,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: tokens.kineticAccent.withValues(alpha: 0.08),
-                            blurRadius: 20,
-                            spreadRadius: 1,
-                          ),
-                        ],
-                      ),
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          Positioned(
-                            top: 6,
-                            left: 6,
-                            child: Container(
-                              width: 6,
-                              height: 6,
-                              decoration: BoxDecoration(
-                                border: Border(
-                                  top: BorderSide(color: tokens.kineticAccent, width: 1.2),
-                                  left: BorderSide(color: tokens.kineticAccent, width: 1.2),
-                                ),
-                              ),
+                      // Brand Icon Badge
+                      Center(
+                        child: Container(
+                          width: 68,
+                          height: 68,
+                          decoration: BoxDecoration(
+                            color: tokens.panel,
+                            borderRadius: BorderRadius.circular(tokens.radiusMd),
+                            border: Border.all(
+                              color: tokens.kineticAccent.withValues(alpha: 0.25),
+                              width: 1.5,
                             ),
                           ),
-                          Icon(
-                            Icons.shield_outlined,
-                            size: 38,
+                          alignment: Alignment.center,
+                          child: Icon(
+                            Icons.fitness_center_rounded,
+                            size: 34,
                             color: tokens.kineticAccent,
                           ),
-                        ],
+                        ),
                       ),
-                    ),
-                  ),
 
-                  const SizedBox(height: 20),
+                      const SizedBox(height: 20),
 
-                  Text(
-                    'TERMINAL ACCESS',
-                    style: TextStyle(
-                      fontFamily: AppTypography.displayFontFamily,
-                      fontSize: 24,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1.0,
-                      color: tokens.textPrimary,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
+                      Text(
+                        'Welcome Back',
+                        style: TextStyle(
+                          fontFamily: AppTypography.displayFontFamily,
+                          fontSize: 26,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -0.3,
+                          color: tokens.textPrimary,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
 
-                  const SizedBox(height: 6),
+                      const SizedBox(height: 6),
 
-                  Text(
-                    'Sign in to access your workout plan, nutrition, and progress',
-                    style: TextStyle(
-                      fontFamily: AppTypography.bodyFontFamily,
-                      fontSize: 12,
-                      color: tokens.textSecondary,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
+                      Text(
+                        'Sign in to access your workout plan, nutrition, and progress',
+                        style: TextStyle(
+                          fontFamily: AppTypography.bodyFontFamily,
+                          fontSize: 13,
+                          color: tokens.textSecondary,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
 
-                  const SizedBox(height: 28),
+                      const SizedBox(height: 28),
 
                   // Error Banner
                   if (authState.error != null) ...[
@@ -498,8 +435,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                   // Submit Action Button
                   AppButton(
-                    label: 'LOG IN',
+                    label: 'Sign In',
                     variant: AppButtonVariant.primary,
+                    size: AppButtonSize.large,
                     isLoading: authState.isLoading,
                     isFullWidth: true,
                     onPressed: authState.isLoading ? null : _handleEmailSignIn,
@@ -514,12 +452,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 14),
                         child: Text(
-                          'OR SIGN IN WITH',
+                          'OR CONTINUE WITH',
                           style: TextStyle(
                             fontFamily: AppTypography.displayFontFamily,
-                            fontSize: 9,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 1.0,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.8,
                             color: tokens.textMuted,
                           ),
                         ),
@@ -532,8 +470,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                   // Google Sign-In Button
                   AppButton(
-                    label: 'CONTINUE WITH GOOGLE',
+                    label: 'Continue with Google',
                     variant: AppButtonVariant.secondary,
+                    size: AppButtonSize.large,
                     isLoading: _isProcessingGoogleSignIn,
                     isFullWidth: true,
                     icon: Icon(
@@ -553,10 +492,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        'NEW TO IRONFLOW? ',
+                        'Don\'t have an account? ',
                         style: TextStyle(
                           fontFamily: AppTypography.bodyFontFamily,
-                          fontSize: 12,
+                          fontSize: 13,
                           color: tokens.textSecondary,
                         ),
                       ),
@@ -566,12 +505,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           context.go(_withFromQuery(AppRoutes.signup));
                         },
                         child: Text(
-                          'CREATE ACCOUNT',
+                          'Sign Up',
                           style: TextStyle(
                             fontFamily: AppTypography.displayFontFamily,
-                            fontSize: 12,
+                            fontSize: 13,
                             fontWeight: FontWeight.w700,
-                            letterSpacing: 0.5,
                             color: tokens.kineticAccent,
                           ),
                         ),
@@ -586,6 +524,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  ),
+);
+}
 }

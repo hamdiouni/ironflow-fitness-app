@@ -896,7 +896,7 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen> {
                     ),
                   ),
                   subtitle: Text(
-                    'Allow AI Coach to inspect local training telemetry for tailored recommendations',
+                    'Allow AI Coach to use local workout data for tailored recommendations',
                     style: TextStyle(fontSize: 11, color: tokens.textSecondary),
                   ),
                   value: _aiPersonalizationConsent,
@@ -967,7 +967,7 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen> {
                 Divider(color: tokens.borderSubtle, height: 1),
                 _buildActionTile(
                   title: 'Delete Account & All Data',
-                  subtitle: 'Permanently destroy account, cloud records, and all device telemetry',
+                  subtitle: 'Permanently delete account, cloud records, and all device data',
                   icon: Icons.delete_forever_rounded,
                   accentColor: tokens.error,
                   tokens: tokens,

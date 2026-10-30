@@ -302,7 +302,7 @@ class _ExportSettingsScreenState extends ConsumerState<ExportSettingsScreen> {
                   const SizedBox(width: 14),
                   Expanded(
                     child: Text(
-                      _statusMessage ?? 'Processing telemetry...',
+                      _statusMessage ?? 'Processing data...',
                       style: TextStyle(
                         fontFamily: AppTypography.bodyFontFamily,
                         fontSize: 13,
@@ -322,11 +322,11 @@ class _ExportSettingsScreenState extends ConsumerState<ExportSettingsScreen> {
   // --- Export Actions ---
 
   Future<void> _exportWorkoutsCsv() async {
-    _startOp('Compiling workout CSV telemetry...');
+    _startOp('Compiling workout CSV file...');
     try {
       final useCase = ref.read(exportWorkoutsUseCaseProvider);
       final path = await useCase.exportToCSV();
-      await _shareFile(path, 'Workout CSV telemetry exported successfully');
+      await _shareFile(path, 'Workout CSV exported successfully');
     } catch (e) {
       _showError('Failed to export workout CSV: $e');
     } finally {
@@ -339,7 +339,7 @@ class _ExportSettingsScreenState extends ConsumerState<ExportSettingsScreen> {
     try {
       final useCase = ref.read(simpleJsonExportUseCaseProvider);
       final path = await useCase.exportWorkoutsToJSON();
-      await _shareFile(path, 'Workout JSON telemetry exported successfully');
+      await _shareFile(path, 'Workout JSON exported successfully');
     } catch (e) {
       _showError('Failed to export workout JSON: $e');
     } finally {
@@ -378,7 +378,7 @@ class _ExportSettingsScreenState extends ConsumerState<ExportSettingsScreen> {
     try {
       final useCase = ref.read(simpleJsonExportUseCaseProvider);
       final path = await useCase.exportNutritionToJSON();
-      await _shareFile(path, 'Nutrition JSON telemetry exported successfully');
+      await _shareFile(path, 'Nutrition JSON exported successfully');
     } catch (e) {
       _showError('Failed to export nutrition JSON: $e');
     } finally {

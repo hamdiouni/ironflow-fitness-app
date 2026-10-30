@@ -94,7 +94,7 @@ class ToolsHubScreen extends ConsumerWidget {
               ),
             ),
             Text(
-              'SCIENTIFIC FITNESS PROTOCOLS',
+              'FITNESS CALCULATORS',
               style: TextStyle(
                 fontFamily: AppTypography.displayFontFamily,
                 fontSize: 9,
@@ -118,17 +118,22 @@ class ToolsHubScreen extends ConsumerWidget {
         ),
       ),
       body: SafeArea(
-        child: ListView.separated(
-          padding: const EdgeInsets.all(AppTheme.spacingMedium),
-          itemCount: tools.length,
-          separatorBuilder: (context, index) => const SizedBox(height: 12),
-          itemBuilder: (context, index) {
-            final tool = tools[index];
-            return _ToolCard(tool: tool, tokens: tokens)
-                .animate()
-                .fadeIn(delay: (index * 50).ms, duration: 300.ms)
-                .slideY(begin: 0.08, end: 0.0, curve: Curves.easeOut);
-          },
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 720),
+            child: ListView.separated(
+              padding: const EdgeInsets.all(AppTheme.spacingMedium),
+              itemCount: tools.length,
+              separatorBuilder: (context, index) => const SizedBox(height: 12),
+              itemBuilder: (context, index) {
+                final tool = tools[index];
+                return _ToolCard(tool: tool, tokens: tokens)
+                    .animate()
+                    .fadeIn(delay: (index * 50).ms, duration: 300.ms)
+                    .slideY(begin: 0.08, end: 0.0, curve: Curves.easeOut);
+              },
+            ),
+          ),
         ),
       ),
     );

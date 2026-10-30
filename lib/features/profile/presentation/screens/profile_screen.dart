@@ -86,7 +86,7 @@ class ProfileScreen extends ConsumerWidget {
           ),
           error: (error, _) => Center(
             child: Text(
-              'Error loading profile telemetry: $error',
+              'Error loading profile: $error',
               style: TextStyle(color: tokens.error),
             ),
           ),

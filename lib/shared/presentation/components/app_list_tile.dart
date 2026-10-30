@@ -20,7 +20,7 @@ class AppListTile extends StatelessWidget {
       horizontal: AppSpacings.lg,
       vertical: AppSpacings.md,
     ),
-    this.showBorder = true,
+    this.showBorder = false,
   });
 
   /// Primary title text.

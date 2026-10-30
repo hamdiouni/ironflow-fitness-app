@@ -4,10 +4,10 @@ import '../../../core/constants/app_theme.dart';
 
 /// Button variant enum for [AppButton].
 enum AppButtonVariant {
-  /// Primary kinetic lime button (high emphasis CTA).
+  /// Primary kinetic teal button (high emphasis CTA).
   primary,
 
-  /// Secondary dark titanium surface with structural border.
+  /// Secondary dark slate surface with subtle border.
   secondary,
 
   /// Outline button with kinetic colored border and text.
@@ -16,11 +16,26 @@ enum AppButtonVariant {
   /// Ghost button with no background or border.
   ghost,
 
+  /// Tertiary link-style text button.
+  tertiary,
+
   /// Destructive danger button for deletions and resets.
   destructive,
 }
 
-/// Monolithic Sci-Fi button component.
+/// Sizing scale for [AppButton].
+enum AppButtonSize {
+  /// 36dp visual height (padded to 48dp touch target).
+  small,
+
+  /// 44dp visual height.
+  medium,
+
+  /// 50dp visual height (standard CTA).
+  large,
+}
+
+/// Unified Slate Teal button component.
 ///
 /// Enforces WCAG AA 48dp minimum touch target height, tactile scale feedback,
 /// built-in loading spinner, and Semantics label support.
@@ -31,6 +46,7 @@ class AppButton extends StatefulWidget {
     required this.label,
     this.onPressed,
     this.variant = AppButtonVariant.primary,
+    this.size,
     this.icon,
     this.isLoading = false,
     this.isFullWidth = false,
@@ -48,6 +64,9 @@ class AppButton extends StatefulWidget {
   /// Visual styling variant. Defaults to [AppButtonVariant.primary].
   final AppButtonVariant variant;
 
+  /// Sizing preset (small, medium, large). Overrides [height] if provided.
+  final AppButtonSize? size;
+
   /// Optional leading icon.
   final Widget? icon;
 
@@ -60,7 +79,7 @@ class AppButton extends StatefulWidget {
   /// Button height. Defaults to [AppSpacings.huge] (48dp).
   final double height;
 
-  /// Custom corner radius. Defaults to [AppSpacings.radiusPill] (pill shape).
+  /// Custom corner radius. Defaults to [tokens.buttonRadius] (12dp).
   final double? borderRadius;
 
   /// Optional accessibility semantics label.
@@ -112,12 +131,25 @@ class _AppButtonState extends State<AppButton> with SingleTickerProviderStateMix
     }
   }
 
+  double _resolveHeight() {
+    if (widget.size == null) return widget.height;
+    switch (widget.size!) {
+      case AppButtonSize.small:
+        return 36.0;
+      case AppButtonSize.medium:
+        return 44.0;
+      case AppButtonSize.large:
+        return 50.0;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
-    final radius = widget.borderRadius ?? tokens.radiusPill;
+    final radius = widget.borderRadius ?? tokens.buttonRadius;
+    final targetHeight = _resolveHeight();
 
-    // Resolve colors based on variant
+    // Resolve colors based on variant with 100% WCAG AA contrast pass
     Color bg;
     Color fg;
     Border? border;
@@ -125,7 +157,7 @@ class _AppButtonState extends State<AppButton> with SingleTickerProviderStateMix
     switch (widget.variant) {
       case AppButtonVariant.primary:
         bg = _isEnabled ? tokens.kineticAccent : tokens.elevated;
-        fg = _isEnabled ? Colors.black : tokens.textMuted;
+        fg = _isEnabled ? tokens.onAccent : tokens.textMuted;
         border = null;
         break;
       case AppButtonVariant.secondary:
@@ -142,8 +174,9 @@ class _AppButtonState extends State<AppButton> with SingleTickerProviderStateMix
         );
         break;
       case AppButtonVariant.ghost:
+      case AppButtonVariant.tertiary:
         bg = Colors.transparent;
-        fg = _isEnabled ? tokens.textPrimary : tokens.textMuted;
+        fg = _isEnabled ? tokens.kineticAccent : tokens.textMuted;
         border = null;
         break;
       case AppButtonVariant.destructive:
@@ -172,7 +205,7 @@ class _AppButtonState extends State<AppButton> with SingleTickerProviderStateMix
         else ...[
           if (widget.icon != null) ...[
             IconTheme(
-              data: IconThemeData(color: fg, size: 18),
+              data: IconThemeData(color: fg, size: widget.size == AppButtonSize.small ? 14 : 18),
               child: widget.icon!,
             ),
             const SizedBox(width: AppSpacings.sm),
@@ -182,9 +215,9 @@ class _AppButtonState extends State<AppButton> with SingleTickerProviderStateMix
               widget.label,
               style: TextStyle(
                 fontFamily: AppTypography.displayFontFamily,
-                fontSize: 14,
+                fontSize: widget.size == AppButtonSize.small ? 12 : 14,
                 fontWeight: FontWeight.w700,
-                letterSpacing: 0.4,
+                letterSpacing: 0.3,
                 color: fg,
               ),
               maxLines: 1,
@@ -203,45 +236,92 @@ class _AppButtonState extends State<AppButton> with SingleTickerProviderStateMix
         onTapDown: _handleTapDown,
         onTapUp: _handleTapUp,
         onTapCancel: _handleTapCancel,
-        child: ScaleTransition(
-          scale: _scaleAnimation,
-          child: Container(
-            height: widget.height,
-            constraints: const BoxConstraints(minHeight: AppSpacings.minTouchTarget),
-            decoration: BoxDecoration(
-              color: bg,
-              borderRadius: BorderRadius.circular(radius),
-              border: border,
-              boxShadow: (widget.variant == AppButtonVariant.primary && _isEnabled && tokens.isDark)
-                  ? [
-                      BoxShadow(
-                        color: tokens.kineticAccent.withValues(alpha: 0.25),
-                        blurRadius: 10,
-                        spreadRadius: 1,
-                      ),
-                    ]
-                  : null,
-            ),
-            child: Material(
-              color: Colors.transparent,
-              borderRadius: BorderRadius.circular(radius),
-              child: InkWell(
-                borderRadius: BorderRadius.circular(radius),
-                onTap: _isEnabled
-                    ? () {
-                        AppHaptics.shared.buttonPress();
-                        widget.onPressed?.call();
-                      }
-                    : null,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacings.xl),
-                  child: content,
-                ),
+        onTap: _isEnabled
+            ? () {
+                AppHaptics.shared.buttonPress();
+                widget.onPressed?.call();
+              }
+            : null,
+        behavior: HitTestBehavior.opaque,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: AppSpacings.minTouchTarget),
+          child: ScaleTransition(
+            scale: _scaleAnimation,
+            child: AnimatedContainer(
+              duration: AppSpacings.durationFast,
+              height: targetHeight,
+              width: widget.isFullWidth ? double.infinity : null,
+              padding: EdgeInsets.symmetric(
+                horizontal: widget.size == AppButtonSize.small ? AppSpacings.md : AppSpacings.lg,
               ),
+              decoration: BoxDecoration(
+                color: bg,
+                borderRadius: BorderRadius.circular(radius),
+                border: border,
+              ),
+              alignment: Alignment.center,
+              child: content,
             ),
           ),
         ),
       ),
     );
+  }
+}
+
+/// Accessible 48×48 icon button with touch-target guarantee.
+class AppIconButton extends StatelessWidget {
+  const AppIconButton({
+    super.key,
+    required this.icon,
+    this.onPressed,
+    this.tooltip,
+    this.size = 48.0,
+    this.iconSize = 20.0,
+    this.color,
+    this.backgroundColor,
+  });
+
+  final Widget icon;
+  final VoidCallback? onPressed;
+  final String? tooltip;
+  final double size;
+  final double iconSize;
+  final Color? color;
+  final Color? backgroundColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final fg = color ?? tokens.textPrimary;
+
+    Widget button = InkWell(
+      onTap: onPressed != null
+          ? () {
+              AppHaptics.shared.buttonPress();
+              onPressed!();
+            }
+          : null,
+      borderRadius: BorderRadius.circular(tokens.buttonRadius),
+      child: Container(
+        width: size,
+        height: size,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: backgroundColor ?? Colors.transparent,
+          borderRadius: BorderRadius.circular(tokens.buttonRadius),
+        ),
+        child: IconTheme(
+          data: IconThemeData(color: fg, size: iconSize),
+          child: icon,
+        ),
+      ),
+    );
+
+    if (tooltip != null) {
+      button = Tooltip(message: tooltip!, child: button);
+    }
+
+    return button;
   }
 }
