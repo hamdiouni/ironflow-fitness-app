@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:progression_tracker/core/theme/app_theme_tokens.dart';
+import 'package:progression_tracker/shared/presentation/components/app_card.dart';
 import 'package:progression_tracker/features/ai/presentation/providers/global_ai_provider.dart';
 import 'package:progression_tracker/features/ai/presentation/providers/global_ai_state.dart';
 import 'package:progression_tracker/features/workout/domain/entities/active_program.dart';
@@ -122,6 +123,7 @@ void main() {
       expect(find.text('PUSH ALPHA'), findsOneWidget);
       expect(find.text('Incline Dumbbell Press'), findsOneWidget);
       expect(find.text('▶ START SESSION'), findsOneWidget);
+      expect(find.byType(AppCard), findsAtLeastNWidgets(3));
     });
 
     testWidgets('renders correctly in light mode with Architectural Titanium tokens', (tester) async {

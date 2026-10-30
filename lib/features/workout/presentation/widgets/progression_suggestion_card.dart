@@ -1,117 +1,124 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_theme.dart';
+import '../../../../shared/presentation/components/app_card.dart';
 import '../../domain/entities/progression_suggestion.dart';
 
 class ProgressionSuggestionCard extends StatelessWidget {
   final ProgressionSuggestion suggestion;
   final VoidCallback onAccept;
-  final VoidCallback onDismiss;
+  final VoidCallback? onDismiss;
+  final VoidCallback? onSkip;
 
   const ProgressionSuggestionCard({
     required this.suggestion,
     required this.onAccept,
-    required this.onDismiss,
+    this.onDismiss,
+    this.onSkip,
     super.key,
   });
 
   @override
   Widget build(BuildContext context) {
-    return AppTheme.glassmorphicCard(
-      margin: const EdgeInsets.all(AppTheme.spacingMedium),
-      padding: const EdgeInsets.all(AppTheme.spacingMedium),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header with icon
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(AppTheme.spacingSmall),
-                decoration: BoxDecoration(
-                  color: _getColor().withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(AppTheme.borderRadiusMedium),
+    final handleSkip = onSkip ?? onDismiss;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppTheme.spacingSmall),
+      child: AppCard(
+        padding: const EdgeInsets.all(AppTheme.spacingMedium),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header with icon
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(AppTheme.spacingSmall),
+                  decoration: BoxDecoration(
+                    color: _getColor().withValues(alpha: 0.2),
+                    borderRadius:
+                        BorderRadius.circular(AppTheme.borderRadiusMedium),
+                  ),
+                  child: Icon(
+                    _getIcon(),
+                    color: _getColor(),
+                    size: 24,
+                  ),
                 ),
-                child: Icon(
-                  _getIcon(),
-                  color: _getColor(),
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: AppTheme.spacingMedium),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _getTitle(),
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    if (suggestion.message != null)
+                const SizedBox(width: AppTheme.spacingMedium),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        suggestion.message!,
+                        _getTitle(),
                         style: const TextStyle(
-                          fontSize: 14,
-                          color: AppTheme.textSecondary,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppTheme.spacingMedium),
-
-          // Suggested values
-          Padding(
-            padding: const EdgeInsets.only(bottom: AppTheme.spacingSmall),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text('Suggested Weight:'),
-                Text(
-                  '${suggestion.suggestedWeight.toStringAsFixed(1)} kg',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+                      const SizedBox(height: 4),
+                      if (suggestion.message != null)
+                        Text(
+                          suggestion.message!,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: AppTheme.textSecondary,
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               ],
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(bottom: AppTheme.spacingMedium),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            const SizedBox(height: AppTheme.spacingMedium),
+
+            // Suggested values
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppTheme.spacingSmall),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Suggested Weight:'),
+                  Text(
+                    '${suggestion.suggestedWeight.toStringAsFixed(1)} kg',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppTheme.spacingMedium),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Suggested Reps:'),
+                  Text(
+                    '${suggestion.suggestedReps}',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+            ),
+
+            // Action buttons
+            Row(
               children: [
-                const Text('Suggested Reps:'),
-                Text(
-                  '${suggestion.suggestedReps}',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: handleSkip,
+                    child: const Text('Skip'),
+                  ),
+                ),
+                const SizedBox(width: AppTheme.spacingSmall),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: onAccept,
+                    child: const Text('Accept'),
+                  ),
                 ),
               ],
             ),
-          ),
-
-          // Action buttons
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: onDismiss,
-                  child: const Text('Dismiss'),
-                ),
-              ),
-              const SizedBox(width: AppTheme.spacingSmall),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: onAccept,
-                  child: const Text('Accept'),
-                ),
-              ),
-            ],
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

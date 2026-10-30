@@ -37,6 +37,7 @@ import '../../features/design_system/presentation/screens/design_gallery_screen.
 import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/settings/presentation/screens/export_settings_screen.dart';
 import '../../features/settings/presentation/screens/privacy_settings_screen.dart';
+import '../../features/workout/domain/entities/exercise.dart';
 import '../../features/workout/domain/entities/exercise_definition.dart';
 import '../../features/tools/presentation/screens/tools_hub_screen.dart';
 
@@ -74,6 +75,26 @@ class AppRoutes {
   static const String aiTest = '/ai-test';
   static const String designGallery = '/design-gallery';
   static const String tools = '/tools';
+
+  /// Validates a `?from=` return path so only internal non-auth routes are used.
+  static String resolvePostAuthRedirect(String? from) {
+    if (from == null || from.trim().isEmpty) {
+      return home;
+    }
+    final trimmed = from.trim();
+    if (!trimmed.startsWith('/') || trimmed.startsWith('//')) {
+      return home;
+    }
+    final parsed = Uri.tryParse(trimmed);
+    final path = parsed?.path ?? trimmed;
+    if (path == login ||
+        path == signup ||
+        path == splash ||
+        path == onboarding) {
+      return home;
+    }
+    return trimmed;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -118,6 +139,15 @@ final routerProvider = Provider<GoRouter>((ref) {
         if (kDebugMode) {
           AppLogger.debug('⚠️ [Router] Not authenticated, redirecting to login');
         }
+        final targetUri = state.uri.toString();
+        if (targetUri.isNotEmpty &&
+            loc != AppRoutes.home &&
+            targetUri != AppRoutes.home) {
+          return Uri(
+            path: AppRoutes.login,
+            queryParameters: {'from': targetUri},
+          ).toString();
+        }
         return AppRoutes.login;
       }
 
@@ -134,10 +164,13 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       // Case 3: Authenticated AND onboarded user accessing auth or onboarding routes
       if (isAuthRoute || isOnboarding) {
+        final destination =
+            AppRoutes.resolvePostAuthRedirect(state.uri.queryParameters['from']);
         if (kDebugMode) {
-          AppLogger.debug('⚠️ [Router] Already authenticated and onboarded, redirecting to /home');
+          AppLogger.debug(
+              '⚠️ [Router] Already authenticated and onboarded, redirecting to $destination');
         }
-        return AppRoutes.home;
+        return destination;
       }
 
       if (kDebugMode) {
@@ -205,7 +238,13 @@ final routerProvider = Provider<GoRouter>((ref) {
                     builder: (context, state) {
                       final extra =
                           state.extra as Map<String, dynamic>? ?? {};
+                      final workoutId =
+                          state.uri.queryParameters['workoutId'] ??
+                              state.uri.queryParameters['id'] ??
+                              extra['workoutId'] as String?;
                       return WorkoutSummaryScreen(
+                        workoutId: workoutId,
+                        exercises: extra['exercises'] as List<Exercise>? ?? const [],
                         totalSets: extra['totalSets'] as int? ?? 0,
                         totalVolume: extra['totalVolume'] as double? ?? 0.0,
                         duration: extra['duration'] as Duration? ??
@@ -214,6 +253,31 @@ final routerProvider = Provider<GoRouter>((ref) {
                         exerciseNames: extra['exerciseNames'] as List<String>? ?? [],
                       );
                     },
+                    routes: [
+                      GoRoute(
+                        path: ':workoutId',
+                        builder: (context, state) {
+                          final extra =
+                              state.extra as Map<String, dynamic>? ?? {};
+                          final workoutId =
+                              state.pathParameters['workoutId'] ??
+                                  extra['workoutId'] as String?;
+                          return WorkoutSummaryScreen(
+                            workoutId: workoutId,
+                            exercises:
+                                extra['exercises'] as List<Exercise>? ?? const [],
+                            totalSets: extra['totalSets'] as int? ?? 0,
+                            totalVolume:
+                                extra['totalVolume'] as double? ?? 0.0,
+                            duration: extra['duration'] as Duration? ??
+                                Duration.zero,
+                            prCount: extra['prCount'] as int? ?? 0,
+                            exerciseNames:
+                                extra['exerciseNames'] as List<String>? ?? [],
+                          );
+                        },
+                      ),
+                    ],
                   ),
                   GoRoute(
                     path: 'history',

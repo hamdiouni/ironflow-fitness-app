@@ -2,6 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/constants/app_theme.dart';
+import '../presentation/components/app_card.dart';
 
 /// A pure UI widget that displays an animated macro distribution pie chart
 /// styled in the Monolithic Sci-Fi design system.
@@ -26,12 +27,8 @@ class MacroWheelChart extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = AppThemeTokens.of(context);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: tokens.panel,
-        borderRadius: BorderRadius.circular(tokens.radiusMd),
-        border: Border.all(color: tokens.borderSubtle, width: 1),
-      ),
+    return AppCard(
+      backgroundColor: tokens.panel,
       padding: const EdgeInsets.symmetric(
         horizontal: AppTheme.spacingMedium,
         vertical: AppTheme.spacingLarge,
@@ -220,7 +217,6 @@ class _LegendItem extends StatelessWidget {
       decoration: BoxDecoration(
         color: tokens.card,
         borderRadius: BorderRadius.circular(tokens.radiusSm),
-        border: Border.all(color: tokens.borderSubtle, width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

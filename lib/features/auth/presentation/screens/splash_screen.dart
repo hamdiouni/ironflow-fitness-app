@@ -47,6 +47,11 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     await Future.delayed(const Duration(milliseconds: 800));
     if (!mounted) return;
 
+    final currentUri = GoRouter.of(context).routerDelegate.currentConfiguration.uri;
+    if (currentUri.path != AppRoutes.splash) {
+      return;
+    }
+
     final authState = ref.read(authNotifierProvider);
     final userId = authState.user?.id;
     final isOnboarded = UserProfileStorage().isOnboardedSync(userId: userId);

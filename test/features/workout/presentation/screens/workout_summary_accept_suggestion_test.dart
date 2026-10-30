@@ -132,4 +132,121 @@ void main() {
     expect(revertedExercise.targetWeight, equals(80.0));
     expect(revertedExercise.reps, equals('6-8'));
   });
+
+  testWidgets('Skip leaves target unchanged and Undo does not overwrite diverged program state', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(800, 1400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final notifier = TestActiveProgramNotifier(initialActiveProgram);
+
+    const suggestion = ProgressionSuggestion(
+      suggestedWeight: 85.0,
+      suggestedReps: 8,
+      isStagnant: false,
+      message: 'Increase weight by 5.0kg next session',
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          activeProgramProvider.overrideWith((ref) => notifier),
+          progressionSuggestionProvider('Squat').overrideWith((ref) async => suggestion),
+        ],
+        child: const MaterialApp(
+          home: WorkoutSummaryScreen(
+            totalSets: 3,
+            totalVolume: 2400.0,
+            duration: Duration(minutes: 40),
+            prCount: 0,
+            exerciseNames: ['Squat'],
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // 1. Tapping Skip hides card and leaves active program target unchanged
+    final skipButton = find.widgetWithText(OutlinedButton, 'Skip');
+    expect(skipButton, findsOneWidget);
+    await tester.tap(skipButton);
+    await tester.pumpAndSettle();
+
+    expect(notifier.updatedPrograms, isEmpty);
+    expect(find.widgetWithText(ElevatedButton, 'Accept'), findsNothing);
+  });
+
+  testWidgets('Undo is a safe no-op if active program changed after accepting suggestion', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(800, 1400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final notifier = TestActiveProgramNotifier(initialActiveProgram);
+
+    const suggestion = ProgressionSuggestion(
+      suggestedWeight: 85.0,
+      suggestedReps: 8,
+      isStagnant: false,
+      message: 'Increase weight by 5.0kg next session',
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          activeProgramProvider.overrideWith((ref) => notifier),
+          progressionSuggestionProvider('Squat').overrideWith((ref) async => suggestion),
+        ],
+        child: const MaterialApp(
+          home: WorkoutSummaryScreen(
+            totalSets: 3,
+            totalVolume: 2400.0,
+            duration: Duration(minutes: 40),
+            prCount: 0,
+            exerciseNames: ['Squat'],
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Accept suggestion -> updates Squat target to 85.0
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Accept'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(notifier.updatedPrograms.length, equals(1));
+
+    // Simulate program state diverging before UNDO is tapped (e.g. user switched program or manually edited target to 95.0)
+    final divergedProgram = initialActiveProgram.updateProgram(
+      initialWorkoutProgram.copyWith(
+        days: [
+          const ProgramDay(
+            dayNumber: 1,
+            name: 'Leg Day',
+            focus: 'Quads & Glutes',
+            exercises: [
+              ProgramExercise(
+                exerciseName: 'Squat',
+                sets: 3,
+                reps: '5',
+                restSeconds: 90,
+                targetWeight: 95.0,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+    await notifier.updateProgram(divergedProgram);
+    expect(notifier.updatedPrograms.length, equals(2));
+
+    // Tap UNDO -> must NOT overwrite diverged 95.0kg target
+    final undoButton = find.widgetWithText(SnackBarAction, 'UNDO');
+    expect(undoButton, findsOneWidget);
+    await tester.tap(undoButton);
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(notifier.updatedPrograms.length, equals(2));
+    final currentExercise =
+        notifier.updatedPrograms.last.program.days.first.exercises.first;
+    expect(currentExercise.targetWeight, equals(95.0));
+    expect(currentExercise.reps, equals('5'));
+  });
 }

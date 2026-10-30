@@ -25,6 +25,7 @@ import '../../../ai/presentation/widgets/quick_feedback_bottom_sheet.dart';
 import '../../../ai/presentation/providers/global_ai_provider.dart';
 import '../../../../shared/presentation/services/app_haptics.dart';
 import '../../domain/usecases/calculate_workout_volume_use_case.dart';
+import '../../domain/usecases/workout_metrics.dart';
 
 class ActiveWorkoutScreen extends ConsumerStatefulWidget {
   final ActiveProgram? activeProgram;
@@ -45,6 +46,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
   // the live session celebration count. Saved workout data, history, and progression
   // remain correct and canonical.
   int _prCount = 0;
+  WeightUnit _weightUnit = WeightUnit.kg;
 
   @override
   Widget build(BuildContext context) {
@@ -137,7 +139,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     AppLogger.debug('📊 [WorkoutUI] Building workout view');
     final tokens = context.tokens;
     final hasExercises = workout.exercises.isNotEmpty;
-    final hasSets = workout.exercises.any((e) => e.sets.isNotEmpty);
+    final hasSets = WorkoutMetrics.hasWorkingSets(workout);
     
     AppLogger.debug('🔍 [WorkoutUI] Has exercises: $hasExercises, Has sets: $hasSets');
     
@@ -161,6 +163,48 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
           ),
         ),
         actions: [
+          Center(
+            child: InkWell(
+              key: const Key('weight_unit_toggle'),
+              borderRadius: BorderRadius.circular(tokens.radiusSm),
+              onTap: () {
+                AppHaptics.shared.selectionChanged();
+                setState(() {
+                  _weightUnit = _weightUnit == WeightUnit.kg
+                      ? WeightUnit.lb
+                      : WeightUnit.kg;
+                });
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: tokens.panel,
+                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                  border: Border.all(color: tokens.borderSubtle, width: 1),
+                ),
+                child: Text(
+                  _weightUnit.label,
+                  style: TextStyle(
+                    color: tokens.kineticAccent,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    fontFamily: AppTypography.displayFontFamily,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 4),
+          SizedBox(
+            width: 44,
+            height: 44,
+            child: IconButton(
+              key: const Key('discard_workout_button'),
+              icon: Icon(Icons.delete_outline, color: tokens.error, size: 22),
+              tooltip: 'Discard Workout',
+              onPressed: () => _confirmDiscardWorkout(context),
+            ),
+          ),
           SizedBox(
             width: 48,
             height: 48,
@@ -196,6 +240,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                         key: ValueKey(exercise.id),
                         exercise: exercise,
                         programExercise: programExercise,
+                        weightUnit: _weightUnit,
                         isAnimating: _animatingExerciseId == exercise.id,
                         onAnimationComplete: () { if (mounted) setState(() => _animatingExerciseId = null); },
                         onLogSet: (reps, weight, [type = SetType.normal, rpe]) => _logSet(exercise, reps, weight, type, rpe),
@@ -211,12 +256,62 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     );
   }
 
+  Future<void> _confirmDiscardWorkout(BuildContext context) async {
+    final tokens = context.tokens;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: tokens.card,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(tokens.radiusLg),
+          side: BorderSide(color: tokens.borderSubtle, width: 1),
+        ),
+        title: Text(
+          'DISCARD WORKOUT?',
+          style: TextStyle(
+            color: tokens.textPrimary,
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            fontFamily: AppTypography.fontFamilyHeadings,
+          ),
+        ),
+        content: Text(
+          'Are you sure you want to discard this workout session? Unsaved progress will be lost.',
+          style: TextStyle(color: tokens.textMuted, fontSize: 13),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text('CANCEL', style: TextStyle(color: tokens.textMuted)),
+          ),
+          AppButton(
+            key: const Key('confirm_discard_workout_button'),
+            label: 'DISCARD',
+            variant: AppButtonVariant.destructive,
+            height: 40,
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      ref.read(restTimerProvider.notifier).stop();
+      await ref.read(workoutNotifierProvider.notifier).reset();
+      if (!context.mounted) return;
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      } else {
+        try {
+          context.go(AppRoutes.workout);
+        } catch (_) {}
+      }
+    }
+  }
+
   Widget _buildCompletedView(BuildContext context, Workout workout) {
     AppLogger.debug('📊 [WorkoutUI] Building completed view');
-    final totalWorkingSets = workout.exercises.fold<int>(
-      0,
-      (s, e) => s + e.sets.where((set) => set.type != SetType.warmup).length,
-    );
+    final totalWorkingSets = WorkoutMetrics.workingSetCount(workout);
     final volumeUseCase = CalculateWorkoutVolumeUseCase();
     final totalWorkingVolume = volumeUseCase(workout);
     AppLogger.debug('🔍 [WorkoutUI] Total working sets: $totalWorkingSets, Working volume: $totalWorkingVolume, Duration: ${workout.duration}');
@@ -235,6 +330,8 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
         
         AppLogger.debug('📊 [WorkoutUI] Navigating to workout summary...');
         context.go(AppRoutes.workoutSummary, extra: <String, dynamic>{
+          'workoutId': workout.id,
+          'exercises': workout.exercises,
           'totalSets': totalWorkingSets,
           'totalVolume': totalWorkingVolume,
           'duration': workout.duration,
@@ -328,6 +425,23 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
 
   Future<void> _finishWorkout(BuildContext context) async {
     try {
+      final current = ref.read(workoutNotifierProvider);
+      final hasWorkingSets = current.maybeWhen(
+        inProgress: (w, _) => WorkoutMetrics.hasWorkingSets(w),
+        orElse: () => false,
+      );
+      if (!hasWorkingSets) {
+        AppLogger.debug('⚠️ [WorkoutUI] Cannot finish workout: zero working sets');
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Log at least one working set before finishing.'),
+            ),
+          );
+        }
+        return;
+      }
+
       AppLogger.debug('📊 [WorkoutUI] Finishing workout...');
       
       // Show calorie input dialog first
@@ -678,6 +792,7 @@ class _ExerciseCard extends ConsumerStatefulWidget {
     required this.onLogSet,
     required this.onUpdateSetType,
     this.programExercise,
+    this.weightUnit = WeightUnit.kg,
   });
   final Exercise exercise;
   final bool isAnimating;
@@ -685,6 +800,7 @@ class _ExerciseCard extends ConsumerStatefulWidget {
   final Future<void> Function(int reps, double weight, [SetType type, int? rpe]) onLogSet;
   final Future<void> Function(int setIndex, SetType newType) onUpdateSetType;
   final ProgramExercise? programExercise;
+  final WeightUnit weightUnit;
   @override
   ConsumerState<_ExerciseCard> createState() => _ExerciseCardState();
 }
@@ -732,20 +848,8 @@ class _ExerciseCardState extends ConsumerState<_ExerciseCard> {
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
-      child: Container(
+      child: AppCard(
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: tokens.card,
-          borderRadius: BorderRadius.circular(tokens.radiusMd),
-          border: Border.all(color: tokens.borderSubtle, width: 1),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.25),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -897,7 +1001,9 @@ class _ExerciseCardState extends ConsumerState<_ExerciseCard> {
                               ),
                             ),
                             Text(
-                              'SET $setNumber: ${set.weight}KG × ${set.reps}$rpeText',
+                              widget.weightUnit == WeightUnit.kg
+                                  ? 'SET $setNumber: ${set.weight}KG × ${set.reps}$rpeText'
+                                  : 'SET $setNumber: ${WorkoutMetrics.fromCanonicalKg(set.weight, WeightUnit.lb).toStringAsFixed(1)}LB × ${set.reps}$rpeText',
                               style: TextStyle(
                                 color: typeColor,
                                 fontSize: 11,
@@ -966,60 +1072,57 @@ class _ExerciseCardState extends ConsumerState<_ExerciseCard> {
             const SizedBox(height: 10),
 
             // ── Inputs Row (Reps, Weight, RPE/RIR, Plate Calc, Log Set) ─────────
-            Row(
-              children: [
-                Expanded(flex: 5, child: _NumberField(controller: _repsController, label: 'REPS', tokens: tokens)),
-                const SizedBox(width: 6),
-                Expanded(flex: 6, child: _NumberField(controller: _weightController, label: 'WEIGHT (KG)', isDecimal: true, tokens: tokens)),
-                const SizedBox(width: 6),
-                Expanded(
-                  flex: 5,
-                  child: Stack(
-                    alignment: Alignment.centerRight,
-                    children: [
-                      _NumberField(
-                        controller: _rpeController,
-                        label: _isRirMode ? 'RIR' : 'RPE',
-                        tokens: tokens,
-                      ),
-                      Positioned(
-                        right: 4,
-                        child: InkWell(
-                          onTap: () {
-                            AppHaptics.shared.selectionChanged();
-                            setState(() {
-                              _isRirMode = !_isRirMode;
-                              final val = int.tryParse(_rpeController.text.trim());
-                              if (val != null) {
-                                final converted = (10 - val).clamp(0, 10);
-                                _rpeController.text = converted.toString();
-                              }
-                            });
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: tokens.cyanAccent.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(3),
-                              border: Border.all(color: tokens.cyanAccent.withValues(alpha: 0.4), width: 0.8),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final isNarrow = constraints.maxWidth < 360;
+                final rpeStack = Stack(
+                  alignment: Alignment.centerRight,
+                  children: [
+                    _NumberField(
+                      controller: _rpeController,
+                      label: _isRirMode ? 'RIR' : 'RPE',
+                      tokens: tokens,
+                    ),
+                    Positioned(
+                      right: 4,
+                      child: InkWell(
+                        onTap: () {
+                          AppHaptics.shared.selectionChanged();
+                          setState(() {
+                            _isRirMode = !_isRirMode;
+                            final val = int.tryParse(_rpeController.text.trim());
+                            if (val != null) {
+                              final converted = (10 - val).clamp(0, 10);
+                              _rpeController.text = converted.toString();
+                            }
+                          });
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: tokens.cyanAccent.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(3),
+                            border: Border.all(
+                              color: tokens.cyanAccent.withValues(alpha: 0.4),
+                              width: 0.8,
                             ),
-                            child: Text(
-                              _isRirMode ? 'RIR' : 'RPE',
-                              style: TextStyle(
-                                fontSize: 8,
-                                fontWeight: FontWeight.w900,
-                                color: tokens.cyanAccent,
-                                fontFamily: AppTypography.displayFontFamily,
-                              ),
+                          ),
+                          child: Text(
+                            _isRirMode ? 'RIR' : 'RPE',
+                            style: TextStyle(
+                              fontSize: 8,
+                              fontWeight: FontWeight.w900,
+                              color: tokens.cyanAccent,
+                              fontFamily: AppTypography.displayFontFamily,
                             ),
                           ),
                         ),
                       ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 4),
-                IconButton(
+                    ),
+                  ],
+                );
+
+                final plateCalcBtn = IconButton(
                   tooltip: 'Plate Calculator',
                   icon: Icon(Icons.calculate_outlined, color: tokens.kineticAccent, size: 24),
                   onPressed: () {
@@ -1036,9 +1139,9 @@ class _ExerciseCardState extends ConsumerState<_ExerciseCard> {
                       },
                     );
                   },
-                ),
-                const SizedBox(width: 4),
-                SizedBox(
+                );
+
+                final logSetBtn = SizedBox(
                   height: 48,
                   child: AppButton(
                     label: 'LOG SET',
@@ -1046,8 +1149,79 @@ class _ExerciseCardState extends ConsumerState<_ExerciseCard> {
                     isLoading: _isLogging,
                     onPressed: _isLogging ? null : _handleLogSet,
                   ),
-                ),
-              ],
+                );
+
+                final weightLabel = 'WEIGHT (${widget.weightUnit.label})';
+
+                if (isNarrow) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            flex: 5,
+                            child: _NumberField(
+                              controller: _repsController,
+                              label: 'REPS',
+                              tokens: tokens,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            flex: 6,
+                            child: _NumberField(
+                              controller: _weightController,
+                              label: weightLabel,
+                              isDecimal: true,
+                              tokens: tokens,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(flex: 5, child: rpeStack),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          plateCalcBtn,
+                          const SizedBox(width: 8),
+                          Expanded(child: logSetBtn),
+                        ],
+                      ),
+                    ],
+                  );
+                }
+
+                return Row(
+                  children: [
+                    Expanded(
+                      flex: 5,
+                      child: _NumberField(
+                        controller: _repsController,
+                        label: 'REPS',
+                        tokens: tokens,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      flex: 6,
+                      child: _NumberField(
+                        controller: _weightController,
+                        label: weightLabel,
+                        isDecimal: true,
+                        tokens: tokens,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(flex: 5, child: rpeStack),
+                    const SizedBox(width: 4),
+                    plateCalcBtn,
+                    const SizedBox(width: 4),
+                    logSetBtn,
+                  ],
+                );
+              },
             ),
           ],
         ),
@@ -1063,9 +1237,15 @@ class _ExerciseCardState extends ConsumerState<_ExerciseCard> {
 
   Future<void> _handleLogSet() async {
     final reps = int.tryParse(_repsController.text.trim());
-    final weight = double.tryParse(_weightController.text.trim());
-    if (reps == null || reps <= 0 || weight == null || weight < 0) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enter valid reps and weight')));
+    final rawWeight = double.tryParse(_weightController.text.trim());
+    final canonicalWeight =
+        WorkoutMetrics.toCanonicalKg(rawWeight, widget.weightUnit);
+    if (reps == null ||
+        !WorkoutMetrics.isValidReps(reps) ||
+        canonicalWeight == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Enter valid reps and weight')),
+      );
       return;
     }
 
@@ -1088,7 +1268,7 @@ class _ExerciseCardState extends ConsumerState<_ExerciseCard> {
 
     setState(() => _isLogging = true);
     try {
-      await widget.onLogSet(reps, weight, _selectedSetType, parsedRpe);
+      await widget.onLogSet(reps, canonicalWeight, _selectedSetType, parsedRpe);
     } catch (e, s) {
       if (mounted) ErrorHandler.handleError(context, e, s);
     } finally {

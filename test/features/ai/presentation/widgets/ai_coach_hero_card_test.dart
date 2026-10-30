@@ -11,6 +11,7 @@ import 'package:progression_tracker/features/ai/presentation/widgets/ai_empty_st
 import 'package:progression_tracker/features/ai/presentation/widgets/ai_error_state.dart';
 import 'package:progression_tracker/features/ai/presentation/widgets/ai_offline_state.dart';
 import 'package:progression_tracker/features/ai/presentation/widgets/ai_no_key_state.dart';
+import 'package:progression_tracker/shared/presentation/components/app_card.dart';
 import '../../integration/screen_integration_test.dart';
 
 void main() {
@@ -225,6 +226,25 @@ void main() {
 
       expect(tester.takeException(), isNull);
       expect(find.byType(AiCoachHeroCard), findsOneWidget);
+    });
+
+    testWidgets('uses non-glowing AppCard surface so it does not compete with weekly goal emphasis',
+        (tester) async {
+      final state = GlobalAIState(
+        insights: {InsightContext.home: mockInsights},
+        isLoading: {InsightContext.home: false},
+      );
+
+      await tester.pumpWidget(createTestWidget(state: state));
+      await tester.pumpAndSettle();
+
+      final appCardFinder = find.descendant(
+        of: find.byType(AiCoachHeroCard),
+        matching: find.byType(AppCard),
+      );
+      expect(appCardFinder, findsOneWidget);
+      final appCard = tester.widget<AppCard>(appCardFinder);
+      expect(appCard.isGlowing, isFalse);
     });
   });
 }

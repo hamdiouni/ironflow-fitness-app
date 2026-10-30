@@ -20,3 +20,4 @@ export 'set_active_program_use_case.dart';
 export 'start_workout_use_case.dart';
 export 'update_active_program_use_case.dart';
 export 'update_exercise_parameters_use_case.dart';
+export 'workout_metrics.dart';

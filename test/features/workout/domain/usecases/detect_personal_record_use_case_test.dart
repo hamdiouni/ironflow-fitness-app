@@ -164,5 +164,75 @@ void main() {
       final isPR = await useCase('Bench Press', newSet);
       expect(isPR, isFalse);
     });
+
+    test('50 kg x 15 does not beat 140 kg x 5 merely due to reps', () async {
+      repository.history = [
+        Exercise(
+          id: 'e1',
+          name: 'Deadlift',
+          type: ExerciseType.strength,
+          sets: [
+            SetEntry.create(reps: 5, weight: 140.0, type: SetType.normal),
+          ],
+        ),
+      ];
+
+      final newSet = SetEntry.create(
+        reps: 15,
+        weight: 50.0,
+        type: SetType.normal,
+      );
+
+      final isPR = await useCase('Deadlift', newSet);
+      expect(isPR, isFalse);
+    });
+
+    test('rejects negative and non-finite weights and supports valid 0 kg bodyweight sets', () async {
+      final now = DateTime.now();
+      repository.history = [
+        Exercise(
+          id: 'e-bw',
+          name: 'Pull Up',
+          type: ExerciseType.strength,
+          sets: [
+            SetEntry(id: 's-bw-1', reps: 10, weight: 0.0, timestamp: now),
+            // Corrupted historical non-finite set must be ignored
+            SetEntry(id: 's-corrupt', reps: 10, weight: double.infinity, timestamp: now),
+          ],
+        ),
+      ];
+
+      // 12 bodyweight reps beats 10 bodyweight reps at 0 kg
+      final validBodyweightPR = SetEntry.create(
+        reps: 12,
+        weight: 0.0,
+        type: SetType.normal,
+      );
+      expect(await useCase('Pull Up', validBodyweightPR), isTrue);
+
+      // Negative and non-finite candidate sets are rejected
+      final negativeSet = SetEntry(
+        id: 's-neg',
+        reps: 10,
+        weight: -20.0,
+        timestamp: now,
+      );
+      final nanSet = SetEntry(
+        id: 's-nan',
+        reps: 10,
+        weight: double.nan,
+        timestamp: now,
+      );
+      final infSet = SetEntry(
+        id: 's-inf',
+        reps: 10,
+        weight: double.infinity,
+        timestamp: now,
+      );
+
+      expect(await useCase('Pull Up', negativeSet), isFalse);
+      expect(await useCase('Pull Up', nanSet), isFalse);
+      expect(await useCase('Pull Up', infSet), isFalse);
+    });
   });
 }

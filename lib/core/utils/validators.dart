@@ -3,9 +3,9 @@ library;
 
 /// Utility class for validating entity data
 class Validators {
-  /// Validates that weight is non-negative (0 is valid for bodyweight exercises)
+  /// Validates that weight is finite and non-negative (0 is valid for bodyweight exercises)
   static bool isValidWeight(double weight) {
-    return weight >= 0;
+    return weight.isFinite && weight >= 0;
   }
 
   /// Validates that reps is a positive integer

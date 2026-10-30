@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/config/app_config.dart';
 import '../../../../core/constants/app_theme.dart';
 import '../../../../core/providers/connectivity_provider.dart';
+import '../../../../shared/presentation/components/app_card.dart';
 import '../../domain/entities/insight.dart';
 import '../providers/global_ai_provider.dart';
 import 'ai_destination.dart';
@@ -74,49 +75,32 @@ class _AiCoachHeroCardState extends ConsumerState<AiCoachHeroCard> {
     return Semantics(
       container: true,
       label: 'AI Coach Hero Card',
-      child: Container(
-        margin: const EdgeInsets.symmetric(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
           horizontal: AppSpacings.lg,
           vertical: AppSpacings.sm,
         ),
-        decoration: BoxDecoration(
-          color: tokens.card,
-          borderRadius: BorderRadius.circular(tokens.radiusMd),
-          border: Border.all(
-            color: tokens.kineticAccent.withValues(alpha: 0.35),
-            width: 1.2,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: tokens.kineticAccent.withValues(alpha: tokens.isDark ? 0.08 : 0.04),
-              blurRadius: 16,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(tokens.radiusMd),
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacings.lg),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Top header row
-                _buildHeader(context, primary, isLoading, hasKey),
-                const SizedBox(height: AppSpacings.sm),
+        child: AppCard(
+          isGlowing: false,
+          padding: const EdgeInsets.all(AppSpacings.lg),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Top header row
+              _buildHeader(context, primary, isLoading, hasKey),
+              const SizedBox(height: AppSpacings.sm),
 
-                // Main state content
-                _buildContent(
-                  context: context,
-                  hasKey: hasKey,
-                  isOnline: isOnline,
-                  insights: insights,
-                  isLoading: isLoading,
-                  error: error,
-                ),
-              ],
-            ),
+              // Main state content
+              _buildContent(
+                context: context,
+                hasKey: hasKey,
+                isOnline: isOnline,
+                insights: insights,
+                isLoading: isLoading,
+                error: error,
+              ),
+            ],
           ),
         ),
       ),
@@ -138,10 +122,6 @@ class _AiCoachHeroCardState extends ConsumerState<AiCoachHeroCard> {
           decoration: BoxDecoration(
             color: tokens.kineticAccent.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(tokens.radiusXs),
-            border: Border.all(
-              color: tokens.kineticAccent.withValues(alpha: 0.3),
-              width: 0.8,
-            ),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -268,7 +248,6 @@ class _AiCoachHeroCardState extends ConsumerState<AiCoachHeroCard> {
                 decoration: BoxDecoration(
                   color: tokens.elevated,
                   borderRadius: BorderRadius.circular(tokens.radiusSm),
-                  border: Border.all(color: tokens.borderSubtle, width: 1),
                 ),
                 child: Text(
                   insight.icon,

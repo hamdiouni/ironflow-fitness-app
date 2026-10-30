@@ -226,5 +226,48 @@ void main() {
       expect(activeProgramRepository.updated, isEmpty);
       expect(activeProgramRepository.current?.currentDayIndex, 0);
     });
+
+    test('zero-working-set workouts (empty or warm-up only) do not save or advance program', () async {
+      final emptyWorkout = Workout(
+        id: 'workout-empty',
+        date: DateTime(2026, 10, 23),
+        duration: Duration.zero,
+        totalVolume: 0,
+        programId: 'program-1',
+        programDayIndex: 0,
+        exercises: const [],
+      );
+      final warmupOnlyWorkout = Workout(
+        id: 'workout-warmup-only',
+        date: DateTime(2026, 10, 23),
+        duration: Duration.zero,
+        totalVolume: 0,
+        programId: 'program-1',
+        programDayIndex: 0,
+        exercises: [
+          Exercise(
+            id: 'exercise-1',
+            name: 'Bench Press',
+            type: ExerciseType.strength,
+            sets: [
+              SetEntry(
+                id: 'set-warmup',
+                reps: 10,
+                weight: 40,
+                type: SetType.warmup,
+                timestamp: DateTime(2026, 10, 23),
+              ),
+            ],
+          ),
+        ],
+      );
+
+      await useCase(emptyWorkout, const Duration(minutes: 10));
+      await useCase(warmupOnlyWorkout, const Duration(minutes: 15));
+
+      expect(workoutRepository.saved, isEmpty);
+      expect(activeProgramRepository.updated, isEmpty);
+      expect(activeProgramRepository.current?.currentDayIndex, 0);
+    });
   });
 }

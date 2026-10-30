@@ -40,6 +40,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     });
   }
 
+  String _resolvePostLoginRoute() {
+    try {
+      final from = GoRouterState.of(context).uri.queryParameters['from'];
+      return AppRoutes.resolvePostAuthRedirect(from);
+    } catch (_) {
+      return AppRoutes.home;
+    }
+  }
+
+  String _withFromQuery(String baseRoute) {
+    try {
+      final from = GoRouterState.of(context).uri.queryParameters['from'];
+      if (from != null && from.isNotEmpty) {
+        return Uri(path: baseRoute, queryParameters: {'from': from}).toString();
+      }
+    } catch (_) {}
+    return baseRoute;
+  }
+
   Future<void> _handleEmailSignIn() async {
     if (_isProcessingGoogleSignIn) return;
     if (!_formKey.currentState!.validate()) return;
@@ -56,7 +75,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       final isOnboarded = await ref.read(isOnboardedProvider.future);
       if (!mounted) return;
       if (isOnboarded) {
-        context.go(AppRoutes.home);
+        context.go(_resolvePostLoginRoute());
       } else {
         context.go(AppRoutes.onboarding);
       }
@@ -78,7 +97,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       final isOnboarded = await ref.read(isOnboardedProvider.future);
       if (!mounted) return;
       if (isOnboarded) {
-        context.go(AppRoutes.home);
+        context.go(_resolvePostLoginRoute());
       } else {
         context.go(AppRoutes.onboarding);
       }
@@ -544,7 +563,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       InkWell(
                         onTap: () {
                           AppHaptics.shared.selectionChanged();
-                          context.go(AppRoutes.signup);
+                          context.go(_withFromQuery(AppRoutes.signup));
                         },
                         child: Text(
                           'CREATE ACCOUNT',
