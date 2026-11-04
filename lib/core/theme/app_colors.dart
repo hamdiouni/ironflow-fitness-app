@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Stripe Design System color tokens for IronFlow.
+/// Direction 4 Soft & Layered color tokens for IronFlow.
 ///
 /// Adapted from DESIGN.md:
 /// - Primary: Electric Indigo (#533AFD), Deep Indigo (#4434D4), Press (#2E2B8C), Soft (#665EFD)

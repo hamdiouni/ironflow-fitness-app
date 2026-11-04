@@ -327,3 +327,4 @@ class AnimatedStaggerItem extends StatelessWidget {
     );
   }
 }
+

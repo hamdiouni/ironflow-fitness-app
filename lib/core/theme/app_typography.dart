@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'app_colors.dart';
 
-/// Stripe Design System typography styles for IronFlow.
+/// Direction 4 Soft & Layered typography styles for IronFlow.
 ///
 /// Adapted from DESIGN.md:
 /// - Thin display tier: weight 300 with negative tracking (-1.4px to -0.2px).
