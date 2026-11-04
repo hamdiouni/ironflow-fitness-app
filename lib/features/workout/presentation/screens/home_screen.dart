@@ -178,172 +178,85 @@ class _HomeHeader extends StatelessWidget {
         AppSpacings.lg,
         AppSpacings.xs,
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Row(
-            children: [
-              const IronFlowLogo(size: 38),
-              const SizedBox(width: AppSpacings.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'TODAY',
-                      style: TextStyle(
-                        fontFamily: AppTypography.displayFontFamily,
-                        color: tokens.kineticAccent,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 1.5,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Ready to train',
-                      style: TextStyle(
-                        fontFamily: AppTypography.displayFontFamily,
-                        color: tokens.textPrimary,
-                        fontSize: 22,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.5,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: tokens.warning.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(tokens.radiusPill),
-                  border: Border.all(color: tokens.warning.withValues(alpha: 0.3)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.local_fire_department_rounded, size: 15, color: tokens.warning),
-                    const SizedBox(width: 4),
-                    Text(
-                      '7 d',
-                      style: TextStyle(
-                        fontFamily: AppTypography.displayFontFamily,
-                        color: tokens.textPrimary,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: AppSpacings.xs),
-              const AiEntryButton(contextScreen: 'today'),
-              const SizedBox(width: AppSpacings.xs),
-              Semantics(
-                button: true,
-                label: 'Open User Profile and Settings',
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-                  child: InkWell(
-                    onTap: () => _openUserHub(context, tokens),
-                    customBorder: const CircleBorder(),
-                    child: Center(
-                      child: Container(
-                        width: 38,
-                        height: 38,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: tokens.card,
-                          border: Border.all(color: tokens.borderSubtle, width: 1),
-                        ),
-                        child: Icon(Icons.person_outline, color: tokens.textPrimary, size: 20),
-                      ),
-                    ),
+          const IronFlowLogo(size: 40),
+          const SizedBox(width: AppSpacings.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'TODAY',
+                  style: TextStyle(
+                    fontFamily: AppTypography.displayFontFamily,
+                    color: tokens.kineticAccent,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.5,
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 2),
+                Text(
+                  'Ready to train',
+                  style: TextStyle(
+                    fontFamily: AppTypography.displayFontFamily,
+                    color: tokens.textPrimary,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 12),
-          InkWell(
-            onTap: () => context.push(AppRoutes.designPreview),
-            borderRadius: BorderRadius.circular(tokens.radiusLg),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    tokens.kineticAccent.withValues(alpha: 0.18),
-                    tokens.panel,
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: tokens.warning.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(tokens.radiusPill),
+              border: Border.all(color: tokens.warning.withValues(alpha: 0.3)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.local_fire_department_rounded, size: 15, color: tokens.warning),
+                const SizedBox(width: 4),
+                Text(
+                  '7 d',
+                  style: TextStyle(
+                    fontFamily: AppTypography.displayFontFamily,
+                    color: tokens.textPrimary,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 12,
+                  ),
                 ),
-                borderRadius: BorderRadius.circular(tokens.radiusLg),
-                border: Border.all(color: tokens.kineticAccent.withValues(alpha: 0.35), width: 1.2),
-                boxShadow: [
-                  BoxShadow(
-                    color: tokens.kineticAccent.withValues(alpha: 0.1),
-                    blurRadius: 12,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 36,
-                    height: 36,
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSpacings.xs),
+          const AiEntryButton(contextScreen: 'today'),
+          const SizedBox(width: AppSpacings.xs),
+          Semantics(
+            button: true,
+            label: 'Open User Profile and Settings',
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+              child: InkWell(
+                onTap: () => _openUserHub(context, tokens),
+                customBorder: const CircleBorder(),
+                child: Center(
+                  child: Container(
+                    width: 38,
+                    height: 38,
                     decoration: BoxDecoration(
-                      color: tokens.kineticAccent.withValues(alpha: 0.2),
                       shape: BoxShape.circle,
+                      color: tokens.card,
+                      border: Border.all(color: tokens.borderSubtle, width: 1),
                     ),
-                    child: Icon(Icons.auto_awesome, color: tokens.kineticAccent, size: 18),
+                    child: Icon(Icons.person_outline, color: tokens.textPrimary, size: 20),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Direction 4 (Soft & Layered)',
-                          style: TextStyle(
-                            fontFamily: AppTypography.displayFontFamily,
-                            color: tokens.textPrimary,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        const SizedBox(height: 1),
-                        Text(
-                          'Tap to explore all 11 interactive preview screens',
-                          style: TextStyle(
-                            fontFamily: AppTypography.bodyFontFamily,
-                            color: tokens.textSecondary,
-                            fontSize: 11,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: tokens.kineticAccent,
-                      borderRadius: BorderRadius.circular(tokens.radiusPill),
-                    ),
-                    child: const Text(
-                      'Open Lab',
-                      style: TextStyle(
-                        color: Color(0xFF1E1B4B),
-                        fontWeight: FontWeight.w800,
-                        fontSize: 11,
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
           ),
@@ -769,55 +682,77 @@ class _TodayDirectiveCard extends ConsumerWidget {
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppSpacings.lg, vertical: AppSpacings.xs),
             child: AppCard(
-              padding: const EdgeInsets.all(AppSpacings.md),
-              child: Row(
+              padding: const EdgeInsets.all(AppSpacings.lg),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: 42,
-                    height: 42,
-                    decoration: BoxDecoration(
-                      color: tokens.card,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: tokens.kineticAccent.withValues(alpha: 0.5)),
-                    ),
-                    child: Icon(Icons.fitness_center_rounded, color: tokens.kineticAccent, size: 20),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'NO ACTIVE PROGRAM',
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: tokens.kineticAccent.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(tokens.radiusPill),
+                        ),
+                        child: Text(
+                          'TODAY\'S FOCUS',
                           style: TextStyle(
                             fontFamily: AppTypography.displayFontFamily,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.5,
-                            color: tokens.textPrimary,
+                            color: tokens.kineticAccent,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.8,
                           ),
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          'Initialize an AI training split or load a program.',
+                      ),
+                      TextButton.icon(
+                        onPressed: () => context.go(AppRoutes.workoutProgramSelection),
+                        icon: Icon(Icons.tune_rounded, size: 14, color: tokens.kineticAccent),
+                        label: Text(
+                          'SELECT PROGRAM',
                           style: TextStyle(
-                            fontFamily: AppTypography.bodyFontFamily,
+                            fontFamily: AppTypography.displayFontFamily,
                             fontSize: 11,
-                            color: tokens.textSecondary,
+                            fontWeight: FontWeight.w800,
+                            color: tokens.kineticAccent,
                           ),
                         ),
-                      ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Full Body Training Session',
+                    style: TextStyle(
+                      fontFamily: AppTypography.displayFontFamily,
+                      fontSize: 19,
+                      fontWeight: FontWeight.w800,
+                      color: tokens.textPrimary,
                     ),
                   ),
-                  TextButton(
-                    onPressed: () => context.go(AppRoutes.workoutProgramSelection),
-                    child: Text(
-                      'SETUP',
-                      style: TextStyle(
-                        fontFamily: AppTypography.displayFontFamily,
-                        fontWeight: FontWeight.w800,
-                        color: tokens.kineticAccent,
-                      ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Open workout session • Log sets with live rest timer',
+                    style: TextStyle(
+                      fontFamily: AppTypography.bodyFontFamily,
+                      fontSize: 12,
+                      color: tokens.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    height: 46,
+                    width: double.infinity,
+                    child: AppButton(
+                      label: "START TODAY'S WORKOUT",
+                      variant: AppButtonVariant.primary,
+                      icon: const Icon(Icons.play_arrow_rounded, size: 20),
+                      onPressed: () async {
+                        AppHaptics.shared.selectionChanged();
+                        await ref.read(workoutNotifierProvider.notifier).start(initialExercises: const []);
+                        if (context.mounted) context.go(AppRoutes.workoutActive);
+                      },
                     ),
                   ),
                 ],

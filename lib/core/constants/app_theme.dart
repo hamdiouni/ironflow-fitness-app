@@ -171,6 +171,46 @@ class AppTheme {
           ),
         ),
       ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: tokens.kineticAccent,
+          foregroundColor: tokens.onAccent,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppSpacings.radiusPill),
+          ),
+          padding: const EdgeInsets.symmetric(
+            horizontal: spacingLarge,
+            vertical: spacingMedium,
+          ),
+          textStyle: const TextStyle(
+            fontFamily: AppTypography.displayFontFamily,
+            fontWeight: FontWeight.w700,
+            fontSize: 15,
+          ),
+        ),
+      ),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: tokens.kineticAccent,
+        foregroundColor: tokens.onAccent,
+        elevation: 4,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSpacings.radiusPill),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: tokens.kineticAccent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppSpacings.radiusPill),
+          ),
+          textStyle: const TextStyle(
+            fontFamily: AppTypography.displayFontFamily,
+            fontWeight: FontWeight.w700,
+            fontSize: 14,
+          ),
+        ),
+      ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: tokens.elevated,
