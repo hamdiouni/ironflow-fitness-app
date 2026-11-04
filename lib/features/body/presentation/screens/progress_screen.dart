@@ -142,9 +142,8 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen>
           child: Container(
             margin: const EdgeInsets.symmetric(horizontal: AppTheme.spacingMedium),
             decoration: BoxDecoration(
-              color: tokens.panel,
+              color: tokens.elevated,
               borderRadius: BorderRadius.circular(AppSpacings.radiusPill),
-              border: Border.all(color: tokens.borderSubtle, width: 1),
             ),
             child: TabBar(
               controller: _tabController,
@@ -235,10 +234,8 @@ class _BodyWeightTab extends ConsumerWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
-                        color: tokens.card,
+                        color: tokens.elevated,
                         borderRadius: BorderRadius.circular(tokens.radiusPill),
-                        border:
-                            Border.all(color: tokens.borderSubtle, width: 1),
                       ),
                       child: Text(
                         'LAST 30 DAYS',
