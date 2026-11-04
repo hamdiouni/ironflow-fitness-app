@@ -1,4 +1,3 @@
-import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/reminder_settings.dart';
 import '../../domain/repositories/reminder_settings_repository.dart';

@@ -9,7 +9,7 @@ import '../../../ai/presentation/widgets/ai_entry_button.dart';
 
 /// Screen displaying workout analytics, consistency streak, volume, and muscle group distribution.
 ///
-/// Upgraded to the Monolithic Sci-Fi design system (Direction 3).
+/// Upgraded to the Stripe design system (Direction 3).
 class AnalyticsScreen extends ConsumerStatefulWidget {
   const AnalyticsScreen({super.key});
 

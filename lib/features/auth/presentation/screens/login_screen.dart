@@ -7,10 +7,10 @@ import 'package:progression_tracker/core/constants/app_theme.dart';
 import 'package:progression_tracker/core/router/app_router.dart';
 import 'package:progression_tracker/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:progression_tracker/features/onboarding/presentation/providers/onboarding_provider.dart';
-import 'package:progression_tracker/shared/presentation/components/app_button.dart';
+import 'package:progression_tracker/shared/presentation/components/components.dart';
 import 'package:progression_tracker/shared/presentation/services/app_haptics.dart';
 
-/// Direction 4: Soft & Layered Operator Authentication Screen.
+/// Stripe Design System Authentication Screen.
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
@@ -184,30 +184,38 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                       const SizedBox(height: 32),
 
-                      // Direction 4 Soft Rounded Header Badge
+                      // Stripe Signature Mesh Hero Badge
                       Center(
-                        child: Container(
-                          width: 80,
-                          height: 80,
-                          decoration: BoxDecoration(
-                            color: tokens.panel,
-                            borderRadius: BorderRadius.circular(tokens.radiusLg),
-                            border: Border.all(
-                              color: tokens.kineticAccent.withValues(alpha: 0.4),
-                              width: 1.5,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: tokens.kineticAccent.withValues(alpha: tokens.isDark ? 0.25 : 0.12),
-                                blurRadius: 24,
-                                spreadRadius: 1,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(tokens.radiusLg),
+                          child: StripeMeshBackdrop(
+                            height: 88,
+                            child: Center(
+                              child: Container(
+                                width: 54,
+                                height: 54,
+                                decoration: BoxDecoration(
+                                  color: tokens.panel,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: tokens.kineticAccent.withValues(alpha: 0.5),
+                                    width: 1.5,
+                                  ),
+                                  boxShadow: const [
+                                    BoxShadow(
+                                      color: Color(0x1F003770),
+                                      blurRadius: 16,
+                                      offset: Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: Icon(
+                                  Icons.shield_rounded,
+                                  size: 30,
+                                  color: tokens.kineticAccent,
+                                ),
                               ),
-                            ],
-                          ),
-                          child: Icon(
-                            Icons.shield_rounded,
-                            size: 40,
-                            color: tokens.kineticAccent,
+                            ),
                           ),
                         ),
                       ),

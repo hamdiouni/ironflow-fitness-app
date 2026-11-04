@@ -16,7 +16,7 @@ import '../../../onboarding/domain/entities/user_profile.dart';
 import '../../../onboarding/presentation/providers/onboarding_provider.dart';
 import '../providers/profile_data_provider.dart';
 
-/// Monolithic Sci-Fi Profile & Settings screen.
+/// Stripe Profile & Settings screen.
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
@@ -223,7 +223,7 @@ class _ProfileHeader extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // Monolithic Avatar Icon
+            // Stripe Avatar Icon
             Container(
               width: 64,
               height: 64,

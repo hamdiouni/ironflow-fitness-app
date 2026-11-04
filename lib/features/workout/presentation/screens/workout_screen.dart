@@ -178,7 +178,7 @@ class _EmptyState extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Direction 4 Hero Card for Program State
+          // Stripe Hero Card for Program State
           AppCard(
             padding: const EdgeInsets.all(20),
             child: Column(
@@ -508,7 +508,7 @@ class _ActiveProgramHeader extends StatelessWidget {
               ),
             ],
             const SizedBox(height: 16),
-            // Monolithic Progress Bar
+            // Stripe Progress Bar
             AppProgressBar(
               progress: completionPercentage,
               progressColor: tokens.kineticAccent,

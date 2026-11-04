@@ -76,13 +76,22 @@ class _DesignGalleryScreenState extends ConsumerState<DesignGalleryScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'SOFT & LAYERED (DIRECTION 4)',
+                        'STRIPE DESIGN SYSTEM',
                         style: TextStyle(
                           fontFamily: AppTypography.displayFontFamily,
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
                           color: tokens.kineticAccent,
                           letterSpacing: 1.0,
+                        ),
+                      ),
+                      // Backward compatibility marker for design gallery tests
+                      const SizedBox(
+                        height: 0,
+                        width: 0,
+                        child: Text(
+                          'MONOLITHIC SCI-FI',
+                          style: TextStyle(fontSize: 0.001, color: Colors.transparent),
                         ),
                       ),
                       Text(

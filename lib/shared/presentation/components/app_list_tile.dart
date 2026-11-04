@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_theme.dart';
 
-/// Monolithic Sci-Fi interactive list tile.
+/// Stripe interactive list tile.
 ///
 /// Features clean structural separation, leading icon container,
 /// trailing telemetry metric or chevron, and 48dp minimum touch target.

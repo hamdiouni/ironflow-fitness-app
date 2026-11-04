@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_theme.dart';
 
-/// Monolithic Sci-Fi skeleton shimmer loader.
+/// Stripe skeleton shimmer loader.
 ///
 /// Respects accessibility reduced-motion preferences. When animations are disabled,
 /// displays a static low-contrast placeholder.

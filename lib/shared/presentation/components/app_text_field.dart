@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_theme.dart';
 
-/// Monolithic Sci-Fi text input field.
+/// Stripe design system text input field.
 ///
 /// Features high-contrast dark titanium surface, focus indicator glow,
 /// prefix/suffix icons, and clean error state.
@@ -122,7 +122,7 @@ class AppTextField extends StatelessWidget {
             hintText: hintText,
             errorText: errorText,
             filled: true,
-            fillColor: tokens.elevated,
+            fillColor: tokens.isDark ? tokens.elevated : AppColors.canvas,
             prefixIcon: prefixIcon,
             suffixIcon: suffixIcon,
             contentPadding: const EdgeInsets.symmetric(
@@ -130,26 +130,32 @@ class AppTextField extends StatelessWidget {
               vertical: AppSpacings.md,
             ),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppSpacings.radiusMd),
-              borderSide: BorderSide(color: tokens.borderSubtle, width: 1),
+              borderRadius: BorderRadius.circular(AppSpacings.radiusSm),
+              borderSide: BorderSide(
+                color: tokens.isDark ? tokens.borderSubtle : AppColors.hairlineInput,
+                width: 1,
+              ),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppSpacings.radiusMd),
-              borderSide: BorderSide(color: tokens.borderSubtle, width: 1),
+              borderRadius: BorderRadius.circular(AppSpacings.radiusSm),
+              borderSide: BorderSide(
+                color: tokens.isDark ? tokens.borderSubtle : AppColors.hairlineInput,
+                width: 1,
+              ),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppSpacings.radiusMd),
+              borderRadius: BorderRadius.circular(AppSpacings.radiusSm),
               borderSide: BorderSide(
                 color: hasError ? tokens.error : tokens.kineticAccent,
                 width: 1.5,
               ),
             ),
             errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppSpacings.radiusMd),
+              borderRadius: BorderRadius.circular(AppSpacings.radiusSm),
               borderSide: BorderSide(color: tokens.error, width: 1),
             ),
             focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppSpacings.radiusMd),
+              borderRadius: BorderRadius.circular(AppSpacings.radiusSm),
               borderSide: BorderSide(color: tokens.error, width: 1.5),
             ),
           ),

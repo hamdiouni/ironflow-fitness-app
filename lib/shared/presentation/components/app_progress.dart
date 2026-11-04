@@ -2,7 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_theme.dart';
 
-/// Monolithic Sci-Fi linear progress bar with optional kinetic gradient.
+/// Stripe linear progress bar with optional kinetic gradient.
 class AppProgressBar extends StatelessWidget {
   /// Creates an [AppProgressBar].
   const AppProgressBar({
@@ -79,7 +79,7 @@ class AppProgressBar extends StatelessWidget {
   }
 }
 
-/// Monolithic Sci-Fi circular progress ring with centered telemetry label.
+/// Stripe circular progress ring with centered telemetry label.
 class AppProgressRing extends StatelessWidget {
   /// Creates an [AppProgressRing].
   const AppProgressRing({

@@ -11,10 +11,10 @@ import 'package:progression_tracker/features/ai/presentation/providers/image_gen
 import 'package:progression_tracker/features/ai/data/services/image_generation_service.dart';
 import 'package:progression_tracker/shared/presentation/services/app_haptics.dart';
 
-/// Monolithic Sci-Fi AI Chat Screen for personalized fitness coaching
+/// Stripe AI Chat Screen for personalized fitness coaching
 ///
 /// Features:
-/// - Monolithic dark titanium sci-fi design system
+/// - Stripe design system
 /// - Live telemetry status (Online Gemini vs Local Fallback vs Key Missing)
 /// - Rich markdown formatting with custom sci-fi styling
 /// - Quick action protocol prompt chips
@@ -795,7 +795,7 @@ class _AIChatScreenState extends ConsumerState<AIChatScreen> {
   }
 }
 
-/// Quick action button widget with Monolithic Sci-Fi styling
+/// Quick action button widget with Stripe styling
 class _QuickActionButton extends StatelessWidget {
   final String code;
   final String label;
@@ -892,7 +892,7 @@ class _SuggestionChip extends StatelessWidget {
   }
 }
 
-/// Enhanced chat bubble with Monolithic Sci-Fi styling and markdown support
+/// Enhanced chat bubble with Stripe styling and markdown support
 class _ChatBubble extends ConsumerWidget {
   final String role;
   final String content;

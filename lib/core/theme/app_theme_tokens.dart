@@ -80,7 +80,7 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
   // Convenient alias
   Color get textTertiary => textMuted;
 
-  /// Direction 4: Soft & Layered Dark Tokens.
+  /// Stripe Design System: Dark Tokens (Brand Dark 900 Shell).
   static final AppThemeTokens dark = AppThemeTokens(
     isDark: true,
     canvas: AppColors.canvasDark,
@@ -109,7 +109,7 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
       border: Border.all(color: AppColors.borderSubtleDark, width: 1),
       boxShadow: const [
         BoxShadow(
-          color: Color(0x1F000000),
+          color: Color(0x2E000000),
           blurRadius: 16,
           offset: Offset(0, 4),
         ),
@@ -121,7 +121,7 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
       border: Border.all(color: AppColors.kineticAccentDark, width: 1.5),
       boxShadow: const [
         BoxShadow(
-          color: Color(0x2EA5B4FC),
+          color: Color(0x33A5B4FC),
           blurRadius: 16,
           spreadRadius: 1,
         ),
@@ -129,7 +129,7 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
     ),
   );
 
-  /// Direction 4: Soft & Layered Light Tokens.
+  /// Stripe Design System: Light Tokens (Crisp White Canvas & Soft Off-White).
   static final AppThemeTokens light = AppThemeTokens(
     isDark: false,
     canvas: AppColors.canvasLight,
@@ -158,9 +158,14 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
       border: Border.all(color: AppColors.borderSubtleLight, width: 1),
       boxShadow: const [
         BoxShadow(
-          color: Color(0x0D000000),
-          blurRadius: 12,
-          offset: Offset(0, 3),
+          color: Color(0x14003770),
+          blurRadius: 16,
+          offset: Offset(0, 4),
+        ),
+        BoxShadow(
+          color: Color(0x0A003770),
+          blurRadius: 4,
+          offset: Offset(0, 1),
         ),
       ],
     ),
@@ -170,7 +175,7 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
       border: Border.all(color: AppColors.kineticAccentLight, width: 1.5),
       boxShadow: const [
         BoxShadow(
-          color: Color(0x264338CA),
+          color: Color(0x26533AFD),
           blurRadius: 12,
           spreadRadius: 1,
         ),

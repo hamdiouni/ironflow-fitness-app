@@ -24,7 +24,7 @@ import '../widgets/lifts_volume_tab.dart';
 import '../widgets/progress_photo_comparison.dart';
 import '../../../onboarding/presentation/providers/onboarding_provider.dart';
 
-/// Monolithic Sci-Fi Progress Screen displaying:
+/// Stripe Progress Screen displaying:
 /// - Tab 0: Lifts & Volume (charts, frequency, volume progression, muscle breakdown merged from Analytics)
 /// - Tab 1: Body Weight & Measurements (trend graph, recent entries, body circumferences)
 /// - Tab 2: Photos (physique photo gallery and before/after comparison slider)

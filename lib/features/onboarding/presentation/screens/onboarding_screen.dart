@@ -18,7 +18,7 @@ import 'package:progression_tracker/features/workout/presentation/widgets/split_
 import 'package:progression_tracker/features/nutrition/domain/usecases/build_suggested_meal_plan_use_case.dart';
 import 'package:progression_tracker/features/nutrition/domain/entities/diet_plan.dart';
 
-/// Monolithic Sci-Fi Guided 7-Step Onboarding Stepper.
+/// Stripe Guided 7-Step Onboarding Stepper.
 ///
 /// Steps:
 /// 1. Goal (Lose fat, Gain muscle, Maintain)

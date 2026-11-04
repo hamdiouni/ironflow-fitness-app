@@ -21,7 +21,7 @@ enum AppButtonVariant {
   destructive,
 }
 
-/// Direction 4 (Soft & Layered) capsule button component.
+/// Stripe Design System capsule pill button component (from DESIGN.md).
 ///
 /// Enforces WCAG AA 48dp minimum touch target height, tactile scale feedback,
 /// built-in loading spinner, and Semantics label support.
@@ -130,8 +130,8 @@ class _AppButtonState extends State<AppButton> with SingleTickerProviderStateMix
         border = null;
         break;
       case AppButtonVariant.secondary:
-        bg = tokens.elevated;
-        fg = _isEnabled ? tokens.textPrimary : tokens.textMuted;
+        bg = tokens.isDark ? tokens.elevated : AppColors.canvas;
+        fg = _isEnabled ? (tokens.isDark ? tokens.textPrimary : AppColors.primary) : tokens.textMuted;
         border = Border.all(color: tokens.borderSubtle, width: 1);
         break;
       case AppButtonVariant.outline:

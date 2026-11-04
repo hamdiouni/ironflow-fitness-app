@@ -270,7 +270,7 @@ class AIChatNotifier extends StateNotifier<AIChatState> {
             DateTime.now(),
           );
           AppLogger.debug('✅ [AI CHAT] Found ${bodyEntries.length} body entries');
-        } catch (e) {
+        } catch (e, stackTrace) {
           AppLogger.debug('⚠️ [AI CHAT] Error gathering user data: $e');
         }
       } else {
@@ -370,7 +370,7 @@ class AIChatNotifier extends StateNotifier<AIChatState> {
           responseLength: responseText.length,
         );
         AppLogger.debug('📊 [Analytics] AI query event logged');
-      } catch (e) {
+      } catch (e, stackTrace) {
         AppLogger.debug('⚠️ [Analytics] Failed to log AI query event: $e');
       }
       

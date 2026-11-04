@@ -5,7 +5,7 @@ import '../../../../core/constants/app_theme.dart';
 import '../../domain/entities/reminder_settings.dart';
 import '../providers/notification_providers.dart';
 
-/// Monolithic Sci-Fi screen for configuring reminder settings
+/// Stripe screen for configuring reminder settings
 class ReminderSettingsScreen extends ConsumerWidget {
   const ReminderSettingsScreen({super.key});
 

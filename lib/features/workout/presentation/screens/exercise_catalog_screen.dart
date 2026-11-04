@@ -10,7 +10,7 @@ import '../../domain/entities/exercise_definition.dart';
 import '../providers/exercise_providers.dart';
 import 'exercise_detail_screen.dart';
 
-/// Exercise catalog with muscle-group tabs, search, and Monolithic Sci-Fi cards.
+/// Exercise catalog with muscle-group tabs, search, and Stripe cards.
 class ExerciseCatalogScreen extends ConsumerStatefulWidget {
   const ExerciseCatalogScreen({super.key, this.onSelect});
   final void Function(ExerciseDefinition)? onSelect;

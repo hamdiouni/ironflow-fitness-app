@@ -6,7 +6,7 @@ import 'package:progression_tracker/core/router/app_router.dart';
 import 'package:progression_tracker/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:progression_tracker/features/onboarding/data/user_profile_storage.dart';
 
-/// Monolithic Sci-Fi Splash screen that verifies authentication and onboarding telemetry
+/// Stripe Splash screen that verifies authentication and onboarding telemetry
 /// before routing the operator to the appropriate interface.
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -43,7 +43,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   Future<void> _checkAuthStatus() async {
     if (!mounted) return;
 
-    // Small delay to allow the Monolithic branding and state check to initialize cleanly
+    // Small delay to allow the Stripe branding and state check to initialize cleanly
     await Future.delayed(const Duration(milliseconds: 800));
     if (!mounted) return;
 
@@ -80,7 +80,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
               children: [
                 const Spacer(),
 
-                // Monolithic Sci-Fi Logo Icon
+                // Stripe Logo Icon
                 AnimatedBuilder(
                   animation: _pulseAnimation,
                   builder: (context, child) {

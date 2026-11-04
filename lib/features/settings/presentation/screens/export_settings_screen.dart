@@ -9,7 +9,7 @@ import '../../../../core/constants/app_theme.dart';
 import '../../domain/usecases/restore_data_use_case.dart';
 import '../providers/settings_providers.dart';
 
-/// Monolithic Sci-Fi screen for Telemetry Data Export & System Restore.
+/// Stripe screen for Telemetry Data Export & System Restore.
 class ExportSettingsScreen extends ConsumerStatefulWidget {
   const ExportSettingsScreen({super.key});
 

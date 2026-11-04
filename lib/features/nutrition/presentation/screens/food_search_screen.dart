@@ -18,7 +18,7 @@ import '../providers/food_providers.dart';
 
 /// Screen for searching and selecting food items from the authoritative USDA-verified database.
 ///
-/// Upgraded to the Monolithic Sci-Fi design system with portion sizing,
+/// Upgraded to the Stripe design system with portion sizing,
 /// factual descriptions, verifiable provenance, budget filtering, and
 /// true micronutrient telemetry (flagging missing values as "No data").
 class FoodSearchScreen extends ConsumerStatefulWidget {

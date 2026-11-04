@@ -569,7 +569,7 @@ class SettingsScreen extends ConsumerWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'MONOLITHIC DARK THEME',
+                                  'STRIPE DARK DASHBOARD',
                                   style: TextStyle(
                                     fontFamily: AppTypography.displayFontFamily,
                                     fontSize: 12,
@@ -579,7 +579,7 @@ class SettingsScreen extends ConsumerWidget {
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  isDark ? 'High-contrast titanium canvas' : 'Light mode canvas',
+                                  isDark ? 'Deep navy brand shell (#1C1E54)' : 'Light mode canvas',
                                   style: TextStyle(
                                     fontFamily: AppTypography.bodyFontFamily,
                                     fontSize: 11,
@@ -946,8 +946,8 @@ Last Updated: October 2026''',
                     ),
                     Divider(color: tokens.borderSubtle, height: 20),
                     _SettingItem(
-                      label: 'ENGINE ARCHITECTURE',
-                      value: 'MONOLITHIC SCI-FI',
+                      label: 'DESIGN SYSTEM',
+                      value: 'STRIPE',
                       tokens: tokens,
                     ),
                     Divider(color: tokens.borderSubtle, height: 20),

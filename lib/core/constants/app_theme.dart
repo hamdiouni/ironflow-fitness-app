@@ -213,14 +213,20 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: tokens.elevated,
+        fillColor: isDark ? tokens.elevated : AppColors.canvas,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSpacings.radiusSm),
-          borderSide: BorderSide(color: tokens.borderSubtle, width: 1),
+          borderSide: BorderSide(
+            color: isDark ? tokens.borderSubtle : AppColors.hairlineInput,
+            width: 1,
+          ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSpacings.radiusSm),
-          borderSide: BorderSide(color: tokens.borderSubtle, width: 1),
+          borderSide: BorderSide(
+            color: isDark ? tokens.borderSubtle : AppColors.hairlineInput,
+            width: 1,
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSpacings.radiusSm),

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_theme.dart';
 import 'app_button.dart';
 
-/// Monolithic Sci-Fi empty, error, and offline state views.
+/// Stripe empty, error, and offline state views.
 class AppStateView extends StatelessWidget {
   /// Creates an [AppStateView].
   const AppStateView({

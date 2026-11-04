@@ -9,7 +9,7 @@ import '../providers/paginated_nutrition_provider.dart';
 
 /// Displays the full nutrition history with lazy loading for performance.
 ///
-/// Upgraded to the Monolithic Sci-Fi design system.
+/// Upgraded to the Stripe design system.
 /// Uses pagination to load nutrition entries in batches of 20 days.
 class NutritionHistoryScreen extends ConsumerStatefulWidget {
   const NutritionHistoryScreen({super.key});

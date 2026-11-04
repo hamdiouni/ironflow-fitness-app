@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_theme.dart';
 
-/// Monolithic Sci-Fi filter / selection chip.
+/// Stripe filter / selection chip.
 ///
 /// Ensures 48dp minimum touch target, active kinetic border/glow, and high contrast.
 class AppChip extends StatelessWidget {

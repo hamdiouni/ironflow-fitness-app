@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_theme.dart';
 import 'app_card.dart';
 
-/// Monolithic Sci-Fi telemetry stat tile.
+/// Stripe telemetry stat tile.
 ///
 /// Displays a high-contrast tabular number, unit label, icon indicator,
 /// and optional delta trend badge.
