@@ -272,8 +272,7 @@ class _WorkoutSummaryResultCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final onSurface = Theme.of(context).colorScheme.onSurface;
-    final secondary = Theme.of(context).colorScheme.onSurfaceVariant;
+    final tokens = context.tokens;
 
     return AppCard(
       padding: const EdgeInsets.all(AppTheme.spacingLarge),
@@ -285,29 +284,32 @@ class _WorkoutSummaryResultCard extends StatelessWidget {
             height: 72,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: AppTheme.primaryColor.withValues(alpha: 0.16),
+              color: tokens.kineticAccent.withValues(alpha: 0.16),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.check_circle_outline,
               size: 40,
-              color: AppTheme.primaryColor,
+              color: tokens.kineticAccent,
             ),
           ),
           const SizedBox(height: AppTheme.spacingMedium),
           Text(
             'Workout Complete!',
             style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: onSurface,
+              fontSize: 26,
+              fontWeight: FontWeight.w800,
+              fontFamily: AppTypography.displayFontFamily,
+              color: tokens.textPrimary,
+              letterSpacing: -0.5,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Text(
             'Great job! Here\'s your summary',
             style: TextStyle(
-              fontSize: 14,
-              color: secondary,
+              fontSize: 13,
+              fontFamily: AppTypography.bodyFontFamily,
+              color: tokens.textSecondary,
             ),
           ),
           const SizedBox(height: AppTheme.spacingLarge),
@@ -320,7 +322,7 @@ class _WorkoutSummaryResultCard extends StatelessWidget {
                   icon: Icons.timer_outlined,
                   value: _formatDuration(duration),
                   label: 'Duration',
-                  color: Colors.orange,
+                  color: tokens.warning,
                 ),
               ),
               const SizedBox(width: 12),
@@ -329,7 +331,7 @@ class _WorkoutSummaryResultCard extends StatelessWidget {
                   icon: Icons.repeat,
                   value: '$totalSets',
                   label: totalSets == 1 ? 'Set' : 'Sets',
-                  color: AppTheme.accentColor,
+                  color: tokens.cyanAccent,
                 ),
               ),
             ],
@@ -342,7 +344,7 @@ class _WorkoutSummaryResultCard extends StatelessWidget {
                   icon: Icons.monitor_weight_outlined,
                   value: _formatVolume(totalVolume),
                   label: 'Volume',
-                  color: Colors.purple,
+                  color: tokens.violetAccent,
                 ),
               ),
               const SizedBox(width: 12),
@@ -351,7 +353,7 @@ class _WorkoutSummaryResultCard extends StatelessWidget {
                   icon: Icons.fitness_center,
                   value: '$totalExercises',
                   label: totalExercises == 1 ? 'Exercise' : 'Exercises',
-                  color: AppTheme.primaryColor,
+                  color: tokens.kineticAccent,
                 ),
               ),
             ],
