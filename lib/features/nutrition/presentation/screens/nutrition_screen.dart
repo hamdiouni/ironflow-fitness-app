@@ -79,9 +79,8 @@ class NutritionScreen extends ConsumerWidget {
             padding: const EdgeInsets.only(right: 12),
             child: Container(
               decoration: BoxDecoration(
-                color: tokens.panel,
+                color: tokens.elevated,
                 borderRadius: BorderRadius.circular(tokens.radiusPill),
-                border: Border.all(color: tokens.borderSubtle, width: 1),
               ),
               child: IconButton(
                 onPressed: () => context.go('/nutrition/history'),
@@ -577,9 +576,8 @@ class _SwapMealDialog extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: tokens.card,
+                  color: tokens.elevated,
                   borderRadius: BorderRadius.circular(tokens.radiusLg),
-                  border: Border.all(color: tokens.borderSubtle, width: 1),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -877,9 +875,8 @@ class _DefaultTargetsDisplay extends ConsumerWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: tokens.card,
+                    color: tokens.elevated,
                     borderRadius: BorderRadius.circular(tokens.radiusPill),
-                    border: Border.all(color: tokens.borderSubtle, width: 1),
                   ),
                   child: Text(
                     'STANDARD',
@@ -1186,9 +1183,8 @@ class _TelemetryPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: tokens.card,
+        color: tokens.elevated,
         borderRadius: BorderRadius.circular(tokens.radiusPill),
-        border: Border.all(color: tokens.borderSubtle, width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
