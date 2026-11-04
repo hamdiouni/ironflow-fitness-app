@@ -74,57 +74,57 @@ class AppColors {
   static const Color carbs = Color(0xFF6EE7B7);   // Stripe Mint / Teal
   static const Color fats = Color(0xFFFCD34D);    // Stripe Warm Lemon / Gold
 
-  // ── Dark Surfaces (Stripe Dashboard Track: Brand Dark 900) ──────────────────
-  /// Dashboard base canvas
-  static const Color canvasDark = Color(0xFF141638);
-  /// Brand dark 900 panel surface
-  static const Color panelDark = Color(0xFF1C1E54);
-  /// Elevated interactive card surface
-  static const Color cardDark = Color(0xFF1C1E54);
-  /// Focused elements, pill surfaces, chips
-  static const Color elevatedDark = Color(0xFF252968);
-  /// Hairline dividers for dark surfaces
-  static const Color borderSubtleDark = Color(0xFF2E336B);
+  // ── Dark Surfaces (Direction 4: Soft & Layered Deep Charcoal) ──────────────
+  /// Deep charcoal base canvas
+  static const Color canvasDark = Color(0xFF0D1117);
+  /// Tonal panel surface
+  static const Color panelDark = Color(0xFF161B22);
+  /// Layered card surface
+  static const Color cardDark = Color(0xFF161B22);
+  /// Elevated interactive elements, chips, and pills
+  static const Color elevatedDark = Color(0xFF21262D);
+  /// Hairline dividers for active states
+  static const Color borderSubtleDark = Color(0xFF30363D);
   /// Ambient active glow
   static const Color borderGlowDark = Color(0x33A5B4FC);
 
-  // ── Light Surfaces (Stripe Canvas & Canvas-Soft) ─────────────────────────────
-  /// Cool-tinted soft canvas
-  static const Color canvasLight = Color(0xFFF6F9FC);
+  // ── Light Surfaces (Direction 4: Soft Warm Paper) ───────────────────────────
+  /// Warm off-white canvas
+  static const Color canvasLight = Color(0xFFF8F6F2);
   /// Clean white panel
   static const Color panelLight = Color(0xFFFFFFFF);
   /// Crisp white card
   static const Color cardLight = Color(0xFFFFFFFF);
-  /// Elevated light surface (soft lavender/blue tint)
-  static const Color elevatedLight = Color(0xFFF0F4F9);
-  /// Hairline card border
-  static const Color borderSubtleLight = Color(0xFFE3E8EE);
+  /// Elevated light surface (soft warm tint)
+  static const Color elevatedLight = Color(0xFFEFECE6);
+  /// Hairline active border for light mode
+  static const Color borderSubtleLight = Color(0xFFE0DDD5);
   /// Active glowing border for light mode
-  static const Color borderGlowLight = Color(0x26533AFD);
+  static const Color borderGlowLight = Color(0x264F46E5);
 
-  // ── Kinetic Accents (Aliased to Stripe Primary) ─────────────────────────────
-  /// Primary kinetic accent (Soft Lavender/Indigo in dark, Electric Indigo in light)
+  // ── Kinetic Accents (Direction 4: Periwinkle & Warm Amber) ─────────────────
+  /// Primary kinetic accent (Periwinkle in dark, Indigo in light)
   static const Color kineticAccentDark = Color(0xFFA5B4FC);
-  static const Color kineticAccentLight = Color(0xFF533AFD);
+  static const Color kineticAccentLight = Color(0xFF4F46E5);
 
   /// On-Accent text color
-  static const Color onAccentDark = Color(0xFF0D253D);
+  static const Color onAccentDark = Color(0xFF0F172A);
   static const Color onAccentLight = Color(0xFFFFFFFF);
 
-  /// Secondary coaching accent
+  /// Secondary coaching accent (Mint)
   static const Color cyanAccentDark = Color(0xFF6EE7B7);
   static const Color cyanAccentLight = Color(0xFF059669);
 
-  /// Tertiary soft lavender accent
-  static const Color violetAccentDark = Color(0xFFC4B5FD);
-  static const Color violetAccentLight = Color(0xFF665EFD);
+  /// Tertiary energy accent (Sunset Orange / Warm Amber)
+  static const Color violetAccentDark = Color(0xFFFB923C);
+  static const Color violetAccentLight = Color(0xFFEA580C);
 
   // ── Typography & Text Colors ───────────────────────────────────────────────
-  static const Color textPrimaryDark = Color(0xFFFFFFFF);
-  static const Color textSecondaryDark = Color(0xFFADB8D0);
-  static const Color textMutedDark = Color(0xFF717D96);
+  static const Color textPrimaryDark = Color(0xFFF0F6FC);
+  static const Color textSecondaryDark = Color(0xFF94A3B8);
+  static const Color textMutedDark = Color(0xFF6E7681);
 
-  static const Color textPrimaryLight = Color(0xFF0D253D); // Stripe Ink
-  static const Color textSecondaryLight = Color(0xFF273951); // Stripe Ink Secondary
-  static const Color textMutedLight = Color(0xFF64748D); // Stripe Ink Mute
+  static const Color textPrimaryLight = Color(0xFF1F2937);
+  static const Color textSecondaryLight = Color(0xFF4B5563);
+  static const Color textMutedLight = Color(0xFF9CA3AF);
 }

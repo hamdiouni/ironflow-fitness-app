@@ -116,7 +116,7 @@ class _AppButtonState extends State<AppButton> with SingleTickerProviderStateMix
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
-    final radius = widget.borderRadius ?? tokens.radiusPill;
+    final radius = widget.borderRadius ?? tokens.radiusLg;
 
     // Resolve colors based on variant
     Color bg;

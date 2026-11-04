@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_theme.dart';
 
-/// Stripe Design System card component with crisp hairline and ambient blue shadow.
+/// Direction 4 Soft Layered card component.
 ///
-/// Features soft ambient shadows, gentle 20dp pebble corners, hairline boundaries,
-/// and responsive touch interaction.
+/// Follows frame-light surface architecture: single surface level per section,
+/// with borders reserved exclusively for selected, focused, or active states.
 class AppCard extends StatelessWidget {
   /// Creates an [AppCard].
   const AppCard({
@@ -17,6 +17,7 @@ class AppCard extends StatelessWidget {
     this.borderColor,
     this.borderWidth = 1.0,
     this.isGlowing = false,
+    this.isSelected = false,
     this.onTap,
   });
 
@@ -35,7 +36,7 @@ class AppCard extends StatelessWidget {
   /// Custom background color override. If null, uses [tokens.card].
   final Color? backgroundColor;
 
-  /// Custom border color override. If null, uses [tokens.borderSubtle].
+  /// Custom border color override. If null, borders are omitted unless selected or glowing.
   final Color? borderColor;
 
   /// Border line width. Defaults to 1.0.
@@ -43,6 +44,9 @@ class AppCard extends StatelessWidget {
 
   /// Whether the card has an active kinetic glow border.
   final bool isGlowing;
+
+  /// Whether the card is in a selected state (applies active border).
+  final bool isSelected;
 
   /// Optional tap callback. If provided, renders an ink response.
   final VoidCallback? onTap;
@@ -52,17 +56,22 @@ class AppCard extends StatelessWidget {
     final tokens = context.tokens;
     final radius = borderRadius ?? tokens.radiusLg;
     final bg = backgroundColor ?? tokens.card;
-    final border = isGlowing
+
+    // Frame-light rule: borders only for selected, glowing, or explicit override
+    final hasBorder = isGlowing || isSelected || borderColor != null;
+    final activeBorderColor = isGlowing || isSelected
         ? tokens.kineticAccent
-        : (borderColor ?? tokens.borderSubtle);
+        : borderColor;
 
     final boxDecoration = BoxDecoration(
       color: bg,
       borderRadius: BorderRadius.circular(radius),
-      border: Border.all(
-        color: border,
-        width: isGlowing ? 1.5 : borderWidth,
-      ),
+      border: hasBorder && activeBorderColor != null
+          ? Border.all(
+              color: activeBorderColor,
+              width: (isGlowing || isSelected) ? 1.5 : borderWidth,
+            )
+          : null,
       boxShadow: isGlowing
           ? [
               BoxShadow(
@@ -75,39 +84,31 @@ class AppCard extends StatelessWidget {
               ? const [
                   BoxShadow(
                     color: Color(0x2E000000),
-                    blurRadius: 16,
-                    offset: Offset(0, 4),
+                    blurRadius: 12,
+                    offset: Offset(0, 3),
                   ),
                 ]
               : const [
                   BoxShadow(
-                    color: Color(0x14003770),
-                    blurRadius: 16,
-                    offset: Offset(0, 4),
-                  ),
-                  BoxShadow(
-                    color: Color(0x0A003770),
-                    blurRadius: 4,
-                    offset: Offset(0, 1),
+                    color: Color(0x0C000000),
+                    blurRadius: 12,
+                    offset: Offset(0, 3),
                   ),
                 ],
     );
 
+    Widget content = Padding(
+      padding: padding,
+      child: child,
+    );
+
     if (onTap != null) {
-      return Container(
-        margin: margin,
-        decoration: boxDecoration,
-        child: Material(
-          color: Colors.transparent,
+      content = Material(
+        color: Colors.transparent,
+        child: InkWell(
           borderRadius: BorderRadius.circular(radius),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(radius),
-            onTap: onTap,
-            child: Padding(
-              padding: padding,
-              child: child,
-            ),
-          ),
+          onTap: onTap,
+          child: content,
         ),
       );
     }
@@ -115,13 +116,8 @@ class AppCard extends StatelessWidget {
     return Container(
       margin: margin,
       decoration: boxDecoration,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(radius),
-        child: Padding(
-          padding: padding,
-          child: child,
-        ),
-      ),
+      clipBehavior: Clip.antiAlias,
+      child: content,
     );
   }
 }

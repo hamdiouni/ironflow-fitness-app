@@ -87,7 +87,7 @@ class AppTheme {
       cardTheme: CardThemeData(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppSpacings.radiusLg),
-          side: BorderSide(color: tokens.borderSubtle, width: 1),
+          side: BorderSide.none,
         ),
         color: tokens.card,
         elevation: 0,
@@ -275,7 +275,7 @@ class AppTheme {
         elevation: 16,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppSpacings.radiusLg),
-          side: BorderSide(color: tokens.borderSubtle, width: 1),
+          side: BorderSide.none,
         ),
         titleTextStyle: TextStyle(
           fontFamily: AppTypography.displayFontFamily,

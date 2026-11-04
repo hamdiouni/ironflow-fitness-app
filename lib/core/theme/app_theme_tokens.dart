@@ -106,12 +106,11 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
     cardDecoration: BoxDecoration(
       color: AppColors.cardDark,
       borderRadius: BorderRadius.circular(AppSpacings.radiusLg),
-      border: Border.all(color: AppColors.borderSubtleDark, width: 1),
       boxShadow: const [
         BoxShadow(
           color: Color(0x2E000000),
-          blurRadius: 16,
-          offset: Offset(0, 4),
+          blurRadius: 12,
+          offset: Offset(0, 3),
         ),
       ],
     ),
@@ -155,17 +154,11 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
     cardDecoration: BoxDecoration(
       color: AppColors.cardLight,
       borderRadius: BorderRadius.circular(AppSpacings.radiusLg),
-      border: Border.all(color: AppColors.borderSubtleLight, width: 1),
       boxShadow: const [
         BoxShadow(
-          color: Color(0x14003770),
-          blurRadius: 16,
-          offset: Offset(0, 4),
-        ),
-        BoxShadow(
-          color: Color(0x0A003770),
-          blurRadius: 4,
-          offset: Offset(0, 1),
+          color: Color(0x0C000000),
+          blurRadius: 12,
+          offset: Offset(0, 3),
         ),
       ],
     ),
