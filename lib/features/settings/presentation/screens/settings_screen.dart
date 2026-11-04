@@ -17,6 +17,7 @@ import '../../../ai/data/datasources/gemini_ai_service.dart';
 import '../../../ai/presentation/providers/ai_provider.dart';
 import 'export_settings_screen.dart';
 import 'privacy_settings_screen.dart';
+import '../../../../core/config/build_stamp.dart';
 
 /// Monolithic Sci-Fi Settings screen organizing all preferences into 7 core sections:
 /// 1. Account (Profile & Biometrics, Edit Profile, Terminate Session)
@@ -946,14 +947,20 @@ Last Updated: October 2026''',
                     ),
                     Divider(color: tokens.borderSubtle, height: 20),
                     _SettingItem(
-                      label: 'DESIGN SYSTEM',
-                      value: 'STRIPE',
+                      label: 'BUILD VERSION',
+                      value: BuildStamp.version,
                       tokens: tokens,
                     ),
                     Divider(color: tokens.borderSubtle, height: 20),
                     _SettingItem(
-                      label: 'BUILD VERSION',
-                      value: '1.1.0+2',
+                      label: 'COMMIT',
+                      value: '${BuildStamp.commit} (${BuildStamp.branch})',
+                      tokens: tokens,
+                    ),
+                    Divider(color: tokens.borderSubtle, height: 20),
+                    _SettingItem(
+                      label: 'BUILD DATE',
+                      value: BuildStamp.buildDate,
                       tokens: tokens,
                     ),
                   ],

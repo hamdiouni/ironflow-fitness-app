@@ -501,9 +501,31 @@ See [APK_BUILD_GUIDE.md](APK_BUILD_GUIDE.md) for detailed instructions.
 
 2. **Archive and upload**: Use Xcode for App Store submission
 
-### Web
+### Web Execution & Preview
+
+The web application runs on a single fixed port: `http://localhost:8080`.
+
+```powershell
+# Option A: Quick-serve release bundle on http://localhost:8080
+.\scripts\run_web.ps1
+
+# Option B: Run in interactive development mode (hot reload)
+.\scripts\run_web.ps1 -Dev
+
+# Option C: Clean up any old servers lingering on 8000, 8085, or 8080
+.\scripts\run_web.ps1 -StopOld
+```
+
+#### Clearing Chrome PWA & Service Worker Cache
+If Chrome serves a previously cached build:
+1. Open DevTools in Chrome (`F12` or `Ctrl+Shift+I`).
+2. Navigate to **Application** > **Service Workers**.
+3. Click **Unregister** on any registered service workers for `localhost`.
+4. Navigate to **Application** > **Storage** and click **Clear site data**.
+5. Perform a hard refresh with `Ctrl+Shift+R`.
 
 ```bash
+# Direct Flutter release build
 flutter build web --release
 ```
 
