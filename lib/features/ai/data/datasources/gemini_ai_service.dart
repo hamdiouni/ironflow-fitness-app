@@ -47,7 +47,7 @@ class GeminiAIService {
         _authTokenProvider = authTokenProvider,
         _httpClient = httpClient ?? http.Client();
 
-  bool get _hasUsableDirectKey => _apiKey.isNotEmpty;
+  bool get _hasUsableDirectKey => _allowDirectApiKey && _apiKey.isNotEmpty;
   bool get allowDirectApiKey => _allowDirectApiKey;
 
   /// Whether a usable Gemini route is configured under build policy.
@@ -61,6 +61,13 @@ class GeminiAIService {
 
   /// Validates that service is configured
   void validateConfiguration() {
+    if (_proxyUrl.isEmpty && _apiKey.isNotEmpty && !_allowDirectApiKey) {
+      throw GeminiAIServiceException(
+        message: 'Direct Gemini API keys are disabled outside debug builds. '
+            'Configure AI_PROXY_URL for profile/release.',
+        code: 'DIRECT_API_KEY_DISABLED',
+      );
+    }
     if (!isConfigured) {
       throw GeminiAIServiceException(
         message: 'Gemini AI service not configured. Configure AI_PROXY_URL '

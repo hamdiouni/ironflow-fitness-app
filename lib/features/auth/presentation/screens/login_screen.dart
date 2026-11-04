@@ -464,7 +464,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                             const SizedBox(height: 14),
 
-                            // Demo Credentials Auto-Fill Pill
+                            if (kDebugMode) // Demo Credentials Auto-Fill Pill
                             Align(
                               alignment: Alignment.centerRight,
                               child: InkWell(
@@ -555,24 +555,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             : _handleGoogleSignIn,
                       ),
 
-                      const SizedBox(height: 12),
-
-                      AppButton(
-                        label: 'Explore Demo Account',
-                        variant: AppButtonVariant.ghost,
-                        isFullWidth: true,
-                        icon: Icon(
-                          Icons.auto_awesome_rounded,
-                          size: 18,
-                          color: tokens.kineticAccent,
+                      if (kDebugMode) ...[
+                        const SizedBox(height: 12),
+                        AppButton(
+                          label: 'Explore Demo Account',
+                          variant: AppButtonVariant.ghost,
+                          isFullWidth: true,
+                          icon: Icon(
+                            Icons.auto_awesome_rounded,
+                            size: 18,
+                            color: tokens.kineticAccent,
+                          ),
+                          onPressed: authState.isLoading
+                              ? null
+                              : () async {
+                                  _fillDemoCredentials();
+                                  await _handleEmailSignIn();
+                                },
                         ),
-                        onPressed: authState.isLoading
-                            ? null
-                            : () async {
-                                _fillDemoCredentials();
-                                await _handleEmailSignIn();
-                              },
-                      ),
+                      ],
 
                       const SizedBox(height: 28),
 
