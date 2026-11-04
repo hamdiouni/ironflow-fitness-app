@@ -10,7 +10,7 @@ import 'package:progression_tracker/features/onboarding/presentation/providers/o
 import 'package:progression_tracker/shared/presentation/components/app_button.dart';
 import 'package:progression_tracker/shared/presentation/services/app_haptics.dart';
 
-/// Monolithic Sci-Fi Operator Authentication Screen.
+/// Direction 4: Soft & Layered Operator Authentication Screen.
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
@@ -122,465 +122,468 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return Scaffold(
       backgroundColor: tokens.canvas,
       body: SafeArea(
-        child: SingleChildScrollView(
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
-          child: AutofillGroup(
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const SizedBox(height: 12),
-
-                  // Top Telemetry Header
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 440),
+            child: SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
+              child: AutofillGroup(
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      const SizedBox(height: 12),
+
+                      // Top Telemetry Header
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Container(
-                            width: 6,
-                            height: 6,
-                            decoration: BoxDecoration(
-                              color: tokens.kineticAccent,
-                              shape: BoxShape.circle,
-                            ),
+                          Row(
+                            children: [
+                              Container(
+                                width: 8,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  color: tokens.kineticAccent,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Sign In',
+                                style: TextStyle(
+                                  fontFamily: AppTypography.displayFontFamily,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.8,
+                                  color: tokens.textSecondary,
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'ACCOUNT LOGIN',
-                            style: TextStyle(
-                              fontFamily: AppTypography.displayFontFamily,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 1.4,
-                              color: tokens.textMuted,
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: tokens.kineticAccent.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(tokens.radiusPill),
+                            ),
+                            child: Text(
+                              'Secure',
+                              style: TextStyle(
+                                fontFamily: AppTypography.displayFontFamily,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                color: tokens.kineticAccent,
+                              ),
                             ),
                           ),
                         ],
                       ),
+
+                      const SizedBox(height: 32),
+
+                      // Direction 4 Soft Rounded Header Badge
+                      Center(
+                        child: Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            color: tokens.panel,
+                            borderRadius: BorderRadius.circular(tokens.radiusLg),
+                            border: Border.all(
+                              color: tokens.kineticAccent.withValues(alpha: 0.4),
+                              width: 1.5,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: tokens.kineticAccent.withValues(alpha: tokens.isDark ? 0.25 : 0.12),
+                                blurRadius: 24,
+                                spreadRadius: 1,
+                              ),
+                            ],
+                          ),
+                          child: Icon(
+                            Icons.shield_rounded,
+                            size: 40,
+                            color: tokens.kineticAccent,
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
+
                       Text(
-                        'SECURE',
+                        'Welcome Back',
                         style: TextStyle(
                           fontFamily: AppTypography.displayFontFamily,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                          color: tokens.kineticAccent.withValues(alpha: 0.8),
+                          fontSize: 26,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.3,
+                          color: tokens.textPrimary,
                         ),
+                        textAlign: TextAlign.center,
                       ),
-                    ],
-                  ),
 
-                  const SizedBox(height: 32),
+                      const SizedBox(height: 6),
 
-                  // Monolithic Header & Icon Badge
-                  Center(
-                    child: Container(
-                      width: 76,
-                      height: 76,
-                      decoration: BoxDecoration(
-                        color: tokens.panel,
-                        borderRadius: BorderRadius.circular(tokens.radiusMd),
-                        border: Border.all(
-                          color: tokens.kineticAccent.withValues(alpha: 0.35),
-                          width: 1.5,
+                      Text(
+                        'Sign in to access your workout plan, nutrition, and progress.',
+                        style: TextStyle(
+                          fontFamily: AppTypography.bodyFontFamily,
+                          fontSize: 13,
+                          color: tokens.textSecondary,
                         ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: tokens.kineticAccent.withValues(alpha: 0.08),
-                            blurRadius: 20,
-                            spreadRadius: 1,
+                        textAlign: TextAlign.center,
+                      ),
+
+                      const SizedBox(height: 28),
+
+                      // Error Banner
+                      if (authState.error != null) ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: tokens.error.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(tokens.radiusSm),
+                            border: Border.all(
+                              color: tokens.error.withValues(alpha: 0.4),
+                              width: 1,
+                            ),
                           ),
-                        ],
-                      ),
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          Positioned(
-                            top: 6,
-                            left: 6,
-                            child: Container(
-                              width: 6,
-                              height: 6,
-                              decoration: BoxDecoration(
-                                border: Border(
-                                  top: BorderSide(color: tokens.kineticAccent, width: 1.2),
-                                  left: BorderSide(color: tokens.kineticAccent, width: 1.2),
+                          child: Row(
+                            children: [
+                              Icon(Icons.warning_amber_rounded, color: tokens.error, size: 20),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  authState.error!,
+                                  style: TextStyle(
+                                    fontFamily: AppTypography.bodyFontFamily,
+                                    fontSize: 12,
+                                    color: tokens.error,
+                                    height: 1.3,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 18),
+                      ],
+
+                      // Form Soft Layered Card
+                      Container(
+                        padding: const EdgeInsets.all(22),
+                        decoration: BoxDecoration(
+                          color: tokens.panel,
+                          borderRadius: BorderRadius.circular(tokens.radiusLg),
+                          border: Border.all(color: tokens.borderSubtle, width: 1),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: tokens.isDark ? 0.25 : 0.06),
+                              blurRadius: 18,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Email Field
+                            Text(
+                              'Email Address',
+                              style: TextStyle(
+                                fontFamily: AppTypography.displayFontFamily,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.2,
+                                color: tokens.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            TextFormField(
+                              controller: _emailController,
+                              keyboardType: TextInputType.emailAddress,
+                              textInputAction: TextInputAction.next,
+                              autofillHints: const [AutofillHints.email],
+                              enabled: !authState.isLoading,
+                              style: TextStyle(
+                                fontFamily: AppTypography.bodyFontFamily,
+                                fontSize: 14,
+                                color: tokens.textPrimary,
+                              ),
+                              decoration: InputDecoration(
+                                hintText: 'you@example.com',
+                                hintStyle: TextStyle(
+                                  fontFamily: AppTypography.bodyFontFamily,
+                                  fontSize: 13,
+                                  color: tokens.textMuted.withValues(alpha: 0.6),
+                                ),
+                                prefixIcon: Icon(
+                                  Icons.alternate_email_rounded,
+                                  size: 18,
+                                  color: tokens.kineticAccent,
+                                ),
+                                filled: true,
+                                fillColor: tokens.elevated,
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 14,
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                                  borderSide: BorderSide(color: tokens.borderSubtle, width: 1),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                                  borderSide: BorderSide(color: tokens.borderSubtle, width: 1),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                                  borderSide: BorderSide(color: tokens.kineticAccent, width: 1.5),
+                                ),
+                                errorBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                                  borderSide: BorderSide(color: tokens.error, width: 1),
+                                ),
+                                focusedErrorBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                                  borderSide: BorderSide(color: tokens.error, width: 1.5),
+                                ),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return 'Email is required';
+                                }
+                                if (!value.contains('@') || !value.contains('.')) {
+                                  return 'Enter a valid email address';
+                                }
+                                return null;
+                              },
+                            ),
+
+                            const SizedBox(height: 18),
+
+                            // Password Field
+                            Text(
+                              'Password',
+                              style: TextStyle(
+                                fontFamily: AppTypography.displayFontFamily,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.2,
+                                color: tokens.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            TextFormField(
+                              controller: _passwordController,
+                              obscureText: _obscurePassword,
+                              textInputAction: TextInputAction.done,
+                              autofillHints: const [AutofillHints.password],
+                              onFieldSubmitted: (_) => _handleEmailSignIn(),
+                              enabled: !authState.isLoading,
+                              style: TextStyle(
+                                fontFamily: AppTypography.bodyFontFamily,
+                                fontSize: 14,
+                                color: tokens.textPrimary,
+                              ),
+                              decoration: InputDecoration(
+                                hintText: '••••••••',
+                                hintStyle: TextStyle(
+                                  fontFamily: AppTypography.bodyFontFamily,
+                                  fontSize: 13,
+                                  color: tokens.textMuted.withValues(alpha: 0.6),
+                                ),
+                                prefixIcon: Icon(
+                                  Icons.lock_outline_rounded,
+                                  size: 18,
+                                  color: tokens.kineticAccent,
+                                ),
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    _obscurePassword
+                                        ? Icons.visibility_outlined
+                                        : Icons.visibility_off_outlined,
+                                    size: 18,
+                                    color: tokens.textMuted,
+                                  ),
+                                  onPressed: () {
+                                    setState(() {
+                                      _obscurePassword = !_obscurePassword;
+                                    });
+                                  },
+                                ),
+                                filled: true,
+                                fillColor: tokens.elevated,
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 14,
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                                  borderSide: BorderSide(color: tokens.borderSubtle, width: 1),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                                  borderSide: BorderSide(color: tokens.borderSubtle, width: 1),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                                  borderSide: BorderSide(color: tokens.kineticAccent, width: 1.5),
+                                ),
+                                errorBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                                  borderSide: BorderSide(color: tokens.error, width: 1),
+                                ),
+                                focusedErrorBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                                  borderSide: BorderSide(color: tokens.error, width: 1.5),
+                                ),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Password is required';
+                                }
+                                if (value.length < 6) {
+                                  return 'Password must be at least 6 characters';
+                                }
+                                return null;
+                              },
+                            ),
+
+                            const SizedBox(height: 14),
+
+                            // Demo Credentials Auto-Fill Pill
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: InkWell(
+                                onTap: _fillDemoCredentials,
+                                borderRadius: BorderRadius.circular(tokens.radiusPill),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                  decoration: BoxDecoration(
+                                    color: tokens.kineticAccent.withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(tokens.radiusPill),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.auto_fix_high_rounded,
+                                        size: 14,
+                                        color: tokens.kineticAccent,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        'Fill Demo Account',
+                                        style: TextStyle(
+                                          fontFamily: AppTypography.displayFontFamily,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w700,
+                                          color: tokens.kineticAccent,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                          Icon(
-                            Icons.shield_outlined,
-                            size: 38,
-                            color: tokens.kineticAccent,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  Text(
-                    'TERMINAL ACCESS',
-                    style: TextStyle(
-                      fontFamily: AppTypography.displayFontFamily,
-                      fontSize: 24,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1.0,
-                      color: tokens.textPrimary,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-
-                  const SizedBox(height: 6),
-
-                  Text(
-                    'Sign in to access your workout plan, nutrition, and progress',
-                    style: TextStyle(
-                      fontFamily: AppTypography.bodyFontFamily,
-                      fontSize: 12,
-                      color: tokens.textSecondary,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-
-                  const SizedBox(height: 28),
-
-                  // Error Banner
-                  if (authState.error != null) ...[
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: tokens.error.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(tokens.radiusSm),
-                        border: Border.all(
-                          color: tokens.error.withValues(alpha: 0.4),
-                          width: 1,
+                          ],
                         ),
                       ),
-                      child: Row(
+
+                      const SizedBox(height: 24),
+
+                      // Submit Action Button
+                      AppButton(
+                        label: 'Log In',
+                        variant: AppButtonVariant.primary,
+                        isLoading: authState.isLoading,
+                        isFullWidth: true,
+                        onPressed: authState.isLoading ? null : _handleEmailSignIn,
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // Divider
+                      Row(
                         children: [
-                          Icon(Icons.warning_amber_rounded, color: tokens.error, size: 20),
-                          const SizedBox(width: 10),
-                          Expanded(
+                          Expanded(child: Divider(color: tokens.borderSubtle, height: 1)),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 14),
                             child: Text(
-                              authState.error!,
+                              'OR CONTINUE WITH',
                               style: TextStyle(
-                                fontFamily: AppTypography.bodyFontFamily,
-                                fontSize: 12,
-                                color: tokens.error,
-                                height: 1.3,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                  ],
-
-                  // Form Container
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: tokens.panel,
-                      borderRadius: BorderRadius.circular(tokens.radiusMd),
-                      border: Border.all(color: tokens.borderSubtle, width: 1),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Email Field
-                        Text(
-                          'EMAIL ADDRESS',
-                          style: TextStyle(
-                            fontFamily: AppTypography.displayFontFamily,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 1.0,
-                            color: tokens.textMuted,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        TextFormField(
-                          controller: _emailController,
-                          keyboardType: TextInputType.emailAddress,
-                          textInputAction: TextInputAction.next,
-                          autofillHints: const [AutofillHints.email],
-                          enabled: !authState.isLoading,
-                          style: TextStyle(
-                            fontFamily: AppTypography.bodyFontFamily,
-                            fontSize: 14,
-                            color: tokens.textPrimary,
-                          ),
-                          decoration: InputDecoration(
-                            hintText: 'you@example.com',
-                            hintStyle: TextStyle(
-                              fontFamily: AppTypography.bodyFontFamily,
-                              fontSize: 13,
-                              color: tokens.textMuted.withValues(alpha: 0.5),
-                            ),
-                            prefixIcon: Icon(
-                              Icons.alternate_email_rounded,
-                              size: 18,
-                              color: tokens.kineticAccent,
-                            ),
-                            filled: true,
-                            fillColor: tokens.card,
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 14,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(tokens.radiusSm),
-                              borderSide: BorderSide(color: tokens.borderSubtle, width: 1),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(tokens.radiusSm),
-                              borderSide: BorderSide(color: tokens.borderSubtle, width: 1),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(tokens.radiusSm),
-                              borderSide: BorderSide(color: tokens.kineticAccent, width: 1.5),
-                            ),
-                            errorBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(tokens.radiusSm),
-                              borderSide: BorderSide(color: tokens.error, width: 1),
-                            ),
-                            focusedErrorBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(tokens.radiusSm),
-                              borderSide: BorderSide(color: tokens.error, width: 1.5),
-                            ),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'Email is required';
-                            }
-                            if (!value.contains('@') || !value.contains('.')) {
-                              return 'Enter a valid email address';
-                            }
-                            return null;
-                          },
-                        ),
-
-                        const SizedBox(height: 18),
-
-                        // Password Field
-                        Text(
-                          'PASSWORD',
-                          style: TextStyle(
-                            fontFamily: AppTypography.displayFontFamily,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 1.0,
-                            color: tokens.textMuted,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        TextFormField(
-                          controller: _passwordController,
-                          obscureText: _obscurePassword,
-                          textInputAction: TextInputAction.done,
-                          autofillHints: const [AutofillHints.password],
-                          onFieldSubmitted: (_) => _handleEmailSignIn(),
-                          enabled: !authState.isLoading,
-                          style: TextStyle(
-                            fontFamily: AppTypography.bodyFontFamily,
-                            fontSize: 14,
-                            color: tokens.textPrimary,
-                          ),
-                          decoration: InputDecoration(
-                            hintText: '••••••••',
-                            hintStyle: TextStyle(
-                              fontFamily: AppTypography.bodyFontFamily,
-                              fontSize: 13,
-                              color: tokens.textMuted.withValues(alpha: 0.5),
-                            ),
-                            prefixIcon: Icon(
-                              Icons.lock_outline_rounded,
-                              size: 18,
-                              color: tokens.kineticAccent,
-                            ),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscurePassword
-                                    ? Icons.visibility_outlined
-                                    : Icons.visibility_off_outlined,
-                                size: 18,
+                                fontFamily: AppTypography.displayFontFamily,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.8,
                                 color: tokens.textMuted,
                               ),
-                              onPressed: () {
-                                setState(() {
-                                  _obscurePassword = !_obscurePassword;
-                                });
-                              },
-                            ),
-                            filled: true,
-                            fillColor: tokens.card,
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 14,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(tokens.radiusSm),
-                              borderSide: BorderSide(color: tokens.borderSubtle, width: 1),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(tokens.radiusSm),
-                              borderSide: BorderSide(color: tokens.borderSubtle, width: 1),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(tokens.radiusSm),
-                              borderSide: BorderSide(color: tokens.kineticAccent, width: 1.5),
-                            ),
-                            errorBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(tokens.radiusSm),
-                              borderSide: BorderSide(color: tokens.error, width: 1),
-                            ),
-                            focusedErrorBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(tokens.radiusSm),
-                              borderSide: BorderSide(color: tokens.error, width: 1.5),
                             ),
                           ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Password is required';
-                            }
-                            if (value.length < 6) {
-                              return 'Password must be at least 6 characters';
-                            }
-                            return null;
-                          },
+                          Expanded(child: Divider(color: tokens.borderSubtle, height: 1)),
+                        ],
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // Google Sign-In Button
+                      AppButton(
+                        label: 'Continue with Google',
+                        variant: AppButtonVariant.secondary,
+                        isLoading: _isProcessingGoogleSignIn,
+                        isFullWidth: true,
+                        icon: Icon(
+                          Icons.g_mobiledata_rounded,
+                          size: 24,
+                          color: tokens.kineticAccent,
                         ),
+                        onPressed: (_isProcessingGoogleSignIn || authState.isLoading)
+                            ? null
+                            : _handleGoogleSignIn,
+                      ),
 
-                        const SizedBox(height: 14),
+                      const SizedBox(height: 28),
 
-                        // Demo Credentials Auto-Fill Chip
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: InkWell(
-                            onTap: _fillDemoCredentials,
-                            borderRadius: BorderRadius.circular(tokens.radiusSm),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.auto_fix_high_rounded,
-                                    size: 13,
-                                    color: tokens.kineticAccent,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    'AUTOFILL DEMO ACCOUNT',
-                                    style: TextStyle(
-                                      fontFamily: AppTypography.displayFontFamily,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w700,
-                                      letterSpacing: 0.5,
-                                      color: tokens.kineticAccent,
-                                    ),
-                                  ),
-                                ],
+                      // Sign-up Link
+                      Wrap(
+                        alignment: WrapAlignment.center,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          Text(
+                            "Don't have an account? ",
+                            style: TextStyle(
+                              fontFamily: AppTypography.bodyFontFamily,
+                              fontSize: 13,
+                              color: tokens.textSecondary,
+                            ),
+                          ),
+                          InkWell(
+                            onTap: () {
+                              AppHaptics.shared.selectionChanged();
+                              context.go(_withFromQuery(AppRoutes.signup));
+                            },
+                            child: Text(
+                              'Sign Up',
+                              style: TextStyle(
+                                fontFamily: AppTypography.displayFontFamily,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: tokens.kineticAccent,
                               ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Submit Action Button
-                  AppButton(
-                    label: 'LOG IN',
-                    variant: AppButtonVariant.primary,
-                    isLoading: authState.isLoading,
-                    isFullWidth: true,
-                    onPressed: authState.isLoading ? null : _handleEmailSignIn,
-                  ),
-
-                  const SizedBox(height: 18),
-
-                  // Divider
-                  Row(
-                    children: [
-                      Expanded(child: Divider(color: tokens.borderSubtle, height: 1)),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 14),
-                        child: Text(
-                          'OR SIGN IN WITH',
-                          style: TextStyle(
-                            fontFamily: AppTypography.displayFontFamily,
-                            fontSize: 9,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 1.0,
-                            color: tokens.textMuted,
-                          ),
-                        ),
+                        ],
                       ),
-                      Expanded(child: Divider(color: tokens.borderSubtle, height: 1)),
+
+                      const SizedBox(height: 16),
                     ],
                   ),
-
-                  const SizedBox(height: 18),
-
-                  // Google Sign-In Button
-                  AppButton(
-                    label: 'CONTINUE WITH GOOGLE',
-                    variant: AppButtonVariant.secondary,
-                    isLoading: _isProcessingGoogleSignIn,
-                    isFullWidth: true,
-                    icon: Icon(
-                      Icons.g_mobiledata_rounded,
-                      size: 24,
-                      color: tokens.kineticAccent,
-                    ),
-                    onPressed: (_isProcessingGoogleSignIn || authState.isLoading)
-                        ? null
-                        : _handleGoogleSignIn,
-                  ),
-
-                  const SizedBox(height: 28),
-
-                  // Sign-up Link
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'NEW TO IRONFLOW? ',
-                        style: TextStyle(
-                          fontFamily: AppTypography.bodyFontFamily,
-                          fontSize: 12,
-                          color: tokens.textSecondary,
-                        ),
-                      ),
-                      InkWell(
-                        onTap: () {
-                          AppHaptics.shared.selectionChanged();
-                          context.go(_withFromQuery(AppRoutes.signup));
-                        },
-                        child: Text(
-                          'CREATE ACCOUNT',
-                          style: TextStyle(
-                            fontFamily: AppTypography.displayFontFamily,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.5,
-                            color: tokens.kineticAccent,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 16),
-                ],
+                ),
               ),
             ),
           ),

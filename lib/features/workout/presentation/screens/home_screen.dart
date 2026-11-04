@@ -674,7 +674,7 @@ class _TodayDirectiveCard extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'NO ACTIVE PROTOCOL',
+                          'NO ACTIVE PROGRAM',
                           style: TextStyle(
                             fontFamily: AppTypography.displayFontFamily,
                             fontSize: 13,

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_theme.dart';
 
-/// Monolithic Sci-Fi card component.
+/// Direction 4: Soft & Layered card component.
 ///
-/// Features precision 1px structural borders, matte surface elevations,
-/// and an optional kinetic glow border for active telemetry elements.
+/// Features soft ambient shadows, gentle 20dp pebble corners, hairline boundaries,
+/// and responsive touch interaction.
 class AppCard extends StatelessWidget {
   /// Creates an [AppCard].
   const AppCard({
@@ -29,7 +29,7 @@ class AppCard extends StatelessWidget {
   /// External margin around the card.
   final EdgeInsetsGeometry? margin;
 
-  /// Corner radius. Defaults to [AppSpacings.radiusMd] (14dp).
+  /// Corner radius. Defaults to [AppSpacings.radiusLg] (20dp).
   final double? borderRadius;
 
   /// Custom background color override. If null, uses [tokens.card].
@@ -41,7 +41,7 @@ class AppCard extends StatelessWidget {
   /// Border line width. Defaults to 1.0.
   final double borderWidth;
 
-  /// Whether the card has an active kinetic neon glow border.
+  /// Whether the card has an active kinetic glow border.
   final bool isGlowing;
 
   /// Optional tap callback. If provided, renders an ink response.
@@ -50,7 +50,7 @@ class AppCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
-    final radius = borderRadius ?? tokens.radiusMd;
+    final radius = borderRadius ?? tokens.radiusLg;
     final bg = backgroundColor ?? tokens.card;
     final border = isGlowing
         ? tokens.kineticAccent
@@ -66,32 +66,26 @@ class AppCard extends StatelessWidget {
       boxShadow: isGlowing
           ? [
               BoxShadow(
-                color: tokens.kineticAccent.withValues(alpha: tokens.isDark ? 0.25 : 0.15),
-                blurRadius: 10,
+                color: tokens.kineticAccent.withValues(alpha: tokens.isDark ? 0.28 : 0.2),
+                blurRadius: 16,
                 spreadRadius: 1,
               ),
             ]
           : tokens.isDark
-              ? null
+              ? const [
+                  BoxShadow(
+                    color: Color(0x1F000000),
+                    blurRadius: 16,
+                    offset: Offset(0, 4),
+                  ),
+                ]
               : const [
                   BoxShadow(
-                    color: Color(0x08000000),
-                    blurRadius: 6,
-                    offset: Offset(0, 2),
+                    color: Color(0x0D000000),
+                    blurRadius: 12,
+                    offset: Offset(0, 3),
                   ),
                 ],
-    );
-
-    Widget content = Container(
-      margin: margin,
-      decoration: boxDecoration,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(radius),
-        child: Padding(
-          padding: padding,
-          child: child,
-        ),
-      ),
     );
 
     if (onTap != null) {
@@ -113,6 +107,16 @@ class AppCard extends StatelessWidget {
       );
     }
 
-    return content;
+    return Container(
+      margin: margin,
+      decoration: boxDecoration,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(radius),
+        child: Padding(
+          padding: padding,
+          child: child,
+        ),
+      ),
+    );
   }
 }

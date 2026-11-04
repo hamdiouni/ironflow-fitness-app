@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
+import '../theme/app_spacings.dart';
 import '../theme/app_theme_tokens.dart';
 import '../theme/app_typography.dart';
 
@@ -10,19 +11,19 @@ export '../theme/app_spacings.dart';
 export '../theme/app_theme_tokens.dart';
 export '../theme/app_typography.dart';
 
-/// IronFlow application theme — Monolithic Sci-Fi styling with dark and light modes.
+/// IronFlow application theme — Direction 4: Soft & Layered design system.
 class AppTheme {
-  // ── Brand colors (same in both modes) ──────────────────────────────────────
-  static const Color primaryColor = Color(0xFF00FF87);   // Monolithic Neon green
-  static const Color accentColor  = Color(0xFF00D2FF);   // Cyan pulse
-  static const Color warningColor = Color(0xFFFFB800);
-  static const Color errorColor   = Color(0xFFFF3B56);
-  static const Color successColor = Color(0xFF00FF87);
+  // ── Brand colors (Direction 4: Soft Periwinkle & Mint) ─────────────────────
+  static const Color primaryColor = AppColors.kineticAccentDark; // #A5B4FC
+  static const Color accentColor  = AppColors.cyanAccentDark;    // #6EE7B7
+  static const Color warningColor = AppColors.warningDark;       // #FCD34D
+  static const Color errorColor   = AppColors.errorDark;         // #FDA4AF
+  static const Color successColor = AppColors.successDark;       // #6EE7B7
 
   // Macro colors
-  static const Color proteinColor = Color(0xFFFF4B6E);
-  static const Color carbsColor   = Color(0xFF00D2FF);
-  static const Color fatsColor    = Color(0xFFFFB800);
+  static const Color proteinColor = AppColors.protein;
+  static const Color carbsColor   = AppColors.carbs;
+  static const Color fatsColor    = AppColors.fats;
 
   // ── Dark mode palette ───────────────────────────────────────────────────────
   static const Color darkBackground = AppColors.canvasDark;
@@ -41,7 +42,6 @@ class AppTheme {
   static const Color lightTextDisabled  = AppColors.textMutedLight;
 
   // ── Static aliases kept for backward compat with existing widgets ───────────
-  // These resolve to dark-mode values (existing code uses them directly).
   static const Color backgroundColor = darkBackground;
   static const Color surfaceColor    = darkSurface;
   static const Color textPrimary     = darkTextPrimary;
@@ -55,10 +55,10 @@ class AppTheme {
   static const double spacingLarge   = 24.0;
   static const double spacingXLarge  = 32.0;
 
-  // ── Border radius ───────────────────────────────────────────────────────────
-  static const double borderRadiusSmall  = 8.0;
+  // ── Border radius (Direction 4: Soft & Layered) ────────────────────────────
+  static const double borderRadiusSmall  = 12.0;
   static const double borderRadiusMedium = 16.0;
-  static const double borderRadiusLarge  = 24.0;
+  static const double borderRadiusLarge  = 26.0;
 
   // ── Glassmorphism ───────────────────────────────────────────────────────────
   static const double glassBlurSigma = 10.0;
@@ -86,7 +86,7 @@ class AppTheme {
       extensions: [tokens],
       cardTheme: CardThemeData(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(borderRadiusMedium),
+          borderRadius: BorderRadius.circular(AppSpacings.radiusLg),
           side: BorderSide(color: tokens.borderSubtle, width: 1),
         ),
         color: tokens.card,
@@ -109,7 +109,7 @@ class AppTheme {
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
         backgroundColor: tokens.panel,
         selectedItemColor: tokens.kineticAccent,
-        unselectedItemColor: tokens.textTertiary,
+        unselectedItemColor: tokens.textSecondary,
         selectedLabelStyle: const TextStyle(
           fontFamily: AppTypography.displayFontFamily,
           fontSize: 11,
@@ -128,6 +128,7 @@ class AppTheme {
         labelColor: tokens.kineticAccent,
         unselectedLabelColor: onSurf2,
         indicatorColor: tokens.kineticAccent,
+        indicatorSize: TabBarIndicatorSize.label,
         labelStyle: const TextStyle(
           fontFamily: AppTypography.displayFontFamily,
           fontWeight: FontWeight.w600,
@@ -136,10 +137,10 @@ class AppTheme {
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: tokens.kineticAccent,
-          foregroundColor: Colors.black,
+          foregroundColor: tokens.onAccent,
           elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(borderRadiusMedium),
+            borderRadius: BorderRadius.circular(AppSpacings.radiusPill),
           ),
           padding: const EdgeInsets.symmetric(
             horizontal: spacingLarge,
@@ -157,7 +158,7 @@ class AppTheme {
           foregroundColor: tokens.kineticAccent,
           side: BorderSide(color: tokens.kineticAccent, width: 1.5),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(borderRadiusMedium),
+            borderRadius: BorderRadius.circular(AppSpacings.radiusPill),
           ),
           padding: const EdgeInsets.symmetric(
             horizontal: spacingLarge,
@@ -174,15 +175,15 @@ class AppTheme {
         filled: true,
         fillColor: tokens.elevated,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(borderRadiusMedium),
+          borderRadius: BorderRadius.circular(AppSpacings.radiusSm),
           borderSide: BorderSide(color: tokens.borderSubtle, width: 1),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(borderRadiusMedium),
+          borderRadius: BorderRadius.circular(AppSpacings.radiusSm),
           borderSide: BorderSide(color: tokens.borderSubtle, width: 1),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(borderRadiusMedium),
+          borderRadius: BorderRadius.circular(AppSpacings.radiusSm),
           borderSide: BorderSide(color: tokens.kineticAccent, width: 1.5),
         ),
         labelStyle: TextStyle(
@@ -202,9 +203,9 @@ class AppTheme {
       colorScheme: ColorScheme(
         brightness: brightness,
         primary: tokens.kineticAccent,
-        onPrimary: Colors.black,
+        onPrimary: tokens.onAccent,
         secondary: tokens.cyanAccent,
-        onSecondary: Colors.black,
+        onSecondary: isDark ? const Color(0xFF052E1F) : Colors.white,
         surface: surface,
         onSurface: onSurf,
         error: tokens.error,
@@ -220,14 +221,14 @@ class AppTheme {
         ),
         side: BorderSide(color: tokens.borderSubtle),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(borderRadiusSmall),
+          borderRadius: BorderRadius.circular(AppSpacings.radiusPill),
         ),
       ),
       dialogTheme: DialogThemeData(
         backgroundColor: tokens.card,
         elevation: 16,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(borderRadiusLarge),
+          borderRadius: BorderRadius.circular(AppSpacings.radiusLg),
           side: BorderSide(color: tokens.borderSubtle, width: 1),
         ),
         titleTextStyle: TextStyle(
@@ -241,7 +242,7 @@ class AppTheme {
         backgroundColor: tokens.panel,
         elevation: 16,
         shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(AppSpacings.radiusXl)),
         ),
       ),
     );
@@ -273,7 +274,7 @@ class AppTheme {
               padding: padding,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(borderRadius),
-                color: bg.withValues(alpha: isDark ? 0.6 : 0.85),
+                color: bg.withValues(alpha: isDark ? 0.7 : 0.85),
                 border: Border.all(color: border, width: 1),
               ),
               child: child,
@@ -296,7 +297,7 @@ extension AppThemeDecorations on AppTheme {
   }) {
     return BoxDecoration(
       borderRadius: BorderRadius.circular(borderRadius),
-      color: (backgroundColor ?? AppTheme.surfaceColor).withValues(alpha: 0.6),
+      color: (backgroundColor ?? AppTheme.surfaceColor).withValues(alpha: 0.7),
       border: Border.all(
         color: (borderColor ?? Colors.white).withValues(alpha: 0.08),
         width: 1,
@@ -323,4 +324,3 @@ extension AppThemeDecorations on AppTheme {
     );
   }
 }
-

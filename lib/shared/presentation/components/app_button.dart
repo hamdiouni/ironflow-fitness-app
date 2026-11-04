@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import '../services/app_haptics.dart';
 import '../../../core/constants/app_theme.dart';
+import '../../../core/theme/app_motion.dart';
 
 /// Button variant enum for [AppButton].
 enum AppButtonVariant {
-  /// Primary kinetic lime button (high emphasis CTA).
+  /// Primary kinetic accent button (high emphasis CTA).
   primary,
 
-  /// Secondary dark titanium surface with structural border.
+  /// Secondary surface with structural border.
   secondary,
 
   /// Outline button with kinetic colored border and text.
@@ -20,7 +21,7 @@ enum AppButtonVariant {
   destructive,
 }
 
-/// Monolithic Sci-Fi button component.
+/// Direction 4 (Soft & Layered) capsule button component.
 ///
 /// Enforces WCAG AA 48dp minimum touch target height, tactile scale feedback,
 /// built-in loading spinner, and Semantics label support.
@@ -60,7 +61,7 @@ class AppButton extends StatefulWidget {
   /// Button height. Defaults to [AppSpacings.huge] (48dp).
   final double height;
 
-  /// Custom corner radius. Defaults to [AppSpacings.radiusPill] (pill shape).
+  /// Custom corner radius. Defaults to [AppSpacings.radiusPill] (capsule pill).
   final double? borderRadius;
 
   /// Optional accessibility semantics label.
@@ -81,7 +82,7 @@ class _AppButtonState extends State<AppButton> with SingleTickerProviderStateMix
       vsync: this,
       duration: AppSpacings.durationFast,
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.97).animate(
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.98).animate(
       CurvedAnimation(parent: _pressController, curve: Curves.easeInOut),
     );
   }
@@ -125,7 +126,7 @@ class _AppButtonState extends State<AppButton> with SingleTickerProviderStateMix
     switch (widget.variant) {
       case AppButtonVariant.primary:
         bg = _isEnabled ? tokens.kineticAccent : tokens.elevated;
-        fg = _isEnabled ? Colors.black : tokens.textMuted;
+        fg = _isEnabled ? tokens.onAccent : tokens.textMuted;
         border = null;
         break;
       case AppButtonVariant.secondary:
@@ -195,52 +196,58 @@ class _AppButtonState extends State<AppButton> with SingleTickerProviderStateMix
       ],
     );
 
+    final isReducedMotion = AppMotion.isReducedMotion(context);
+
+    Widget buttonBody = Container(
+      height: widget.height,
+      constraints: const BoxConstraints(minHeight: AppSpacings.minTouchTarget),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(radius),
+        border: border,
+        boxShadow: (widget.variant == AppButtonVariant.primary && _isEnabled)
+            ? [
+                BoxShadow(
+                  color: tokens.kineticAccent.withValues(alpha: tokens.isDark ? 0.28 : 0.2),
+                  blurRadius: 16,
+                  offset: const Offset(0, 4),
+                ),
+              ]
+            : null,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(radius),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(radius),
+          onTap: _isEnabled
+              ? () {
+                  AppHaptics.shared.buttonPress();
+                  widget.onPressed?.call();
+                }
+              : null,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacings.xl),
+            child: content,
+          ),
+        ),
+      ),
+    );
+
     return Semantics(
       button: true,
       enabled: _isEnabled,
       label: widget.semanticsLabel ?? widget.label,
       child: GestureDetector(
-        onTapDown: _handleTapDown,
-        onTapUp: _handleTapUp,
-        onTapCancel: _handleTapCancel,
-        child: ScaleTransition(
-          scale: _scaleAnimation,
-          child: Container(
-            height: widget.height,
-            constraints: const BoxConstraints(minHeight: AppSpacings.minTouchTarget),
-            decoration: BoxDecoration(
-              color: bg,
-              borderRadius: BorderRadius.circular(radius),
-              border: border,
-              boxShadow: (widget.variant == AppButtonVariant.primary && _isEnabled && tokens.isDark)
-                  ? [
-                      BoxShadow(
-                        color: tokens.kineticAccent.withValues(alpha: 0.25),
-                        blurRadius: 10,
-                        spreadRadius: 1,
-                      ),
-                    ]
-                  : null,
-            ),
-            child: Material(
-              color: Colors.transparent,
-              borderRadius: BorderRadius.circular(radius),
-              child: InkWell(
-                borderRadius: BorderRadius.circular(radius),
-                onTap: _isEnabled
-                    ? () {
-                        AppHaptics.shared.buttonPress();
-                        widget.onPressed?.call();
-                      }
-                    : null,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacings.xl),
-                  child: content,
-                ),
+        onTapDown: isReducedMotion ? null : _handleTapDown,
+        onTapUp: isReducedMotion ? null : _handleTapUp,
+        onTapCancel: isReducedMotion ? null : _handleTapCancel,
+        child: isReducedMotion
+            ? buttonBody
+            : ScaleTransition(
+                scale: _scaleAnimation,
+                child: buttonBody,
               ),
-            ),
-          ),
-        ),
       ),
     );
   }

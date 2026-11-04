@@ -54,7 +54,6 @@ void main() async {
     // Initialize Firebase Crashlytics handlers (mobile only; collection
     // itself was configured by TelemetryPreferences just above).
     if (!kIsWeb) {
-
       // Pass all uncaught Flutter errors to Crashlytics
       FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
       
@@ -222,7 +221,7 @@ class MainApp extends ConsumerWidget {
   }
 }
 
-/// Scaffold that wraps the 4 primary tabs with a bottom navigation dock.
+/// Scaffold that wraps the 4 primary tabs with Direction 4 responsive navigation.
 class MainScaffold extends StatelessWidget {
   const MainScaffold({
     super.key,
@@ -249,70 +248,158 @@ class MainScaffold extends StatelessWidget {
         if (didPop) return;
         navigationShell.goBranch(0);
       },
-      child: Scaffold(
-        body: navigationShell,
-        bottomNavigationBar: Container(
-          decoration: BoxDecoration(
-            color: tokens.panel,
-            border: Border(
-              top: BorderSide(
-                color: tokens.borderSubtle,
-                width: 1,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isWide = constraints.maxWidth >= 900;
+          if (isWide) {
+            return Scaffold(
+              body: Row(
+                children: [
+                  NavigationRail(
+                    backgroundColor: tokens.panel,
+                    selectedIndex: currentIndex,
+                    onDestinationSelected: (index) {
+                      if (index != currentIndex) {
+                        AppHaptics.shared.selectionChanged();
+                        navigationShell.goBranch(
+                          index,
+                          initialLocation: index == navigationShell.currentIndex,
+                        );
+                      }
+                    },
+                    selectedIconTheme: IconThemeData(color: tokens.kineticAccent),
+                    unselectedIconTheme: IconThemeData(color: tokens.textSecondary),
+                    selectedLabelTextStyle: TextStyle(
+                      fontFamily: AppTypography.displayFontFamily,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: tokens.kineticAccent,
+                    ),
+                    unselectedLabelTextStyle: TextStyle(
+                      fontFamily: AppTypography.displayFontFamily,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: tokens.textSecondary,
+                    ),
+                    labelType: NavigationRailLabelType.all,
+                    destinations: const [
+                      NavigationRailDestination(
+                        icon: Icon(Icons.home_outlined),
+                        selectedIcon: Icon(Icons.home),
+                        label: Text('TODAY'),
+                      ),
+                      NavigationRailDestination(
+                        icon: Icon(Icons.fitness_center_outlined),
+                        selectedIcon: Icon(Icons.fitness_center),
+                        label: Text('TRAIN'),
+                      ),
+                      NavigationRailDestination(
+                        icon: Icon(Icons.restaurant_outlined),
+                        selectedIcon: Icon(Icons.restaurant),
+                        label: Text('FUEL'),
+                      ),
+                      NavigationRailDestination(
+                        icon: Icon(Icons.show_chart_outlined),
+                        selectedIcon: Icon(Icons.show_chart),
+                        label: Text('PROGRESS'),
+                      ),
+                    ],
+                  ),
+                  const VerticalDivider(width: 1, thickness: 1),
+                  Expanded(
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 1120),
+                        child: navigationShell,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          return Scaffold(
+            body: navigationShell,
+            bottomNavigationBar: Container(
+              decoration: BoxDecoration(
+                color: tokens.panel,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(AppSpacings.radiusXl),
+                ),
+                border: Border(
+                  top: BorderSide(
+                    color: tokens.borderSubtle,
+                    width: 1,
+                  ),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: tokens.isDark ? 0.35 : 0.08),
+                    blurRadius: 20,
+                    offset: const Offset(0, -4),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(AppSpacings.radiusXl),
+                ),
+                child: BottomNavigationBar(
+                  currentIndex: currentIndex,
+                  onTap: (index) {
+                    if (index != currentIndex) {
+                      AppHaptics.shared.selectionChanged();
+                      navigationShell.goBranch(
+                        index,
+                        initialLocation: index == navigationShell.currentIndex,
+                      );
+                    }
+                  },
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                  type: BottomNavigationBarType.fixed,
+                  selectedItemColor: tokens.kineticAccent,
+                  unselectedItemColor: tokens.textSecondary,
+                  selectedLabelStyle: const TextStyle(
+                    fontFamily: AppTypography.displayFontFamily,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.5,
+                  ),
+                  unselectedLabelStyle: const TextStyle(
+                    fontFamily: AppTypography.displayFontFamily,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.5,
+                  ),
+                  items: const [
+                    BottomNavigationBarItem(
+                      icon: Icon(Icons.home_outlined),
+                      activeIcon: Icon(Icons.home),
+                      label: 'TODAY',
+                    ),
+                    BottomNavigationBarItem(
+                      icon: Icon(Icons.fitness_center_outlined),
+                      activeIcon: Icon(Icons.fitness_center),
+                      label: 'TRAIN',
+                    ),
+                    BottomNavigationBarItem(
+                      icon: Icon(Icons.restaurant_outlined),
+                      activeIcon: Icon(Icons.restaurant),
+                      label: 'FUEL',
+                    ),
+                    BottomNavigationBarItem(
+                      icon: Icon(Icons.show_chart_outlined),
+                      activeIcon: Icon(Icons.show_chart),
+                      label: 'PROGRESS',
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-          child: BottomNavigationBar(
-            currentIndex: currentIndex,
-            onTap: (index) {
-              if (index != currentIndex) {
-                AppHaptics.shared.selectionChanged();
-                navigationShell.goBranch(
-                  index,
-                  initialLocation: index == navigationShell.currentIndex,
-                );
-              }
-            },
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            type: BottomNavigationBarType.fixed,
-            selectedItemColor: tokens.kineticAccent,
-            unselectedItemColor: tokens.textTertiary,
-            selectedLabelStyle: const TextStyle(
-              fontFamily: AppTypography.displayFontFamily,
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.5,
-            ),
-            unselectedLabelStyle: const TextStyle(
-              fontFamily: AppTypography.displayFontFamily,
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.5,
-            ),
-            items: const [
-              BottomNavigationBarItem(
-                icon: Icon(Icons.home_outlined),
-                activeIcon: Icon(Icons.home),
-                label: 'TODAY',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.fitness_center_outlined),
-                activeIcon: Icon(Icons.fitness_center),
-                label: 'TRAIN',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.restaurant_outlined),
-                activeIcon: Icon(Icons.restaurant),
-                label: 'FUEL',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.show_chart_outlined),
-                activeIcon: Icon(Icons.show_chart),
-                label: 'PROGRESS',
-              ),
-            ],
-          ),
-        ),
+          );
+        },
       ),
     );
   }

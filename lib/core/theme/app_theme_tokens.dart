@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'app_colors.dart';
 import 'app_spacings.dart';
 
-/// Extension tokens exposing the Monolithic Sci-Fi design system through Flutter's [ThemeExtension].
+/// Extension tokens exposing the Direction 4 (Soft & Layered) design system through Flutter's [ThemeExtension].
 @immutable
 class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
   const AppThemeTokens({
@@ -28,7 +28,8 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
     required this.fats,
     required this.cardDecoration,
     required this.glowDecoration,
-  });
+    Color? onAccent,
+  }) : _onAccent = onAccent;
 
   final bool isDark;
 
@@ -44,6 +45,9 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
   final Color kineticAccent;
   final Color cyanAccent;
   final Color violetAccent;
+  final Color? _onAccent;
+
+  Color get onAccent => _onAccent ?? (isDark ? AppColors.onAccentDark : AppColors.onAccentLight);
 
   // Typography
   final Color textPrimary;
@@ -70,12 +74,13 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
   double get radiusSm => AppSpacings.radiusSm;
   double get radiusMd => AppSpacings.radiusMd;
   double get radiusLg => AppSpacings.radiusLg;
+  double get radiusXl => AppSpacings.radiusXl;
   double get radiusPill => AppSpacings.radiusPill;
 
   // Convenient alias
   Color get textTertiary => textMuted;
 
-  /// Monolithic Sci-Fi Dark Tokens.
+  /// Direction 4: Soft & Layered Dark Tokens.
   static final AppThemeTokens dark = AppThemeTokens(
     isDark: true,
     canvas: AppColors.canvasDark,
@@ -85,6 +90,7 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
     borderSubtle: AppColors.borderSubtleDark,
     borderGlow: AppColors.borderGlowDark,
     kineticAccent: AppColors.kineticAccentDark,
+    onAccent: AppColors.onAccentDark,
     cyanAccent: AppColors.cyanAccentDark,
     violetAccent: AppColors.violetAccentDark,
     textPrimary: AppColors.textPrimaryDark,
@@ -99,24 +105,31 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
     fats: AppColors.fats,
     cardDecoration: BoxDecoration(
       color: AppColors.cardDark,
-      borderRadius: BorderRadius.circular(AppSpacings.radiusMd),
+      borderRadius: BorderRadius.circular(AppSpacings.radiusLg),
       border: Border.all(color: AppColors.borderSubtleDark, width: 1),
+      boxShadow: const [
+        BoxShadow(
+          color: Color(0x1F000000),
+          blurRadius: 16,
+          offset: Offset(0, 4),
+        ),
+      ],
     ),
     glowDecoration: BoxDecoration(
       color: AppColors.cardDark,
-      borderRadius: BorderRadius.circular(AppSpacings.radiusMd),
+      borderRadius: BorderRadius.circular(AppSpacings.radiusLg),
       border: Border.all(color: AppColors.kineticAccentDark, width: 1.5),
       boxShadow: const [
         BoxShadow(
-          color: Color(0x3300FF87),
-          blurRadius: 10,
+          color: Color(0x2EA5B4FC),
+          blurRadius: 16,
           spreadRadius: 1,
         ),
       ],
     ),
   );
 
-  /// Architectural Titanium Light Tokens.
+  /// Direction 4: Soft & Layered Light Tokens.
   static final AppThemeTokens light = AppThemeTokens(
     isDark: false,
     canvas: AppColors.canvasLight,
@@ -126,6 +139,7 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
     borderSubtle: AppColors.borderSubtleLight,
     borderGlow: AppColors.borderGlowLight,
     kineticAccent: AppColors.kineticAccentLight,
+    onAccent: AppColors.onAccentLight,
     cyanAccent: AppColors.cyanAccentLight,
     violetAccent: AppColors.violetAccentLight,
     textPrimary: AppColors.textPrimaryLight,
@@ -140,24 +154,24 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
     fats: AppColors.fats,
     cardDecoration: BoxDecoration(
       color: AppColors.cardLight,
-      borderRadius: BorderRadius.circular(AppSpacings.radiusMd),
+      borderRadius: BorderRadius.circular(AppSpacings.radiusLg),
       border: Border.all(color: AppColors.borderSubtleLight, width: 1),
       boxShadow: const [
         BoxShadow(
-          color: Color(0x0A000000),
-          blurRadius: 8,
-          offset: Offset(0, 2),
+          color: Color(0x0D000000),
+          blurRadius: 12,
+          offset: Offset(0, 3),
         ),
       ],
     ),
     glowDecoration: BoxDecoration(
       color: AppColors.cardLight,
-      borderRadius: BorderRadius.circular(AppSpacings.radiusMd),
+      borderRadius: BorderRadius.circular(AppSpacings.radiusLg),
       border: Border.all(color: AppColors.kineticAccentLight, width: 1.5),
       boxShadow: const [
         BoxShadow(
-          color: Color(0x2600A855),
-          blurRadius: 8,
+          color: Color(0x264338CA),
+          blurRadius: 12,
           spreadRadius: 1,
         ),
       ],
@@ -174,6 +188,7 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
     Color? borderSubtle,
     Color? borderGlow,
     Color? kineticAccent,
+    Color? onAccent,
     Color? cyanAccent,
     Color? violetAccent,
     Color? textPrimary,
@@ -198,6 +213,7 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
       borderSubtle: borderSubtle ?? this.borderSubtle,
       borderGlow: borderGlow ?? this.borderGlow,
       kineticAccent: kineticAccent ?? this.kineticAccent,
+      onAccent: onAccent ?? this.onAccent,
       cyanAccent: cyanAccent ?? this.cyanAccent,
       violetAccent: violetAccent ?? this.violetAccent,
       textPrimary: textPrimary ?? this.textPrimary,
@@ -227,6 +243,7 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
       borderSubtle: Color.lerp(borderSubtle, other.borderSubtle, t)!,
       borderGlow: Color.lerp(borderGlow, other.borderGlow, t)!,
       kineticAccent: Color.lerp(kineticAccent, other.kineticAccent, t)!,
+      onAccent: Color.lerp(onAccent, other.onAccent, t)!,
       cyanAccent: Color.lerp(cyanAccent, other.cyanAccent, t)!,
       violetAccent: Color.lerp(violetAccent, other.violetAccent, t)!,
       textPrimary: Color.lerp(textPrimary, other.textPrimary, t)!,
@@ -259,4 +276,3 @@ extension AppThemeContextExtension on BuildContext {
         : AppThemeTokens.light;
   }
 }
-

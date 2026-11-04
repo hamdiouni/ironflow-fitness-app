@@ -155,7 +155,7 @@ class _ErrorState extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: AppStateView.error(
-          title: 'TELEMETRY ERROR',
+          title: 'UNABLE TO LOAD',
           message: error.toString(),
           onRetry: onRetry,
         ),
@@ -174,7 +174,7 @@ class _EmptyState extends StatelessWidget {
         padding: const EdgeInsets.all(24),
         child: AppStateView.empty(
           title: 'NO ACTIVE PROGRAM',
-          message: 'Initialize a custom AI training protocol or load an existing program split to begin tracking.',
+          message: 'Create a custom AI routine or load an existing program to begin tracking.',
           actionLabel: 'GENERATE PROGRAM',
           onAction: () => context.go(AppRoutes.workoutProgramSelection),
         ),

@@ -143,7 +143,7 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen>
             margin: const EdgeInsets.symmetric(horizontal: AppTheme.spacingMedium),
             decoration: BoxDecoration(
               color: tokens.panel,
-              borderRadius: BorderRadius.circular(tokens.radiusSm),
+              borderRadius: BorderRadius.circular(AppSpacings.radiusPill),
               border: Border.all(color: tokens.borderSubtle, width: 1),
             ),
             child: TabBar(
@@ -151,9 +151,9 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen>
               indicatorSize: TabBarIndicatorSize.tab,
               indicator: BoxDecoration(
                 color: tokens.kineticAccent,
-                borderRadius: BorderRadius.circular(tokens.radiusSm - 1),
+                borderRadius: BorderRadius.circular(AppSpacings.radiusPill),
               ),
-              labelColor: Colors.black,
+              labelColor: tokens.onAccent,
               unselectedLabelColor: tokens.textMuted,
               labelStyle: const TextStyle(
                 fontFamily: AppTypography.displayFontFamily,

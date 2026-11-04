@@ -1,0 +1,1315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IronFlow — UI/UX Upgrade: 4 Design Directions</title>
+  <style>
+    :root {
+      --bg: #090d12;
+      --surface: #121820;
+      --surface-raised: #1a232e;
+      --border: #263342;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --teal: #2dd4bf;
+      --teal-ink: #042f2e;
+      --sage: #4ade80;
+      --cobalt: #3b82f6;
+      --periwinkle: #a5b4fc;
+      --amber: #f59e0b;
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.5;
+      padding: 32px 24px 80px 24px;
+    }
+    .container { max-width: 1440px; margin: 0 auto; }
+    
+    /* Header & Hero */
+    header {
+      padding: 32px 0 24px 0;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 32px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      border-radius: 999px;
+      background: rgba(45, 212, 191, 0.15);
+      color: var(--teal);
+      border: 1px solid rgba(45, 212, 191, 0.3);
+      margin-bottom: 12px;
+    }
+    h1 {
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+    }
+    .subtitle {
+      font-size: 16px;
+      color: var(--text-muted);
+      max-width: 860px;
+    }
+
+    /* Decision Callout */
+    .decision-callout {
+      background: linear-gradient(135deg, rgba(45, 212, 191, 0.08) 0%, rgba(59, 130, 246, 0.08) 100%);
+      border: 2px solid var(--teal);
+      border-radius: var(--radius);
+      padding: 24px 28px;
+      margin-bottom: 40px;
+    }
+    .decision-callout h2 {
+      font-size: 20px;
+      color: var(--teal);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .decision-callout p {
+      color: var(--text-main);
+      font-size: 15px;
+      margin-bottom: 12px;
+    }
+    .decision-options {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .decision-pill {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 13px;
+    }
+    .decision-pill strong {
+      display: block;
+      color: var(--text-main);
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+
+    /* Summary Matrix */
+    .section-title {
+      font-size: 22px;
+      font-weight: 700;
+      margin: 40px 0 16px 0;
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+    }
+    .section-title span {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+    .table-wrapper {
+      overflow-x: auto;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 40px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 13px;
+    }
+    th, td {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    th {
+      background: var(--surface-raised);
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    tr:last-child td { border-bottom: none; }
+    .color-chip {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+      vertical-align: middle;
+      margin-right: 6px;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    .tag-pass {
+      display: inline-block;
+      padding: 2px 8px;
+      font-size: 11px;
+      font-weight: 700;
+      border-radius: 4px;
+      background: rgba(74, 222, 128, 0.15);
+      color: #4ade80;
+      border: 1px solid rgba(74, 222, 128, 0.3);
+    }
+
+    /* Side-by-Side Comparison Grids */
+    .preview-block {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 40px;
+    }
+    .preview-header {
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 12px;
+    }
+    .preview-header h3 {
+      font-size: 18px;
+      font-weight: 700;
+    }
+    .preview-header .hint {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    
+    .screen-grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+    @media (max-width: 1100px) {
+      .screen-grid-4 { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 600px) {
+      .screen-grid-4 { grid-template-columns: 1fr; }
+    }
+
+    .screen-card {
+      background: var(--surface-raised);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .screen-card-header {
+      padding: 10px 14px;
+      background: rgba(0,0,0,0.25);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .screen-card-header .dir-name {
+      color: var(--text-main);
+    }
+    .screen-card-header .dir-slug {
+      color: var(--text-muted);
+      font-size: 11px;
+    }
+    .screen-img-box {
+      width: 100%;
+      background: #000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 8px;
+    }
+    .screen-img-box img {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 4px;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .screen-card-footer {
+      padding: 10px 14px;
+      font-size: 11px;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border);
+    }
+
+    /* Wide Screen Layout Grid (2 Columns) */
+    .screen-grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+    @media (max-width: 900px) {
+      .screen-grid-2 { grid-template-columns: 1fr; }
+    }
+
+    /* Detail Cards for Each Direction */
+    .directions-detail-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+      margin-bottom: 40px;
+    }
+    @media (max-width: 900px) {
+      .directions-detail-grid { grid-template-columns: 1fr; }
+    }
+    .dir-detail-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .dir-detail-card.dir-1 { border-top: 4px solid var(--teal); }
+    .dir-detail-card.dir-2 { border-top: 4px solid #f3f4f6; }
+    .dir-detail-card.dir-3 { border-top: 4px solid var(--cobalt); }
+    .dir-detail-card.dir-4 { border-top: 4px solid var(--periwinkle); }
+
+    .dir-detail-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+    .dir-detail-title h3 {
+      font-size: 20px;
+      font-weight: 700;
+    }
+    .dir-idea {
+      font-size: 14px;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+    .pros-cons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      font-size: 12px;
+    }
+    .pros-list, .cons-list {
+      list-style: none;
+    }
+    .pros-list li {
+      margin-bottom: 6px;
+      color: #86efac;
+      padding-left: 14px;
+      position: relative;
+    }
+    .pros-list li::before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: #4ade80;
+    }
+    .cons-list li {
+      margin-bottom: 6px;
+      color: #fca5a5;
+      padding-left: 14px;
+      position: relative;
+    }
+    .cons-list li::before {
+      content: "–";
+      position: absolute;
+      left: 0;
+      color: #f87171;
+    }
+
+    /* Final CTA */
+    .cta-box {
+      text-align: center;
+      padding: 48px 32px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-top: 40px;
+    }
+    .cta-box h2 {
+      font-size: 24px;
+      margin-bottom: 12px;
+    }
+    .cta-box p {
+      font-size: 15px;
+      color: var(--text-muted);
+      max-width: 600px;
+      margin: 0 auto 24px auto;
+    }
+    .choice-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 16px;
+    }
+    .choice-badge {
+      display: inline-block;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 14px;
+      background: var(--surface-raised);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+    }
+    .choice-badge.active {
+      background: var(--teal);
+      color: var(--teal-ink);
+      border-color: var(--teal);
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <header>
+    <div class="badge">Part 2 Verification Complete &bull; 4 Directions</div>
+    <h1>IronFlow UI/UX Design Directions</h1>
+    <p class="subtitle">
+      Explore and compare the 4 distinct design directions below. All four follow the frame-light rules, 
+      pass WCAG AA contrast (with 100% verified color pairs), use bundled open-license fonts (Inter & Space Grotesk), 
+      and render the exact same fake dataset for fair side-by-side evaluation.
+    </p>
+  </header>
+
+  <!-- DECISION CALLOUT -->
+  <div class="decision-callout">
+    <h2>Which Direction Do You Choose?</h2>
+    <p>
+      Review the side-by-side screenshots below across all 9 core app surfaces and 2 viewports (phone and wide desktop web). 
+      Once you have made your choice, reply in chat with your selected direction (or request specific refinements/combinations):
+    </p>
+    <div class="decision-options">
+      <div class="decision-pill">
+        <strong>1. Slate Teal Refined</strong>
+        The chosen palette in its cleanest form. Athletic slate surfaces, one teal action color, lowest risk, 1:1 token migration.
+      </div>
+      <div class="decision-pill">
+        <strong>2. Nordic Calm</strong>
+        Editorial white space, warm paper canvas, black ink buttons, thin hairline rules, and quiet sage accents.
+      </div>
+      <div class="decision-pill">
+        <strong>3. Kinetic Block</strong>
+        Bold, high-intensity athletic bento blocks, cobalt & amber hero bands, scoreboard numbers, 4 px square buttons.
+      </div>
+      <div class="decision-pill">
+        <strong>4. Soft Layered</strong>
+        Friendly coaching style, 26 px rounded floating sheets, periwinkle and mint accents, full capsule buttons.
+      </div>
+    </div>
+  </div>
+
+  <!-- SUMMARY TABLE -->
+  <h2 class="section-title">Design Directions Matrix <span>Structural Differences (Not Color-Only)</span></h2>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Direction</th>
+          <th>Philosophy & Mode</th>
+          <th>Grid & Radii</th>
+          <th>Button Style</th>
+          <th>Navigation Model</th>
+          <th>Chart Style</th>
+          <th>Typography</th>
+          <th>WCAG AA</th>
+          <th>Paint Cost</th>
+          <th>Build Effort</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>1. Slate Teal</strong><br><span style="color:var(--text-muted);font-size:11px;">01-slate-teal</span></td>
+          <td>Athletic frame-light<br><strong>Dark first</strong> (Alt: Light)</td>
+          <td>Pad: 16 px, Gap: 16 px<br>Card: 14 px, Button: 12 px</td>
+          <td>Rounded filled (50 px)<br>Teal solid + dark ink text</td>
+          <td>Phone: M3 bottom pill<br>Wide: Left rail (76 px)</td>
+          <td>Smooth Bezier curves with soft teal fill; horizontal grid only</td>
+          <td>Space Grotesk (700 bold)<br>Inter body & labels</td>
+          <td><span class="tag-pass">100% Pass AA</span></td>
+          <td>Fastest (flat fills, no list shadows)</td>
+          <td><strong>Medium (M)</strong><br>Direct token match</td>
+        </tr>
+        <tr>
+          <td><strong>2. Nordic Calm</strong><br><span style="color:var(--text-muted);font-size:11px;">02-nordic-calm</span></td>
+          <td>Editorial white space<br><strong>Light first</strong> (Alt: Dark)</td>
+          <td>Pad: 24 px, Gap: 28 px<br>Card: 8 px (Frameless), Button: 8 px</td>
+          <td>Ink minimal (52 px)<br>Solid ink black on paper</td>
+          <td>Phone: Borderless text dock<br>Wide: Slim text sidebar</td>
+          <td>Thin 1.5 px sparklines with endpoint dot; no fill, no grid</td>
+          <td>Pure Inter system<br>Inter 600 bold + Inter figures</td>
+          <td><span class="tag-pass">100% Pass AA</span></td>
+          <td>Fast (large unpainted white areas)</td>
+          <td><strong>Large (L)</strong><br>Frameless layout changes</td>
+        </tr>
+        <tr>
+          <td><strong>3. Kinetic Block</strong><br><span style="color:var(--text-muted);font-size:11px;">03-kinetic-block</span></td>
+          <td>High-density scoreboard<br><strong>Dark first</strong> (Alt: Light)</td>
+          <td>Pad: 12 px, Gap: 10 px<br>Card: 4 px, Button: 4 px</td>
+          <td>Block uppercase (52 px)<br>Cobalt block + amber bands</td>
+          <td>Phone: Compact tab strip<br>Wide: 2-col bento grid</td>
+          <td>Stepped vertical bars; scoreboard numeric callouts</td>
+          <td>Space Grotesk 800 ALL-CAPS<br>Space Grotesk figures</td>
+          <td><span class="tag-pass">100% Pass AA</span></td>
+          <td>Fast (rectilinear geometry)</td>
+          <td><strong>Large (L)</strong><br>New bento grid & painters</td>
+        </tr>
+        <tr>
+          <td><strong>4. Soft Layered</strong><br><span style="color:var(--text-muted);font-size:11px;">04-soft-layered</span></td>
+          <td>Friendly coaching sheets<br><strong>Dark first</strong> (Alt: Light)</td>
+          <td>Pad: 20 px, Gap: 20 px<br>Card: 26 px, Button: 999 px</td>
+          <td>Capsule pills (54 px)<br>Periwinkle fill + deep indigo text</td>
+          <td>Phone: Floating bottom dock<br>Wide: Floating left dock</td>
+          <td>Concentric macro rings; capsule-topped bar columns</td>
+          <td>Inter 700 bold headings<br>Space Grotesk numbers</td>
+          <td><span class="tag-pass">100% Pass AA</span></td>
+          <td>Good (soft card shadows, 0 blur)</td>
+          <td><strong>Medium-Large (M/L)</strong><br>Capsules & dock</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- TOKENS COMPARISON TABLE -->
+  <h2 class="section-title">Color Tokens & Hex Manifest <span>Main Modes</span></h2>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Token Name</th>
+          <th>1. Slate Teal (Dark)</th>
+          <th>2. Nordic Calm (Light)</th>
+          <th>3. Kinetic Block (Dark)</th>
+          <th>4. Soft Layered (Dark)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>canvas</code></td>
+          <td><span class="color-chip" style="background:#0B1218;"></span>#0B1218</td>
+          <td><span class="color-chip" style="background:#F7F7F5;"></span>#F7F7F5</td>
+          <td><span class="color-chip" style="background:#090A0D;"></span>#090A0D</td>
+          <td><span class="color-chip" style="background:#12131A;"></span>#12131A</td>
+        </tr>
+        <tr>
+          <td><code>surface</code></td>
+          <td><span class="color-chip" style="background:#131D26;"></span>#131D26</td>
+          <td><span class="color-chip" style="background:#FFFFFF;"></span>#FFFFFF</td>
+          <td><span class="color-chip" style="background:#141720;"></span>#141720</td>
+          <td><span class="color-chip" style="background:#1C1E28;"></span>#1C1E28</td>
+        </tr>
+        <tr>
+          <td><code>raised</code></td>
+          <td><span class="color-chip" style="background:#1C2A36;"></span>#1C2A36</td>
+          <td><span class="color-chip" style="background:#EFEFEB;"></span>#EFEFEB</td>
+          <td><span class="color-chip" style="background:#1E2230;"></span>#1E2230</td>
+          <td><span class="color-chip" style="background:#272A38;"></span>#272A38</td>
+        </tr>
+        <tr>
+          <td><code>hairline</code></td>
+          <td><span class="color-chip" style="background:#243443;"></span>#243443</td>
+          <td><span class="color-chip" style="background:#E2E2DD;"></span>#E2E2DD</td>
+          <td><span class="color-chip" style="background:#2A3042;"></span>#2A3042</td>
+          <td><span class="color-chip" style="background:#30344A;"></span>#30344A</td>
+        </tr>
+        <tr>
+          <td><code>textPrimary</code></td>
+          <td><span class="color-chip" style="background:#F1F5F9;"></span>#F1F5F9 (15.3:1)</td>
+          <td><span class="color-chip" style="background:#14171F;"></span>#14171F (16.8:1)</td>
+          <td><span class="color-chip" style="background:#FFFFFF;"></span>#FFFFFF (17.8:1)</td>
+          <td><span class="color-chip" style="background:#F4F4F8;"></span>#F4F4F8 (16.2:1)</td>
+        </tr>
+        <tr>
+          <td><code>textSecondary</code></td>
+          <td><span class="color-chip" style="background:#9DAEC2;"></span>#9DAEC2 (7.5:1)</td>
+          <td><span class="color-chip" style="background:#585E6B;"></span>#585E6B (6.0:1)</td>
+          <td><span class="color-chip" style="background:#A9B1C3;"></span>#A9B1C3 (7.6:1)</td>
+          <td><span class="color-chip" style="background:#ADB1C6;"></span>#ADB1C6 (7.0:1)</td>
+        </tr>
+        <tr>
+          <td><code>accent</code></td>
+          <td><span class="color-chip" style="background:#2DD4BF;"></span>#2DD4BF (Teal)</td>
+          <td><span class="color-chip" style="background:#14171F;"></span>#14171F (Black Ink)</td>
+          <td><span class="color-chip" style="background:#2563EB;"></span>#2563EB (Cobalt)</td>
+          <td><span class="color-chip" style="background:#A5B4FC;"></span>#A5B4FC (Periwinkle)</td>
+        </tr>
+        <tr>
+          <td><code>onAccent</code></td>
+          <td><span class="color-chip" style="background:#042F2E;"></span>#042F2E (7.9:1)</td>
+          <td><span class="color-chip" style="background:#FFFFFF;"></span>#FFFFFF (16.8:1)</td>
+          <td><span class="color-chip" style="background:#FFFFFF;"></span>#FFFFFF (5.1:1)</td>
+          <td><span class="color-chip" style="background:#1E1B4B;"></span>#1E1B4B (8.6:1)</td>
+        </tr>
+        <tr>
+          <td><code>block / hero</code></td>
+          <td><span class="color-chip" style="background:#2DD4BF;"></span>#2DD4BF (Teal)</td>
+          <td><span class="color-chip" style="background:#166534;"></span>#166534 (Sage)</td>
+          <td><span class="color-chip" style="background:#F97316;"></span>#F97316 (Amber)</td>
+          <td><span class="color-chip" style="background:#6EE7B7;"></span>#6EE7B7 (Mint)</td>
+        </tr>
+        <tr>
+          <td><code>success</code></td>
+          <td><span class="color-chip" style="background:#4ADE80;"></span>#4ADE80</td>
+          <td><span class="color-chip" style="background:#15803D;"></span>#15803D</td>
+          <td><span class="color-chip" style="background:#4ADE80;"></span>#4ADE80</td>
+          <td><span class="color-chip" style="background:#6EE7B7;"></span>#6EE7B7</td>
+        </tr>
+        <tr>
+          <td><code>warning</code></td>
+          <td><span class="color-chip" style="background:#FBBF24;"></span>#FBBF24</td>
+          <td><span class="color-chip" style="background:#975A16;"></span>#975A16</td>
+          <td><span class="color-chip" style="background:#FACC15;"></span>#FACC15</td>
+          <td><span class="color-chip" style="background:#FCD34D;"></span>#FCD34D</td>
+        </tr>
+        <tr>
+          <td><code>error</code></td>
+          <td><span class="color-chip" style="background:#F87171;"></span>#F87171</td>
+          <td><span class="color-chip" style="background:#B42318;"></span>#B42318</td>
+          <td><span class="color-chip" style="background:#FF8A8A;"></span>#FF8A8A</td>
+          <td><span class="color-chip" style="background:#FDA4AF;"></span>#FDA4AF</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- SCREEN COMPARISONS -->
+  <h2 class="section-title">Visual Comparison <span>9 Screens Across All 4 Directions (Fake Data)</span></h2>
+
+  <!-- 1. TODAY / HOME -->
+  <div class="preview-block">
+    <div class="preview-header">
+      <h3>1. Today / Home Screen (Main Mode &bull; 390×844)</h3>
+      <div class="hint">Identical workout & nutrition progress data</div>
+    </div>
+    <div class="screen-grid-4">
+      <div class="screen-card">
+        <div class="screen-card-header">
+          <span class="dir-name">Direction 1</span>
+          <span class="dir-slug">Slate Teal (Dark)</span>
+        </div>
+        <div class="screen-img-box">
+          <img src="01-slate-teal/today_main_390x844.png" alt="Direction 1 Today">
+        </div>
+        <div class="screen-card-footer">Tonal surfaces, teal accent badge, M3 bottom pill</div>
+      </div>
+      <div class="screen-card">
+        <div class="screen-card-header">
+          <span class="dir-name">Direction 2</span>
+          <span class="dir-slug">Nordic Calm (Light)</span>
+        </div>
+        <div class="screen-img-box">
+          <img src="02-nordic-calm/today_main_390x844.png" alt="Direction 2 Today">
+        </div>
+        <div class="screen-card-footer">Frameless paper canvas, black ink CTA, sage block</div>
+      </div>
+      <div class="screen-card">
+        <div class="screen-card-header">
+          <span class="dir-name">Direction 3</span>
+          <span class="dir-slug">Kinetic Block (Dark)</span>
+        </div>
+        <div class="screen-img-box">
+          <img src="03-kinetic-block/today_main_390x844.png" alt="Direction 3 Today">
+        </div>
+        <div class="screen-card-footer">Amber hero header band, scoreboard numbers, 4 px buttons</div>
+      </div>
+      <div class="screen-card">
+        <div class="screen-card-header">
+          <span class="dir-name">Direction 4</span>
+          <span class="dir-slug">Soft Layered (Dark)</span>
+        </div>
+        <div class="screen-img-box">
+          <img src="04-soft-layered/today_main_390x844.png" alt="Direction 4 Today">
+        </div>
+        <div class="screen-card-footer">26 px rounded sheets, capsule pills, mint coach pill</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. TODAY ALTERNATE MODE -->
+  <div class="preview-block">
+    <div class="preview-header">
+      <h3>2. Today / Home Screen (Alternate Mode &bull; 390×844)</h3>
+      <div class="hint">Light mode for D1, D3, D4 &bull; Dark mode for D2 (Nordic Calm)</div>
+    </div>
+    <div class="screen-grid-4">
+      <div class="screen-card">
+        <div class="screen-card-header">
+          <span class="dir-name">Direction 1</span>
+          <span class="dir-slug">Slate Teal (Light)</span>
+        </div>
+        <div class="screen-img-box">
+          <img src="01-slate-teal/today_alt_390x844.png" alt="Direction 1 Today Light">
+        </div>
+        <div class="screen-card-footer">Crisp slate light, deep teal CTA (5.3:1 AA pass)</div>
+      </div>
+      <div class="screen-card">
+        <div class="screen-card-header">
+          <span class="dir-name">Direction 2</span>
+          <span class="dir-slug">Nordic Calm (Dark)</span>
+        </div>
+        <div class="screen-img-box">
+          <img src="02-nordic-calm/today_alt_390x844.png" alt="Direction 2 Today Dark">
+        </div>
+        <div class="screen-card-footer">High-contrast ink dark, white button, sage accents</div>
+      </div>
+      <div class="screen-card">
+        <div class="screen-card-header">
+          <span class="dir-name">Direction 3</span>
+          <span class="dir-slug">Kinetic Block (Light)</span>
+        </div>
+        <div class="screen-img-box">
+          <img src="03-kinetic-block/today_alt_390x844.png" alt="Direction 3 Today Light">
+        </div>
+        <div class="screen-card-footer">Light bento cards, deep cobalt CTA, rust orange band</div>
+      </div>
+      <div class="screen-card">
+        <div class="screen-card-header">
+          <span class="dir-name">Direction 4</span>
+          <span class="dir-slug">Soft Layered (Light)</span>
+        </div>
+        <div class="screen-img-box">
+          <img src="04-soft-layered/today_alt_390x844.png" alt="Direction 4 Today Light">
+        </div>
+        <div class="screen-card-footer">Warm linen canvas, indigo capsule CTA, emerald block</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. TODAY WIDE (DESKTOP WEB) -->
+  <div class="preview-block">
+    <div class="preview-header">
+      <h3>3. Today / Home Screen (Wide Desktop Web &bull; 1280×800)</h3>
+      <div class="hint">Responsive navigation rail / sidebar &amp; centered 1040 px max-width layout</div>
+    </div>
+    <div class="screen-grid-2">
+      <div class="screen-card">
+        <div class="screen-card-header">
+          <span class="dir-name">Direction 1: Slate Teal Refined</span>
+          <span class="dir-slug">1280×800 Web</span>
+        </div>
+        <div class="screen-img-box">
+          <img src="01-slate-teal/today_wide_1280x800.png" alt="Direction 1 Today Wide">
+        </div>
+        <div class="screen-card-footer">Left navigation rail (76 px), centered 1040 px multi-column content</div>
+      </div>
+      <div class="screen-card">
+        <div class="screen-card-header">
+          <span class="dir-name">Direction 2: Nordic Calm</span>
+          <span class="dir-slug">1280×800 Web</span>
+        </div>
+        <div class="screen-img-box">
+          <img src="02-nordic-calm/today_wide_1280x800.png" alt="Direction 2 Today Wide">
+        </div>
+        <div class="screen-card-footer">Editorial left sidebar, expansive paper white space</div>
+      </div>
+      <div class="screen-card">
+        <div class="screen-card-header">
+          <span class="dir-name">Direction 3: Kinetic Block</span>
+          <span class="dir-slug">1280×800 Web</span>
+        </div>
+        <div class="screen-img-box">
+          <img src="03-kinetic-block/today_wide_1280x800.png" alt="Direction 3 Today Wide">
+        </div>
+        <div class="screen-card-footer">Command rail, dual-column athletic bento grid</div>
+      </div>
+      <div class="screen-card">
+        <div class="screen-card-header">
+          <span class="dir-name">Direction 4: Soft Layered</span>
+          <span class="dir-slug">1280×800 Web</span>
+        </div>
+        <div class="screen-img-box">
+          <img src="04-soft-layered/today_wide_1280x800.png" alt="Direction 4 Today Wide">
+        </div>
+        <div class="screen-card-footer">Floating rounded left dock, wide soft sheets</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. ACTIVE WORKOUT -->
+  <div class="preview-block">
+    <div class="preview-header">
+      <h3>4. Active Workout Screen (390×844)</h3>
+      <div class="hint">Exercise header, working set logger, weight plate calculator, rest timer</div>
+    </div>
+    <div class="screen-grid-4">
+      <div class="screen-card">
+        <div class="screen-card-header">
+          <span class="dir-name">Direction 1</span>
+          <span class="dir-slug">Slate Teal</span>
+        </div>
+        <div class="screen-img-box">
+          <img src="01-slate-teal/active_workout_390x844.png" alt="Direction 1 Active Workout">
+        </div>
+        <div class="screen-card-footer">Tonal set rows, teal check button, subtle plate bar</div>
+      </div>
+      <div class="screen-card">
+        <div class="screen-card-header">
+          <span class="dir-name">Direction 2</span>
+          <span class="dir-slug">Nordic Calm</span>
+        </div>
+        <div class="screen-img-box">
+          <img src="02-nordic-calm/active_workout_390x844.png" alt="Direction 2 Active Workout">
+        </div>
+        <div class="screen-card-footer">Hairline divider set rows, ink black check button</div>
+      </div>
+      <div class="screen-card">
+        <div class="screen-card-header">
+          <span class="dir-name">Direction 3</span>
+          <span class="dir-slug">Kinetic Block</span>
+        </div>
+        <div class="screen-img-box">
+          <img src="03-kinetic-block/active_workout_390x844.png" alt="Direction 3 Active Workout">
+        </div>
+        <div class="screen-card-footer">High-contrast scoreboard rows, 4 px square check button</div>
+      </div>
+      <div class="screen-card">
+        <div class="screen-card-header">
+          <span class="dir-name">Direction 4</span>
+          <span class="dir-slug">Soft Layered</span>
+        </div>
+        <div class="screen-img-box">
+          <img src="04-soft-layered/active_workout_390x844.png" alt="Direction 4 Active Workout">
+        </div>
+        <div class="screen-card-footer">Rounded set pills, capsule check button, pastel badges</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. WORKOUT SUMMARY -->
+  <div class="preview-block">
+    <div class="preview-header">
+      <h3>5. Workout Summary Screen (390×844)</h3>
+      <div class="hint">Order: Results (time, sets, volume) &rarr; PRs &rarr; Exercises &rarr; Next-time &rarr; Done</div>
+    </div>
+    <div class="screen-grid-4">
+      <div class="screen-card">
+        <div class="screen-card-header">
+          <span class="dir-name">Direction 1</span>
+          <span class="dir-slug">Slate Teal</span>
+        </div>
+        <div class="screen-img-box">
+          <img src="01-slate-teal/workout_summary_390x844.png" alt="Direction 1 Workout Summary">
+        </div>
+        <div class="screen-card-footer">Clean stat row, PR callout, Next-time suggestion</div>
+      </div>
+      <div class="screen-card">
+        <div class="screen-card-header">
+          <span class="dir-name">Direction 2</span>
+          <span class="dir-slug">Nordic Calm</span>
+        </div>
+        <div class="screen-img-box">
+          <img src="02-nordic-calm/workout_summary_390x844.png" alt="Direction 2 Workout Summary">
+        </div>
+        <div class="screen-card-footer">Editorial summary, hairline splitters, quiet PR text</div>
+      </div>
+      <div class="screen-card">
+        <div class="screen-card-header">
+          <span class="dir-name">Direction 3</span>
+          <span class="dir-slug">Kinetic Block</span>
+        </div>
+        <div class="screen-img-box">
+          <img src="03-kinetic-block/workout_summary_390x844.png" alt="Direction 3 Workout Summary">
+        </div>
+        <div class="screen-card-footer">Bento celebration block, scoreboard volume callout</div>
+      </div>
+      <div class="screen-card">
+        <div class="screen-card-header">
+          <span class="dir-name">Direction 4</span>
+          <span class="dir-slug">Soft Layered</span>
+        </div>
+        <div class="screen-img-box">
+          <img src="04-soft-layered/workout_summary_390x844.png" alt="Direction 4 Workout Summary">
+        </div>
+        <div class="screen-card-footer">Rounded celebratory sheet, capsule Done button</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. FUEL: DAILY BALANCE -->
+  <div class="preview-block">
+    <div class="preview-header">
+      <h3>6. Fuel / Daily Nutrition Screen (390×844)</h3>
+      <div class="hint">Calories remaining, protein/carb/fat targets, meal history cards</div>
+    </div>
+    <div class="screen-grid-4">
+      <div class="screen-card">
+        <div class="screen-card-header">
+          <span class="dir-name">Direction 1</span>
+          <span class="dir-slug">Slate Teal</span>
+        </div>
+        <div class="screen-img-box">
+          <img src="01-slate-teal/fuel_daily_390x844.png" alt="Direction 1 Fuel">
+        </div>
+        <div class="screen-card-footer">Segmented macro bars, clean meal list rows</div>
+      </div>
+      <div class="screen-card">
+        <div class="screen-card-header">
+          <span class="dir-name">Direction 2</span>
+          <span class="dir-slug">Nordic Calm</span>
+        </div>
+        <div class="screen-img-box">
+          <img src="02-nordic-calm/fuel_daily_390x844.png" alt="Direction 2 Fuel">
+        </div>
+        <div class="screen-card-footer">Hairline macro meters, minimal paper meal entries</div>
+      </div>
+      <div class="screen-card">
+        <div class="screen-card-header">
+          <span class="dir-name">Direction 3</span>
+          <span class="dir-slug">Kinetic Block</span>
+        </div>
+        <div class="screen-img-box">
+          <img src="03-kinetic-block/fuel_daily_390x844.png" alt="Direction 3 Fuel">
+        </div>
+        <div class="screen-card-footer">Stepped macro blocks, bold calorie scoreboard</div>
+      </div>
+      <div class="screen-card">
+        <div class="screen-card-header">
+          <span class="dir-name">Direction 4</span>
+          <span class="dir-slug">Soft Layered</span>
+        </div>
+        <div class="screen-img-box">
+          <img src="04-soft-layered/fuel_daily_390x844.png" alt="Direction 4 Fuel">
+        </div>
+        <div class="screen-card-footer">Concentric macro rings, rounded meal sheets</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7. FUEL: QUANTITY BOTTOM SHEET -->
+  <div class="preview-block">
+    <div class="preview-header">
+      <h3>7. Fuel / Add-Food Quantity Sheet (390×844)</h3>
+      <div class="hint">Modal portion stepper, serving size chips, macro computation pill</div>
+    </div>
+    <div class="screen-grid-4">
+      <div class="screen-card">
+        <div class="screen-card-header">
+          <span class="dir-name">Direction 1</span>
+          <span class="dir-slug">Slate Teal</span>
+        </div>
+        <div class="screen-img-box">
+          <img src="01-slate-teal/fuel_quantity_sheet_390x844.png" alt="Direction 1 Quantity Sheet">
+        </div>
+        <div class="screen-card-footer">Tonal dark bottom sheet, 14 px corner radius</div>
+      </div>
+      <div class="screen-card">
+        <div class="screen-card-header">
+          <span class="dir-name">Direction 2</span>
+          <span class="dir-slug">Nordic Calm</span>
+        </div>
+        <div class="screen-img-box">
+          <img src="02-nordic-calm/fuel_quantity_sheet_390x844.png" alt="Direction 2 Quantity Sheet">
+        </div>
+        <div class="screen-card-footer">Clean white paper sheet, black ink Add button</div>
+      </div>
+      <div class="screen-card">
+        <div class="screen-card-header">
+          <span class="dir-name">Direction 3</span>
+          <span class="dir-slug">Kinetic Block</span>
+        </div>
+        <div class="screen-img-box">
+          <img src="03-kinetic-block/fuel_quantity_sheet_390x844.png" alt="Direction 3 Quantity Sheet">
+        </div>
+        <div class="screen-card-footer">4 px square sheet, cobalt Add block button</div>
+      </div>
+      <div class="screen-card">
+        <div class="screen-card-header">
+          <span class="dir-name">Direction 4</span>
+          <span class="dir-slug">Soft Layered</span>
+        </div>
+        <div class="screen-img-box">
+          <img src="04-soft-layered/fuel_quantity_sheet_390x844.png" alt="Direction 4 Quantity Sheet">
+        </div>
+        <div class="screen-card-footer">32 px curved modal sheet, periwinkle capsule Add button</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 8. PROGRESS CHARTS (PHONE & WIDE) -->
+  <div class="preview-block">
+    <div class="preview-header">
+      <h3>8. Progress &amp; Charts Screen (390×844)</h3>
+      <div class="hint">Bench press strength curve, bodyweight trend, personal record cards</div>
+    </div>
+    <div class="screen-grid-4">
+      <div class="screen-card">
+        <div class="screen-card-header">
+          <span class="dir-name">Direction 1</span>
+          <span class="dir-slug">Slate Teal</span>
+        </div>
+        <div class="screen-img-box">
+          <img src="01-slate-teal/progress_charts_390x844.png" alt="Direction 1 Progress">
+        </div>
+        <div class="screen-card-footer">Smooth Bezier area chart with soft teal gradient</div>
+      </div>
+      <div class="screen-card">
+        <div class="screen-card-header">
+          <span class="dir-name">Direction 2</span>
+          <span class="dir-slug">Nordic Calm</span>
+        </div>
+        <div class="screen-img-box">
+          <img src="02-nordic-calm/progress_charts_390x844.png" alt="Direction 2 Progress">
+        </div>
+        <div class="screen-card-footer">1.5 px hairline sparkline with endpoint dot; no grid</div>
+      </div>
+      <div class="screen-card">
+        <div class="screen-card-header">
+          <span class="dir-name">Direction 3</span>
+          <span class="dir-slug">Kinetic Block</span>
+        </div>
+        <div class="screen-img-box">
+          <img src="03-kinetic-block/progress_charts_390x844.png" alt="Direction 3 Progress">
+        </div>
+        <div class="screen-card-footer">Stepped bar columns, large bold scoreboard numbers</div>
+      </div>
+      <div class="screen-card">
+        <div class="screen-card-header">
+          <span class="dir-name">Direction 4</span>
+          <span class="dir-slug">Soft Layered</span>
+        </div>
+        <div class="screen-img-box">
+          <img src="04-soft-layered/progress_charts_390x844.png" alt="Direction 4 Progress">
+        </div>
+        <div class="screen-card-footer">Rounded capsule bar pillars, periwinkle trend line</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 9. PROGRESS WIDE -->
+  <div class="preview-block">
+    <div class="preview-header">
+      <h3>9. Progress &amp; Charts Screen (Wide Desktop Web &bull; 1280×800)</h3>
+      <div class="hint">Dual-column responsive analytics layout</div>
+    </div>
+    <div class="screen-grid-2">
+      <div class="screen-card">
+        <div class="screen-card-header">
+          <span class="dir-name">Direction 1: Slate Teal Refined</span>
+          <span class="dir-slug">Wide Progress</span>
+        </div>
+        <div class="screen-img-box">
+          <img src="01-slate-teal/progress_charts_wide_1280x800.png" alt="Direction 1 Progress Wide">
+        </div>
+      </div>
+      <div class="screen-card">
+        <div class="screen-card-header">
+          <span class="dir-name">Direction 2: Nordic Calm</span>
+          <span class="dir-slug">Wide Progress</span>
+        </div>
+        <div class="screen-img-box">
+          <img src="02-nordic-calm/progress_charts_wide_1280x800.png" alt="Direction 2 Progress Wide">
+        </div>
+      </div>
+      <div class="screen-card">
+        <div class="screen-card-header">
+          <span class="dir-name">Direction 3: Kinetic Block</span>
+          <span class="dir-slug">Wide Progress</span>
+        </div>
+        <div class="screen-img-box">
+          <img src="03-kinetic-block/progress_charts_wide_1280x800.png" alt="Direction 3 Progress Wide">
+        </div>
+      </div>
+      <div class="screen-card">
+        <div class="screen-card-header">
+          <span class="dir-name">Direction 4: Soft Layered</span>
+          <span class="dir-slug">Wide Progress</span>
+        </div>
+        <div class="screen-img-box">
+          <img src="04-soft-layered/progress_charts_wide_1280x800.png" alt="Direction 4 Progress Wide">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 10. EXERCISE DETAIL -->
+  <div class="preview-block">
+    <div class="preview-header">
+      <h3>10. Exercise Detail Screen (390×844)</h3>
+      <div class="hint">Instructions, target muscle chips, personal records, start workout CTA</div>
+    </div>
+    <div class="screen-grid-4">
+      <div class="screen-card">
+        <div class="screen-card-header">
+          <span class="dir-name">Direction 1</span>
+          <span class="dir-slug">Slate Teal</span>
+        </div>
+        <div class="screen-img-box">
+          <img src="01-slate-teal/exercise_detail_390x844.png" alt="Direction 1 Exercise Detail">
+        </div>
+      </div>
+      <div class="screen-card">
+        <div class="screen-card-header">
+          <span class="dir-name">Direction 2</span>
+          <span class="dir-slug">Nordic Calm</span>
+        </div>
+        <div class="screen-img-box">
+          <img src="02-nordic-calm/exercise_detail_390x844.png" alt="Direction 2 Exercise Detail">
+        </div>
+      </div>
+      <div class="screen-card">
+        <div class="screen-card-header">
+          <span class="dir-name">Direction 3</span>
+          <span class="dir-slug">Kinetic Block</span>
+        </div>
+        <div class="screen-img-box">
+          <img src="03-kinetic-block/exercise_detail_390x844.png" alt="Direction 3 Exercise Detail">
+        </div>
+      </div>
+      <div class="screen-card">
+        <div class="screen-card-header">
+          <span class="dir-name">Direction 4</span>
+          <span class="dir-slug">Soft Layered</span>
+        </div>
+        <div class="screen-img-box">
+          <img src="04-soft-layered/exercise_detail_390x844.png" alt="Direction 4 Exercise Detail">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 11. COMPONENT SHEET (SYSTEM GALLERY) -->
+  <div class="preview-block">
+    <div class="preview-header">
+      <h3>11. Component Sheet &bull; Control Gallery (390×844)</h3>
+      <div class="hint">Buttons (all states), inputs, chips, tabs, toggles, dialog, bottom sheet, snackbar, empty/error/loading states</div>
+    </div>
+    <div class="screen-grid-4">
+      <div class="screen-card">
+        <div class="screen-card-header">
+          <span class="dir-name">Direction 1</span>
+          <span class="dir-slug">Slate Teal</span>
+        </div>
+        <div class="screen-img-box">
+          <img src="01-slate-teal/component_sheet_390x844.png" alt="Direction 1 Component Sheet">
+        </div>
+      </div>
+      <div class="screen-card">
+        <div class="screen-card-header">
+          <span class="dir-name">Direction 2</span>
+          <span class="dir-slug">Nordic Calm</span>
+        </div>
+        <div class="screen-img-box">
+          <img src="02-nordic-calm/component_sheet_390x844.png" alt="Direction 2 Component Sheet">
+        </div>
+      </div>
+      <div class="screen-card">
+        <div class="screen-card-header">
+          <span class="dir-name">Direction 3</span>
+          <span class="dir-slug">Kinetic Block</span>
+        </div>
+        <div class="screen-img-box">
+          <img src="03-kinetic-block/component_sheet_390x844.png" alt="Direction 3 Component Sheet">
+        </div>
+      </div>
+      <div class="screen-card">
+        <div class="screen-card-header">
+          <span class="dir-name">Direction 4</span>
+          <span class="dir-slug">Soft Layered</span>
+        </div>
+        <div class="screen-img-box">
+          <img src="04-soft-layered/component_sheet_390x844.png" alt="Direction 4 Component Sheet">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 12. ONBOARDING STEP 1 -->
+  <div class="preview-block">
+    <div class="preview-header">
+      <h3>12. Onboarding Step 1 (390×844)</h3>
+      <div class="hint">First-run fitness goal selection, progress indicator, primary continue action</div>
+    </div>
+    <div class="screen-grid-4">
+      <div class="screen-card">
+        <div class="screen-card-header">
+          <span class="dir-name">Direction 1</span>
+          <span class="dir-slug">Slate Teal</span>
+        </div>
+        <div class="screen-img-box">
+          <img src="01-slate-teal/onboarding_step1_390x844.png" alt="Direction 1 Onboarding">
+        </div>
+      </div>
+      <div class="screen-card">
+        <div class="screen-card-header">
+          <span class="dir-name">Direction 2</span>
+          <span class="dir-slug">Nordic Calm</span>
+        </div>
+        <div class="screen-img-box">
+          <img src="02-nordic-calm/onboarding_step1_390x844.png" alt="Direction 2 Onboarding">
+        </div>
+      </div>
+      <div class="screen-card">
+        <div class="screen-card-header">
+          <span class="dir-name">Direction 3</span>
+          <span class="dir-slug">Kinetic Block</span>
+        </div>
+        <div class="screen-img-box">
+          <img src="03-kinetic-block/onboarding_step1_390x844.png" alt="Direction 3 Onboarding">
+        </div>
+      </div>
+      <div class="screen-card">
+        <div class="screen-card-header">
+          <span class="dir-name">Direction 4</span>
+          <span class="dir-slug">Soft Layered</span>
+        </div>
+        <div class="screen-img-box">
+          <img src="04-soft-layered/onboarding_step1_390x844.png" alt="Direction 4 Onboarding">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DIRECTION DETAILS GRID -->
+  <h2 class="section-title">Direction Deep Dives <span>Pros, Cons &amp; Implementation Strategy</span></h2>
+  <div class="directions-detail-grid">
+    
+    <!-- Direction 1 -->
+    <div class="dir-detail-card dir-1">
+      <div class="dir-detail-title">
+        <h3>1. Slate Teal Refined</h3>
+        <span class="tag-pass">Lowest Risk &bull; Medium Effort</span>
+      </div>
+      <div class="dir-idea">
+        "The Slate Teal palette already chosen, in its cleanest form: calm slate surfaces, one teal action color, and no extra borders or glow."
+      </div>
+      <div class="pros-cons">
+        <div>
+          <strong style="color:#86efac;display:block;margin-bottom:6px;">Strengths:</strong>
+          <ul class="pros-list">
+            <li>Preserves existing brand identity; feels like polish rather than a disruptive rebrand.</li>
+            <li>Direct 1:1 mapping to current <code>AppThemeTokens</code> and architecture.</li>
+            <li>Optimized for dark gym environments with minimal eye fatigue.</li>
+            <li>100% WCAG AA contrast pass across both Dark and Light modes.</li>
+          </ul>
+        </div>
+        <div>
+          <strong style="color:#fca5a5;display:block;margin-bottom:6px;">Trade-offs:</strong>
+          <ul class="cons-list">
+            <li>Least visually radical of the four directions.</li>
+            <li>Single primary accent requires disciplined secondary status colors.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Direction 2 -->
+    <div class="dir-detail-card dir-2">
+      <div class="dir-detail-title">
+        <h3>2. Nordic Calm</h3>
+        <span class="tag-pass">Light-First &bull; Large Effort</span>
+      </div>
+      <div class="dir-idea">
+        "A quiet, light, editorial look: lots of white space, black ink buttons, thin rules instead of boxes, and one sage green for good news."
+      </div>
+      <div class="pros-cons">
+        <div>
+          <strong style="color:#86efac;display:block;margin-bottom:6px;">Strengths:</strong>
+          <ul class="pros-list">
+            <li>Unmatched reading calm; eliminates tracker anxiety.</li>
+            <li>Excels on desktop web browsers and under daylight training.</li>
+            <li>Pure single-font Inter typography simplifies assets.</li>
+          </ul>
+        </div>
+        <div>
+          <strong style="color:#fca5a5;display:block;margin-bottom:6px;">Trade-offs:</strong>
+          <ul class="cons-list">
+            <li>Significant departure from typical dark gym aesthetics.</li>
+            <li>Solid black ink buttons lack motivational color cueing.</li>
+            <li>24 px padding increases vertical scrolling.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Direction 3 -->
+    <div class="dir-detail-card dir-3">
+      <div class="dir-detail-title">
+        <h3>3. Kinetic Block</h3>
+        <span class="tag-pass">High-Density &bull; Large Effort</span>
+      </div>
+      <div class="dir-idea">
+        "Bold and sporty: compact bento blocks, strong cobalt and amber color blocks, big scoreboard numbers, and square, confident buttons."
+      </div>
+      <div class="pros-cons">
+        <div>
+          <strong style="color:#86efac;display:block;margin-bottom:6px;">Strengths:</strong>
+          <ul class="pros-list">
+            <li>Maximum athletic energy; scoreboard numbers readable from across the gym.</li>
+            <li>Compact density displays more telemetry above the fold.</li>
+            <li>Square 4 px tap targets leave zero click ambiguity.</li>
+          </ul>
+        </div>
+        <div>
+          <strong style="color:#fca5a5;display:block;margin-bottom:6px;">Trade-offs:</strong>
+          <ul class="cons-list">
+            <li>ALL-CAPS headings complicate localized strings.</li>
+            <li>Dual accents (cobalt + amber) require careful visual balance.</li>
+            <li>Requires rebuilding screens into multi-column bento grids.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Direction 4 -->
+    <div class="dir-detail-card dir-4">
+      <div class="dir-detail-title">
+        <h3>4. Soft Layered</h3>
+        <span class="tag-pass">Approachable &bull; Med-Large Effort</span>
+      </div>
+      <div class="dir-idea">
+        "Friendly and coaching-style: soft rounded sheets that float a little, capsule buttons, and gentle periwinkle and mint accents."
+      </div>
+      <div class="pros-cons">
+        <div>
+          <strong style="color:#86efac;display:block;margin-bottom:6px;">Strengths:</strong>
+          <ul class="pros-list">
+            <li>Encouraging and human; fits the AI Coach conversational tone.</li>
+            <li>54 px capsule buttons provide superior thumb ergonomics.</li>
+            <li>Warm, harmonious adaptation between dark and light modes.</li>
+          </ul>
+        </div>
+        <div>
+          <strong style="color:#fca5a5;display:block;margin-bottom:6px;">Trade-offs:</strong>
+          <ul class="cons-list">
+            <li>26 px corner radii consume screen perimeter on small phones.</li>
+            <li>Subtle ambient shadows carry a small compositing cost.</li>
+            <li>Pastel tones feel less aggressive to heavy powerlifters.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- CALL TO ACTION -->
+  <div class="cta-box">
+    <h2>Ready for Your Decision</h2>
+    <p>
+      Tell me which direction you want to move forward with across IronFlow. You can choose any of the 4 directions as designed, or ask for a tailored mix (for example: Direction 1's palette with Direction 3's scoreboard numbers):
+    </p>
+    <div class="choice-buttons">
+      <span class="choice-badge active">Option 1: Slate Teal Refined (Recommended)</span>
+      <span class="choice-badge">Option 2: Nordic Calm</span>
+      <span class="choice-badge">Option 3: Kinetic Block</span>
+      <span class="choice-badge">Option 4: Soft Layered</span>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
+

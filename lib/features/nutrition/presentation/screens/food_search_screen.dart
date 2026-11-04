@@ -1308,7 +1308,7 @@ class _FoodDetailAndQuantitySheetState
 
                     // Scaled Macro Telemetry Gauges (Live)
                     Text(
-                      'SCALED PROTOCOL MACROS (${_grams.toInt()}G)',
+                      'SCALED MACROS (${_grams.toInt()}G)',
                       style: TextStyle(
                         fontFamily: AppTypography.displayFontFamily,
                         fontSize: 10,
@@ -1629,7 +1629,7 @@ class _BudgetAlternativesSheetSection extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Equi-macro swaps aligned with your budget protocol with verified nutritional provenance.',
+            'Budget-friendly meal swaps with balanced macros.',
             style: TextStyle(
               fontSize: 10.5,
               color: tokens.textMuted,

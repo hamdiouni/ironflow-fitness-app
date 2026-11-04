@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_theme.dart';
 
-/// Monolithic Sci-Fi modal bottom sheet container and launcher.
+/// Direction 4: Soft & Layered modal bottom sheet container and launcher.
 class AppBottomSheet extends StatelessWidget {
   /// Creates an [AppBottomSheet].
   const AppBottomSheet({
@@ -24,7 +24,7 @@ class AppBottomSheet extends StatelessWidget {
   /// Internal padding for the content.
   final EdgeInsetsGeometry padding;
 
-  /// Static helper to display the sheet modal.
+  /// Static helper to display the sheet modal with responsive width containment.
   static Future<T?> show<T>({
     required BuildContext context,
     required Widget child,
@@ -36,10 +36,15 @@ class AppBottomSheet extends StatelessWidget {
       context: context,
       isScrollControlled: isScrollControlled,
       backgroundColor: Colors.transparent,
-      builder: (context) => AppBottomSheet(
-        title: title,
-        action: action,
-        child: child,
+      builder: (context) => Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 560),
+          child: AppBottomSheet(
+            title: title,
+            action: action,
+            child: child,
+          ),
+        ),
       ),
     );
   }
@@ -51,12 +56,19 @@ class AppBottomSheet extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: tokens.panel,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(AppSpacings.radiusXl)),
         border: Border(
           top: BorderSide(color: tokens.borderSubtle, width: 1),
           left: BorderSide(color: tokens.borderSubtle, width: 1),
           right: BorderSide(color: tokens.borderSubtle, width: 1),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: tokens.isDark ? 0.35 : 0.12),
+            blurRadius: 24,
+            offset: const Offset(0, -4),
+          ),
+        ],
       ),
       child: SafeArea(
         top: false,
@@ -64,15 +76,15 @@ class AppBottomSheet extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Drag Handle
+            // Soft capsule drag handle
             Center(
               child: Container(
                 margin: const EdgeInsets.only(top: AppSpacings.md, bottom: AppSpacings.sm),
-                width: 40,
+                width: 36,
                 height: 4,
                 decoration: BoxDecoration(
                   color: tokens.borderSubtle,
-                  borderRadius: BorderRadius.circular(2),
+                  borderRadius: BorderRadius.circular(AppSpacings.radiusPill),
                 ),
               ),
             ),
@@ -98,7 +110,8 @@ class AppBottomSheet extends StatelessWidget {
                         ),
                       )
                     else
-                    ?action,
+                      const SizedBox.shrink(),
+                    if (action != null) action!,
                   ],
                 ),
               ),

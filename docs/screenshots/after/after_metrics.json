@@ -1,0 +1,74 @@
+{
+  "home_screen": {
+    "initial_mount_ms": 2602.5,
+    "avg_frame_build_ms": 4.83,
+    "p90_frame_build_ms": 6.98,
+    "worst_frame_build_ms": 84.54,
+    "raster_snapshot_ms": 70.58,
+    "missed_frames_16ms": 1
+  },
+  "train_workout_screen": {
+    "initial_mount_ms": 793.94,
+    "avg_frame_build_ms": 16.46,
+    "p90_frame_build_ms": 20.5,
+    "worst_frame_build_ms": 26.8,
+    "raster_snapshot_ms": 83.25,
+    "missed_frames_16ms": 8
+  },
+  "active_workout_screen": {
+    "initial_mount_ms": 797.47,
+    "avg_frame_build_ms": 10.72,
+    "p90_frame_build_ms": 12.36,
+    "worst_frame_build_ms": 39.93,
+    "raster_snapshot_ms": 26.11,
+    "missed_frames_16ms": 1
+  },
+  "workout_summary_screen": {
+    "initial_mount_ms": 471.55,
+    "avg_frame_build_ms": 1.05,
+    "p90_frame_build_ms": 0.36,
+    "worst_frame_build_ms": 16.28,
+    "raster_snapshot_ms": 46.26,
+    "missed_frames_16ms": 0
+  },
+  "nutrition_fuel_screen": {
+    "initial_mount_ms": 466.66,
+    "avg_frame_build_ms": 1.34,
+    "p90_frame_build_ms": 0.61,
+    "worst_frame_build_ms": 21.17,
+    "raster_snapshot_ms": 25.68,
+    "missed_frames_16ms": 1
+  },
+  "food_search_screen": {
+    "initial_mount_ms": 556.11,
+    "avg_frame_build_ms": 1.65,
+    "p90_frame_build_ms": 0.55,
+    "worst_frame_build_ms": 27.27,
+    "raster_snapshot_ms": 42.9,
+    "missed_frames_16ms": 1
+  },
+  "progress_screen": {
+    "initial_mount_ms": 599.52,
+    "avg_frame_build_ms": 8.4,
+    "p90_frame_build_ms": 15.12,
+    "worst_frame_build_ms": 15.77,
+    "raster_snapshot_ms": 31.54,
+    "missed_frames_16ms": 0
+  },
+  "exercise_catalog_screen": {
+    "initial_mount_ms": 397.16,
+    "avg_frame_build_ms": 1.36,
+    "p90_frame_build_ms": 0.59,
+    "worst_frame_build_ms": 21.31,
+    "raster_snapshot_ms": 14.39,
+    "missed_frames_16ms": 1
+  },
+  "ai_chat_screen": {
+    "initial_mount_ms": 248.63,
+    "avg_frame_build_ms": 0.99,
+    "p90_frame_build_ms": 0.93,
+    "worst_frame_build_ms": 13.23,
+    "raster_snapshot_ms": 20.89,
+    "missed_frames_16ms": 0
+  }
+}

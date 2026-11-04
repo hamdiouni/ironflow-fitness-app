@@ -1,0 +1,74 @@
+{
+  "home_screen": {
+    "initial_mount_ms": 2630.92,
+    "avg_frame_build_ms": 5.55,
+    "p90_frame_build_ms": 9.16,
+    "worst_frame_build_ms": 96.71,
+    "raster_snapshot_ms": 84.85,
+    "missed_frames_16ms": 1
+  },
+  "train_workout_screen": {
+    "initial_mount_ms": 981.89,
+    "avg_frame_build_ms": 18.43,
+    "p90_frame_build_ms": 23.38,
+    "worst_frame_build_ms": 29.94,
+    "raster_snapshot_ms": 167.82,
+    "missed_frames_16ms": 13
+  },
+  "active_workout_screen": {
+    "initial_mount_ms": 1063.58,
+    "avg_frame_build_ms": 12.15,
+    "p90_frame_build_ms": 16.11,
+    "worst_frame_build_ms": 51.24,
+    "raster_snapshot_ms": 36.66,
+    "missed_frames_16ms": 1
+  },
+  "workout_summary_screen": {
+    "initial_mount_ms": 448.57,
+    "avg_frame_build_ms": 2.66,
+    "p90_frame_build_ms": 1.37,
+    "worst_frame_build_ms": 40.73,
+    "raster_snapshot_ms": 247.36,
+    "missed_frames_16ms": 1
+  },
+  "nutrition_fuel_screen": {
+    "initial_mount_ms": 619.23,
+    "avg_frame_build_ms": 1.33,
+    "p90_frame_build_ms": 0.38,
+    "worst_frame_build_ms": 21.94,
+    "raster_snapshot_ms": 39.6,
+    "missed_frames_16ms": 1
+  },
+  "food_search_screen": {
+    "initial_mount_ms": 676.47,
+    "avg_frame_build_ms": 1.65,
+    "p90_frame_build_ms": 0.6,
+    "worst_frame_build_ms": 27.75,
+    "raster_snapshot_ms": 56.92,
+    "missed_frames_16ms": 1
+  },
+  "progress_screen": {
+    "initial_mount_ms": 617.16,
+    "avg_frame_build_ms": 9.3,
+    "p90_frame_build_ms": 13.6,
+    "worst_frame_build_ms": 23.62,
+    "raster_snapshot_ms": 35.69,
+    "missed_frames_16ms": 1
+  },
+  "exercise_catalog_screen": {
+    "initial_mount_ms": 423.14,
+    "avg_frame_build_ms": 1.43,
+    "p90_frame_build_ms": 0.94,
+    "worst_frame_build_ms": 22.91,
+    "raster_snapshot_ms": 40.38,
+    "missed_frames_16ms": 1
+  },
+  "ai_chat_screen": {
+    "initial_mount_ms": 286.75,
+    "avg_frame_build_ms": 0.75,
+    "p90_frame_build_ms": 0.34,
+    "worst_frame_build_ms": 11.45,
+    "raster_snapshot_ms": 27.13,
+    "missed_frames_16ms": 0
+  }
+}

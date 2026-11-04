@@ -62,7 +62,7 @@ class NutritionScreen extends ConsumerWidget {
               ),
             ),
             Text(
-              'PROTOCOL & TARGET TELEMETRY',
+              'DAILY FUEL & MACROS',
               style: TextStyle(
                 fontFamily: AppTypography.displayFontFamily,
                 fontSize: 9,
@@ -243,7 +243,7 @@ class _NutritionErrorState extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'TELEMETRY OFFLINE',
+              'NUTRITION OFFLINE',
               style: TextStyle(
                 fontFamily: AppTypography.displayFontFamily,
                 color: tokens.textPrimary,
@@ -260,7 +260,7 @@ class _NutritionErrorState extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             AppButton(
-              label: 'RETRY CONNECTION',
+              label: 'RETRY',
               icon: const Icon(Icons.refresh_rounded, size: 18),
               onPressed: onRetry,
             ),
@@ -1267,7 +1267,7 @@ class _GenerateDietPlanButtonState
   @override
   Widget build(BuildContext context) {
     return AppButton(
-      label: _isLoading ? 'CALCULATING PROTOCOL...' : 'GENERATE DIET PLAN',
+      label: _isLoading ? 'CALCULATING DIET PLAN...' : 'GENERATE DIET PLAN',
       icon: _isLoading ? null : const Icon(Icons.auto_awesome_rounded, size: 18),
       isLoading: _isLoading,
       isFullWidth: true,

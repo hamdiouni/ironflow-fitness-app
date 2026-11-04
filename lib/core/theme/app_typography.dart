@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'app_colors.dart';
 
-/// Monolithic Sci-Fi typography styles.
+/// Direction 4: Soft & Layered typography styles.
 ///
 /// Combines [SpaceGrotesk] for geometric technical displays, headers, and tabular
 /// telemetry metrics, with [Inter] for high-readability body copy and input labels.
@@ -14,9 +15,9 @@ class AppTypography {
 
   /// Generates a complete Material 3 TextTheme adapted to [isDark].
   static TextTheme createTextTheme({required bool isDark}) {
-    final textPrimary = isDark ? const Color(0xFFFFFFFF) : const Color(0xFF0E1015);
-    final textSecondary = isDark ? const Color(0xFF8E95A5) : const Color(0xFF555C6E);
-    final textMuted = isDark ? const Color(0xFF525866) : const Color(0xFF8C93A4);
+    final textPrimary = isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight;
+    final textSecondary = isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight;
+    final textMuted = isDark ? AppColors.textMutedDark : AppColors.textMutedLight;
 
     return TextTheme(
       // ── Displays (High-Impact Hero Text) ───────────────────────────────────

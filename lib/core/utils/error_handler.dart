@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../constants/app_theme.dart';
 import '../error/exceptions.dart';
 import '../../features/workout/domain/exceptions/workout_exceptions.dart';
 import '../../features/nutrition/domain/exceptions/diet_plan_exceptions.dart';
@@ -6,8 +7,7 @@ import '../../features/nutrition/domain/exceptions/diet_plan_exceptions.dart';
 /// Utility class for handling errors and displaying user-friendly messages.
 ///
 /// Maps domain and data exceptions to human-readable strings and presents
-/// them in an [AlertDialog]. Unexpected (non-domain) errors are also logged
-/// to the console via [debugPrint] for diagnostics.
+/// them in a styled dialog.
 class ErrorHandler {
   /// Handles [error] by mapping it to a user-friendly message and showing
   /// an error dialog in the given [context].
@@ -34,7 +34,10 @@ class ErrorHandler {
   /// Display a SnackBar with the given message
   static void showSnackBar(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+      ),
     );
   }
 
@@ -72,15 +75,42 @@ class ErrorHandler {
 
   /// Display an error dialog with the given message
   static void _showErrorDialog(BuildContext context, String message) {
+    final tokens = context.tokens;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Error'),
-        content: Text(message),
+        backgroundColor: tokens.panel,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(tokens.radiusLg),
+          side: BorderSide(color: tokens.borderSubtle, width: 1),
+        ),
+        title: Text(
+          'Notice',
+          style: TextStyle(
+            fontFamily: AppTypography.displayFontFamily,
+            color: tokens.textPrimary,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        content: Text(
+          message,
+          style: TextStyle(
+            fontFamily: AppTypography.bodyFontFamily,
+            color: tokens.textSecondary,
+            fontSize: 14,
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
+            child: Text(
+              'OK',
+              style: TextStyle(
+                fontFamily: AppTypography.displayFontFamily,
+                color: tokens.kineticAccent,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ),
         ],
       ),
