@@ -681,14 +681,13 @@ class _RestTimerSection extends ConsumerWidget {
         margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
         decoration: BoxDecoration(
-          color: tokens.panel,
+          color: tokens.card,
           borderRadius: BorderRadius.circular(tokens.radiusLg),
-          border: Border.all(color: tokens.kineticAccent.withValues(alpha: 0.35), width: 1),
           boxShadow: [
             BoxShadow(
-              color: tokens.kineticAccent.withValues(alpha: 0.1),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
+              color: tokens.kineticAccent.withValues(alpha: 0.12),
+              blurRadius: 12,
+              offset: const Offset(0, 3),
             ),
           ],
         ),
@@ -1044,12 +1043,11 @@ class _ExerciseCardState extends ConsumerState<_ExerciseCard> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 5),
                         decoration: BoxDecoration(
-                          color: isSelected ? color.withValues(alpha: 0.18) : tokens.panel,
+                          color: isSelected ? color.withValues(alpha: 0.18) : tokens.elevated,
                           borderRadius: BorderRadius.circular(tokens.radiusSm),
-                          border: Border.all(
-                            color: isSelected ? color : tokens.borderSubtle,
-                            width: isSelected ? 1.5 : 1,
-                          ),
+                          border: isSelected
+                              ? Border.all(color: color, width: 1.5)
+                              : null,
                         ),
                         child: Center(
                           child: Text(
@@ -1330,11 +1328,11 @@ class _NumberField extends StatelessWidget {
           letterSpacing: 0.5,
         ),
         filled: true,
-        fillColor: tokens.panel,
+        fillColor: tokens.elevated,
         contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(tokens.radiusSm),
-          borderSide: BorderSide(color: tokens.borderSubtle, width: 1),
+          borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(tokens.radiusSm),
