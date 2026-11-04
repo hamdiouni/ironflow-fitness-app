@@ -178,58 +178,172 @@ class _HomeHeader extends StatelessWidget {
         AppSpacings.lg,
         AppSpacings.xs,
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const IronFlowLogo(size: 40),
-          const SizedBox(width: AppSpacings.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  greeting,
-                  style: TextStyle(
-                    fontFamily: AppTypography.bodyFontFamily,
-                    color: tokens.textSecondary,
-                    fontSize: 13,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'IronFlow',
-                  style: TextStyle(
-                    fontFamily: AppTypography.displayFontFamily,
-                    color: tokens.textPrimary,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -0.3,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const AiEntryButton(contextScreen: 'today'),
-          const SizedBox(width: AppSpacings.xs),
-          Semantics(
-            button: true,
-            label: 'Open User Profile and Settings',
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-              child: InkWell(
-                onTap: () => _openUserHub(context, tokens),
-                customBorder: const CircleBorder(),
-                child: Center(
-                  child: Container(
-                    width: 38,
-                    height: 38,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: tokens.card,
-                      border: Border.all(color: tokens.borderSubtle, width: 1),
+          Row(
+            children: [
+              const IronFlowLogo(size: 38),
+              const SizedBox(width: AppSpacings.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'TODAY',
+                      style: TextStyle(
+                        fontFamily: AppTypography.displayFontFamily,
+                        color: tokens.kineticAccent,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.5,
+                      ),
                     ),
-                    child: Icon(Icons.person_outline, color: tokens.textPrimary, size: 20),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Ready to train',
+                      style: TextStyle(
+                        fontFamily: AppTypography.displayFontFamily,
+                        color: tokens.textPrimary,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: tokens.warning.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(tokens.radiusPill),
+                  border: Border.all(color: tokens.warning.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.local_fire_department_rounded, size: 15, color: tokens.warning),
+                    const SizedBox(width: 4),
+                    Text(
+                      '7 d',
+                      style: TextStyle(
+                        fontFamily: AppTypography.displayFontFamily,
+                        color: tokens.textPrimary,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSpacings.xs),
+              const AiEntryButton(contextScreen: 'today'),
+              const SizedBox(width: AppSpacings.xs),
+              Semantics(
+                button: true,
+                label: 'Open User Profile and Settings',
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                  child: InkWell(
+                    onTap: () => _openUserHub(context, tokens),
+                    customBorder: const CircleBorder(),
+                    child: Center(
+                      child: Container(
+                        width: 38,
+                        height: 38,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: tokens.card,
+                          border: Border.all(color: tokens.borderSubtle, width: 1),
+                        ),
+                        child: Icon(Icons.person_outline, color: tokens.textPrimary, size: 20),
+                      ),
+                    ),
                   ),
                 ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          InkWell(
+            onTap: () => context.push(AppRoutes.designPreview),
+            borderRadius: BorderRadius.circular(tokens.radiusLg),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    tokens.kineticAccent.withValues(alpha: 0.18),
+                    tokens.panel,
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(tokens.radiusLg),
+                border: Border.all(color: tokens.kineticAccent.withValues(alpha: 0.35), width: 1.2),
+                boxShadow: [
+                  BoxShadow(
+                    color: tokens.kineticAccent.withValues(alpha: 0.1),
+                    blurRadius: 12,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: tokens.kineticAccent.withValues(alpha: 0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(Icons.auto_awesome, color: tokens.kineticAccent, size: 18),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Direction 4 (Soft & Layered)',
+                          style: TextStyle(
+                            fontFamily: AppTypography.displayFontFamily,
+                            color: tokens.textPrimary,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 1),
+                        Text(
+                          'Tap to explore all 11 interactive preview screens',
+                          style: TextStyle(
+                            fontFamily: AppTypography.bodyFontFamily,
+                            color: tokens.textSecondary,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: tokens.kineticAccent,
+                      borderRadius: BorderRadius.circular(tokens.radiusPill),
+                    ),
+                    child: const Text(
+                      'Open Lab',
+                      style: TextStyle(
+                        color: Color(0xFF1E1B4B),
+                        fontWeight: FontWeight.w800,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -419,7 +533,7 @@ class _WeeklyActivitySection extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'WEEKLY ACTIVITY',
+                    'CONSISTENCY',
                     style: TextStyle(
                       fontFamily: AppTypography.displayFontFamily,
                       color: tokens.textSecondary,
@@ -917,7 +1031,7 @@ class _DailyFuelSummaryBar extends ConsumerWidget {
                           Icon(Icons.restaurant_menu_rounded, color: tokens.warning, size: 16),
                           const SizedBox(width: 6),
                           Text(
-                            'DAILY NUTRITION',
+                            'DAILY BALANCE',
                             style: TextStyle(
                               fontFamily: AppTypography.displayFontFamily,
                               fontSize: 10,
@@ -931,7 +1045,7 @@ class _DailyFuelSummaryBar extends ConsumerWidget {
                       Row(
                         children: [
                           Text(
-                            'OPEN FUEL DOCK',
+                            'VIEW FUEL',
                             style: TextStyle(
                               fontFamily: AppTypography.displayFontFamily,
                               fontSize: 9,

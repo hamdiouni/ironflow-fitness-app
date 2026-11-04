@@ -18,17 +18,40 @@ void main() {
   runApp(const DesignLabApp());
 }
 
-class DesignLabApp extends StatefulWidget {
+class DesignLabApp extends StatelessWidget {
   const DesignLabApp({super.key});
 
   @override
-  State<DesignLabApp> createState() => _DesignLabAppState();
+  Widget build(BuildContext context) {
+    return const MaterialApp(
+      title: 'IronFlow Design Lab',
+      debugShowCheckedModeBanner: false,
+      home: DesignLabScreen(initialDirection: DesignDirection.softLayered),
+    );
+  }
 }
 
-class _DesignLabAppState extends State<DesignLabApp> {
-  DesignDirection _direction = DesignDirection.slateTeal;
+class DesignLabScreen extends StatefulWidget {
+  final DesignDirection initialDirection;
+  const DesignLabScreen({
+    super.key,
+    this.initialDirection = DesignDirection.softLayered,
+  });
+
+  @override
+  State<DesignLabScreen> createState() => _DesignLabScreenState();
+}
+
+class _DesignLabScreenState extends State<DesignLabScreen> {
+  late DesignDirection _direction;
   bool _isDark = true;
   int _activeScreenIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _direction = widget.initialDirection;
+  }
 
   final List<String> _screenTitles = [
     'Today (Home)',
@@ -48,11 +71,9 @@ class _DesignLabAppState extends State<DesignLabApp> {
   Widget build(BuildContext context) {
     final tokens = DesignTokens.fromDirection(_direction, isDark: _isDark);
 
-    return MaterialApp(
-      title: 'IronFlow Design Lab',
-      debugShowCheckedModeBanner: false,
-      theme: tokens.toThemeData(),
-      home: Scaffold(
+    return Theme(
+      data: tokens.toThemeData(),
+      child: Scaffold(
         backgroundColor: tokens.canvas,
         appBar: DesignLabAppBar(
           tokens: tokens,
@@ -107,7 +128,9 @@ class _DesignLabAppState extends State<DesignLabApp> {
           onSelectExercise: (_) => setState(() => _activeScreenIndex = 7),
         );
       case 7:
-        return PreviewExerciseDetailScreen(tokens: tokens);
+        return PreviewExerciseDetailScreen(
+          tokens: tokens,
+        );
       case 8:
         return PreviewProgressScreen(tokens: tokens);
       case 9:
@@ -115,36 +138,44 @@ class _DesignLabAppState extends State<DesignLabApp> {
       case 10:
         return PreviewAuthScreen(tokens: tokens);
       default:
-        return PreviewTodayScreen(tokens: tokens);
+        return Center(child: Text('Screen index $_activeScreenIndex'));
     }
   }
 
   Widget _buildBottomNav(DesignTokens tokens) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
         color: tokens.panel,
-        border: Border(top: BorderSide(color: tokens.borderSubtle)),
+        border: Border(top: BorderSide(color: tokens.borderSubtle, width: 1)),
       ),
       child: SafeArea(
-        top: false,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _buildNavItem(tokens, 0, Icons.today, 'Today'),
-            _buildNavItem(tokens, 1, Icons.fitness_center, 'Active'),
-            _buildNavItem(tokens, 3, Icons.restaurant, 'Fuel'),
-            _buildNavItem(tokens, 6, Icons.format_list_bulleted, 'Library'),
-            _buildNavItem(tokens, 8, Icons.bar_chart, 'Progress'),
-            _buildNavItem(tokens, 9, Icons.widgets_outlined, 'Tokens'),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildNavItem(0, Icons.home_outlined, Icons.home, 'Today', tokens),
+              _buildNavItem(1, Icons.fitness_center_outlined, Icons.fitness_center, 'Workout', tokens),
+              _buildNavItem(3, Icons.restaurant_outlined, Icons.restaurant, 'Fuel', tokens),
+              _buildNavItem(8, Icons.bar_chart_outlined, Icons.bar_chart, 'Progress', tokens),
+              _buildNavItem(9, Icons.widgets_outlined, Icons.widgets, 'UI Kit', tokens),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildNavItem(DesignTokens tokens, int index, IconData icon, String label) {
+  Widget _buildNavItem(
+    int index,
+    IconData outlineIcon,
+    IconData filledIcon,
+    String label,
+    DesignTokens tokens,
+  ) {
     final isSelected = _activeScreenIndex == index;
+    final icon = isSelected ? filledIcon : outlineIcon;
+
     return InkWell(
       onTap: () => setState(() => _activeScreenIndex = index),
       borderRadius: BorderRadius.circular(tokens.chipRadius),

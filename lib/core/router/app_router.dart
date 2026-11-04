@@ -40,6 +40,7 @@ import '../../features/settings/presentation/screens/privacy_settings_screen.dar
 import '../../features/workout/domain/entities/exercise.dart';
 import '../../features/workout/domain/entities/exercise_definition.dart';
 import '../../features/tools/presentation/screens/tools_hub_screen.dart';
+import '../../dev/design_lab/main_design_lab.dart';
 
 // ---------------------------------------------------------------------------
 // Route path constants
@@ -74,6 +75,7 @@ class AppRoutes {
   static const String aiChat = '/ai-chat';
   static const String aiTest = '/ai-test';
   static const String designGallery = '/design-gallery';
+  static const String designPreview = '/design-preview';
   static const String tools = '/tools';
 
   /// Validates a `?from=` return path so only internal non-auth routes are used.
@@ -396,14 +398,18 @@ final routerProvider = Provider<GoRouter>((ref) {
           );
         },
       ),
+      GoRoute(
+        path: AppRoutes.designPreview,
+        builder: (context, state) => const DesignLabScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.designGallery,
+        builder: (context, state) => const DesignGalleryScreen(),
+      ),
       if (kDebugMode) ...[
         GoRoute(
           path: AppRoutes.aiTest,
           builder: (context, state) => const AITestScreen(),
-        ),
-        GoRoute(
-          path: AppRoutes.designGallery,
-          builder: (context, state) => const DesignGalleryScreen(),
         ),
       ],
     ],

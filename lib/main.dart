@@ -304,6 +304,45 @@ class MainScaffold extends StatelessWidget {
                         label: Text('PROGRESS'),
                       ),
                     ],
+                    trailing: Expanded(
+                      child: Align(
+                        alignment: Alignment.bottomCenter,
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: 24),
+                          child: Tooltip(
+                            message: 'Direction 4 Design Lab',
+                            child: InkWell(
+                              onTap: () => context.push(AppRoutes.designPreview),
+                              borderRadius: BorderRadius.circular(tokens.radiusPill),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: tokens.kineticAccent.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(tokens.radiusPill),
+                                  border: Border.all(color: tokens.kineticAccent.withValues(alpha: 0.3)),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.auto_awesome, color: tokens.kineticAccent, size: 16),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'LAB',
+                                      style: TextStyle(
+                                        fontFamily: AppTypography.displayFontFamily,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w800,
+                                        color: tokens.kineticAccent,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                   const VerticalDivider(width: 1, thickness: 1),
                   Expanded(
