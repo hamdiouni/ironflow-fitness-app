@@ -10,7 +10,7 @@ import '../../domain/entities/exercise_definition.dart';
 import '../providers/exercise_providers.dart';
 import 'exercise_detail_screen.dart';
 
-/// Exercise catalog with muscle-group tabs, search, and Stripe cards.
+/// Exercise catalog with muscle-group tabs, search, and soft layered cards.
 class ExerciseCatalogScreen extends ConsumerStatefulWidget {
   const ExerciseCatalogScreen({super.key, this.onSelect});
   final void Function(ExerciseDefinition)? onSelect;
@@ -117,12 +117,12 @@ class _ExerciseCatalogScreenState extends ConsumerState<ExerciseCatalogScreen>
                           )
                         : null,
                     filled: true,
-                    fillColor: tokens.panel,
+                    fillColor: tokens.elevated,
                     contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
                     isDense: true,
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(tokens.radiusPill),
-                      borderSide: BorderSide(color: tokens.borderSubtle, width: 1),
+                      borderSide: BorderSide.none,
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(tokens.radiusPill),
@@ -303,12 +303,11 @@ class _EquipChip extends StatelessWidget {
           decoration: BoxDecoration(
             color: selected
                 ? tokens.kineticAccent.withValues(alpha: 0.15)
-                : tokens.panel,
+                : tokens.elevated,
             borderRadius: BorderRadius.circular(tokens.radiusPill),
-            border: Border.all(
-              color: selected ? tokens.kineticAccent : tokens.borderSubtle,
-              width: selected ? 1.5 : 1,
-            ),
+            border: selected
+                ? Border.all(color: tokens.kineticAccent, width: 1.5)
+                : null,
             boxShadow: selected
                 ? [
                     BoxShadow(
