@@ -80,7 +80,7 @@ class GeminiAIService {
   Future<String?> _getAuthToken() async {
     if (_authTokenProvider != null) {
       try {
-        return await _authTokenProvider!();
+        return await _authTokenProvider();
       } catch (_) {}
     }
     try {

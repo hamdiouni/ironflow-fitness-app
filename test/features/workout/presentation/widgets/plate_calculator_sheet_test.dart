@@ -69,6 +69,13 @@ void main() {
     });
 
     testWidgets('applying weight triggers callback with correct weight', (tester) async {
+      tester.view.physicalSize = const Size(800, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
       double? appliedWeight;
       await tester.pumpWidget(buildTestableWidget(
         initialWeight: 100.0,
@@ -78,6 +85,7 @@ void main() {
 
       final applyButton = find.text('APPLY WEIGHT');
       expect(applyButton, findsOneWidget);
+      await tester.ensureVisible(applyButton);
       await tester.tap(applyButton);
       await tester.pumpAndSettle();
 
