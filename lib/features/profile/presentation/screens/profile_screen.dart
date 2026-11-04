@@ -696,7 +696,7 @@ class _GoalCard extends StatelessWidget {
                 height: 6,
                 decoration: BoxDecoration(
                   color: tokens.card,
-                  borderRadius: BorderRadius.circular(3),
+                  borderRadius: BorderRadius.circular(tokens.radiusPill),
                 ),
                 child: FractionallySizedBox(
                   alignment: Alignment.centerLeft,
@@ -704,7 +704,7 @@ class _GoalCard extends StatelessWidget {
                   child: Container(
                     decoration: BoxDecoration(
                       color: tokens.kineticAccent,
-                      borderRadius: BorderRadius.circular(3),
+                      borderRadius: BorderRadius.circular(tokens.radiusPill),
                     ),
                   ),
                 ),
@@ -962,7 +962,7 @@ class _MacroBar extends StatelessWidget {
             height: 6,
             decoration: BoxDecoration(
               color: tokens.card,
-              borderRadius: BorderRadius.circular(3),
+              borderRadius: BorderRadius.circular(tokens.radiusPill),
             ),
             child: FractionallySizedBox(
               alignment: Alignment.centerLeft,
@@ -970,7 +970,7 @@ class _MacroBar extends StatelessWidget {
               child: Container(
                 decoration: BoxDecoration(
                   color: color,
-                  borderRadius: BorderRadius.circular(3),
+                  borderRadius: BorderRadius.circular(tokens.radiusPill),
                   boxShadow: [
                     BoxShadow(
                       color: color.withValues(alpha: 0.4),

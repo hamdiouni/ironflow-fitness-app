@@ -187,7 +187,7 @@ class _AIChatScreenState extends ConsumerState<AIChatScreen> {
               padding: const EdgeInsets.all(7),
               decoration: BoxDecoration(
                 color: tokens.card,
-                borderRadius: BorderRadius.circular(6),
+                borderRadius: BorderRadius.circular(tokens.radiusPill),
                 border: Border.all(color: tokens.kineticAccent.withValues(alpha: 0.5)),
                 boxShadow: [
                   BoxShadow(
@@ -288,7 +288,7 @@ class _AIChatScreenState extends ConsumerState<AIChatScreen> {
                       },
                       style: FilledButton.styleFrom(
                         backgroundColor: Colors.redAccent.shade700,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(tokens.radiusPill)),
                       ),
                       child: const Text('Clear'),
                     ),
@@ -446,12 +446,12 @@ class _AIChatScreenState extends ConsumerState<AIChatScreen> {
                         _selectedScreenCategory = cat.id;
                       });
                     },
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(tokens.radiusPill),
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
                         color: isSelected ? tokens.kineticAccent.withValues(alpha: 0.2) : tokens.card,
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(tokens.radiusPill),
                         border: Border.all(
                           color: isSelected ? tokens.kineticAccent : tokens.borderSubtle,
                           width: 1,
@@ -497,12 +497,12 @@ class _AIChatScreenState extends ConsumerState<AIChatScreen> {
                       _messageController.text = prompt;
                       _sendMessage(prompt);
                     },
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius: BorderRadius.circular(tokens.radiusPill),
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
                         color: tokens.card,
-                        borderRadius: BorderRadius.circular(6),
+                        borderRadius: BorderRadius.circular(tokens.radiusPill),
                         border: Border.all(color: tokens.borderSubtle),
                       ),
                       child: Row(
@@ -578,7 +578,7 @@ class _AIChatScreenState extends ConsumerState<AIChatScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               minimumSize: const Size(0, 34),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(6),
+                borderRadius: BorderRadius.circular(tokens.radiusPill),
               ),
               textStyle: const TextStyle(
                 fontWeight: FontWeight.bold,
@@ -728,7 +728,7 @@ class _AIChatScreenState extends ConsumerState<AIChatScreen> {
               child: Container(
                 decoration: BoxDecoration(
                   color: tokens.card,
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(tokens.radiusPill),
                   border: Border.all(color: tokens.borderSubtle),
                 ),
                 child: TextField(
@@ -769,7 +769,7 @@ class _AIChatScreenState extends ConsumerState<AIChatScreen> {
                 color: chatState.isLoading
                     ? tokens.borderSubtle
                     : tokens.kineticAccent,
-                borderRadius: BorderRadius.circular(6),
+                borderRadius: BorderRadius.circular(tokens.radiusPill),
                 boxShadow: chatState.isLoading
                     ? null
                     : [
@@ -815,12 +815,12 @@ class _QuickActionButton extends StatelessWidget {
 
     return InkWell(
       onTap: onPressed,
-      borderRadius: BorderRadius.circular(6),
+      borderRadius: BorderRadius.circular(tokens.radiusPill),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
         decoration: BoxDecoration(
           color: tokens.card,
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(tokens.radiusPill),
           border: Border.all(color: tokens.borderSubtle),
         ),
         child: Row(
@@ -863,12 +863,12 @@ class _SuggestionChip extends StatelessWidget {
 
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(6),
+      borderRadius: BorderRadius.circular(tokens.radiusPill),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
           color: tokens.panel,
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(tokens.radiusPill),
           border: Border.all(color: tokens.borderSubtle),
         ),
         child: Row(
@@ -925,7 +925,7 @@ class _ChatBubble extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
                 color: isUser ? tokens.card : tokens.panel,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(tokens.radiusLg),
                 border: Border.all(
                   color: isUser
                       ? tokens.kineticAccent.withValues(alpha: 0.3)
@@ -1104,7 +1104,7 @@ class _AIResponseContent extends ConsumerWidget {
             ),
             codeblockDecoration: BoxDecoration(
               color: tokens.canvas,
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: BorderRadius.circular(tokens.radiusPill),
               border: Border.all(color: tokens.borderSubtle),
             ),
             codeblockPadding: const EdgeInsets.all(10),
@@ -1796,6 +1796,7 @@ class _PersonaCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final tokens = AppThemeTokens.of(context);
     
     // Calculate display values
     final displaySpeed = '${(persona.recommendedSpeed * 2).toStringAsFixed(1)}x';
@@ -1803,7 +1804,7 @@ class _PersonaCard extends StatelessWidget {
 
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(tokens.radiusPill),
       child: Container(
         width: 140,
         padding: const EdgeInsets.all(12),
@@ -1819,7 +1820,7 @@ class _PersonaCard extends StatelessWidget {
                 )
               : null,
           color: isSelected ? null : theme.colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(tokens.radiusPill),
           border: Border.all(
             color: isSelected
                 ? theme.colorScheme.primary
@@ -1864,7 +1865,7 @@ class _PersonaCard extends StatelessWidget {
                     color: isSelected
                         ? Colors.white.withOpacity(0.3)
                         : theme.colorScheme.secondary.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius: BorderRadius.circular(tokens.radiusPill),
                   ),
                   child: Text(
                     displaySpeed,

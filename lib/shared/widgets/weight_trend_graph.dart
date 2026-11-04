@@ -390,7 +390,7 @@ class WeightTrendGraph extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: tokens.card,
-        borderRadius: BorderRadius.circular(tokens.radiusSm),
+        borderRadius: BorderRadius.circular(tokens.radiusPill),
         border: Border.all(color: tokens.borderSubtle, width: 1),
       ),
       child: Row(
@@ -446,7 +446,7 @@ class _LegendItem extends StatelessWidget {
             height: isDashed ? 1.5 : 2.5,
             decoration: BoxDecoration(
               color: color,
-              borderRadius: BorderRadius.circular(1),
+              borderRadius: BorderRadius.circular(tokens.radiusPill),
             ),
           )
         else

@@ -246,7 +246,7 @@ class _StatsCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: tokens.panel,
-        borderRadius: BorderRadius.circular(tokens.radiusMd),
+        borderRadius: BorderRadius.circular(tokens.radiusLg),
         border: Border.all(color: tokens.borderSubtle, width: 1),
       ),
       padding: const EdgeInsets.all(AppTheme.spacingMedium),
@@ -256,7 +256,7 @@ class _StatsCard extends StatelessWidget {
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(tokens.radiusSm),
+              borderRadius: BorderRadius.circular(tokens.radiusPill),
               border: Border.all(
                 color: color.withValues(alpha: 0.35),
                 width: 1,
@@ -313,7 +313,7 @@ class _WorkoutFrequencyChart extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: tokens.panel,
-        borderRadius: BorderRadius.circular(tokens.radiusMd),
+        borderRadius: BorderRadius.circular(tokens.radiusLg),
         border: Border.all(color: tokens.borderSubtle, width: 1),
       ),
       padding: const EdgeInsets.all(AppTheme.spacingMedium),
@@ -463,7 +463,7 @@ class _VolumeProgressionChart extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: tokens.panel,
-        borderRadius: BorderRadius.circular(tokens.radiusMd),
+        borderRadius: BorderRadius.circular(tokens.radiusLg),
         border: Border.all(color: tokens.borderSubtle, width: 1),
       ),
       padding: const EdgeInsets.all(AppTheme.spacingMedium),
@@ -598,7 +598,7 @@ class _MuscleGroupChart extends StatelessWidget {
       return Container(
         decoration: BoxDecoration(
           color: tokens.panel,
-          borderRadius: BorderRadius.circular(tokens.radiusMd),
+          borderRadius: BorderRadius.circular(tokens.radiusLg),
           border: Border.all(color: tokens.borderSubtle, width: 1),
         ),
         padding: const EdgeInsets.all(AppTheme.spacingLarge),
@@ -614,7 +614,7 @@ class _MuscleGroupChart extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: tokens.panel,
-        borderRadius: BorderRadius.circular(tokens.radiusMd),
+        borderRadius: BorderRadius.circular(tokens.radiusLg),
         border: Border.all(color: tokens.borderSubtle, width: 1),
       ),
       padding: const EdgeInsets.all(AppTheme.spacingMedium),
@@ -659,7 +659,7 @@ class _MuscleGroupChart extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: color.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                  borderRadius: BorderRadius.circular(tokens.radiusPill),
                   border: Border.all(color: color.withValues(alpha: 0.4)),
                 ),
                 child: Row(

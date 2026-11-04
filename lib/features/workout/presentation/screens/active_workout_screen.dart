@@ -166,7 +166,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
           Center(
             child: InkWell(
               key: const Key('weight_unit_toggle'),
-              borderRadius: BorderRadius.circular(tokens.radiusSm),
+              borderRadius: BorderRadius.circular(tokens.radiusPill),
               onTap: () {
                 AppHaptics.shared.selectionChanged();
                 setState(() {
@@ -179,7 +179,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                   color: tokens.panel,
-                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                  borderRadius: BorderRadius.circular(tokens.radiusPill),
                   border: Border.all(color: tokens.borderSubtle, width: 1),
                 ),
                 child: Text(
@@ -682,7 +682,7 @@ class _RestTimerSection extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
         decoration: BoxDecoration(
           color: tokens.panel,
-          borderRadius: BorderRadius.circular(tokens.radiusMd),
+          borderRadius: BorderRadius.circular(tokens.radiusLg),
           border: Border.all(color: tokens.kineticAccent.withValues(alpha: 0.35), width: 1),
           boxShadow: [
             BoxShadow(
@@ -988,7 +988,7 @@ class _ExerciseCardState extends ConsumerState<_ExerciseCard> {
                               margin: const EdgeInsets.only(right: 5),
                               decoration: BoxDecoration(
                                 color: typeColor.withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(2),
+                                borderRadius: BorderRadius.circular(tokens.radiusPill),
                               ),
                               child: Text(
                                 setType.shortCode,
@@ -1101,7 +1101,7 @@ class _ExerciseCardState extends ConsumerState<_ExerciseCard> {
                           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                           decoration: BoxDecoration(
                             color: tokens.cyanAccent.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(3),
+                            borderRadius: BorderRadius.circular(tokens.radiusPill),
                             border: Border.all(
                               color: tokens.cyanAccent.withValues(alpha: 0.4),
                               width: 0.8,
@@ -1430,7 +1430,7 @@ class _ExerciseSelectionSheetState extends State<ExerciseSelectionSheet> {
             height: 4,
             decoration: BoxDecoration(
               color: tokens.borderSubtle,
-              borderRadius: BorderRadius.circular(2),
+              borderRadius: BorderRadius.circular(tokens.radiusPill),
             ),
           ),
           Padding(
@@ -1446,7 +1446,7 @@ class _ExerciseSelectionSheetState extends State<ExerciseSelectionSheet> {
                 filled: true,
                 fillColor: tokens.panel,
                 enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                  borderRadius: BorderRadius.circular(tokens.radiusPill),
                   borderSide: BorderSide(color: tokens.borderSubtle, width: 1),
                 ),
                 focusedBorder: OutlineInputBorder(

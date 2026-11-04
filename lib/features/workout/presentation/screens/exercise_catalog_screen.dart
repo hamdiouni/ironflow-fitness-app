@@ -121,11 +121,11 @@ class _ExerciseCatalogScreenState extends ConsumerState<ExerciseCatalogScreen>
                     contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
                     isDense: true,
                     enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(tokens.radiusSm),
+                      borderRadius: BorderRadius.circular(tokens.radiusPill),
                       borderSide: BorderSide(color: tokens.borderSubtle, width: 1),
                     ),
                     focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(tokens.radiusSm),
+                      borderRadius: BorderRadius.circular(tokens.radiusPill),
                       borderSide: BorderSide(color: tokens.kineticAccent, width: 1.5),
                     ),
                   ),
@@ -429,7 +429,7 @@ class _MuscleTag extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
         color: group.color.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(tokens.radiusXs),
+        borderRadius: BorderRadius.circular(tokens.radiusPill),
         border: Border.all(
           color: group.color.withValues(alpha: 0.3),
           width: 0.5,

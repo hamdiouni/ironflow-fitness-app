@@ -73,7 +73,7 @@ class _DeleteBackground extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: tokens.error.withValues(alpha: 0.85),
-        borderRadius: BorderRadius.circular(tokens.radiusMd),
+        borderRadius: BorderRadius.circular(tokens.radiusLg),
         border: Border.all(color: tokens.error, width: 1),
       ),
       alignment: Alignment.centerRight,
@@ -103,7 +103,7 @@ class MealCard extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: tokens.card,
-        borderRadius: BorderRadius.circular(tokens.radiusMd),
+        borderRadius: BorderRadius.circular(tokens.radiusLg),
         border: Border.all(color: tokens.borderSubtle, width: 1),
       ),
       padding: const EdgeInsets.all(AppTheme.spacingMedium),
@@ -131,7 +131,7 @@ class MealCard extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: tokens.panel,
-                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                  borderRadius: BorderRadius.circular(tokens.radiusPill),
                   border: Border.all(color: tokens.borderSubtle, width: 1),
                 ),
                 child: Text(
@@ -232,7 +232,7 @@ class _MacroChip extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(tokens.radiusSm),
+        borderRadius: BorderRadius.circular(tokens.radiusPill),
         border: Border.all(
           color: color.withValues(alpha: 0.35),
           width: 1,

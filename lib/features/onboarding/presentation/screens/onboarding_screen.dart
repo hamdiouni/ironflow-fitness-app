@@ -433,7 +433,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
                       color: tokens.card,
-                      borderRadius: BorderRadius.circular(4),
+                      borderRadius: BorderRadius.circular(tokens.radiusPill),
                       border: Border.all(color: tokens.borderSubtle),
                     ),
                     child: Text(
@@ -875,7 +875,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
                       color: tokens.kineticAccent.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(4),
+                      borderRadius: BorderRadius.circular(tokens.radiusPill),
                       border: Border.all(color: tokens.kineticAccent.withValues(alpha: 0.4)),
                     ),
                     child: Text(
@@ -905,14 +905,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       });
                       _saveDraft();
                     },
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius: BorderRadius.circular(tokens.radiusPill),
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 180),
                       width: 52,
                       height: 48,
                       decoration: BoxDecoration(
                         color: isSelected ? tokens.kineticAccent : tokens.canvas,
-                        borderRadius: BorderRadius.circular(6),
+                        borderRadius: BorderRadius.circular(tokens.radiusPill),
                         border: Border.all(
                           color: isSelected ? tokens.kineticAccent : tokens.borderSubtle,
                           width: isSelected ? 1.5 : 1,
@@ -1005,7 +1005,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
                     color: tokens.kineticAccent.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(4),
+                    borderRadius: BorderRadius.circular(tokens.radiusPill),
                   ),
                   child: Text(
                     'AUTO-OPTIMIZED',
@@ -1083,7 +1083,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
                         color: tokens.kineticAccent,
-                        borderRadius: BorderRadius.circular(4),
+                        borderRadius: BorderRadius.circular(tokens.radiusPill),
                       ),
                       child: const Text(
                         'RECOMMENDED',
@@ -1329,7 +1329,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
                       color: tokens.kineticAccent.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(4),
+                      borderRadius: BorderRadius.circular(tokens.radiusPill),
                     ),
                     child: Text(
                       _goal!.displayName.toUpperCase(),
@@ -1477,7 +1477,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(tokens.radiusPill),
         border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Column(
@@ -1556,7 +1556,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
                               color: tokens.kineticAccent.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(4),
+                              borderRadius: BorderRadius.circular(tokens.radiusPill),
                             ),
                             child: Text(
                               'READY',
@@ -1704,7 +1704,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                                   decoration: BoxDecoration(
                                     color: tokens.panel,
-                                    borderRadius: BorderRadius.circular(4),
+                                    borderRadius: BorderRadius.circular(tokens.radiusPill),
                                     border: Border.all(color: tokens.borderSubtle),
                                   ),
                                   child: Row(
@@ -1792,7 +1792,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                                   color: _includeDietPlan
                                       ? tokens.kineticAccent.withValues(alpha: 0.15)
                                       : tokens.panel,
-                                  borderRadius: BorderRadius.circular(4),
+                                  borderRadius: BorderRadius.circular(tokens.radiusPill),
                                 ),
                                 child: Text(
                                   _includeDietPlan ? 'INCLUDED' : 'SKIPPED',
@@ -2124,14 +2124,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(6),
+      borderRadius: BorderRadius.circular(tokens.radiusPill),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: isSelected ? tokens.kineticAccent : tokens.canvas,
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(tokens.radiusPill),
           border: Border.all(
             color: isSelected ? tokens.kineticAccent : tokens.borderSubtle,
           ),
@@ -2311,7 +2311,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
             color: tokens.panel,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(tokens.radiusPill),
             border: Border.all(color: tokens.kineticAccent.withValues(alpha: 0.5)),
           ),
           child: Column(

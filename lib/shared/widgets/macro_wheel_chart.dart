@@ -216,7 +216,7 @@ class _LegendItem extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: tokens.card,
-        borderRadius: BorderRadius.circular(tokens.radiusSm),
+        borderRadius: BorderRadius.circular(tokens.radiusPill),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
