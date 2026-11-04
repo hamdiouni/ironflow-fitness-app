@@ -246,7 +246,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                           decoration: BoxDecoration(
                             color: tokens.error.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(tokens.radiusSm),
+                            borderRadius: BorderRadius.circular(tokens.radiusPill),
                             border: Border.all(
                               color: tokens.error.withValues(alpha: 0.4),
                               width: 1,
@@ -333,23 +333,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   vertical: 14,
                                 ),
                                 border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                                  borderRadius: BorderRadius.circular(tokens.radiusPill),
                                   borderSide: BorderSide(color: tokens.borderSubtle, width: 1),
                                 ),
                                 enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                                  borderRadius: BorderRadius.circular(tokens.radiusPill),
                                   borderSide: BorderSide(color: tokens.borderSubtle, width: 1),
                                 ),
                                 focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                                  borderRadius: BorderRadius.circular(tokens.radiusPill),
                                   borderSide: BorderSide(color: tokens.kineticAccent, width: 1.5),
                                 ),
                                 errorBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                                  borderRadius: BorderRadius.circular(tokens.radiusPill),
                                   borderSide: BorderSide(color: tokens.error, width: 1),
                                 ),
                                 focusedErrorBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                                  borderRadius: BorderRadius.circular(tokens.radiusPill),
                                   borderSide: BorderSide(color: tokens.error, width: 1.5),
                                 ),
                               ),
@@ -423,23 +423,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   vertical: 14,
                                 ),
                                 border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                                  borderRadius: BorderRadius.circular(tokens.radiusPill),
                                   borderSide: BorderSide(color: tokens.borderSubtle, width: 1),
                                 ),
                                 enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                                  borderRadius: BorderRadius.circular(tokens.radiusPill),
                                   borderSide: BorderSide(color: tokens.borderSubtle, width: 1),
                                 ),
                                 focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                                  borderRadius: BorderRadius.circular(tokens.radiusPill),
                                   borderSide: BorderSide(color: tokens.kineticAccent, width: 1.5),
                                 ),
                                 errorBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                                  borderRadius: BorderRadius.circular(tokens.radiusPill),
                                   borderSide: BorderSide(color: tokens.error, width: 1),
                                 ),
                                 focusedErrorBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                                  borderRadius: BorderRadius.circular(tokens.radiusPill),
                                   borderSide: BorderSide(color: tokens.error, width: 1.5),
                                 ),
                               ),
@@ -545,6 +545,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         onPressed: (_isProcessingGoogleSignIn || authState.isLoading)
                             ? null
                             : _handleGoogleSignIn,
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      AppButton(
+                        label: 'Explore Demo Account',
+                        variant: AppButtonVariant.ghost,
+                        isFullWidth: true,
+                        icon: Icon(
+                          Icons.auto_awesome_rounded,
+                          size: 18,
+                          color: tokens.kineticAccent,
+                        ),
+                        onPressed: authState.isLoading
+                            ? null
+                            : () async {
+                                _fillDemoCredentials();
+                                await _handleEmailSignIn();
+                              },
                       ),
 
                       const SizedBox(height: 28),

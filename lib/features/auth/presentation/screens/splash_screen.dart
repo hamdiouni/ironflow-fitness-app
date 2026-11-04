@@ -107,45 +107,14 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                           ),
                         ],
                       ),
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          // Corner bracket accents
-                          Positioned(
-                            top: 8,
-                            left: 8,
-                            child: Container(
-                              width: 8,
-                              height: 8,
-                              decoration: BoxDecoration(
-                                border: Border(
-                                  top: BorderSide(color: tokens.kineticAccent, width: 1.5),
-                                  left: BorderSide(color: tokens.kineticAccent, width: 1.5),
-                                ),
-                              ),
-                            ),
-                          ),
-                          Positioned(
-                            bottom: 8,
-                            right: 8,
-                            child: Container(
-                              width: 8,
-                              height: 8,
-                              decoration: BoxDecoration(
-                                border: Border(
-                                  bottom: BorderSide(color: tokens.kineticAccent, width: 1.5),
-                                  right: BorderSide(color: tokens.kineticAccent, width: 1.5),
-                                ),
-                              ),
-                            ),
-                          ),
-                          Icon(
-                            Icons.fitness_center_rounded,
-                            size: 52,
-                            color: tokens.kineticAccent,
-                          ),
-                        ],
+                      child: Center(
+                        child: Icon(
+                          Icons.fitness_center_rounded,
+                          size: 52,
+                          color: tokens.kineticAccent,
+                        ),
                       ),
+
                     );
                   },
                 ),
@@ -168,7 +137,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
                 // Protocol subtitle
                 Text(
-                  'BIOMETRIC TELEMETRY & TRAINING SYSTEM',
+                  'SMART WORKOUT & NUTRITION COMPANION',
                   style: TextStyle(
                     fontFamily: AppTypography.displayFontFamily,
                     fontSize: 10,
@@ -186,7 +155,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                   child: Column(
                     children: [
                       ClipRRect(
-                        borderRadius: BorderRadius.circular(tokens.radiusSm),
+                        borderRadius: BorderRadius.circular(tokens.radiusPill),
                         child: LinearProgressIndicator(
                           minHeight: 3,
                           backgroundColor: tokens.panel,

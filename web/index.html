@@ -39,6 +39,24 @@
   <!-- Google Sign-In Configuration for Web -->
   <meta name="google-signin-client_id" content="845707679691-jdat95ll1q9itnhchr6mtkuepobd46mh.apps.googleusercontent.com">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <!-- Anti-cache & Service Worker clean sweep for instant updates -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for (let r of registrations) {
+          r.unregister();
+        }
+      });
+    }
+    if ('caches' in window) {
+      caches.keys().then(function(names) {
+        for (let n of names) {
+          caches.delete(n);
+        }
+      });
+    }
+  </script>
+
   <style>
     body {
       margin: 0;

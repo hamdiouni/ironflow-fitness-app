@@ -217,7 +217,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                           decoration: BoxDecoration(
                             color: tokens.error.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(tokens.radiusSm),
+                            borderRadius: BorderRadius.circular(tokens.radiusPill),
                             border: Border.all(
                               color: tokens.error.withValues(alpha: 0.4),
                               width: 1,
@@ -304,23 +304,23 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                                   vertical: 14,
                                 ),
                                 border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                                  borderRadius: BorderRadius.circular(tokens.radiusPill),
                                   borderSide: BorderSide(color: tokens.borderSubtle, width: 1),
                                 ),
                                 enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                                  borderRadius: BorderRadius.circular(tokens.radiusPill),
                                   borderSide: BorderSide(color: tokens.borderSubtle, width: 1),
                                 ),
                                 focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                                  borderRadius: BorderRadius.circular(tokens.radiusPill),
                                   borderSide: BorderSide(color: tokens.kineticAccent, width: 1.5),
                                 ),
                                 errorBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                                  borderRadius: BorderRadius.circular(tokens.radiusPill),
                                   borderSide: BorderSide(color: tokens.error, width: 1),
                                 ),
                                 focusedErrorBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                                  borderRadius: BorderRadius.circular(tokens.radiusPill),
                                   borderSide: BorderSide(color: tokens.error, width: 1.5),
                                 ),
                               ),
@@ -370,23 +370,23 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                                   vertical: 14,
                                 ),
                                 border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                                  borderRadius: BorderRadius.circular(tokens.radiusPill),
                                   borderSide: BorderSide(color: tokens.borderSubtle, width: 1),
                                 ),
                                 enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                                  borderRadius: BorderRadius.circular(tokens.radiusPill),
                                   borderSide: BorderSide(color: tokens.borderSubtle, width: 1),
                                 ),
                                 focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                                  borderRadius: BorderRadius.circular(tokens.radiusPill),
                                   borderSide: BorderSide(color: tokens.kineticAccent, width: 1.5),
                                 ),
                                 errorBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                                  borderRadius: BorderRadius.circular(tokens.radiusPill),
                                   borderSide: BorderSide(color: tokens.error, width: 1),
                                 ),
                                 focusedErrorBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                                  borderRadius: BorderRadius.circular(tokens.radiusPill),
                                   borderSide: BorderSide(color: tokens.error, width: 1.5),
                                 ),
                               ),
@@ -459,23 +459,23 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                                   vertical: 14,
                                 ),
                                 border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                                  borderRadius: BorderRadius.circular(tokens.radiusPill),
                                   borderSide: BorderSide(color: tokens.borderSubtle, width: 1),
                                 ),
                                 enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                                  borderRadius: BorderRadius.circular(tokens.radiusPill),
                                   borderSide: BorderSide(color: tokens.borderSubtle, width: 1),
                                 ),
                                 focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                                  borderRadius: BorderRadius.circular(tokens.radiusPill),
                                   borderSide: BorderSide(color: tokens.kineticAccent, width: 1.5),
                                 ),
                                 errorBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                                  borderRadius: BorderRadius.circular(tokens.radiusPill),
                                   borderSide: BorderSide(color: tokens.error, width: 1),
                                 ),
                                 focusedErrorBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                                  borderRadius: BorderRadius.circular(tokens.radiusPill),
                                   borderSide: BorderSide(color: tokens.error, width: 1.5),
                                 ),
                               ),
@@ -548,23 +548,23 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                                   vertical: 14,
                                 ),
                                 border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                                  borderRadius: BorderRadius.circular(tokens.radiusPill),
                                   borderSide: BorderSide(color: tokens.borderSubtle, width: 1),
                                 ),
                                 enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                                  borderRadius: BorderRadius.circular(tokens.radiusPill),
                                   borderSide: BorderSide(color: tokens.borderSubtle, width: 1),
                                 ),
                                 focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                                  borderRadius: BorderRadius.circular(tokens.radiusPill),
                                   borderSide: BorderSide(color: tokens.kineticAccent, width: 1.5),
                                 ),
                                 errorBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                                  borderRadius: BorderRadius.circular(tokens.radiusPill),
                                   borderSide: BorderSide(color: tokens.error, width: 1),
                                 ),
                                 focusedErrorBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                                  borderRadius: BorderRadius.circular(tokens.radiusPill),
                                   borderSide: BorderSide(color: tokens.error, width: 1.5),
                                 ),
                               ),

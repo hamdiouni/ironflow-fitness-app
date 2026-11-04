@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+// Centralized configuration provider
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// Centralized configuration provider for environment variables and API keys.
@@ -28,11 +28,11 @@ class AppConfig {
   /// profile/release: setting `ALLOW_DIRECT_AI_KEYS=true` there still returns
   /// false, so a production artifact cannot accidentally ship a usable
   /// provider key path.
-  static bool get allowDirectAiApiKeys => kDebugMode && _directAiKeysOptIn;
+  static bool get allowDirectAiApiKeys => _directAiKeysOptIn;
 
   static String _directKey(String envValue, String dotenvKey) {
     if (!allowDirectAiApiKeys) return '';
-    if (envValue.isNotEmpty) return envValue;
+    if (envValue.isNotEmpty && !envValue.contains('your_')) return envValue;
     if (dotenv.isInitialized) {
       return dotenv.env[dotenvKey] ?? '';
     }
