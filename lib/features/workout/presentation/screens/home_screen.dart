@@ -686,17 +686,17 @@ class _HeroReadinessBanner extends StatelessWidget {
         padding: const EdgeInsets.all(AppSpacings.md + 2),
         child: Row(
           children: [
-            AppProgressRing(
+            LiveMacroRing(
               progress: 0.92,
               size: 58,
               strokeWidth: 6,
-              progressColor: tokens.kineticAccent,
+              primaryColor: tokens.kineticAccent,
               backgroundColor: tokens.elevated,
-              centerWidget: Text(
+              centerChild: Text(
                 '92%',
                 style: TextStyle(
                   fontFamily: AppTypography.displayFontFamily,
-                  fontSize: 14,
+                  fontSize: 13,
                   fontWeight: FontWeight.w800,
                   color: tokens.kineticAccent,
                 ),
@@ -742,7 +742,7 @@ class _HeroReadinessBanner extends StatelessWidget {
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    'CNS & muscle readiness high. Great day for heavy compound lifts.',
+                    'CNS and muscles primed for heavy compound lifts.',
                     style: TextStyle(
                       fontFamily: AppTypography.bodyFontFamily,
                       color: tokens.textSecondary,
@@ -1040,25 +1040,42 @@ class _DailyFuelSummaryBar extends ConsumerWidget {
         },
         padding: const EdgeInsets.all(AppSpacings.md),
         child: nutritionAsync.when(
-            data: (summary) {
-              final consumed = summary.totalCalories;
-              final progress = (consumed / targetCalories).clamp(0.0, 1.0);
-              final protein = summary.totalProtein.round();
-              final carbs = summary.totalCarbs.round();
-              final fats = summary.totalFats.round();
+          data: (summary) {
+            final consumed = summary.totalCalories;
+            final progress = (consumed / targetCalories).clamp(0.0, 1.0);
+            final protein = summary.totalProtein.round();
+            final carbs = summary.totalCarbs.round();
+            final fats = summary.totalFats.round();
 
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            return Row(
+              children: [
+                LiveMacroRing(
+                  progress: progress,
+                  size: 60,
+                  strokeWidth: 6,
+                  primaryColor: progress > 0.95 ? tokens.kineticAccent : tokens.warning,
+                  backgroundColor: tokens.elevated,
+                  centerChild: Text(
+                    '${(progress * 100).toInt()}%',
+                    style: TextStyle(
+                      fontFamily: AppTypography.displayFontFamily,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      color: tokens.textPrimary,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppSpacings.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Icon(Icons.restaurant_menu_rounded, color: tokens.warning, size: 16),
-                          const SizedBox(width: 6),
                           Text(
-                            'DAILY BALANCE',
+                            'DAILY FUEL',
                             style: TextStyle(
                               fontFamily: AppTypography.displayFontFamily,
                               fontSize: 10,
@@ -1067,98 +1084,77 @@ class _DailyFuelSummaryBar extends ConsumerWidget {
                               color: tokens.textMuted,
                             ),
                           ),
+                          Row(
+                            children: [
+                              Text(
+                                'VIEW FUEL',
+                                style: TextStyle(
+                                  fontFamily: AppTypography.displayFontFamily,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w700,
+                                  color: tokens.kineticAccent,
+                                ),
+                              ),
+                              Icon(Icons.chevron_right, size: 14, color: tokens.kineticAccent),
+                            ],
+                          ),
                         ],
                       ),
+                      const SizedBox(height: 4),
                       Row(
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
                         children: [
                           Text(
-                            'VIEW FUEL',
+                            '${consumed.toInt()}',
                             style: TextStyle(
                               fontFamily: AppTypography.displayFontFamily,
-                              fontSize: 9,
-                              fontWeight: FontWeight.w700,
-                              color: tokens.kineticAccent,
+                              fontSize: 19,
+                              fontWeight: FontWeight.w900,
+                              color: tokens.textPrimary,
+                              fontFeatures: const [FontFeature.tabularFigures()],
                             ),
                           ),
-                          Icon(Icons.chevron_right, size: 14, color: tokens.kineticAccent),
+                          Text(
+                            ' / ${targetCalories.toInt()} KCAL',
+                            style: TextStyle(
+                              fontFamily: AppTypography.displayFontFamily,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: tokens.textMuted,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          _FuelMacroChip(label: 'P', value: '${protein}g', color: tokens.cyanAccent, tokens: tokens),
+                          const SizedBox(width: 6),
+                          _FuelMacroChip(label: 'C', value: '${carbs}g', color: tokens.warning, tokens: tokens),
+                          const SizedBox(width: 6),
+                          _FuelMacroChip(label: 'F', value: '${fats}g', color: tokens.violetAccent, tokens: tokens),
                         ],
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
-                    children: [
-                      Text(
-                        '${consumed.toInt()}',
-                        style: TextStyle(
-                          fontFamily: AppTypography.displayFontFamily,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w900,
-                          color: tokens.textPrimary,
-                          fontFeatures: const [FontFeature.tabularFigures()],
-                        ),
-                      ),
-                      Text(
-                        ' / ${targetCalories.toInt()} KCAL',
-                        style: TextStyle(
-                          fontFamily: AppTypography.displayFontFamily,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: tokens.textMuted,
-                        ),
-                      ),
-                      const Spacer(),
-                      Text(
-                        '${(progress * 100).toInt()}%',
-                        style: TextStyle(
-                          fontFamily: AppTypography.displayFontFamily,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w800,
-                          color: tokens.warning,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(3),
-                    child: LinearProgressIndicator(
-                      value: progress,
-                      minHeight: 6,
-                      backgroundColor: tokens.panel,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        progress > 0.95 ? tokens.kineticAccent : tokens.warning,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      _FuelMacroChip(label: 'P', value: '${protein}g', color: tokens.cyanAccent, tokens: tokens),
-                      const SizedBox(width: 8),
-                      _FuelMacroChip(label: 'C', value: '${carbs}g', color: tokens.warning, tokens: tokens),
-                      const SizedBox(width: 8),
-                      _FuelMacroChip(label: 'F', value: '${fats}g', color: tokens.violetAccent, tokens: tokens),
-                    ],
-                  ),
-                ],
-              );
-            },
-            loading: () => SizedBox(
-              height: 48,
-              child: Center(
-                child: SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: tokens.warning),
                 ),
+              ],
+            );
+          },
+          loading: () => SizedBox(
+            height: 60,
+            child: Center(
+              child: SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2, color: tokens.warning),
               ),
             ),
-            error: (_, _) => const SizedBox.shrink(),
           ),
+          error: (_, _) => const SizedBox.shrink(),
         ),
+      ),
     );
   }
 }
@@ -1222,6 +1218,7 @@ class _QuickWorkoutActions extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final tokens = context.tokens;
     final hasRecentWorkout = workouts.isNotEmpty;
 
     return Padding(
@@ -1229,56 +1226,141 @@ class _QuickWorkoutActions extends ConsumerWidget {
         horizontal: AppSpacings.lg,
         vertical: AppSpacings.xs,
       ),
-      child: hasRecentWorkout
-          ? Row(
-              children: [
-                Expanded(
-                  child: SizedBox(
-                    height: 46,
-                    child: AppButton(
-                      label: 'QUICK START',
-                      variant: AppButtonVariant.ghost,
-                      icon: const Icon(Icons.add_rounded, size: 18),
-                      onPressed: () async {
-                        AppHaptics.shared.selectionChanged();
-                        await ref.read(workoutNotifierProvider.notifier).start(initialExercises: const []);
-                        if (context.mounted) context.go(AppRoutes.workoutActive);
-                      },
-                    ),
-                  ),
+      child: Row(
+        children: [
+          // 1. Quick Start
+          Expanded(
+            child: AnimatedScaleButton(
+              onPressed: () async {
+                AppHaptics.shared.selectionChanged();
+                await ref.read(workoutNotifierProvider.notifier).start(initialExercises: const []);
+                if (context.mounted) context.go(AppRoutes.workoutActive);
+              },
+              child: Container(
+                height: 44,
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                decoration: BoxDecoration(
+                  color: tokens.elevated,
+                  borderRadius: BorderRadius.circular(tokens.radiusLg),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: SizedBox(
-                    height: 46,
-                    child: AppButton(
-                      label: 'REPEAT LAST',
-                      variant: AppButtonVariant.secondary,
-                      icon: const Icon(Icons.replay_rounded, size: 18),
-                      onPressed: () async {
-                        AppHaptics.shared.selectionChanged();
-                        await ref.read(workoutNotifierProvider.notifier).repeatWorkout(workouts.first);
-                        if (context.mounted) context.go(AppRoutes.workoutActive);
-                      },
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.add_rounded, size: 16, color: tokens.kineticAccent),
+                    const SizedBox(width: 4),
+                    Flexible(
+                      child: Text(
+                        'START',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontFamily: AppTypography.displayFontFamily,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.5,
+                          color: tokens.textPrimary,
+                        ),
+                      ),
                     ),
-                  ),
+                  ],
                 ),
-              ],
-            )
-          : SizedBox(
-              height: 48,
-              width: double.infinity,
-              child: AppButton(
-                label: 'QUICK START EMPTY WORKOUT',
-                variant: AppButtonVariant.primary,
-                icon: const Icon(Icons.play_arrow_rounded, size: 20),
-                onPressed: () async {
-                  AppHaptics.shared.selectionChanged();
-                  await ref.read(workoutNotifierProvider.notifier).start(initialExercises: const []);
-                  if (context.mounted) context.go(AppRoutes.workoutActive);
-                },
               ),
             ),
+          ),
+          const SizedBox(width: 8),
+
+          // 2. Log Fuel
+          Expanded(
+            child: AnimatedScaleButton(
+              onPressed: () {
+                AppHaptics.shared.selectionChanged();
+                context.go(AppRoutes.nutrition);
+              },
+              child: Container(
+                height: 44,
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                decoration: BoxDecoration(
+                  color: tokens.elevated,
+                  borderRadius: BorderRadius.circular(tokens.radiusLg),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.restaurant_menu_rounded, size: 15, color: tokens.warning),
+                    const SizedBox(width: 4),
+                    Flexible(
+                      child: Text(
+                        'FUEL',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontFamily: AppTypography.displayFontFamily,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.5,
+                          color: tokens.textPrimary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+
+          // 3. Repeat Last / Programs
+          Expanded(
+            child: AnimatedScaleButton(
+              onPressed: () async {
+                AppHaptics.shared.selectionChanged();
+                if (hasRecentWorkout) {
+                  await ref.read(workoutNotifierProvider.notifier).repeatWorkout(workouts.first);
+                  if (context.mounted) context.go(AppRoutes.workoutActive);
+                } else {
+                  context.go(AppRoutes.workoutProgramSelection);
+                }
+              },
+              child: Container(
+                height: 44,
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                decoration: BoxDecoration(
+                  color: tokens.elevated,
+                  borderRadius: BorderRadius.circular(tokens.radiusLg),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      hasRecentWorkout ? Icons.replay_rounded : Icons.tune_rounded,
+                      size: 15,
+                      color: tokens.cyanAccent,
+                    ),
+                    const SizedBox(width: 4),
+                    Flexible(
+                      child: Text(
+                        hasRecentWorkout ? 'REPEAT' : 'PLANS',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontFamily: AppTypography.displayFontFamily,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.5,
+                          color: tokens.textPrimary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
