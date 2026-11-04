@@ -123,7 +123,7 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
             child: Container(
               decoration: BoxDecoration(
                 color: tokens.panel,
-                borderRadius: BorderRadius.circular(tokens.radiusSm),
+                borderRadius: BorderRadius.circular(tokens.radiusPill),
                 border: Border.all(color: tokens.borderSubtle, width: 1),
               ),
               child: IconButton(
@@ -144,7 +144,7 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
               height: 48,
               decoration: BoxDecoration(
                 color: tokens.panel,
-                borderRadius: BorderRadius.circular(tokens.radiusMd),
+                borderRadius: BorderRadius.circular(tokens.radiusPill),
                 border: Border.all(
                   color: search.query.isNotEmpty ? tokens.cyanAccent : tokens.borderSubtle,
                   width: 1,
@@ -307,7 +307,7 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
                       color: tokens.cyanAccent.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(4),
+                      borderRadius: BorderRadius.circular(tokens.radiusPill),
                       border: Border.all(
                         color: tokens.cyanAccent.withValues(alpha: 0.3),
                         width: 1,
@@ -388,7 +388,7 @@ class _SciFiPill extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
           decoration: BoxDecoration(
             color: selected ? tokens.cyanAccent.withValues(alpha: 0.15) : tokens.panel,
-            borderRadius: BorderRadius.circular(tokens.radiusSm),
+            borderRadius: BorderRadius.circular(tokens.radiusPill),
             border: Border.all(
               color: selected ? tokens.cyanAccent : tokens.borderSubtle,
               width: selected ? 1.5 : 1,
@@ -454,7 +454,7 @@ class _BudgetPill extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           decoration: BoxDecoration(
             color: selected ? color.withValues(alpha: 0.15) : tokens.panel.withValues(alpha: 0.6),
-            borderRadius: BorderRadius.circular(tokens.radiusSm),
+            borderRadius: BorderRadius.circular(tokens.radiusPill),
             border: Border.all(
               color: selected
                   ? color
@@ -535,7 +535,7 @@ class _FoodListTile extends StatelessWidget {
               children: [
                 // Food Image / Icon container
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                  borderRadius: BorderRadius.circular(tokens.radiusMd),
                   child: CachedNetworkImage(
                     imageUrl: food.imageUrl,
                     width: 58,
@@ -571,7 +571,7 @@ class _FoodListTile extends StatelessWidget {
                               margin: const EdgeInsets.only(right: 6),
                               decoration: BoxDecoration(
                                 color: tokens.cyanAccent.withValues(alpha: 0.12),
-                                borderRadius: BorderRadius.circular(3),
+                                borderRadius: BorderRadius.circular(tokens.radiusPill),
                                 border: Border.all(
                                   color: tokens.cyanAccent.withValues(alpha: 0.4),
                                   width: 0.8,
@@ -666,7 +666,7 @@ class _FoodListTile extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
                 color: tokens.card.withValues(alpha: 0.6),
-                borderRadius: BorderRadius.circular(tokens.radiusSm),
+                borderRadius: BorderRadius.circular(tokens.radiusPill),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -733,7 +733,7 @@ class _FoodListTile extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(3),
+        borderRadius: BorderRadius.circular(tokens.radiusPill),
         border: Border.all(color: color.withValues(alpha: 0.35), width: 0.8),
       ),
       child: Text(
@@ -884,8 +884,8 @@ class _FoodDetailAndQuantitySheetState
         return Container(
           decoration: BoxDecoration(
             color: tokens.canvas,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-            border: Border.all(color: tokens.borderGlow.withValues(alpha: 0.4), width: 1.5),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+            border: Border.all(color: tokens.borderSubtle, width: 1.5),
             boxShadow: [
               BoxShadow(
                 color: tokens.cyanAccent.withValues(alpha: 0.08),
@@ -905,7 +905,7 @@ class _FoodDetailAndQuantitySheetState
                     height: 4,
                     decoration: BoxDecoration(
                       color: tokens.borderSubtle,
-                      borderRadius: BorderRadius.circular(2),
+                      borderRadius: BorderRadius.circular(tokens.radiusPill),
                     ),
                   ),
                 ),
@@ -922,7 +922,7 @@ class _FoodDetailAndQuantitySheetState
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         ClipRRect(
-                          borderRadius: BorderRadius.circular(tokens.radiusSm),
+                          borderRadius: BorderRadius.circular(tokens.radiusMd),
                           child: CachedNetworkImage(
                             imageUrl: _currentFood.imageUrl,
                             width: 60,
@@ -955,7 +955,7 @@ class _FoodDetailAndQuantitySheetState
                                       margin: const EdgeInsets.only(right: 6),
                                       decoration: BoxDecoration(
                                         color: tokens.cyanAccent.withValues(alpha: 0.15),
-                                        borderRadius: BorderRadius.circular(4),
+                                        borderRadius: BorderRadius.circular(tokens.radiusPill),
                                         border: Border.all(
                                           color: tokens.cyanAccent.withValues(alpha: 0.5),
                                           width: 1,
@@ -976,7 +976,7 @@ class _FoodDetailAndQuantitySheetState
                                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                     decoration: BoxDecoration(
                                       color: tokens.panel,
-                                      borderRadius: BorderRadius.circular(4),
+                                      borderRadius: BorderRadius.circular(tokens.radiusPill),
                                       border: Border.all(color: tokens.borderSubtle, width: 1),
                                     ),
                                     child: Text(
@@ -1015,7 +1015,7 @@ class _FoodDetailAndQuantitySheetState
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: tokens.panel,
-                          borderRadius: BorderRadius.circular(tokens.radiusSm),
+                          borderRadius: BorderRadius.circular(tokens.radiusLg),
                           border: Border.all(color: tokens.borderSubtle, width: 1),
                         ),
                         child: Column(
@@ -1079,7 +1079,7 @@ class _FoodDetailAndQuantitySheetState
                                 color: _isServingMode
                                     ? tokens.cyanAccent.withValues(alpha: 0.15)
                                     : tokens.panel,
-                                borderRadius: BorderRadius.circular(tokens.radiusSm),
+                                borderRadius: BorderRadius.circular(tokens.radiusPill),
                                 border: Border.all(
                                   color: _isServingMode ? tokens.cyanAccent : tokens.borderSubtle,
                                   width: _isServingMode ? 1.5 : 1,
@@ -1113,7 +1113,7 @@ class _FoodDetailAndQuantitySheetState
                                 color: !_isServingMode
                                     ? tokens.cyanAccent.withValues(alpha: 0.15)
                                     : tokens.panel,
-                                borderRadius: BorderRadius.circular(tokens.radiusSm),
+                                borderRadius: BorderRadius.circular(tokens.radiusPill),
                                 border: Border.all(
                                   color: !_isServingMode ? tokens.cyanAccent : tokens.borderSubtle,
                                   width: !_isServingMode ? 1.5 : 1,
@@ -1144,7 +1144,7 @@ class _FoodDetailAndQuantitySheetState
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: tokens.panel,
-                          borderRadius: BorderRadius.circular(tokens.radiusSm),
+                          borderRadius: BorderRadius.circular(tokens.radiusLg),
                           border: Border.all(color: tokens.borderSubtle, width: 1),
                         ),
                         child: Column(
@@ -1196,7 +1196,7 @@ class _FoodDetailAndQuantitySheetState
                                       color: isSelected
                                           ? tokens.cyanAccent
                                           : tokens.card,
-                                      borderRadius: BorderRadius.circular(tokens.radiusSm),
+                                      borderRadius: BorderRadius.circular(tokens.radiusPill),
                                       border: Border.all(
                                         color: isSelected ? tokens.cyanAccent : tokens.borderSubtle,
                                         width: 1,
@@ -1226,7 +1226,7 @@ class _FoodDetailAndQuantitySheetState
                               height: 52,
                               decoration: BoxDecoration(
                                 color: tokens.panel,
-                                borderRadius: BorderRadius.circular(tokens.radiusSm),
+                                borderRadius: BorderRadius.circular(tokens.radiusPill),
                                 border: Border.all(color: tokens.borderSubtle, width: 1),
                               ),
                               child: TextField(
@@ -1282,7 +1282,7 @@ class _FoodDetailAndQuantitySheetState
                                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
                                   decoration: BoxDecoration(
                                     color: isSel ? tokens.cyanAccent : tokens.panel,
-                                    borderRadius: BorderRadius.circular(tokens.radiusSm),
+                                    borderRadius: BorderRadius.circular(tokens.radiusPill),
                                     border: Border.all(
                                       color: isSel ? tokens.cyanAccent : tokens.borderSubtle,
                                       width: 1,
@@ -1356,7 +1356,7 @@ class _FoodDetailAndQuantitySheetState
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
                         color: tokens.panel,
-                        borderRadius: BorderRadius.circular(tokens.radiusSm),
+                        borderRadius: BorderRadius.circular(tokens.radiusLg),
                         border: Border.all(color: tokens.borderSubtle, width: 1),
                       ),
                       child: Column(
@@ -1600,7 +1600,7 @@ class _BudgetAlternativesSheetSection extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: tokens.panel,
-        borderRadius: BorderRadius.circular(tokens.radiusSm),
+        borderRadius: BorderRadius.circular(tokens.radiusLg),
         border: Border.all(
           color: const Color(0xFF00E676).withValues(alpha: 0.35),
           width: 1,
@@ -1642,7 +1642,7 @@ class _BudgetAlternativesSheetSection extends StatelessWidget {
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: tokens.card,
-                borderRadius: BorderRadius.circular(tokens.radiusSm),
+                borderRadius: BorderRadius.circular(tokens.radiusLg),
                 border: Border.all(color: tokens.borderSubtle, width: 1),
               ),
               child: Column(
@@ -1670,7 +1670,7 @@ class _BudgetAlternativesSheetSection extends StatelessWidget {
                           color: alt.savingsBadge.contains('SAVE')
                               ? const Color(0xFF00E676).withValues(alpha: 0.15)
                               : tokens.cyanAccent.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(3),
+                          borderRadius: BorderRadius.circular(tokens.radiusPill),
                         ),
                         child: Text(
                           alt.savingsBadge,
@@ -1714,7 +1714,7 @@ class _BudgetAlternativesSheetSection extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                         decoration: BoxDecoration(
                           color: tokens.cyanAccent.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(4),
+                          borderRadius: BorderRadius.circular(tokens.radiusPill),
                           border: Border.all(
                             color: tokens.cyanAccent.withValues(alpha: 0.6),
                             width: 1,
@@ -1772,7 +1772,7 @@ class _MacroGaugeCard extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
         decoration: BoxDecoration(
           color: tokens.panel,
-          borderRadius: BorderRadius.circular(tokens.radiusSm),
+          borderRadius: BorderRadius.circular(tokens.radiusLg),
           border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
         ),
         child: Column(
@@ -2005,10 +2005,10 @@ class _CreateCustomFoodDialogState
     final tokens = AppThemeTokens.of(context);
 
     return Dialog(
-      backgroundColor: tokens.canvas,
+      backgroundColor: tokens.panel,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(tokens.radiusMd),
-        side: BorderSide(color: tokens.borderGlow.withValues(alpha: 0.5), width: 1.5),
+        borderRadius: BorderRadius.circular(tokens.radiusLg),
+        side: BorderSide(color: tokens.borderSubtle, width: 1),
       ),
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -2170,19 +2170,19 @@ class _CreateCustomFoodDialogState
       isDense: true,
       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(tokens.radiusSm),
+        borderRadius: BorderRadius.circular(tokens.radiusLg),
         borderSide: BorderSide(color: tokens.borderSubtle, width: 1),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(tokens.radiusSm),
+        borderRadius: BorderRadius.circular(tokens.radiusLg),
         borderSide: BorderSide(color: tokens.cyanAccent, width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(tokens.radiusSm),
+        borderRadius: BorderRadius.circular(tokens.radiusLg),
         borderSide: BorderSide(color: tokens.error, width: 1),
       ),
       focusedErrorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(tokens.radiusSm),
+        borderRadius: BorderRadius.circular(tokens.radiusLg),
         borderSide: BorderSide(color: tokens.error, width: 1.5),
       ),
     );

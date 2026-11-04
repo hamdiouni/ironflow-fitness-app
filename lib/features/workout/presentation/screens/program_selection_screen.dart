@@ -174,7 +174,7 @@ class _ProgramSelectionScreenState extends ConsumerState<ProgramSelectionScreen>
         builder: (ctx) => AlertDialog(
           backgroundColor: tokens.panel,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(tokens.radiusMd),
+            borderRadius: BorderRadius.circular(tokens.radiusPill),
             side: BorderSide(color: tokens.borderSubtle, width: 1),
           ),
           title: Text(
@@ -396,7 +396,7 @@ class _ProgramSelectionScreenState extends ConsumerState<ProgramSelectionScreen>
                     backgroundColor: tokens.cyanAccent,
                     foregroundColor: Colors.black,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(tokens.radiusLg),
+                      borderRadius: BorderRadius.circular(tokens.radiusPill),
                     ),
                     elevation: 4,
                     shadowColor: tokens.cyanAccent.withValues(alpha: 0.5),
@@ -529,14 +529,14 @@ class _ProgramSelectionScreenState extends ConsumerState<ProgramSelectionScreen>
             InkWell(
               key: const Key('preview_mode_schedule'),
               onTap: () => setState(() => _previewMode = PreviewMode.schedule),
-              borderRadius: BorderRadius.circular(tokens.radiusSm),
+              borderRadius: BorderRadius.circular(tokens.radiusPill),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                   color: _previewMode == PreviewMode.schedule
                       ? tokens.cyanAccent.withValues(alpha: 0.15)
                       : Colors.transparent,
-                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                  borderRadius: BorderRadius.circular(tokens.radiusPill),
                   border: Border.all(
                     color: _previewMode == PreviewMode.schedule
                         ? tokens.cyanAccent
@@ -561,14 +561,14 @@ class _ProgramSelectionScreenState extends ConsumerState<ProgramSelectionScreen>
             InkWell(
               key: const Key('preview_mode_frequency'),
               onTap: () => setState(() => _previewMode = PreviewMode.frequency),
-              borderRadius: BorderRadius.circular(tokens.radiusSm),
+              borderRadius: BorderRadius.circular(tokens.radiusPill),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                   color: _previewMode == PreviewMode.frequency
                       ? tokens.cyanAccent.withValues(alpha: 0.15)
                       : Colors.transparent,
-                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                  borderRadius: BorderRadius.circular(tokens.radiusPill),
                   border: Border.all(
                     color: _previewMode == PreviewMode.frequency
                         ? tokens.cyanAccent
@@ -614,7 +614,7 @@ class _CategoryTabButton extends StatelessWidget {
     return Expanded(
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(tokens.radiusMd),
+        borderRadius: BorderRadius.circular(tokens.radiusPill),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
           padding: const EdgeInsets.symmetric(vertical: 10),
@@ -622,7 +622,7 @@ class _CategoryTabButton extends StatelessWidget {
             color: isSelected
                 ? tokens.cyanAccent.withValues(alpha: 0.18)
                 : tokens.panel,
-            borderRadius: BorderRadius.circular(tokens.radiusMd),
+            borderRadius: BorderRadius.circular(tokens.radiusPill),
             border: Border.all(
               color: isSelected ? tokens.cyanAccent : tokens.borderSubtle,
               width: isSelected ? 1.4 : 1.0,

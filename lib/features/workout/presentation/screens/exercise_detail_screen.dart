@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_theme.dart';
+import '../../../../shared/presentation/components/app_card.dart';
 import '../../../../core/utils/chart_data_sampler.dart';
 import '../../../../shared/widgets/exercise_video_player.dart';
 import '../../domain/entities/entities.dart';
@@ -321,7 +322,7 @@ class _PerformanceTable extends StatelessWidget {
     // Show most recent first (up to 20 entries)
     final recent = points.reversed.take(20).toList();
 
-    return AppTheme.glassmorphicCard(
+    return AppCard(
       padding: const EdgeInsets.all(AppTheme.spacingSmall),
       child: Column(
         children: [

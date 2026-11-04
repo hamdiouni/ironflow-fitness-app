@@ -93,7 +93,7 @@ class _ExercisePickerScreenState extends State<ExercisePickerScreen> {
                       )
                     : null,
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(999),
                 ),
               ),
               onChanged: (_) => _updateFilteredExercises(),
@@ -183,7 +183,7 @@ class _ExercisePickerTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       leading: ClipRRect(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(16),
         child: CachedNetworkImage(
           imageUrl: exercise.imageUrl,
           width: 56,
@@ -206,7 +206,7 @@ class _ExercisePickerTile extends StatelessWidget {
             height: 56,
             decoration: BoxDecoration(
               color: exercise.muscleGroup.color.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(16),
             ),
             child: Icon(
               Icons.fitness_center,

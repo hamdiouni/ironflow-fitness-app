@@ -78,7 +78,7 @@ class _NutritionHistoryScreenState
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: tokens.cyanAccent.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(tokens.radiusSm),
+                    borderRadius: BorderRadius.circular(tokens.radiusPill),
                     border: Border.all(
                       color: tokens.cyanAccent.withValues(alpha: 0.4),
                       width: 1,
@@ -249,7 +249,7 @@ class _NutritionHistoryItem extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
         color: tokens.panel,
-        borderRadius: BorderRadius.circular(tokens.radiusMd),
+        borderRadius: BorderRadius.circular(tokens.radiusLg),
         border: Border.all(color: tokens.borderSubtle, width: 1),
       ),
       padding: const EdgeInsets.all(AppTheme.spacingMedium),
@@ -262,7 +262,7 @@ class _NutritionHistoryItem extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 8),
             decoration: BoxDecoration(
               color: tokens.card,
-              borderRadius: BorderRadius.circular(tokens.radiusSm),
+              borderRadius: BorderRadius.circular(tokens.radiusLg),
               border: Border.all(
                 color: tokens.borderSubtle,
                 width: 1,

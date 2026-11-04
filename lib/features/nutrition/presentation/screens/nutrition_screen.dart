@@ -29,7 +29,7 @@ import 'food_search_screen.dart';
 
 /// Nutrition screen displaying daily macro summary, meal list, and log meal form.
 ///
-/// Upgraded to the Monolithic Sci-Fi design system (Direction 3).
+/// Upgraded to Direction 4 (Soft & Layered).
 ///
 /// **Validates: Requirements 6.1, 6.2, 6.3, 6.5, 6.6, 12.3, 12.4, 18.1, 18.2, 18.3, 18.4, 18.5, 18.6**
 class NutritionScreen extends ConsumerWidget {
@@ -80,7 +80,7 @@ class NutritionScreen extends ConsumerWidget {
             child: Container(
               decoration: BoxDecoration(
                 color: tokens.panel,
-                borderRadius: BorderRadius.circular(tokens.radiusSm),
+                borderRadius: BorderRadius.circular(tokens.radiusPill),
                 border: Border.all(color: tokens.borderSubtle, width: 1),
               ),
               child: IconButton(
@@ -376,7 +376,7 @@ class _NutritionBody extends StatelessWidget {
                         color: summary.meals.isNotEmpty
                             ? tokens.kineticAccent.withValues(alpha: 0.12)
                             : tokens.card,
-                        borderRadius: BorderRadius.circular(tokens.radiusSm),
+                        borderRadius: BorderRadius.circular(tokens.radiusPill),
                         border: Border.all(
                           color: summary.meals.isNotEmpty
                               ? tokens.kineticAccent.withValues(alpha: 0.35)
@@ -529,10 +529,10 @@ class _SwapMealDialog extends ConsumerWidget {
     );
 
     return AlertDialog(
-      backgroundColor: tokens.canvas,
+      backgroundColor: tokens.panel,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(tokens.radiusMd),
-        side: BorderSide(color: tokens.borderGlow.withValues(alpha: 0.5), width: 1.5),
+        borderRadius: BorderRadius.circular(tokens.radiusLg),
+        side: BorderSide(color: tokens.borderSubtle, width: 1),
       ),
       title: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -577,8 +577,8 @@ class _SwapMealDialog extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: tokens.panel,
-                  borderRadius: BorderRadius.circular(tokens.radiusSm),
+                  color: tokens.card,
+                  borderRadius: BorderRadius.circular(tokens.radiusLg),
                   border: Border.all(color: tokens.borderSubtle, width: 1),
                 ),
                 child: Column(
@@ -649,7 +649,7 @@ class _SwapMealDialog extends ConsumerWidget {
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
                       color: tokens.panel,
-                      borderRadius: BorderRadius.circular(tokens.radiusSm),
+                      borderRadius: BorderRadius.circular(tokens.radiusLg),
                       border: Border.all(
                         color: alt.savingsBadge.contains('SAVE')
                             ? const Color(0xFF00E676).withValues(alpha: 0.4)
@@ -682,7 +682,7 @@ class _SwapMealDialog extends ConsumerWidget {
                                 color: alt.savingsBadge.contains('SAVE')
                                     ? const Color(0xFF00E676).withValues(alpha: 0.15)
                                     : tokens.cyanAccent.withValues(alpha: 0.12),
-                                borderRadius: BorderRadius.circular(3),
+                                borderRadius: BorderRadius.circular(tokens.radiusPill),
                               ),
                               child: Text(
                                 alt.savingsBadge,
@@ -782,7 +782,7 @@ class _SwapMealDialog extends ConsumerWidget {
                                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                 decoration: BoxDecoration(
                                   color: tokens.cyanAccent,
-                                  borderRadius: BorderRadius.circular(4),
+                                  borderRadius: BorderRadius.circular(tokens.radiusPill),
                                 ),
                                 child: const Text(
                                   'SWAP',
@@ -878,7 +878,7 @@ class _DefaultTargetsDisplay extends ConsumerWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
                     color: tokens.card,
-                    borderRadius: BorderRadius.circular(tokens.radiusSm),
+                    borderRadius: BorderRadius.circular(tokens.radiusPill),
                     border: Border.all(color: tokens.borderSubtle, width: 1),
                   ),
                   child: Text(
@@ -1023,7 +1023,7 @@ class _DietPlanTargetsDisplay extends ConsumerWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
                     color: tokens.kineticAccent.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(tokens.radiusSm),
+                    borderRadius: BorderRadius.circular(tokens.radiusPill),
                     border: Border.all(
                       color: tokens.kineticAccent.withValues(alpha: 0.35),
                       width: 1,
@@ -1133,7 +1133,7 @@ class _TargetTelemetryChip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
       decoration: BoxDecoration(
         color: tokens.card,
-        borderRadius: BorderRadius.circular(tokens.radiusSm),
+        borderRadius: BorderRadius.circular(tokens.radiusLg),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -1187,7 +1187,7 @@ class _TelemetryPill extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: tokens.card,
-        borderRadius: BorderRadius.circular(tokens.radiusSm),
+        borderRadius: BorderRadius.circular(tokens.radiusPill),
         border: Border.all(color: tokens.borderSubtle, width: 1),
       ),
       child: Row(
@@ -1532,7 +1532,7 @@ class _LogMealDialogState extends State<_LogMealDialog> {
     return AlertDialog(
       backgroundColor: tokens.panel,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(tokens.radiusMd),
+        borderRadius: BorderRadius.circular(tokens.radiusLg),
         side: BorderSide(color: tokens.borderSubtle, width: 1),
       ),
       title: Row(
@@ -1541,7 +1541,7 @@ class _LogMealDialogState extends State<_LogMealDialog> {
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
               color: tokens.kineticAccent.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(tokens.radiusSm),
+              borderRadius: BorderRadius.circular(tokens.radiusPill),
             ),
             child: Icon(
               Icons.restaurant_rounded,
@@ -1628,15 +1628,15 @@ class _LogMealDialogState extends State<_LogMealDialog> {
         fillColor: tokens.card,
         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(tokens.radiusSm),
+          borderRadius: BorderRadius.circular(tokens.radiusLg),
           borderSide: BorderSide(color: tokens.borderSubtle, width: 1),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(tokens.radiusSm),
+          borderRadius: BorderRadius.circular(tokens.radiusLg),
           borderSide: BorderSide(color: tokens.borderSubtle, width: 1),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(tokens.radiusSm),
+          borderRadius: BorderRadius.circular(tokens.radiusLg),
           borderSide: BorderSide(color: tokens.kineticAccent, width: 1.5),
         ),
       ),
@@ -1800,12 +1800,12 @@ class _RecentFoodChip extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(tokens.radiusSm),
+        borderRadius: BorderRadius.circular(tokens.radiusPill),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
             color: tokens.card,
-            borderRadius: BorderRadius.circular(tokens.radiusSm),
+            borderRadius: BorderRadius.circular(tokens.radiusPill),
             border: Border.all(
               color: tokens.borderSubtle,
               width: 1,

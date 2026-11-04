@@ -236,7 +236,7 @@ class _BodyWeightTab extends ConsumerWidget {
                           horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
                         color: tokens.card,
-                        borderRadius: BorderRadius.circular(tokens.radiusSm),
+                        borderRadius: BorderRadius.circular(tokens.radiusPill),
                         border:
                             Border.all(color: tokens.borderSubtle, width: 1),
                       ),
@@ -401,7 +401,7 @@ class _BodyWeightTab extends ConsumerWidget {
                             horizontal: 12, vertical: 8),
                         decoration: BoxDecoration(
                           color: tokens.card,
-                          borderRadius: BorderRadius.circular(tokens.radiusSm),
+                          borderRadius: BorderRadius.circular(tokens.radiusPill),
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -483,7 +483,7 @@ class _BodyWeightTab extends ConsumerWidget {
       builder: (ctx) => AlertDialog(
         backgroundColor: tokens.panel,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(tokens.radiusMd),
+          borderRadius: BorderRadius.circular(tokens.radiusLg),
           side: BorderSide(color: tokens.borderSubtle, width: 1),
         ),
         title: Text(
@@ -650,7 +650,7 @@ class _BodyWeightTab extends ConsumerWidget {
       builder: (ctx) => AlertDialog(
         backgroundColor: tokens.panel,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(tokens.radiusMd),
+          borderRadius: BorderRadius.circular(tokens.radiusLg),
           side: BorderSide(color: tokens.borderSubtle, width: 1),
         ),
         title: Text(
@@ -693,17 +693,17 @@ class _BodyWeightTab extends ConsumerWidget {
                       contentPadding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 10),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(tokens.radiusSm),
+                        borderRadius: BorderRadius.circular(tokens.radiusPill),
                         borderSide:
                             BorderSide(color: tokens.borderSubtle, width: 1),
                       ),
                       enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(tokens.radiusSm),
+                        borderRadius: BorderRadius.circular(tokens.radiusPill),
                         borderSide:
                             BorderSide(color: tokens.borderSubtle, width: 1),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(tokens.radiusSm),
+                        borderRadius: BorderRadius.circular(tokens.radiusPill),
                         borderSide:
                             BorderSide(color: tokens.kineticAccent, width: 1.5),
                       ),

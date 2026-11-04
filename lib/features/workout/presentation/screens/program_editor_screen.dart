@@ -390,11 +390,11 @@ class _ProgramEditorScreenState extends ConsumerState<ProgramEditorScreen> {
                     filled: true,
                     fillColor: tokens.panel,
                     enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(tokens.radiusSm),
+                      borderRadius: BorderRadius.circular(tokens.radiusLg),
                       borderSide: BorderSide(color: tokens.borderSubtle, width: 1),
                     ),
                     focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(tokens.radiusSm),
+                      borderRadius: BorderRadius.circular(tokens.radiusLg),
                       borderSide: BorderSide(color: tokens.kineticAccent, width: 1.5),
                     ),
                   ),
@@ -411,11 +411,11 @@ class _ProgramEditorScreenState extends ConsumerState<ProgramEditorScreen> {
                     filled: true,
                     fillColor: tokens.panel,
                     enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(tokens.radiusSm),
+                      borderRadius: BorderRadius.circular(tokens.radiusLg),
                       borderSide: BorderSide(color: tokens.borderSubtle, width: 1),
                     ),
                     focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(tokens.radiusSm),
+                      borderRadius: BorderRadius.circular(tokens.radiusLg),
                       borderSide: BorderSide(color: tokens.kineticAccent, width: 1.5),
                     ),
                   ),
@@ -431,11 +431,11 @@ class _ProgramEditorScreenState extends ConsumerState<ProgramEditorScreen> {
                     filled: true,
                     fillColor: tokens.panel,
                     enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(tokens.radiusSm),
+                      borderRadius: BorderRadius.circular(tokens.radiusLg),
                       borderSide: BorderSide(color: tokens.borderSubtle, width: 1),
                     ),
                     focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(tokens.radiusSm),
+                      borderRadius: BorderRadius.circular(tokens.radiusLg),
                       borderSide: BorderSide(color: tokens.kineticAccent, width: 1.5),
                     ),
                   ),

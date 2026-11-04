@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/constants/app_theme.dart';
+import '../../../../shared/presentation/components/app_card.dart';
 import '../../../../shared/widgets/empty_state_widget.dart';
 import '../../../ai/domain/entities/insight.dart';
 import '../../../ai/presentation/widgets/contextual_insight_banner.dart';
@@ -177,6 +178,7 @@ class _WorkoutHistoryItemState extends State<_WorkoutHistoryItem> {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AppThemeTokens.of(context);
     final dateLabel = _dateFormat.format(widget.workout.date);
     final timeLabel = _timeFormat.format(widget.workout.date);
     final durationLabel = _formatDuration(widget.workout.duration);
@@ -186,13 +188,13 @@ class _WorkoutHistoryItemState extends State<_WorkoutHistoryItem> {
 
     return Padding(
       padding: const EdgeInsets.only(bottom: AppTheme.spacingSmall),
-      child: AppTheme.glassmorphicCard(
+      child: AppCard(
         padding: const EdgeInsets.all(AppTheme.spacingMedium),
         child: Column(
           children: [
             InkWell(
               onTap: () => setState(() => _isExpanded = !_isExpanded),
-              borderRadius: BorderRadius.circular(AppTheme.borderRadiusSmall),
+              borderRadius: BorderRadius.circular(tokens.radiusLg),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -203,9 +205,9 @@ class _WorkoutHistoryItemState extends State<_WorkoutHistoryItem> {
                       vertical: AppTheme.spacingSmall,
                     ),
                     decoration: BoxDecoration(
-                      color: AppTheme.primaryColor.withValues(alpha: 0.15),
+                      color: tokens.kineticAccent.withValues(alpha: 0.15),
                       borderRadius:
-                          BorderRadius.circular(AppTheme.borderRadiusSmall),
+                          BorderRadius.circular(tokens.radiusLg),
                     ),
                     child: Column(
                       children: [
@@ -364,7 +366,7 @@ class _ExerciseDetailItem extends StatelessWidget {
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: theme.colorScheme.surface.withValues(alpha: 0.5),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: theme.colorScheme.onSurface.withValues(alpha: 0.1),
           ),
