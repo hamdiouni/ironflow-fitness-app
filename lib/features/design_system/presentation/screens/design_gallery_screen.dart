@@ -76,7 +76,7 @@ class _DesignGalleryScreenState extends ConsumerState<DesignGalleryScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'MONOLITHIC SCI-FI',
+                        'SOFT & LAYERED (DIRECTION 4)',
                         style: TextStyle(
                           fontFamily: AppTypography.displayFontFamily,
                           fontSize: 14,
@@ -86,7 +86,7 @@ class _DesignGalleryScreenState extends ConsumerState<DesignGalleryScreen> {
                         ),
                       ),
                       Text(
-                        'Mode: ${tokens.isDark ? "Stealth Carbon (Dark)" : "Architectural Titanium (Light)"}',
+                        'Mode: ${tokens.isDark ? "Midnight Indigo (Dark)" : "Warm Linen (Light)"}',
                         style: TextStyle(
                           fontFamily: AppTypography.bodyFontFamily,
                           fontSize: 12,
