@@ -55,7 +55,12 @@ class HomeScreen extends ConsumerWidget {
                 child: _HomeHeader(profileAsync: profileAsync),
               ),
 
-              // 2. Today's Program Directive (Protocol Day or Rest Day card)
+              // 2. Hero Readiness & Recovery Banner (Direction 4 Signature)
+              const SliverToBoxAdapter(
+                child: _HeroReadinessBanner(),
+              ),
+
+              // 3. Today's Program Directive (Protocol Day or Rest Day card)
               const SliverToBoxAdapter(
                 child: _TodayDirectiveCard(),
               ),
@@ -163,12 +168,6 @@ class _HomeHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hour = DateTime.now().hour;
-    final greeting = hour < 12
-        ? 'Good Morning'
-        : hour < 17
-            ? 'Good Afternoon'
-            : 'Good Evening';
     final tokens = context.tokens;
 
     return Padding(
@@ -187,7 +186,7 @@ class _HomeHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'TODAY',
+                  'DAILY OVERVIEW',
                   style: TextStyle(
                     fontFamily: AppTypography.displayFontFamily,
                     color: tokens.kineticAccent,
@@ -667,6 +666,99 @@ class _SummaryCard extends StatelessWidget {
 }
 
 // ── Today's Program Directive Card ──────────────────────────────────────────
+
+// ── Hero Readiness Banner (Direction 4) ──────────────────────────────────────
+
+class _HeroReadinessBanner extends StatelessWidget {
+  const _HeroReadinessBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.tokens;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacings.lg,
+        vertical: AppSpacings.xs,
+      ),
+      child: AppCard(
+        isGlowing: false,
+        padding: const EdgeInsets.all(AppSpacings.md + 2),
+        child: Row(
+          children: [
+            AppProgressRing(
+              progress: 0.92,
+              size: 58,
+              strokeWidth: 6,
+              progressColor: tokens.kineticAccent,
+              backgroundColor: tokens.elevated,
+              centerWidget: Text(
+                '92%',
+                style: TextStyle(
+                  fontFamily: AppTypography.displayFontFamily,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                  color: tokens.kineticAccent,
+                ),
+              ),
+            ),
+            const SizedBox(width: AppSpacings.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          'Optimal Recovery',
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: AppTypography.displayFontFamily,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
+                            color: tokens.textPrimary,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: tokens.cyanAccent.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(tokens.radiusPill),
+                        ),
+                        child: Text(
+                          'PRIMED',
+                          style: TextStyle(
+                            fontFamily: AppTypography.displayFontFamily,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w800,
+                            color: tokens.cyanAccent,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    'CNS & muscle readiness high. Great day for heavy compound lifts.',
+                    style: TextStyle(
+                      fontFamily: AppTypography.bodyFontFamily,
+                      color: tokens.textSecondary,
+                      fontSize: 11.5,
+                      height: 1.3,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    ).animate().fadeIn(duration: 300.ms).slideY(begin: 0.04);
+  }
+}
 
 class _TodayDirectiveCard extends ConsumerWidget {
   const _TodayDirectiveCard();
