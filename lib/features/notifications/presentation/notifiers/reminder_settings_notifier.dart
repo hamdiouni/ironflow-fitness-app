@@ -31,6 +31,9 @@ class ReminderSettingsNotifier extends StateNotifier<AsyncValue<ReminderSettings
     bool? enabled,
     TimeOfDayModel? time,
   }) async {
+    if (enabled == true) {
+      await _notificationService.requestPermissions();
+    }
     state.whenData((currentSettings) async {
       final newSettings = currentSettings.copyWith(
         workoutRemindersEnabled: enabled ?? currentSettings.workoutRemindersEnabled,
@@ -48,6 +51,9 @@ class ReminderSettingsNotifier extends StateNotifier<AsyncValue<ReminderSettings
     TimeOfDayModel? lunchTime,
     TimeOfDayModel? dinnerTime,
   }) async {
+    if (enabled == true) {
+      await _notificationService.requestPermissions();
+    }
     state.whenData((currentSettings) async {
       final newSettings = currentSettings.copyWith(
         mealRemindersEnabled: enabled ?? currentSettings.mealRemindersEnabled,
@@ -65,6 +71,9 @@ class ReminderSettingsNotifier extends StateNotifier<AsyncValue<ReminderSettings
     bool? enabled,
     TimeOfDayModel? time,
   }) async {
+    if (enabled == true) {
+      await _notificationService.requestPermissions();
+    }
     state.whenData((currentSettings) async {
       final newSettings = currentSettings.copyWith(
         streakRemindersEnabled: enabled ?? currentSettings.streakRemindersEnabled,

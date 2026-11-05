@@ -6,34 +6,48 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 /// Applies the user's stored telemetry choices to Firebase SDKs.
 ///
-/// The Privacy screen has long persisted `analytics_enabled` and
-/// `crash_reporting_enabled`, but startup previously ignored those values
-/// and enabled collection solely from `!kDebugMode`. This service is the
-/// single bridge between the stored opt-outs and the Firebase SDK
-/// collection switches:
-///
+/// Wave 1 Privacy Plumbing:
 /// - Debug builds never collect, regardless of preference.
-/// - Profile/release builds collect only when the corresponding stored
-///   preference is enabled (existing default: enabled, matching the
-///   Privacy screen's historical default and store disclosure).
-/// - Toggling a preference should call [applyStoredPreferences] so the
-///   change takes effect immediately, not only on next launch.
+/// - Profile/release builds default to **OFF (`false`)** until the user
+///   explicitly opts in via the Telemetry Consent screen or Privacy Settings.
+/// - Toggling a preference or recording consent calls [applyStoredPreferences]
+///   so the change takes effect immediately.
 class TelemetryPreferences {
   const TelemetryPreferences._();
 
   static const String analyticsEnabledKey = 'analytics_enabled';
   static const String crashReportingEnabledKey = 'crash_reporting_enabled';
+  static const String consentPromptShownKey = 'telemetry_consent_prompt_shown';
 
   static Future<bool> analyticsEnabled([SharedPreferences? prefs]) async {
     final store = prefs ?? await SharedPreferences.getInstance();
-    return store.getBool(analyticsEnabledKey) ?? true;
+    return store.getBool(analyticsEnabledKey) ?? false;
   }
 
   static Future<bool> crashReportingEnabled([
     SharedPreferences? prefs,
   ]) async {
     final store = prefs ?? await SharedPreferences.getInstance();
-    return store.getBool(crashReportingEnabledKey) ?? true;
+    return store.getBool(crashReportingEnabledKey) ?? false;
+  }
+
+  static Future<bool> hasShownConsentPrompt([SharedPreferences? prefs]) async {
+    final store = prefs ?? await SharedPreferences.getInstance();
+    return store.getBool(consentPromptShownKey) ?? false;
+  }
+
+  /// Records the user's explicit telemetry consent choice and applies it
+  /// immediately to the Firebase SDKs.
+  static Future<void> recordConsentDecision({
+    required bool analyticsEnabled,
+    required bool crashReportingEnabled,
+    SharedPreferences? prefs,
+  }) async {
+    final store = prefs ?? await SharedPreferences.getInstance();
+    await store.setBool(analyticsEnabledKey, analyticsEnabled);
+    await store.setBool(crashReportingEnabledKey, crashReportingEnabled);
+    await store.setBool(consentPromptShownKey, true);
+    await applyStoredPreferences(prefs: store);
   }
 
   /// Pure policy: debug builds never collect analytics.

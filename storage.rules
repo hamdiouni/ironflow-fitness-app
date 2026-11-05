@@ -11,30 +11,44 @@ service firebase.storage {
       return isAuthenticated() && request.auth.uid == userId;
     }
     
+    // Owner read (get + list) and delete across the user's storage subtree.
+    // Separating `delete` from `create, update` fixes BKD-02 where
+    // `request.resource.size` evaluated on `request.resource == null` during
+    // deletes and denied every file deletion and account-deletion purge.
+    match /users/{userId}/{allPaths=**} {
+      allow read, delete: if isOwner(userId);
+    }
+
     // User profile images (private by default; share via expiring/signed
     // URLs if a future social surface needs cross-user avatars)
     match /users/{userId}/profile/{fileName} {
-      allow read: if isOwner(userId);
-      allow write: if isOwner(userId) 
-                   && request.resource.size < 5 * 1024 * 1024  // Max 5MB
-                   && request.resource.contentType.matches('image/.*');
+      allow read, delete: if isOwner(userId);
+      allow create, update: if isOwner(userId)
+                            && request.resource != null
+                            && fileName.size() <= 256
+                            && request.resource.size < 5 * 1024 * 1024  // Max 5MB
+                            && request.resource.contentType.matches('image/.*');
     }
     
     // Workout images/videos
     match /users/{userId}/workouts/{fileName} {
-      allow read: if isOwner(userId);
-      allow write: if isOwner(userId) 
-                   && request.resource.size < 50 * 1024 * 1024  // Max 50MB
-                   && (request.resource.contentType.matches('image/.*') 
-                       || request.resource.contentType.matches('video/.*'));
+      allow read, delete: if isOwner(userId);
+      allow create, update: if isOwner(userId)
+                            && request.resource != null
+                            && fileName.size() <= 256
+                            && request.resource.size < 50 * 1024 * 1024  // Max 50MB
+                            && (request.resource.contentType.matches('image/.*') 
+                                || request.resource.contentType.matches('video/.*'));
     }
     
     // Body progress photos
     match /users/{userId}/progress/{fileName} {
-      allow read: if isOwner(userId);
-      allow write: if isOwner(userId) 
-                   && request.resource.size < 10 * 1024 * 1024  // Max 10MB
-                   && request.resource.contentType.matches('image/.*');
+      allow read, delete: if isOwner(userId);
+      allow create, update: if isOwner(userId)
+                            && request.resource != null
+                            && fileName.size() <= 256
+                            && request.resource.size < 10 * 1024 * 1024  // Max 10MB
+                            && request.resource.contentType.matches('image/.*');
     }
   }
 }

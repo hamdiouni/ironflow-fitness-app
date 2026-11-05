@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/app_theme.dart';
 import '../../../../core/services/telemetry_preferences.dart';
+import '../../../../core/widgets/telemetry_consent_dialog.dart';
 import '../../../../core/utils/record_ownership.dart';
 import '../../../../shared/presentation/services/app_haptics.dart';
 import '../../../ai/presentation/providers/ai_provider.dart';
@@ -29,10 +30,11 @@ class PrivacySettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen> {
-  bool _analyticsEnabled = true;
-  bool _crashReportingEnabled = true;
+  bool _analyticsEnabled = false;
+  bool _crashReportingEnabled = false;
   bool _dataSharing = false;
   bool _aiPersonalizationConsent = false;
+  bool _hasRecordedTelemetryConsent = false;
   bool _isLoading = true;
   bool _isProcessingAction = false;
 
@@ -57,10 +59,12 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen> {
     );
     if (!mounted) return;
     setState(() {
-      _analyticsEnabled = prefs.getBool('analytics_enabled') ?? true;
-      _crashReportingEnabled = prefs.getBool('crash_reporting_enabled') ?? true;
+      _analyticsEnabled = prefs.getBool('analytics_enabled') ?? false;
+      _crashReportingEnabled = prefs.getBool('crash_reporting_enabled') ?? false;
       _dataSharing = prefs.getBool('data_sharing_enabled') ?? false;
       _aiPersonalizationConsent = aiConsent;
+      _hasRecordedTelemetryConsent =
+          prefs.getBool(TelemetryPreferences.consentPromptShownKey) ?? false;
       _isLoading = false;
     });
   }
@@ -71,6 +75,10 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen> {
     await prefs.setBool('crash_reporting_enabled', _crashReportingEnabled);
     await prefs.setBool('data_sharing_enabled', _dataSharing);
     await prefs.setBool(_aiConsentKey, _aiPersonalizationConsent);
+    await prefs.setBool(TelemetryPreferences.consentPromptShownKey, true);
+    if (mounted) {
+      setState(() => _hasRecordedTelemetryConsent = true);
+    }
 
     // Persisting the booleans is not enough: push the Analytics and
     // Crashlytics choices into the Firebase SDKs immediately so an
@@ -811,6 +819,57 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen> {
 
           // Telemetry & Permissions Section
           _buildSectionHeader('TELEMETRY & PERMISSIONS', tokens),
+          if (!_hasRecordedTelemetryConsent)
+            Container(
+              padding: const EdgeInsets.all(12),
+              margin: const EdgeInsets.only(bottom: 12),
+              decoration: BoxDecoration(
+                color: tokens.panel,
+                borderRadius: BorderRadius.circular(tokens.radiusMd),
+                border: Border.all(color: tokens.borderSubtle),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        Icons.privacy_tip_outlined,
+                        size: 18,
+                        color: tokens.kineticAccent,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'Analytics & Crashlytics default OFF until you opt in.',
+                          style: TextStyle(
+                            fontFamily: AppTypography.bodyFontFamily,
+                            fontSize: 12,
+                            color: tokens.textSecondary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () async {
+                        await showDialog<void>(
+                          context: context,
+                          builder: (ctx) => TelemetryConsentScreen(
+                            onDecisionSaved: () => Navigator.of(ctx).pop(),
+                          ),
+                        );
+                        await _loadSettings();
+                      },
+                      child: const Text('REVIEW CONSENT'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           Container(
             decoration: BoxDecoration(
               color: tokens.panel,
@@ -940,6 +999,19 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen> {
                   accentColor: tokens.kineticAccent,
                   tokens: tokens,
                   onTap: _showPrivacyPolicyModal,
+                ),
+                Divider(color: tokens.borderSubtle, height: 1),
+                _buildActionTile(
+                  title: 'Open Source & Font Licenses',
+                  subtitle: 'View bundled OFL font licenses (Inter, Space Grotesk) and package notices',
+                  icon: Icons.description_outlined,
+                  accentColor: tokens.cyanAccent,
+                  tokens: tokens,
+                  onTap: () => showLicensePage(
+                    context: context,
+                    applicationName: 'IronFlow',
+                    applicationVersion: '1.0.0',
+                  ),
                 ),
               ],
             ),

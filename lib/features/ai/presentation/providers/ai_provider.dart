@@ -270,7 +270,7 @@ class AIChatNotifier extends StateNotifier<AIChatState> {
             DateTime.now(),
           );
           AppLogger.debug('✅ [AI CHAT] Found ${bodyEntries.length} body entries');
-        } catch (e, stackTrace) {
+        } catch (e) {
           AppLogger.debug('⚠️ [AI CHAT] Error gathering user data: $e');
         }
       } else {
@@ -322,7 +322,7 @@ class AIChatNotifier extends StateNotifier<AIChatState> {
           AppLogger.debug('✅ [AI CHAT] Gemini response received!');
           AppLogger.debug('📝 [AI CHAT] Response length: ${responseText.length} chars');
           AppLogger.debug('═══════════════════════════════════════');
-        } catch (e, stackTrace) {
+        } catch (e) {
           AppLogger.debug('═══════════════════════════════════════');
           AppLogger.debug('❌ [AI CHAT ERROR] Gemini API failed!');
           AppLogger.debug('🔴 [AI CHAT ERROR] Error message: $e');
@@ -370,7 +370,7 @@ class AIChatNotifier extends StateNotifier<AIChatState> {
           responseLength: responseText.length,
         );
         AppLogger.debug('📊 [Analytics] AI query event logged');
-      } catch (e, stackTrace) {
+      } catch (e) {
         AppLogger.debug('⚠️ [Analytics] Failed to log AI query event: $e');
       }
       

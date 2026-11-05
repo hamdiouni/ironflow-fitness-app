@@ -6,16 +6,33 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('TelemetryPreferences', () {
-    test('stored opt-outs default to enabled for existing installs',
+    test('unconfigured installs default to OFF (disabled) until explicit consent',
         () async {
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
 
-      expect(await TelemetryPreferences.analyticsEnabled(prefs), isTrue);
+      expect(await TelemetryPreferences.analyticsEnabled(prefs), isFalse);
       expect(
         await TelemetryPreferences.crashReportingEnabled(prefs),
-        isTrue,
+        isFalse,
       );
+      expect(await TelemetryPreferences.hasShownConsentPrompt(prefs), isFalse);
+    });
+
+    test('recordConsentDecision persists opt-in choices and marks consent prompt shown',
+        () async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+
+      await TelemetryPreferences.recordConsentDecision(
+        analyticsEnabled: true,
+        crashReportingEnabled: true,
+        prefs: prefs,
+      );
+
+      expect(await TelemetryPreferences.analyticsEnabled(prefs), isTrue);
+      expect(await TelemetryPreferences.crashReportingEnabled(prefs), isTrue);
+      expect(await TelemetryPreferences.hasShownConsentPrompt(prefs), isTrue);
     });
 
     test('stored opt-out values are read back', () async {

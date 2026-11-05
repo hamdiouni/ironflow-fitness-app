@@ -1,3 +1,4 @@
+import 'package:progression_tracker/core/services/hive_encryption_service.dart';
 import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
@@ -26,6 +27,20 @@ class HiveManager {
   static const String _dietPlanBox = 'diet_plan';
   static const String _foodItemsFullBox = 'food_items_full';
   static const String _activeWorkoutStateBox = 'active_workout_state';
+
+  static HiveEncryptionService _encryptionService = HiveEncryptionService();
+
+  /// Allows tests to inject a custom [HiveEncryptionService].
+  static set encryptionService(HiveEncryptionService service) {
+    _encryptionService = service;
+  }
+
+  static Future<Box<E>> _openBoxWithPolicy<E>(String boxName) async {
+    if (HiveEncryptionService.sensitiveBoxes.contains(boxName)) {
+      return _encryptionService.openEncryptedBox<E>(boxName);
+    }
+    return Hive.openBox<E>(boxName);
+  }
 
   /// Initialize Hive
   static Future<void> initialize() async {
@@ -56,39 +71,39 @@ class HiveManager {
       
       for (final boxName in mapBoxes) {
         AppLogger.debug('📊 [Hive] Opening box: $boxName...');
-        await Hive.openBox<Map>(boxName);
+        await _openBoxWithPolicy<Map>(boxName);
         AppLogger.debug('✅ [Hive] Box opened: $boxName');
       }
 
       // Open foods box (stores heterogeneous items: List, String, int)
       AppLogger.debug('📊 [Hive] Opening box: $_foodsBox...');
-      await Hive.openBox(_foodsBox);
+      await _openBoxWithPolicy<dynamic>(_foodsBox);
       AppLogger.debug('✅ [Hive] Box opened: $_foodsBox');
       
       // Open app settings box separately (String type)
       AppLogger.debug('📊 [Hive] Opening box: $_appSettingsBox...');
-      await Hive.openBox<String>(_appSettingsBox);
+      await _openBoxWithPolicy<String>(_appSettingsBox);
       AppLogger.debug('✅ [Hive] Box opened: $_appSettingsBox');
       
       // Open auth session box (dynamic type for flexibility)
       AppLogger.debug('📊 [Hive] Opening box: $_authSessionBox...');
-      await Hive.openBox(_authSessionBox);
+      await _openBoxWithPolicy<dynamic>(_authSessionBox);
       AppLogger.debug('✅ [Hive] Box opened: $_authSessionBox');
 
       // Open user profile box (dynamic type for profile JSON and onboarded flag)
       AppLogger.debug('📊 [Hive] Opening box: $_userProfileBox...');
-      await Hive.openBox(_userProfileBox);
+      await _openBoxWithPolicy<dynamic>(_userProfileBox);
       AppLogger.debug('✅ [Hive] Box opened: $_userProfileBox');
 
       // Open AI chat history box (dynamic type for persisted messages)
       AppLogger.debug('📊 [Hive] Opening box: $_aiChatHistoryBox...');
-      await Hive.openBox(_aiChatHistoryBox);
+      await _openBoxWithPolicy<dynamic>(_aiChatHistoryBox);
       AppLogger.debug('✅ [Hive] Box opened: $_aiChatHistoryBox');
 
       // Open active workout state box (dynamic type, matches
       // WorkoutStateManager's openBox<dynamic> expectation)
       AppLogger.debug('📊 [Hive] Opening box: $_activeWorkoutStateBox...');
-      await Hive.openBox<dynamic>(_activeWorkoutStateBox);
+      await _openBoxWithPolicy<dynamic>(_activeWorkoutStateBox);
       AppLogger.debug('✅ [Hive] Box opened: $_activeWorkoutStateBox');
       
       AppLogger.debug('✅ [Hive] All boxes opened successfully');

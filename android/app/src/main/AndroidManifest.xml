@@ -52,6 +52,15 @@
         <meta-data
             android:name="io.flutter.embedding.android.EnableImpeller"
             android:value="true" />
+
+        <!-- Wave 1 Privacy: Default native Analytics & Crashlytics collection to OFF
+             until explicit user consent is granted via TelemetryPreferences. -->
+        <meta-data
+            android:name="firebase_analytics_collection_enabled"
+            android:value="false" />
+        <meta-data
+            android:name="firebase_crashlytics_collection_enabled"
+            android:value="false" />
         
         <!-- Notification receiver for boot completed -->
         <receiver android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver"

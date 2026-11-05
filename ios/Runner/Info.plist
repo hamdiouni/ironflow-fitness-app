@@ -47,6 +47,12 @@
 	<true/>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>IronFlow uses your photo library only when you choose a progress photo to attach to your body tracking history.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>IronFlow uses your camera only when you take a body progress photo or profile avatar.</string>
+	<key>FIREBASE_ANALYTICS_COLLECTION_ENABLED</key>
+	<false/>
+	<key>FirebaseCrashlyticsCollectionEnabled</key>
+	<false/>
 	<key>CFBundleLocalizations</key>
 	<array>
 		<string>en</string>

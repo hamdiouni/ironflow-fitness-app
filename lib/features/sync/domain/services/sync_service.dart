@@ -1,6 +1,7 @@
 import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:progression_tracker/core/utils/record_ownership.dart';
 import 'dart:async';
+import 'dart:convert';
 import 'package:uuid/uuid.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import '../entities/sync_action.dart';
@@ -56,6 +57,20 @@ class SyncService {
   /// the whole history look foreign-owned once real auth is enabled.
   final bool _enableInitialPush;
 
+  /// Compile-time default for the cloud sync feature flag.
+  static const bool kDefaultCloudSyncEnabled =
+      bool.fromEnvironment('ENABLE_CLOUD_SYNC', defaultValue: true);
+
+  bool _syncEnabled;
+
+  /// Whether cloud sync push/pull is currently enabled.
+  bool get isSyncEnabled => _syncEnabled;
+
+  /// Toggle cloud sync at runtime (e.g. via remote config or user setting).
+  void setSyncEnabled(bool enabled) {
+    _syncEnabled = enabled;
+  }
+
   final _syncStatusController = StreamController<SyncStatusEntity>.broadcast();
   Stream<SyncStatusEntity> get syncStatus => _syncStatusController.stream;
 
@@ -84,7 +99,9 @@ class SyncService {
     Connectivity? connectivity,
     this.currentUserIdProvider,
     bool enableInitialPush = true,
+    bool syncEnabled = kDefaultCloudSyncEnabled,
   })  : _enableInitialPush = enableInitialPush,
+        _syncEnabled = syncEnabled,
         _syncQueue = syncQueue,
         _firestoreSync = firestoreSync,
         _hiveWorkouts = hiveWorkouts,
@@ -160,6 +177,10 @@ class SyncService {
   /// then resolved via [currentUserIdProvider]. With no user at all the
   /// sync is skipped (local-only mode).
   Future<void> syncAll({String? userId}) async {
+    if (!_syncEnabled) {
+      AppLogger.debug('Cloud sync disabled via feature flag, skipping...');
+      return;
+    }
     if (_isSyncing) {
       AppLogger.debug('Sync already in progress, skipping...');
       return;
@@ -392,12 +413,20 @@ class SyncService {
   // Push
   // ---------------------------------------------------------------------------
 
-  /// Push local changes to cloud
+  /// Push local changes to cloud.
+  ///
+  /// Coalesces multiple pending actions for the same `(userId, dataType, dataId)`
+  /// in FIFO order so only the latest effective snapshot/tombstone is pushed to
+  /// Firestore and superseded intermediate edits are marked completed.
   Future<void> _pushLocalChanges(String userId) async {
     final pendingActions = await _syncQueue.getPendingActions();
 
+    // Group eligible actions by (dataType, dataId) in FIFO order to coalesce
+    // superseded intermediate writes for the same record.
+    final latestByRecordKey = <String, SyncAction>{};
+    final supersededIds = <String>[];
+
     for (final action in pendingActions) {
-      // Skip if too many retries
       if (action.retryCount >= 3) {
         AppLogger.debug('Action ${action.id} exceeded max retries, skipping');
         continue;
@@ -410,6 +439,19 @@ class SyncService {
         continue;
       }
 
+      final recordKey = '${action.dataType.name}:${action.dataId}';
+      final previous = latestByRecordKey[recordKey];
+      if (previous != null) {
+        supersededIds.add(previous.id);
+      }
+      latestByRecordKey[recordKey] = action;
+    }
+
+    for (final supersededId in supersededIds) {
+      await _syncQueue.updateActionStatus(supersededId, SyncStatus.completed);
+    }
+
+    for (final action in latestByRecordKey.values) {
       try {
         await _syncQueue.updateActionStatus(action.id, SyncStatus.syncing);
 
@@ -517,15 +559,41 @@ class SyncService {
   // Pull (each leg isolated: one failing collection must not block the rest)
   // ---------------------------------------------------------------------------
 
+  Future<Map<String, DateTime>> _getUnpushedActionClocks(String userId) async {
+    final pendingActions = await _syncQueue.getPendingActions();
+    final map = <String, DateTime>{};
+    for (final action in pendingActions) {
+      final owner = action.data['userId'];
+      if (owner is String && owner.isNotEmpty && owner != userId) {
+        continue;
+      }
+      final key = '${action.dataType.name}:${action.dataId}';
+      final updatedAtIso = action.data['updatedAt'] as String?;
+      final clock = _parse(updatedAtIso) ?? action.timestamp;
+      final existing = map[key];
+      if (existing == null || clock.isAfter(existing)) {
+        map[key] = clock;
+      }
+    }
+    return map;
+  }
+
   Future<void> _pullCloudChanges(String userId) async {
-    await _guardLeg('workouts', () => _pullWorkouts(userId));
-    await _guardLeg('program', () => _pullActiveProgram(userId));
+    final unpushedClocks = await _getUnpushedActionClocks(userId);
+    await _guardLeg('workouts', () => _pullWorkouts(userId, unpushedClocks));
+    await _guardLeg('program', () => _pullActiveProgram(userId, unpushedClocks));
     if (_hiveNutrition != null) {
-      await _guardLeg('meals', () => _pullMeals(userId));
-      await _guardLeg('nutrition targets', () => _pullNutritionTargets(userId));
+      await _guardLeg('meals', () => _pullMeals(userId, unpushedClocks));
+      await _guardLeg(
+        'nutrition targets',
+        () => _pullNutritionTargets(userId, unpushedClocks),
+      );
     }
     if (_hiveBody != null) {
-      await _guardLeg('body entries', () => _pullBodyEntries(userId));
+      await _guardLeg(
+        'body entries',
+        () => _pullBodyEntries(userId, unpushedClocks),
+      );
     }
   }
 
@@ -537,7 +605,10 @@ class SyncService {
     }
   }
 
-  Future<void> _pullWorkouts(String userId) async {
+  Future<void> _pullWorkouts(
+    String userId,
+    Map<String, DateTime> unpushedClocks,
+  ) async {
     final since = await _syncQueue.getCursor(_workoutsKey, userId: userId);
     final cloudWorkouts = await _firestoreSync.getWorkouts(userId, since: since);
     if (cloudWorkouts.isNotEmpty) {
@@ -545,15 +616,34 @@ class SyncService {
         for (final w in await _hiveWorkouts.getAllWorkouts()) w.id: w,
       };
       for (final cloud in cloudWorkouts) {
+        final local = locals[cloud.id];
+        final unpushedClock =
+            unpushedClocks['${SyncDataType.workout.name}:${cloud.id}'];
+        final effectiveLocalClock = _maxClock(
+          local == null ? null : _workoutClock(local),
+          unpushedClock,
+        );
+
         if (cloud.deletedAt != null) {
-          // Tombstone: propagate the deletion.
-          await _hiveWorkouts.deleteWorkout(cloud.id);
-          AppLogger.debug('📥 Deleted workout ${cloud.id} (tombstone)');
+          final tombstoneClock = _parse(cloud.deletedAt) ?? _workoutClock(cloud);
+          if (effectiveLocalClock == null ||
+              !_isAfter(effectiveLocalClock, tombstoneClock)) {
+            await _hiveWorkouts.deleteWorkout(cloud.id);
+            AppLogger.debug('📥 Deleted workout ${cloud.id} (tombstone)');
+          }
           continue;
         }
-        final local = locals[cloud.id];
-        if (local == null ||
-            _isAfter(_workoutClock(cloud), _workoutClock(local))) {
+        if (local == null && unpushedClock == null) {
+          await _hiveWorkouts.saveWorkout(cloud);
+          AppLogger.debug('📥 Pulled workout ${cloud.id}');
+        } else if (effectiveLocalClock != null &&
+            _shouldAcceptCloud(
+              cloudClock: _workoutClock(cloud),
+              localClock: effectiveLocalClock,
+              cloudJson: cloud.toJson(),
+              localJson: local?.toJson(),
+              hasUnpushedLocalEdit: unpushedClock != null,
+            )) {
           await _hiveWorkouts.saveWorkout(cloud);
           AppLogger.debug('📥 Pulled workout ${cloud.id}');
         }
@@ -562,13 +652,28 @@ class SyncService {
     await _advanceCursor(_workoutsKey, userId);
   }
 
-  Future<void> _pullActiveProgram(String userId) async {
+  Future<void> _pullActiveProgram(
+    String userId,
+    Map<String, DateTime> unpushedClocks,
+  ) async {
     final since = await _syncQueue.getCursor(_programsKey, userId: userId);
     final cloud = await _firestoreSync.getActiveProgram(userId, since: since);
     if (cloud != null) {
       final local = await _hivePrograms.loadActiveProgram(userId: userId);
-      if (local == null ||
-          _isAfter(_parse(cloud.updatedAt), _parse(local.updatedAt))) {
+      final unpushedClock =
+          unpushedClocks['${SyncDataType.program.name}:${cloud.id}'];
+      final effectiveLocalClock = _maxClock(
+        _parse(local?.updatedAt),
+        unpushedClock,
+      );
+      if ((local == null && unpushedClock == null) ||
+          _shouldAcceptCloud(
+            cloudClock: _parse(cloud.updatedAt),
+            localClock: effectiveLocalClock,
+            cloudJson: cloud.toJson(),
+            localJson: local?.toJson(),
+            hasUnpushedLocalEdit: unpushedClock != null,
+          )) {
         // Full state (day index + completed days) comes with the model;
         // the old pull reconstructed a fresh ActiveProgram at day 0.
         await _hivePrograms.saveActiveProgram(cloud, userId: userId);
@@ -578,7 +683,10 @@ class SyncService {
     await _advanceCursor(_programsKey, userId);
   }
 
-  Future<void> _pullMeals(String userId) async {
+  Future<void> _pullMeals(
+    String userId,
+    Map<String, DateTime> unpushedClocks,
+  ) async {
     final hiveNutrition = _hiveNutrition!;
     final since = await _syncQueue.getCursor(_nutritionKey, userId: userId);
     final cloudMeals = await _firestoreSync.getMeals(userId, since: since);
@@ -587,13 +695,31 @@ class SyncService {
         for (final m in await hiveNutrition.getAllMeals()) m.id: m,
       };
       for (final cloud in cloudMeals) {
+        final local = locals[cloud.id];
+        final unpushedClock =
+            unpushedClocks['${SyncDataType.nutrition.name}:${cloud.id}'];
+        final effectiveLocalClock = _maxClock(
+          local == null ? null : _mealClock(local),
+          unpushedClock,
+        );
+
         if (cloud.deletedAt != null) {
-          await hiveNutrition.deleteMealEntry(cloud.id);
-          AppLogger.debug('📥 Deleted meal ${cloud.id} (tombstone)');
+          final tombstoneClock = _parse(cloud.deletedAt) ?? _mealClock(cloud);
+          if (effectiveLocalClock == null ||
+              !_isAfter(effectiveLocalClock, tombstoneClock)) {
+            await hiveNutrition.deleteMealEntry(cloud.id);
+            AppLogger.debug('📥 Deleted meal ${cloud.id} (tombstone)');
+          }
           continue;
         }
-        final local = locals[cloud.id];
-        if (local == null || _isAfter(_mealClock(cloud), _mealClock(local))) {
+        if ((local == null && unpushedClock == null) ||
+            _shouldAcceptCloud(
+              cloudClock: _mealClock(cloud),
+              localClock: effectiveLocalClock,
+              cloudJson: cloud.toJson(),
+              localJson: local?.toJson(),
+              hasUnpushedLocalEdit: unpushedClock != null,
+            )) {
           await hiveNutrition.saveMealEntry(cloud);
           AppLogger.debug('📥 Pulled meal ${cloud.id}');
         }
@@ -602,7 +728,10 @@ class SyncService {
     await _advanceCursor(_nutritionKey, userId);
   }
 
-  Future<void> _pullBodyEntries(String userId) async {
+  Future<void> _pullBodyEntries(
+    String userId,
+    Map<String, DateTime> unpushedClocks,
+  ) async {
     final hiveBody = _hiveBody!;
     final since = await _syncQueue.getCursor(_bodyProgressKey, userId: userId);
     final cloudEntries =
@@ -612,13 +741,31 @@ class SyncService {
         for (final e in await hiveBody.getAllBodyEntries()) e.id: e,
       };
       for (final cloud in cloudEntries) {
+        final local = locals[cloud.id];
+        final unpushedClock =
+            unpushedClocks['${SyncDataType.bodyProgress.name}:${cloud.id}'];
+        final effectiveLocalClock = _maxClock(
+          local == null ? null : _bodyClock(local),
+          unpushedClock,
+        );
+
         if (cloud.deletedAt != null) {
-          await hiveBody.deleteBodyEntry(cloud.id);
-          AppLogger.debug('📥 Deleted body entry ${cloud.id} (tombstone)');
+          final tombstoneClock = _parse(cloud.deletedAt) ?? _bodyClock(cloud);
+          if (effectiveLocalClock == null ||
+              !_isAfter(effectiveLocalClock, tombstoneClock)) {
+            await hiveBody.deleteBodyEntry(cloud.id);
+            AppLogger.debug('📥 Deleted body entry ${cloud.id} (tombstone)');
+          }
           continue;
         }
-        final local = locals[cloud.id];
-        if (local == null || _isAfter(_bodyClock(cloud), _bodyClock(local))) {
+        if ((local == null && unpushedClock == null) ||
+            _shouldAcceptCloud(
+              cloudClock: _bodyClock(cloud),
+              localClock: effectiveLocalClock,
+              cloudJson: cloud.toJson(),
+              localJson: local?.toJson(),
+              hasUnpushedLocalEdit: unpushedClock != null,
+            )) {
           await hiveBody.saveBodyEntry(cloud);
           AppLogger.debug('📥 Pulled body entry ${cloud.id}');
         }
@@ -627,12 +774,28 @@ class SyncService {
     await _advanceCursor(_bodyProgressKey, userId);
   }
 
-  Future<void> _pullNutritionTargets(String userId) async {
+  Future<void> _pullNutritionTargets(
+    String userId,
+    Map<String, DateTime> unpushedClocks,
+  ) async {
     final hiveNutrition = _hiveNutrition!;
     final cloud = await _firestoreSync.getNutritionTargets(userId);
     if (cloud == null) return;
     final local = await hiveNutrition.getNutritionTargets(userId: userId);
-    if (local == null || _isAfter(_parse(cloud.updatedAt), _parse(local.updatedAt))) {
+    final unpushedClock =
+        unpushedClocks['${SyncDataType.nutritionTargets.name}:$userId'];
+    final effectiveLocalClock = _maxClock(
+      _parse(local?.updatedAt),
+      unpushedClock,
+    );
+    if ((local == null && unpushedClock == null) ||
+        _shouldAcceptCloud(
+          cloudClock: _parse(cloud.updatedAt),
+          localClock: effectiveLocalClock,
+          cloudJson: cloud.toJson(),
+          localJson: local?.toJson(),
+          hasUnpushedLocalEdit: unpushedClock != null,
+        )) {
       await hiveNutrition.saveNutritionTargets(cloud, userId: userId);
       AppLogger.debug('📥 Pulled nutrition targets');
     }
@@ -657,6 +820,48 @@ class SyncService {
       iso == null ? null : DateTime.tryParse(iso);
 
   bool _isAfter(DateTime? a, DateTime? b) => (a ?? _epoch).isAfter(b ?? _epoch);
+
+  DateTime? _maxClock(DateTime? a, DateTime? b) {
+    if (a == null) return b;
+    if (b == null) return a;
+    return a.isAfter(b) ? a : b;
+  }
+
+  /// Deterministic Last-Write-Wins (LWW) decision with unpushed local edit
+  /// protection and canonical JSON tie-breaking on equal timestamps.
+  bool _shouldAcceptCloud({
+    required DateTime? cloudClock,
+    required DateTime? localClock,
+    Map<String, dynamic>? cloudJson,
+    Map<String, dynamic>? localJson,
+    bool hasUnpushedLocalEdit = false,
+  }) {
+    final c = cloudClock ?? _epoch;
+    final l = localClock ?? _epoch;
+    if (c.isAfter(l)) return true;
+    if (c.isBefore(l)) return false;
+
+    // Equal timestamps: if local has an unpushed edit waiting in the outbox,
+    // never overwrite it with a tie.
+    if (hasUnpushedLocalEdit) return false;
+
+    // Deterministic tie-breaker across devices when both records are synced
+    // and share the exact same timestamp millisecond.
+    if (cloudJson != null && localJson != null) {
+      final canonicalCloud = _canonicalizeJson(cloudJson);
+      final canonicalLocal = _canonicalizeJson(localJson);
+      return canonicalCloud.compareTo(canonicalLocal) > 0;
+    }
+    return false;
+  }
+
+  String _canonicalizeJson(Map<String, dynamic> map) {
+    final sortedKeys = map.keys.toList()..sort();
+    final ordered = <String, dynamic>{
+      for (final k in sortedKeys) k: map[k],
+    };
+    return jsonEncode(ordered);
+  }
 
   Future<void> _advanceCursor(String key, String userId) async {
     await _syncQueue.setCursor(

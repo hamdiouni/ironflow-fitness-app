@@ -1,6 +1,5 @@
 import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'dart:async';
-import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
@@ -59,11 +58,12 @@ class NotificationService {
     // Android initialization settings
     const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
 
-    // iOS initialization settings
+    // iOS initialization settings — do not request permissions on cold start;
+    // permissions are requested contextually via requestPermissions().
     const iosSettings = DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
+      requestAlertPermission: false,
+      requestBadgePermission: false,
+      requestSoundPermission: false,
     );
 
     const initSettings = InitializationSettings(
@@ -525,6 +525,10 @@ class NotificationService {
     if (kIsWeb || !_initialized) return;
 
     try {
+      final enabled = await areNotificationsEnabled();
+      if (!enabled) {
+        await requestPermissions();
+      }
       final scheduledDate = tz.TZDateTime.from(targetEndTime, tz.local);
       if (scheduledDate.isBefore(tz.TZDateTime.now(tz.local))) return;
 

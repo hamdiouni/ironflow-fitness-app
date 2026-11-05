@@ -2,6 +2,7 @@ import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -9,6 +10,7 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'firebase_options.dart';
 import 'core/constants/app_theme.dart';
+import 'core/services/app_check_service.dart';
 import 'core/services/telemetry_preferences.dart';
 import 'core/providers/language_provider.dart';
 import 'core/providers/theme_provider.dart';
@@ -30,6 +32,15 @@ void main() async {
   runZonedGuarded<Future<void>>(() async {
     WidgetsFlutterBinding.ensureInitialized();
 
+    // Register bundled OFL font licenses (Inter & Space Grotesk) for LicensePage
+    LicenseRegistry.addLicense(() async* {
+      final licenseText = await rootBundle.loadString('assets/fonts/OFL.txt');
+      yield LicenseEntryWithLineBreaks(
+        const ['inter', 'space_grotesk'],
+        licenseText,
+      );
+    });
+
     // Load environment variables if available (e.g., local debug build)
     try {
       await dotenv.load(fileName: ".env");
@@ -46,6 +57,9 @@ void main() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
+
+    // Initialize Firebase App Check (staged monitor mode in Wave 1 Step 7)
+    await AppCheckService.initialize();
 
     // Apply the user's stored Analytics/Crashlytics opt-outs before any
     // telemetry can be emitted. Debug builds never collect.
@@ -89,7 +103,9 @@ void main() async {
       currentUserId: AuthSessionStorage().getUserId(),
     );
 
-    // Initialize Notification Service
+    // Initialize Notification Service without requesting OS permissions on cold boot.
+    // Notification permissions are requested contextually when the user enables
+    // a reminder or starts a rest timer (Wave 1 Step 5).
     final notificationService = NotificationService();
     await notificationService.initialize(
       onNotificationTap: (payload) {
@@ -100,9 +116,6 @@ void main() async {
         // TODO: Navigate to appropriate screen based on payload
       },
     );
-
-    // Request notification permissions
-    await notificationService.requestPermissions();
 
     // Skip food database initialization on web for faster startup
     // Food data will be loaded from local Hive database instead

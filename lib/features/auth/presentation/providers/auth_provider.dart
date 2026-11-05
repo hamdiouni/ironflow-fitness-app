@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 // Firebase - DISABLED
 // import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
@@ -22,18 +23,48 @@ import '../../data/datasources/mock_auth_datasource.dart';
 import '../../data/datasources/mock_user_datasource.dart';
 import '../../data/repositories/auth_repository_impl.dart';
 
-/// Whether the app authenticates against real Firebase (Phase 1 seam).
-///
-/// Defaults to `false` (mock auth) so behavior is unchanged. Enable with
-/// `--dart-define=USE_FIREBASE_AUTH=true` once the Firebase project is
-/// configured and `firebase deploy --only firestore:rules,firestore:indexes`
-/// has run. Before flipping the default, complete the platform OAuth setup
-/// (Android SHA fingerprints, web client, iOS URL scheme/client IDs) and
-/// decide the mock-id → Firebase-uid local-data migration story.
-const bool kUseFirebaseAuth = bool.fromEnvironment(
+/// Build flavor (`dev`, `staging`, `prod`).
+/// Defaults to `prod` in release builds and `dev` in debug/test builds.
+const String kAppFlavor = String.fromEnvironment(
+  'FLAVOR',
+  defaultValue: kReleaseMode ? 'prod' : 'dev',
+);
+
+const bool _kUseFirebaseAuthEnv = bool.fromEnvironment(
   'USE_FIREBASE_AUTH',
   defaultValue: false,
 );
+
+/// Pure policy determining whether real Firebase Auth must be used (SEC-02).
+///
+/// - Release builds (`isReleaseMode == true`) ALWAYS use real Firebase Auth
+///   and NEVER allow `MockAuthDataSourceImpl`, regardless of flags.
+/// - `prod`, `production`, and `staging` flavors ALWAYS use real Firebase Auth.
+/// - `dev` flavor in debug/test mode uses `useFirebaseAuthFlag` (default `false`
+///   for offline widget/unit tests unless `--dart-define=USE_FIREBASE_AUTH=true`).
+bool shouldUseFirebaseAuth({
+  required bool isReleaseMode,
+  required String flavor,
+  required bool useFirebaseAuthFlag,
+}) {
+  if (isReleaseMode) {
+    return true;
+  }
+  final normalizedFlavor = flavor.trim().toLowerCase();
+  if (normalizedFlavor == 'prod' ||
+      normalizedFlavor == 'production' ||
+      normalizedFlavor == 'staging') {
+    return true;
+  }
+  return useFirebaseAuthFlag;
+}
+
+/// Whether the app authenticates against real Firebase.
+bool get kUseFirebaseAuth => shouldUseFirebaseAuth(
+      isReleaseMode: kReleaseMode,
+      flavor: kAppFlavor,
+      useFirebaseAuthFlag: _kUseFirebaseAuthEnv,
+    );
 
 // Repository Provider — mock by default, real Firebase behind the flag.
 // Both Firebase implementations also implement the mock interfaces, so

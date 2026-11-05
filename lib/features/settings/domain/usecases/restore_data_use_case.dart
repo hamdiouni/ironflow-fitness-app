@@ -292,7 +292,7 @@ class RestoreDataUseCase {
   Future<Directory> getSafetySnapshotDirectory() async {
     Directory baseDir;
     if (_privateDocumentsDir != null) {
-      baseDir = _privateDocumentsDir!;
+      baseDir = _privateDocumentsDir;
     } else {
       try {
         baseDir = await getApplicationDocumentsDirectory();

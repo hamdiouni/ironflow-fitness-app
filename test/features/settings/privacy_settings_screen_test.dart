@@ -273,5 +273,40 @@ void main() {
         tester.view.resetDevicePixelRatio();
       });
     });
+
+    testWidgets('6. Defaults Analytics and Crashlytics to OFF and opens TelemetryConsentScreen when unconfigured', (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      await tester.pumpWidget(createSubject());
+      await tester.pumpAndSettle();
+
+      // Verify banner and review consent button appear when unconfigured
+      expect(
+        find.text('Analytics & Crashlytics default OFF until you opt in.'),
+        findsOneWidget,
+      );
+      expect(find.text('REVIEW CONSENT'), findsOneWidget);
+
+      // Verify both telemetry switches default to false
+      final switches = tester.widgetList<SwitchListTile>(find.byType(SwitchListTile)).toList();
+      expect(switches[0].value, isFalse);
+      expect(switches[1].value, isFalse);
+
+      // Open consent modal and choose KEEP ALL OFF
+      await tester.tap(find.text('REVIEW CONSENT'));
+      await tester.pumpAndSettle();
+      expect(find.text('Privacy & Diagnostics Consent'), findsOneWidget);
+
+      await tester.tap(find.text('KEEP ALL OFF'));
+      await tester.pumpAndSettle();
+
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getBool('analytics_enabled'), isFalse);
+      expect(prefs.getBool('crash_reporting_enabled'), isFalse);
+      expect(prefs.getBool('telemetry_consent_prompt_shown'), isTrue);
+    });
   });
 }

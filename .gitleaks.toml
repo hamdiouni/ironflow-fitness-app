@@ -1,0 +1,36 @@
+title = "IronFlow Gitleaks Configuration"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "google-gemini-api-key"
+description = "Google / Gemini API Key (AIza...)"
+regex = '''AIza[0-9A-Za-z\-_]{35}'''
+tags = ["key", "google", "gemini"]
+
+  [rules.allowlist]
+  description = "Allow public Firebase client configuration keys restricted by App Check and Security Rules"
+  paths = [
+    '''^lib/firebase_options\.dart$''',
+    '''^android/app/google-services\.json$''',
+    '''^ios/Runner/GoogleService-Info\.plist$'''
+  ]
+
+[[rules]]
+id = "nvidia-nim-api-key"
+description = "NVIDIA NIM API Key (nvapi-...)"
+regex = '''nvapi-[0-9A-Za-z\-_]{20,}'''
+tags = ["key", "nvidia"]
+
+[allowlist]
+description = "Global allowlist for generated lockfiles and redacted placeholders"
+regexes = [
+  '''REDACTED_GEMINI_API_KEY''',
+  '''REDACTED_NVIDIA_API_KEY'''
+]
+paths = [
+  '''^pubspec\.lock$''',
+  '''^functions/package-lock\.json$'''
+]
+

@@ -92,7 +92,10 @@ class AppRoutes {
     if (path == login ||
         path == signup ||
         path == splash ||
-        path == onboarding) {
+        path == onboarding ||
+        path == aiTest ||
+        path == designPreview ||
+        path == designGallery) {
       return home;
     }
     return trimmed;
@@ -183,7 +186,19 @@ final routerProvider = Provider<GoRouter>((ref) {
     // REMOVED: refreshListenable - this was causing the router to rebuild
     // and interrupt navigation when auth state changed
     // refreshListenable: _GoRouterRefreshStream(ref.watch(authNotifierProvider.notifier).stream),
-    routes: [
+    routes: buildAppRoutes(),
+  );
+});
+
+/// Builds the top-level route table.
+///
+/// Developer/preview routes (`/design-preview`, `/design-gallery`, `/ai-test`)
+/// are included ONLY when [includeDebugRoutes] is true (`kDebugMode && !kReleaseMode`),
+/// guaranteeing they are never exposed in release builds (SEC-05).
+List<RouteBase> buildAppRoutes({
+  bool includeDebugRoutes = kDebugMode && !kReleaseMode,
+}) {
+  return [
       // Splash screen
       GoRoute(
         path: AppRoutes.splash,
@@ -398,20 +413,19 @@ final routerProvider = Provider<GoRouter>((ref) {
           );
         },
       ),
-      GoRoute(
-        path: AppRoutes.designPreview,
-        builder: (context, state) => const DesignLabScreen(),
-      ),
-      GoRoute(
-        path: AppRoutes.designGallery,
-        builder: (context, state) => const DesignGalleryScreen(),
-      ),
-      if (kDebugMode) ...[
+      if (includeDebugRoutes) ...[
+        GoRoute(
+          path: AppRoutes.designPreview,
+          builder: (context, state) => const DesignLabScreen(),
+        ),
+        GoRoute(
+          path: AppRoutes.designGallery,
+          builder: (context, state) => const DesignGalleryScreen(),
+        ),
         GoRoute(
           path: AppRoutes.aiTest,
           builder: (context, state) => const AITestScreen(),
         ),
       ],
-    ],
-  );
-});
+    ];
+}

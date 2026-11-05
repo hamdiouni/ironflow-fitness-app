@@ -33,22 +33,75 @@ service cloud.firestore {
 
     function writesOwnDoc() {
       return isAuthenticated()
-          && request.resource.data.userId == request.auth.uid;
+          && request.resource.data.userId is string
+          && request.resource.data.userId == request.auth.uid
+          && request.resource.data.userId.size() > 0
+          && request.resource.data.userId.size() <= 128;
+    }
+
+    // Bounds field count and optional variable-length fields on client writes
+    // to prevent megabyte payload stuffing (BKD-04).
+    function isBoundedDoc() {
+      return request.resource.data.keys().size() <= 50
+          && (!('deletedAt' in request.resource.data)
+              || request.resource.data.deletedAt == null
+              || (request.resource.data.deletedAt is string
+                  && request.resource.data.deletedAt.size() <= 64))
+          && (!('name' in request.resource.data)
+              || request.resource.data.name == null
+              || (request.resource.data.name is string
+                  && request.resource.data.name.size() <= 500))
+          && (!('notes' in request.resource.data)
+              || request.resource.data.notes == null
+              || (request.resource.data.notes is string
+                  && request.resource.data.notes.size() <= 10000))
+          && (!('exercises' in request.resource.data)
+              || request.resource.data.exercises == null
+              || (request.resource.data.exercises is list
+                  && request.resource.data.exercises.size() <= 200))
+          && (!('items' in request.resource.data)
+              || request.resource.data.items == null
+              || (request.resource.data.items is list
+                  && request.resource.data.items.size() <= 200));
+    }
+
+    function isValidSyncPayload() {
+      return writesOwnDoc() && isBoundedDoc();
     }
 
     // ------------------------------------------------------------------
-    // Per-user tree: users/{uid} and ALL of its subcollections.
-    // Covers: profile/data (auth) and backups/{id} (settings). Meals and
-    // targets moved OUT of this tree in Phase 2 (they sync through the
-    // flat collections below); any pre-Phase-2 documents left under
-    // users/{uid}/nutrition are orphaned history, readable by the owner
-    // but written by nothing.
+    // Per-user tree: users/{uid} and its explicitly allowed subcollections.
+    // Covers: profile/data (auth), backups/{id} (settings), and read-only
+    // ai_usage/{date} (written exclusively by the Cloud Functions AI proxy
+    // via Admin SDK so clients cannot reset their own daily quota).
     // ------------------------------------------------------------------
     match /users/{userId} {
-      allow read, write: if isOwner(userId);
+      allow read, delete: if isOwner(userId);
+      allow create, update: if isOwner(userId) && isBoundedDoc();
 
-      match /{subcollection}/{document=**} {
-        allow read, write: if isOwner(userId);
+      match /profile/{docId} {
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isBoundedDoc();
+      }
+
+      match /backups/{backupId} {
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isBoundedDoc();
+      }
+
+      match /nutrition/{docId} {
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isBoundedDoc();
+      }
+
+      match /consent/{docId} {
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isBoundedDoc();
+      }
+
+      match /ai_usage/{dateId} {
+        allow read: if isOwner(userId);
+        allow write: if false;
       }
     }
 
@@ -59,32 +112,39 @@ service cloud.firestore {
     // the server `syncedAt` timestamp. Deletes are tombstone updates
     // (deletedAt field), hence `update` covers them; hard `delete` is
     // kept for the program document and account cleanup.
-    // The transitional nested `{collection}/{userId}/**` matches were
-    // removed in Phase 2 — nothing has ever written that shape.
+    // IMPORTANT (BKD-01): `update` requires BOTH `readsOwnDoc()` (existing
+    // doc belongs to caller) and `isValidSyncPayload()` (incoming doc still
+    // belongs to caller and respects field bounds) to prevent cross-user
+    // document hijacking.
     // ------------------------------------------------------------------
     match /workouts/{workoutId} {
       allow read, delete: if readsOwnDoc();
-      allow create, update: if writesOwnDoc();
+      allow create: if isValidSyncPayload();
+      allow update: if readsOwnDoc() && isValidSyncPayload();
     }
 
     match /programs/{programId} {
       allow read, delete: if readsOwnDoc();
-      allow create, update: if writesOwnDoc();
+      allow create: if isValidSyncPayload();
+      allow update: if readsOwnDoc() && isValidSyncPayload();
     }
 
     match /nutrition/{logId} {
       allow read, delete: if readsOwnDoc();
-      allow create, update: if writesOwnDoc();
+      allow create: if isValidSyncPayload();
+      allow update: if readsOwnDoc() && isValidSyncPayload();
     }
 
     match /body_progress/{progressId} {
       allow read, delete: if readsOwnDoc();
-      allow create, update: if writesOwnDoc();
+      allow create: if isValidSyncPayload();
+      allow update: if readsOwnDoc() && isValidSyncPayload();
     }
 
     // Nutrition targets: singleton document whose ID IS the user id.
     match /nutrition_targets/{userId} {
-      allow read, write: if isOwner(userId);
+      allow read, delete: if isOwner(userId);
+      allow create, update: if isOwner(userId) && isValidSyncPayload();
     }
 
     // NOTE: the old `sync_metadata` collection (cloud-stored pull
