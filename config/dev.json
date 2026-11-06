@@ -1,0 +1,14 @@
+{
+  "FLAVOR": "dev",
+  "APP_NAME": "IronFlow Dev",
+  "APP_ID": "com.progressiontracker.progression_tracker.dev",
+  "APP_ID_SUFFIX": ".dev",
+  "APP_ICON_VARIANT": "dev",
+  "FIREBASE_PROJECT_ID": "ironflow-dev",
+  "AI_PROXY_URL": "http://127.0.0.1:5001/ironflow-dev/us-central1/aiGenerate",
+  "APP_CHECK_ENFORCE": false,
+  "ENABLE_CLOUD_SYNC": false,
+  "USE_FIREBASE_AUTH": false,
+  "ALLOW_DIRECT_AI_KEYS": true
+}
+

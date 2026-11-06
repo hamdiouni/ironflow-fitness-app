@@ -90,6 +90,26 @@ class LocalDataWiper {
     }
   }
 
+  Future<void> _clearBoxSafely(String boxName) async {
+    if (Hive.isBoxOpen(boxName)) {
+      try {
+        await Hive.box<dynamic>(boxName).clear();
+        return;
+      } catch (_) {}
+      try {
+        await Hive.box<Map>(boxName).clear();
+        return;
+      } catch (_) {}
+      try {
+        await Hive.box<String>(boxName).clear();
+        return;
+      } catch (_) {}
+    } else {
+      final box = await Hive.openBox<dynamic>(boxName);
+      await box.clear();
+    }
+  }
+
   Future<void> _wipeHiveBoxes(String userId, bool keepAuthSession) async {
     for (final boxName in _userScopedBoxNames) {
       // Critical check: Never clear protected bundled datasets
@@ -97,12 +117,7 @@ class LocalDataWiper {
         continue;
       }
       try {
-        if (Hive.isBoxOpen(boxName)) {
-          await Hive.box(boxName).clear();
-        } else {
-          final box = await Hive.openBox(boxName);
-          await box.clear();
-        }
+        await _clearBoxSafely(boxName);
       } catch (e) {
         if (kDebugMode) {
           AppLogger.debug('⚠️ [LocalDataWiper] Could not clear box $boxName: $e');
@@ -114,13 +129,7 @@ class LocalDataWiper {
     if (userId.isNotEmpty) {
       final userSpecificBoxName = 'user_profile_box_$userId';
       try {
-        if (Hive.isBoxOpen(userSpecificBoxName)) {
-          final box = Hive.box(userSpecificBoxName);
-          await box.clear();
-        } else {
-          final box = await Hive.openBox(userSpecificBoxName);
-          await box.clear();
-        }
+        await _clearBoxSafely(userSpecificBoxName);
       } catch (e) {
         if (kDebugMode) {
           AppLogger.debug('⚠️ [LocalDataWiper] Could not clear $userSpecificBoxName: $e');
@@ -131,19 +140,14 @@ class LocalDataWiper {
     // App state box keys (active_workout_state, active_program)
     try {
       if (Hive.isBoxOpen('app_state')) {
-        await Hive.box('app_state').clear();
+        await _clearBoxSafely('app_state');
       }
     } catch (_) {}
 
     // Auth session box if full account deletion
     if (!keepAuthSession) {
       try {
-        if (Hive.isBoxOpen('auth_session')) {
-          await Hive.box('auth_session').clear();
-        } else {
-          final box = await Hive.openBox('auth_session');
-          await box.clear();
-        }
+        await _clearBoxSafely('auth_session');
       } catch (_) {}
     }
   }

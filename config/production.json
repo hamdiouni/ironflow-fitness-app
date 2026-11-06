@@ -1,0 +1,14 @@
+{
+  "FLAVOR": "production",
+  "APP_NAME": "IronFlow",
+  "APP_ID": "com.progressiontracker.progression_tracker",
+  "APP_ID_SUFFIX": "",
+  "APP_ICON_VARIANT": "production",
+  "FIREBASE_PROJECT_ID": "gym-app-fe50c",
+  "AI_PROXY_URL": "https://us-central1-gym-app-fe50c.cloudfunctions.net/aiGenerate",
+  "APP_CHECK_ENFORCE": true,
+  "ENABLE_CLOUD_SYNC": true,
+  "USE_FIREBASE_AUTH": true,
+  "ALLOW_DIRECT_AI_KEYS": false
+}
+

@@ -1,4 +1,5 @@
 import java.io.FileInputStream
+import java.util.Base64
 import java.util.Properties
 
 plugins {
@@ -8,6 +9,30 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
     id("com.google.gms.google-services")
 }
+
+// Decode --dart-define and --dart-define-from-file entries (config/dev.json,
+// config/staging.json, config/production.json) so Android manifest labels,
+// icon variants, and optional flavor applicationIdSuffix stay synchronized
+// with the Dart FlavorConfig while keeping `flutter build apk --debug`
+// working out of the box.
+val dartDefineMap = mutableMapOf<String, String>()
+if (project.hasProperty("dart-defines")) {
+    val rawDefines = project.property("dart-defines").toString()
+    rawDefines.split(",").filter { it.isNotBlank() }.forEach { encoded ->
+        try {
+            val decoded = String(Base64.getDecoder().decode(encoded), Charsets.UTF_8)
+            val idx = decoded.indexOf('=')
+            if (idx > 0) {
+                dartDefineMap[decoded.substring(0, idx)] = decoded.substring(idx + 1)
+            }
+        } catch (_: Exception) {}
+    }
+}
+val activeFlavor = dartDefineMap["FLAVOR"]?.lowercase() ?: "production"
+val activeAppName = dartDefineMap["APP_NAME"]?.takeIf { it.isNotBlank() } ?: "IronFlow"
+val requestedIdSuffix = dartDefineMap["APP_ID_SUFFIX"] ?: ""
+val hasFlavorGoogleServices = activeFlavor != "production" &&
+    project.file("src/$activeFlavor/google-services.json").exists()
 
 // Release signing is provided outside git via android/key.properties
 // (storeFile/keyAlias/keyPassword/storePassword). CI should materialize
@@ -51,6 +76,10 @@ android {
 
     defaultConfig {
         applicationId = "com.progressiontracker.progression_tracker"
+        if (hasFlavorGoogleServices && requestedIdSuffix.isNotBlank()) {
+            applicationIdSuffix = requestedIdSuffix
+        }
+        resValue("string", "app_name", activeAppName)
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
