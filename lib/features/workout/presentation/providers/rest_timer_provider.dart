@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/services/rest_timer_service.dart';
 import '../../../../core/providers/analytics_provider.dart';
@@ -209,8 +210,9 @@ class RestTimerNotifier extends Notifier<RestTimerState> {
       clearTargetEndTime: true,
     );
     
-    // Trigger haptic feedback for rest timer completion
+    // Trigger haptic feedback and alert sound for rest timer completion
     ref.read(appHapticsProvider).restTimerComplete();
+    SystemSound.play(SystemSoundType.alert);
     
     // Track rest timer completed
     try {

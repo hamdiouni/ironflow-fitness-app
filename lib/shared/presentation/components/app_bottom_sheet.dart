@@ -111,7 +111,7 @@ class AppBottomSheet extends StatelessWidget {
                       )
                     else
                       const SizedBox.shrink(),
-                    if (action != null) action!,
+                    ?action,
                   ],
                 ),
               ),

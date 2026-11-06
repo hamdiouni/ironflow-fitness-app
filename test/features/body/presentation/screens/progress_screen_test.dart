@@ -81,6 +81,7 @@ void main() {
         weightTrendProvider.overrideWith((ref) async => weightPoints ?? mockWeightPoints),
         bodyHistoryProvider.overrideWith((ref) async => bodyEntries ?? mockBodyEntries),
         workoutHistoryProvider.overrideWith((ref) async => workouts ?? mockWorkouts),
+        workoutsStreamProvider.overrideWith((ref) => Stream.value(workouts ?? mockWorkouts)),
         userProfileProvider.overrideWith((ref) async => const UserProfile(
               goal: FitnessGoal.gainMuscle,
               age: 28,
@@ -108,7 +109,7 @@ void main() {
   }
 
   group('ProgressScreen Widget Tests (Monolithic Sci-Fi Segmented)', () {
-    testWidgets('renders PROGRESS header and 3 segmented tabs: LIFTS & VOLUME, BODY WEIGHT, PHOTOS',
+    testWidgets('renders PROGRESS header and 4 segmented tabs: LIFTS & VOLUME, BODY MAP, BODY WEIGHT, PHOTOS',
         (tester) async {
       await tester.binding.setSurfaceSize(const Size(430, 932));
       addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -118,8 +119,22 @@ void main() {
 
       expect(find.text('PROGRESS'), findsOneWidget);
       expect(find.text('LIFTS & VOLUME'), findsOneWidget);
+      expect(find.text('BODY MAP'), findsOneWidget);
       expect(find.text('BODY WEIGHT'), findsOneWidget);
       expect(find.text('PHOTOS'), findsOneWidget);
+    });
+
+    testWidgets('initialTab "bodymap" deep-links directly to BODY MAP tab',
+        (tester) async {
+      await tester.binding.setSurfaceSize(const Size(430, 932));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(createWidgetUnderTest(initialTab: 'bodymap'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('BODY MAP'), findsOneWidget);
+      expect(find.text('RECOVERY'), findsOneWidget);
+      expect(find.text('FRONT'), findsOneWidget);
     });
 
     testWidgets('Tab 0 (LIFTS & VOLUME) renders analytics telemetry cards',

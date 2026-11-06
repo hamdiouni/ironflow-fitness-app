@@ -5,6 +5,7 @@ import '../../../../core/constants/app_theme.dart';
 import '../../../../shared/presentation/services/app_haptics.dart';
 import '../../../ai/presentation/widgets/ai_entry_button.dart';
 import '../widgets/lifts_volume_tab.dart';
+import '../widgets/body_map/body_map_view.dart';
 import '../widgets/progress/body_weight_tab.dart';
 import '../widgets/progress/progress_photos_tab.dart';
 
@@ -34,13 +35,18 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen>
       case 'volume':
       case 'analytics':
         return 0;
+      case 'bodymap':
+      case 'muscle':
+      case 'muscles':
+      case 'map':
+        return 1;
       case 'weight':
       case 'body':
       case 'measurements':
-        return 1;
+        return 2;
       case 'photos':
       case 'photo':
-        return 2;
+        return 3;
       default:
         return 0;
     }
@@ -51,7 +57,7 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen>
     super.initState();
     final initialIndex = _tabIndexFromParam(widget.initialTab);
     _tabController = TabController(
-      length: 3,
+      length: 4,
       vsync: this,
       initialIndex: initialIndex,
     );
@@ -154,6 +160,7 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen>
               dividerColor: Colors.transparent,
               tabs: const [
                 Tab(text: 'LIFTS & VOLUME'),
+                Tab(text: 'BODY MAP'),
                 Tab(text: 'BODY WEIGHT'),
                 Tab(text: 'PHOTOS'),
               ],
@@ -165,6 +172,7 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen>
         controller: _tabController,
         children: const [
           LiftsVolumeTab(),
+          BodyMapView(),
           BodyWeightTab(),
           ProgressPhotosTab(),
         ],

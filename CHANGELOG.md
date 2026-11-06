@@ -5,6 +5,22 @@ This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html) 
 
 ---
 
+## [1.3.0+4] — 2026-11-06
+
+### Body Map & Gym-First Experience (Wave 4)
+- **Canonical 20-Region Anatomical Model (`4.1`)**: Defined `MuscleRegion` representing 20 anatomical regions (`chest`, `front_delts`, `side_delts`, `rear_delts`, `biceps`, `triceps`, `forearms`, `upper_abs`, `lower_abs`, `obliques`, `quads`, `adductors`, `calves`, `upper_traps`, `middle_back`, `lats`, `lower_back`, `glutes`, `hamstrings`, `abductors`) with resilient ID parsing, primary/secondary exercise resolution via `ExerciseCatalog`, and DOMS soreness tracking.
+- **Scientific Recovery Engine (`4.2`)**: Implemented `MuscleRecoveryCalculator` evaluating exponential recovery decay across hours since training, volume loads, 20% warm-up discounting, fatigue thresholding, and user-reported DOMS soreness overrides into 4 recovery tiers (`fresh`, `recovering`, `fatigued`, `sore`).
+- **Interactive 2D Vector Body Map Canvas (`4.3`, `ADR-006`)**: Engineered high-performance `CustomPainter` vector map with zero new dependencies, normalized 300x520 anatomical coordinate paths, front & back silhouette rendering, front/back view toggle, recovery vs 7-day volume heatmap toggle, battery-optimized selection pulse, and arbitrary polygon hit-testing (<0.4ms frame render time).
+- **Muscle Diagnostics & Direct Workout CTA (`4.4`)**: Implemented Direction 4 `MuscleDetailSheet` showing real-time recovery status, last trained date, 7-day sets and volume, manual DOMS toggle, and direct "Train This Muscle" action linking to exercise discovery.
+- **Gym-First Integrations (`4.5`)**:
+  - Integrated `BodyMapView` as 4th tab (`BODY MAP`) on `ProgressScreen` with deep link parameter support (`?tab=bodymap`).
+  - Integrated live `overallBodyReadinessProvider` into `HomeScreen`'s `HeroReadinessBanner` with animated readiness percentage and 1-tap navigation to the Body Map.
+  - Added `WorkoutSummaryMusclesCard` to `WorkoutSummaryScreen` highlighting stimulated muscle groups upon workout completion with direct link to Body Map.
+  - Added audible gym rest timer alerts via `SystemSound.play(SystemSoundType.alert)` combined with isolated haptic feedback (`AppHaptics.restTimerComplete()`).
+- **Catalog & Code Cleanup (`4.6`)**: Removed unused Riverpod code generation dependencies (`riverpod_annotation`, `riverpod_generator`) from `pubspec.yaml`, and deleted 16 obsolete prototype files in `lib/dev/design_lab/`.
+
+---
+
 ## [1.2.0+3] — 2026-11-06
 
 ### Architecture & Data (Wave 3)

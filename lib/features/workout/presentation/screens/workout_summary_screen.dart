@@ -170,6 +170,11 @@ class _WorkoutSummaryScreenState extends ConsumerState<WorkoutSummaryScreen> {
                   exercises: effectiveExercises,
                   exerciseNames: effectiveExerciseNames,
                 ),
+                const SizedBox(height: AppTheme.spacingMedium),
+                WorkoutSummaryMusclesCard(
+                  key: const Key('summary_section_muscles'),
+                  exerciseNames: effectiveExerciseNames,
+                ),
               ],
 
               // 4. NEXT-TIME PROGRESSION SUGGESTIONS SECTION

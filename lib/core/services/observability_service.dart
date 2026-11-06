@@ -276,7 +276,7 @@ class ObservabilityService {
       scrubbedError,
       tag: 'crash_reporter',
       context: {
-        if (scrubbedContext != null) 'reason': scrubbedContext,
+        'reason': ?scrubbedContext,
         'fatal': fatal,
       },
     );

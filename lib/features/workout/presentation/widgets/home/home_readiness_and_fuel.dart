@@ -10,15 +10,40 @@ import 'package:progression_tracker/features/nutrition/presentation/providers/nu
 import 'package:progression_tracker/features/workout/presentation/providers/active_program_providers.dart';
 import 'package:progression_tracker/features/workout/presentation/providers/workout_providers.dart';
 import 'package:progression_tracker/shared/presentation/services/app_haptics.dart';
+import 'package:progression_tracker/features/body/presentation/providers/body_map_providers.dart';
 
 // ── Hero Readiness Banner (Direction 4) ──────────────────────────────────────
 
-class HeroReadinessBanner extends StatelessWidget {
+class HeroReadinessBanner extends ConsumerWidget {
   const HeroReadinessBanner({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final tokens = context.tokens;
+    final readinessScore = ref.watch(overallBodyReadinessProvider);
+    final percentInt = (readinessScore * 100).round();
+
+    final String tierLabel;
+    final String tierTitle;
+    final String tierSubtitle;
+    final Color tierColor;
+
+    if (readinessScore >= 0.85) {
+      tierLabel = 'PRIMED';
+      tierTitle = 'Optimal Recovery';
+      tierSubtitle = 'CNS and muscles primed for heavy compound lifts.';
+      tierColor = tokens.kineticAccent;
+    } else if (readinessScore >= 0.65) {
+      tierLabel = 'RECOVERING';
+      tierTitle = 'Moderate Fatigue';
+      tierSubtitle = 'Good recovery state. Moderate to heavy volume suitable.';
+      tierColor = tokens.cyanAccent;
+    } else {
+      tierLabel = 'FATIGUED';
+      tierTitle = 'High Muscle Fatigue';
+      tierSubtitle = 'Muscles need recovery. Consider light accessory or rest.';
+      tierColor = tokens.warning;
+    }
 
     return Padding(
       padding: const EdgeInsets.symmetric(
@@ -28,21 +53,25 @@ class HeroReadinessBanner extends StatelessWidget {
       child: AppCard(
         isGlowing: false,
         padding: const EdgeInsets.all(AppSpacings.md + 2),
+        onTap: () {
+          AppHaptics.shared.selectionChanged();
+          context.go('${AppRoutes.progress}?tab=bodymap');
+        },
         child: Row(
           children: [
             LiveMacroRing(
-              progress: 0.92,
+              progress: readinessScore,
               size: 58,
               strokeWidth: 6,
-              primaryColor: tokens.kineticAccent,
+              primaryColor: tierColor,
               backgroundColor: tokens.elevated,
               centerChild: Text(
-                '92%',
+                '$percentInt%',
                 style: TextStyle(
                   fontFamily: AppTypography.displayFontFamily,
                   fontSize: 13,
                   fontWeight: FontWeight.w800,
-                  color: tokens.kineticAccent,
+                  color: tierColor,
                 ),
               ),
             ),
@@ -55,7 +84,7 @@ class HeroReadinessBanner extends StatelessWidget {
                     children: [
                       Flexible(
                         child: Text(
-                          'Optimal Recovery',
+                          tierTitle,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontFamily: AppTypography.displayFontFamily,
@@ -69,16 +98,16 @@ class HeroReadinessBanner extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: tokens.cyanAccent.withValues(alpha: 0.15),
+                          color: tierColor.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(tokens.radiusPill),
                         ),
                         child: Text(
-                          'PRIMED',
+                          tierLabel,
                           style: TextStyle(
                             fontFamily: AppTypography.displayFontFamily,
                             fontSize: 9,
                             fontWeight: FontWeight.w800,
-                            color: tokens.cyanAccent,
+                            color: tierColor,
                           ),
                         ),
                       ),
@@ -86,7 +115,7 @@ class HeroReadinessBanner extends StatelessWidget {
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    'CNS and muscles primed for heavy compound lifts.',
+                    tierSubtitle,
                     style: TextStyle(
                       fontFamily: AppTypography.bodyFontFamily,
                       color: tokens.textSecondary,
@@ -96,6 +125,11 @@ class HeroReadinessBanner extends StatelessWidget {
                   ),
                 ],
               ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: tokens.textMuted,
+              size: 20,
             ),
           ],
         ),
