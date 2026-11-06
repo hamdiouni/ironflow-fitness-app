@@ -28,8 +28,9 @@ class ExerciseFilterState {
   }
 }
 
-class ExerciseFilterNotifier extends StateNotifier<ExerciseFilterState> {
-  ExerciseFilterNotifier() : super(const ExerciseFilterState());
+class ExerciseFilterNotifier extends Notifier<ExerciseFilterState> {
+  @override
+  ExerciseFilterState build() => const ExerciseFilterState();
 
   void setQuery(String q) => state = state.copyWith(query: q);
   void setMuscleGroup(MuscleGroup? mg) => state = mg == null
@@ -42,8 +43,8 @@ class ExerciseFilterNotifier extends StateNotifier<ExerciseFilterState> {
 }
 
 final exerciseFilterProvider =
-    StateNotifierProvider<ExerciseFilterNotifier, ExerciseFilterState>(
-  (ref) => ExerciseFilterNotifier(),
+    NotifierProvider<ExerciseFilterNotifier, ExerciseFilterState>(
+  ExerciseFilterNotifier.new,
 );
 
 final filteredExercisesProvider = Provider<List<ExerciseDefinition>>((ref) {

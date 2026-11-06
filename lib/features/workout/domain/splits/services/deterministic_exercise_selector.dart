@@ -1,6 +1,6 @@
 import '../../../../onboarding/domain/entities/user_profile.dart';
-import '../../../data/exercise_database.dart';
 import '../../entities/exercise_definition.dart';
+import '../../services/exercise_catalog.dart';
 import '../entities/movement_pattern.dart';
 
 /// Result of an exercise selection for a slot.
@@ -37,7 +37,7 @@ class DeterministicExerciseSelector {
     final isHome = equipment == EquipmentType.home;
 
     // Filter database candidates
-    final candidates = ExerciseDatabase.all.where((e) {
+    final candidates = ExerciseCatalog.all.where((e) {
       // 1. Equipment check
       if (isHome) {
         final isHomeFriendly = e.equipment == Equipment.bodyweight ||
@@ -114,10 +114,10 @@ class DeterministicExerciseSelector {
 
     // Fallback for documented gaps (e.g. Home Hamstrings)
     if (isHome && slot.pattern == MovementPattern.hipHinge) {
-      final gluteFallback = ExerciseDatabase.all.firstWhere(
+      final gluteFallback = ExerciseCatalog.all.firstWhere(
         (e) => (e.name == 'Glute Bridge' || e.name == 'Single-Leg Hip Thrust') &&
             !usedInDay.contains(e.name),
-        orElse: () => ExerciseDatabase.all.firstWhere((e) => e.name == 'Glute Bridge'),
+        orElse: () => ExerciseCatalog.all.firstWhere((e) => e.name == 'Glute Bridge'),
       );
       return SelectedSlotExercise(
         exerciseName: gluteFallback.name,

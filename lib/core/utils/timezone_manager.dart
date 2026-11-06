@@ -137,19 +137,26 @@ class TimezoneInfo {
 }
 
 /// Provider for timezone offset.
-final timezoneOffsetProvider = StateNotifierProvider<TimezoneOffsetNotifier, int>((ref) {
-  return TimezoneOffsetNotifier();
-});
+final timezoneOffsetProvider =
+    NotifierProvider<TimezoneOffsetNotifier, int>(TimezoneOffsetNotifier.new);
 
-/// Notifier for managing timezone offset.
-class TimezoneOffsetNotifier extends StateNotifier<int> {
-  TimezoneOffsetNotifier() : super(TimezoneManager.getCurrentTimezoneOffset()) {
+/// Notifier for managing timezone offset (Wave 3.2).
+class TimezoneOffsetNotifier extends Notifier<int> {
+  bool _disposed = false;
+
+  @override
+  int build() {
+    _disposed = false;
+    ref.onDispose(() => _disposed = true);
     _loadTimezone();
+    return TimezoneManager.getCurrentTimezoneOffset();
   }
 
   Future<void> _loadTimezone() async {
     final offset = await TimezoneManager.getSavedTimezoneOffset();
-    state = offset;
+    if (!_disposed) {
+      state = offset;
+    }
   }
 
   Future<void> setTimezoneOffset(int offsetHours) async {

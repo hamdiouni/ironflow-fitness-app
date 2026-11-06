@@ -4,14 +4,12 @@ import 'package:path_provider/path_provider.dart';
 import 'package:archive/archive.dart';
 import 'package:progression_tracker/features/workout/domain/repositories/workout_repository.dart';
 import 'package:progression_tracker/features/workout/domain/entities/workout.dart';
-import 'package:progression_tracker/features/workout/data/models/workout_model.dart';
 import 'package:progression_tracker/features/nutrition/domain/repositories/nutrition_repository.dart';
 import 'package:progression_tracker/features/nutrition/domain/entities/daily_nutrition_summary.dart';
-import 'package:progression_tracker/features/nutrition/data/models/meal_model.dart';
 import 'package:progression_tracker/features/body/domain/repositories/body_repository.dart';
 import 'package:progression_tracker/features/body/domain/entities/body_entry.dart';
-import 'package:progression_tracker/features/body/data/models/body_entry_model.dart';
 import 'package:progression_tracker/features/auth/domain/repositories/auth_repository.dart';
+import 'package:progression_tracker/features/settings/domain/services/backup_record_codec.dart';
 import 'package:progression_tracker/features/settings/domain/usecases/export_workouts_use_case.dart';
 import 'package:progression_tracker/features/settings/domain/usecases/export_nutrition_use_case.dart';
 
@@ -200,7 +198,7 @@ class ExportAllDataUseCase {
   // *Model.fromJson, with the legacy dialect kept as a fallback for
   // pre-2.0 backups.
   Map<String, dynamic> _workoutToMap(Workout w) =>
-      WorkoutModel.fromEntity(w).toJson();
+      BackupRecordCodec.workoutToMap(w);
 
   Map<String, dynamic> _nutritionToMap(DailyNutritionSummary n) => {
     'date': n.date.toIso8601String(),
@@ -212,14 +210,11 @@ class ExportAllDataUseCase {
     'total_sugar': n.totalSugar,
     'total_sodium': n.totalSodium,
     'total_potassium': n.totalPotassium,
-    // Meal records are canonical MealModel JSON (Phase 3, F-13) — the
-    // old hand map kept only macros, dropping micros/vitamins/minerals
-    // and the foodItemId link on every backup.
-    'meals': n.meals.map((m) => MealModel.fromEntity(m).toJson()).toList(),
+    'meals': n.meals.map((m) => BackupRecordCodec.mealToMap(m)).toList(),
   };
 
   Map<String, dynamic> _bodyEntryToMap(BodyEntry b) =>
-      BodyEntryModel.fromEntity(b).toJson();
+      BackupRecordCodec.bodyEntryToMap(b);
 
   Future<void> _exportWorkoutsToTemp(String tempPath) async {
     final csvPath = await _exportWorkoutsUseCase.exportToCSV();

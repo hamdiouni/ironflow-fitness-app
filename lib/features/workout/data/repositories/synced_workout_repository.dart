@@ -3,7 +3,7 @@ import '../../domain/repositories/workout_repository.dart';
 import '../datasources/hive_workout_data_source.dart';
 import '../models/workout_model.dart';
 import '../../../../core/utils/record_ownership.dart';
-import '../../../sync/domain/services/sync_service.dart';
+import '../../../sync/data/services/sync_service.dart';
 import '../../../sync/domain/entities/sync_action.dart';
 
 /// Workout repository with automatic cloud sync

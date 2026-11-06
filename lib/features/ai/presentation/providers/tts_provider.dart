@@ -66,18 +66,30 @@ class TtsState {
   }
 }
 
-/// TTS State Notifier
-class TtsNotifier extends StateNotifier<TtsState> {
-  final TtsService _ttsService;
+/// TTS Notifier
+class TtsNotifier extends Notifier<TtsState> {
+  TtsNotifier([this._injectedTtsService]);
 
-  TtsNotifier(this._ttsService) : super(const TtsState()) {
+  final TtsService? _injectedTtsService;
+  late TtsService _ttsService;
+  bool _disposed = false;
+
+  @override
+  TtsState build() {
+    _disposed = false;
+    ref.onDispose(() {
+      _disposed = true;
+    });
+    _ttsService = _injectedTtsService ?? ref.watch(ttsServiceProvider);
     _loadVoices();
     _loadPersonas();
+    return const TtsState();
   }
   
   /// Load available voices
   Future<void> _loadVoices() async {
     await Future.delayed(const Duration(milliseconds: 500)); // Wait for TTS to initialize
+    if (_disposed) return;
     final voices = _ttsService.availableVoices;
     state = state.copyWith(availableVoices: voices);
   }
@@ -85,6 +97,7 @@ class TtsNotifier extends StateNotifier<TtsState> {
   /// Load fitness personas
   Future<void> _loadPersonas() async {
     await Future.delayed(const Duration(milliseconds: 600)); // Wait for voices to load
+    if (_disposed) return;
     final personas = _ttsService.getFitnessVoicePersonas();
     state = state.copyWith(personas: personas);
   }
@@ -101,7 +114,7 @@ class TtsNotifier extends StateNotifier<TtsState> {
 
     // Update state after a delay to check if still speaking
     Future.delayed(const Duration(milliseconds: 500), () {
-      if (mounted) {
+      if (!_disposed) {
         state = state.copyWith(
           isSpeaking: _ttsService.isSpeaking,
           isPaused: _ttsService.isPaused,
@@ -163,7 +176,4 @@ class TtsNotifier extends StateNotifier<TtsState> {
 }
 
 /// TTS State Provider
-final ttsProvider = StateNotifierProvider<TtsNotifier, TtsState>((ref) {
-  final service = ref.watch(ttsServiceProvider);
-  return TtsNotifier(service);
-});
+final ttsProvider = NotifierProvider<TtsNotifier, TtsState>(TtsNotifier.new);

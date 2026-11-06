@@ -5,6 +5,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import '../../../../core/utils/record_ownership.dart';
 import '../../data/models/workout_model.dart';
 import '../../domain/entities/entities.dart';
+import '../../domain/repositories/rest_timer_state_persistence.dart';
 
 /// Manages persistence of the active workout state using Hive.
 ///
@@ -15,7 +16,7 @@ import '../../domain/entities/entities.dart';
 /// current account id explicitly and this manager stores it under
 /// account-scoped keys. Existing direct constructions that do not pass
 /// a user id keep using the legacy keys.
-class WorkoutStateManager {
+class WorkoutStateManager implements RestTimerStatePersistence {
   static const String _boxName = 'active_workout_state';
   static const String _workoutKey = 'current_workout';
   static const String _startTimeKey = 'start_time';
@@ -178,6 +179,7 @@ class WorkoutStateManager {
   }
 
   /// Persists the rest timer target end timestamp and total duration (TRN-02)
+  @override
   Future<void> saveRestTimer(
     DateTime targetEndTime,
     int totalSeconds, {
@@ -195,6 +197,7 @@ class WorkoutStateManager {
   }
 
   /// Returns the persisted rest timer target end time and total duration, or null
+  @override
   ({DateTime targetEndTime, int totalSeconds})? getRestTimer({
     String? userId,
   }) {
@@ -210,6 +213,7 @@ class WorkoutStateManager {
   }
 
   /// Clears persisted rest timer state
+  @override
   Future<void> clearRestTimer({String? userId}) async {
     if (_box == null || !_box!.isOpen) return;
     await _openBox.delete(_restTimerEndTimeKeyFor(userId));

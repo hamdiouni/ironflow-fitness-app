@@ -140,34 +140,65 @@ final updateExerciseParametersUseCaseProvider = Provider<UpdateExerciseParameter
 });
 
 // ---------------------------------------------------------------------------
-// Active Program State Notifier
+// Active Program Notifier
 // ---------------------------------------------------------------------------
 
-/// StateNotifier for managing the active workout program state.
+/// Notifier for managing the active workout program state.
 /// 
 /// This notifier provides centralized state management for the active program,
 /// handling loading, updating, and clearing operations. It uses AsyncValue
 /// to represent loading, data, and error states.
 /// 
 /// **Validates: Requirements 7.1, 7.3, 7.4, 7.5, 7.7, 7.8**
-class ActiveProgramNotifier extends StateNotifier<AsyncValue<ActiveProgram?>> {
-  final ActiveProgramRepository _repository;
-  final UpdateActiveProgramUseCase _updateUseCase;
-  
-  ActiveProgramNotifier(this._repository, this._updateUseCase) 
-      : super(const AsyncValue.loading()) {
-    _loadActiveProgram();
+class ActiveProgramNotifier extends Notifier<AsyncValue<ActiveProgram?>> {
+  ActiveProgramNotifier([
+    this._injectedRepository,
+    this._injectedUpdateUseCase,
+  ]);
+
+  final ActiveProgramRepository? _injectedRepository;
+  final UpdateActiveProgramUseCase? _injectedUpdateUseCase;
+
+  late ActiveProgramRepository _repository;
+  late UpdateActiveProgramUseCase _updateUseCase;
+  bool _disposed = false;
+
+  @override
+  AsyncValue<ActiveProgram?> build() {
+    _disposed = false;
+    ref.onDispose(() {
+      _disposed = true;
+    });
+    _repository = _injectedRepository ?? ref.watch(activeProgramRepositoryProvider);
+    _updateUseCase =
+        _injectedUpdateUseCase ?? ref.watch(updateActiveProgramUseCaseProvider);
+
+    // Phase 3 (F-12): keep the notifier in sync with writes that bypass
+    // it (program advance inside CompleteWorkoutUseCase, sync pulls).
+    ref.listen(activeProgramStreamProvider, (previous, next) {
+      final program = next.valueOrNull;
+      if (next.hasValue) {
+        adoptExternalState(program);
+      }
+    });
+
+    _loadActiveProgram(emitLoading: false);
+    return const AsyncValue.loading();
   }
   
   /// Loads the active program from persistent storage.
   /// 
   /// Sets state to loading, then either data or error based on the result.
-  Future<void> _loadActiveProgram() async {
-    state = const AsyncValue.loading();
+  Future<void> _loadActiveProgram({bool emitLoading = true}) async {
+    if (emitLoading && !_disposed) {
+      state = const AsyncValue.loading();
+    }
     try {
       final program = await _repository.loadActiveProgram();
+      if (_disposed) return;
       state = AsyncValue.data(program);
     } catch (error, stackTrace) {
+      if (_disposed) return;
       state = AsyncValue.error(error, stackTrace);
     }
   }
@@ -178,7 +209,7 @@ class ActiveProgramNotifier extends StateNotifier<AsyncValue<ActiveProgram?>> {
   /// [activeProgramStreamProvider] listener feeds box changes here;
   /// value-equality suppresses echoes of this notifier's own writes.
   void adoptExternalState(ActiveProgram? program) {
-    if (!mounted) return;
+    if (_disposed) return;
     if (state.valueOrNull == program) return;
     state = AsyncValue.data(program);
   }
@@ -314,7 +345,7 @@ final activeProgramStreamProvider = StreamProvider<ActiveProgram?>((ref) {
       .map((model) => model?.toEntity());
 });
 
-/// StateNotifierProvider for the active workout program.
+/// NotifierProvider for the active workout program.
 ///
 /// This provider manages the active program state using ActiveProgramNotifier,
 /// wiring it with the repository and update use case dependencies.
@@ -323,21 +354,9 @@ final activeProgramStreamProvider = StreamProvider<ActiveProgram?>((ref) {
 /// data, and error states consistently across the UI.
 ///
 /// **Validates: Requirements 7.1, 7.4**
-final activeProgramProvider = StateNotifierProvider<ActiveProgramNotifier, AsyncValue<ActiveProgram?>>(
-  (ref) {
-    final repository = ref.watch(activeProgramRepositoryProvider);
-    final updateUseCase = ref.watch(updateActiveProgramUseCaseProvider);
-    final notifier = ActiveProgramNotifier(repository, updateUseCase);
-    // Phase 3 (F-12): keep the notifier in sync with writes that bypass
-    // it (program advance inside CompleteWorkoutUseCase, sync pulls).
-    ref.listen(activeProgramStreamProvider, (previous, next) {
-      final program = next.valueOrNull;
-      if (next.hasValue) {
-        notifier.adoptExternalState(program);
-      }
-    });
-    return notifier;
-  },
+final activeProgramProvider =
+    NotifierProvider<ActiveProgramNotifier, AsyncValue<ActiveProgram?>>(
+  ActiveProgramNotifier.new,
 );
 
 // Helper Providers

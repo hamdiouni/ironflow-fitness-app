@@ -8,12 +8,17 @@ import 'package:progression_tracker/features/ai/presentation/screens/ai_chat_scr
 
 import 'package:progression_tracker/features/ai/presentation/providers/tts_provider.dart';
 
-class _FakeAIChatNotifier extends StateNotifier<AIChatState>
+class _FakeAIChatNotifier extends Notifier<AIChatState>
     implements AIChatNotifier {
   String? sentMessage;
   bool retryCalled = false;
+  final AIChatState _initial;
 
-  _FakeAIChatNotifier([AIChatState? state]) : super(state ?? AIChatState());
+  _FakeAIChatNotifier([AIChatState? state])
+      : _initial = state ?? AIChatState();
+
+  @override
+  AIChatState build() => _initial;
 
   @override
   Future<void> sendMessage(String message) async {
@@ -45,9 +50,9 @@ class _FakeAIChatNotifier extends StateNotifier<AIChatState>
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-class _FakeTtsNotifier extends StateNotifier<TtsState>
-    implements TtsNotifier {
-  _FakeTtsNotifier() : super(const TtsState());
+class _FakeTtsNotifier extends Notifier<TtsState> implements TtsNotifier {
+  @override
+  TtsState build() => const TtsState();
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -59,8 +64,8 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            aiChatProvider.overrideWith((ref) => _FakeAIChatNotifier()),
-            ttsProvider.overrideWith((ref) => _FakeTtsNotifier()),
+            aiChatProvider.overrideWith(() => _FakeAIChatNotifier()),
+            ttsProvider.overrideWith(() => _FakeTtsNotifier()),
           ],
           child: const MaterialApp(
             home: AIChatScreen(),
@@ -82,8 +87,8 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            aiChatProvider.overrideWith((ref) => _FakeAIChatNotifier()),
-            ttsProvider.overrideWith((ref) => _FakeTtsNotifier()),
+            aiChatProvider.overrideWith(() => _FakeAIChatNotifier()),
+            ttsProvider.overrideWith(() => _FakeTtsNotifier()),
           ],
           child: const MaterialApp(
             home: AIChatScreen(initialMessage: prompt),
@@ -116,8 +121,8 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            aiChatProvider.overrideWith((ref) => _FakeAIChatNotifier(state)),
-            ttsProvider.overrideWith((ref) => _FakeTtsNotifier()),
+            aiChatProvider.overrideWith(() => _FakeAIChatNotifier(state)),
+            ttsProvider.overrideWith(() => _FakeTtsNotifier()),
           ],
           child: const MaterialApp(
             home: AIChatScreen(),
@@ -143,8 +148,8 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            aiChatProvider.overrideWith((ref) => fakeNotifier),
-            ttsProvider.overrideWith((ref) => _FakeTtsNotifier()),
+            aiChatProvider.overrideWith(() => fakeNotifier),
+            ttsProvider.overrideWith(() => _FakeTtsNotifier()),
           ],
           child: const MaterialApp(
             home: AIChatScreen(contextScreen: 'workout'),
@@ -183,8 +188,8 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            aiChatProvider.overrideWith((ref) => fakeNotifier),
-            ttsProvider.overrideWith((ref) => _FakeTtsNotifier()),
+            aiChatProvider.overrideWith(() => fakeNotifier),
+            ttsProvider.overrideWith(() => _FakeTtsNotifier()),
           ],
           child: const MaterialApp(
             home: AIChatScreen(),
@@ -231,8 +236,8 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            aiChatProvider.overrideWith((ref) => _FakeAIChatNotifier()),
-            ttsProvider.overrideWith((ref) => _FakeTtsNotifier()),
+            aiChatProvider.overrideWith(() => _FakeAIChatNotifier()),
+            ttsProvider.overrideWith(() => _FakeTtsNotifier()),
           ],
           child: MaterialApp.router(
             routerConfig: router,

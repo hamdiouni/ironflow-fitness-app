@@ -2,41 +2,21 @@ import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:progression_tracker/features/auth/domain/entities/user.dart';
+import 'auth_datasource.dart';
 import 'auth_session_storage.dart';
 
-/// Simple mock authentication datasource for development
-/// No Firebase, no external dependencies - just works!
-abstract class MockAuthDataSource {
-  Future<User> signUpWithEmail({
-    required String email,
-    required String password,
-  });
+/// Backward-compatible alias for [AuthRemoteDataSource].
+typedef MockAuthDataSource = AuthRemoteDataSource;
 
-  Future<User> signInWithEmail({
-    required String email,
-    required String password,
-  });
+class MockAuthDataSourceImpl implements AuthRemoteDataSource {
+  MockAuthDataSourceImpl() {
+    if (kReleaseMode) {
+      throw StateError(
+        'MockAuthDataSourceImpl is forbidden in release builds (SEC-02 / Wave 3.5).',
+      );
+    }
+  }
 
-  Future<User> signInWithGoogle();
-
-  Future<User> signInWithApple();
-
-  Future<void> signOut();
-
-  Future<User?> getCurrentUser();
-
-  Future<bool> isAuthenticated();
-
-  Future<void> deleteAccount();
-
-  Future<void> reauthenticateWithPassword(String password);
-
-  Future<void> reauthenticateWithGoogle();
-
-  Future<void> resetPassword(String email);
-}
-
-class MockAuthDataSourceImpl implements MockAuthDataSource {
   final AuthSessionStorage _sessionStorage = AuthSessionStorage();
 
   /// Derives a *stable* user id from an email address.

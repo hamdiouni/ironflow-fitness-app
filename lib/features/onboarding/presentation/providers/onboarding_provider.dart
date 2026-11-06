@@ -46,28 +46,53 @@ final userProfileProvider = FutureProvider<UserProfile?>((ref) async {
 /// 5. Marks the user as onboarded
 /// 
 /// This ensures users complete onboarding with a ready-to-use program.
-class OnboardingNotifier extends StateNotifier<AsyncValue<void>> {
-  OnboardingNotifier(
-    this._storage,
-    this._generateProgramUseCase,
-    this._setActiveProgramUseCase,
-    this._generateDietPlanUseCase,
-    this._saveDietPlanUseCase, {
+class OnboardingNotifier extends Notifier<AsyncValue<void>> {
+  OnboardingNotifier([
+    this._injectedStorage,
+    this._injectedGenerateProgramUseCase,
+    this._injectedSetActiveProgramUseCase,
+    this._injectedGenerateDietPlanUseCase,
+    this._injectedSaveDietPlanUseCase,
+  ]) : _injectedNutritionRepository = null;
+
+  OnboardingNotifier.withDependencies(
+    this._injectedStorage,
+    this._injectedGenerateProgramUseCase,
+    this._injectedSetActiveProgramUseCase,
+    this._injectedGenerateDietPlanUseCase,
+    this._injectedSaveDietPlanUseCase, {
     NutritionRepository? nutritionRepository,
-  })  : _nutritionRepository = nutritionRepository,
-        super(const AsyncValue.data(null));
+  }) : _injectedNutritionRepository = nutritionRepository;
 
-  final UserProfileStorage _storage;
-  final GenerateWorkoutProgramUseCase _generateProgramUseCase;
-  final SetActiveProgramUseCase _setActiveProgramUseCase;
-  final GenerateDietPlanUseCase _generateDietPlanUseCase;
-  final SaveDietPlanUseCase _saveDietPlanUseCase;
+  final UserProfileStorage? _injectedStorage;
+  final GenerateWorkoutProgramUseCase? _injectedGenerateProgramUseCase;
+  final SetActiveProgramUseCase? _injectedSetActiveProgramUseCase;
+  final GenerateDietPlanUseCase? _injectedGenerateDietPlanUseCase;
+  final SaveDietPlanUseCase? _injectedSaveDietPlanUseCase;
+  final NutritionRepository? _injectedNutritionRepository;
 
-  /// Optional so unit tests can construct this notifier without a nutrition
-  /// stack. When present, onboarding also writes the user's [NutritionTargets]
-  /// derived from the profile (DATABASE_AND_SYNC_AUDIT F-08: these previously
-  /// had no live writer at all, so every targets-based UI read null).
-  final NutritionRepository? _nutritionRepository;
+  late UserProfileStorage _storage;
+  late GenerateWorkoutProgramUseCase _generateProgramUseCase;
+  late SetActiveProgramUseCase _setActiveProgramUseCase;
+  late GenerateDietPlanUseCase _generateDietPlanUseCase;
+  late SaveDietPlanUseCase _saveDietPlanUseCase;
+  NutritionRepository? _nutritionRepository;
+
+  @override
+  AsyncValue<void> build() {
+    _storage = _injectedStorage ?? ref.watch(userProfileStorageProvider);
+    _generateProgramUseCase = _injectedGenerateProgramUseCase ??
+        ref.watch(generateWorkoutProgramUseCaseProvider);
+    _setActiveProgramUseCase = _injectedSetActiveProgramUseCase ??
+        ref.watch(setActiveProgramUseCaseProvider);
+    _generateDietPlanUseCase =
+        _injectedGenerateDietPlanUseCase ?? GenerateDietPlanUseCase();
+    _saveDietPlanUseCase =
+        _injectedSaveDietPlanUseCase ?? ref.watch(saveDietPlanUseCaseProvider);
+    _nutritionRepository = _injectedNutritionRepository ??
+        (_injectedStorage != null ? null : ref.watch(nutritionRepositoryProvider));
+    return const AsyncValue.data(null);
+  }
 
   Future<void> completeOnboarding(
     UserProfile profile, {
@@ -159,13 +184,6 @@ class OnboardingNotifier extends StateNotifier<AsyncValue<void>> {
 }
 
 final onboardingNotifierProvider =
-    StateNotifierProvider<OnboardingNotifier, AsyncValue<void>>((ref) {
-  return OnboardingNotifier(
-    ref.watch(userProfileStorageProvider),
-    ref.watch(generateWorkoutProgramUseCaseProvider),
-    ref.watch(setActiveProgramUseCaseProvider),
-    GenerateDietPlanUseCase(),
-    ref.watch(saveDietPlanUseCaseProvider),
-    nutritionRepository: ref.watch(nutritionRepositoryProvider),
-  );
-});
+    NotifierProvider<OnboardingNotifier, AsyncValue<void>>(
+  OnboardingNotifier.new,
+);

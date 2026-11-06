@@ -1,5 +1,5 @@
 import 'package:uuid/uuid.dart';
-import '../../data/exercise_database.dart';
+import '../services/exercise_catalog.dart';
 import '../entities/entities.dart';
 import '../repositories/workout_repository.dart';
 import '../repositories/active_program_repository.dart';
@@ -38,7 +38,7 @@ class StartWorkoutUseCase {
     final exercises = currentDay.exercises.map((pe) => Exercise(
       id: const Uuid().v4(),
       exerciseDefinitionId: pe.exerciseDefinitionId ??
-          ExerciseDatabase.getByName(pe.exerciseName)?.id,
+          ExerciseCatalog.getByName(pe.exerciseName)?.id,
       name: pe.exerciseName,
       type: ExerciseType.strength,
       sets: [],

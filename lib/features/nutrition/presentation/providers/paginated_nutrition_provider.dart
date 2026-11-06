@@ -21,16 +21,28 @@ class PaginatedNutritionState with _$PaginatedNutritionState {
 }
 
 /// Notifier for managing paginated nutrition history loading.
-class PaginatedNutritionNotifier extends StateNotifier<PaginatedNutritionState> {
-  final GetNutritionHistoryPaginatedUseCase _getNutritionHistoryPaginated;
-  final GetNutritionHistoryCountUseCase _getNutritionHistoryCount;
+class PaginatedNutritionNotifier extends Notifier<PaginatedNutritionState> {
+  PaginatedNutritionNotifier([
+    this._injectedGetPaginated,
+    this._injectedGetCount,
+  ]);
+
+  final GetNutritionHistoryPaginatedUseCase? _injectedGetPaginated;
+  final GetNutritionHistoryCountUseCase? _injectedGetCount;
+
+  late GetNutritionHistoryPaginatedUseCase _getNutritionHistoryPaginated;
+  late GetNutritionHistoryCountUseCase _getNutritionHistoryCount;
 
   static const int _pageSize = 20;
 
-  PaginatedNutritionNotifier(
-    this._getNutritionHistoryPaginated,
-    this._getNutritionHistoryCount,
-  ) : super(const PaginatedNutritionState());
+  @override
+  PaginatedNutritionState build() {
+    _getNutritionHistoryPaginated = _injectedGetPaginated ??
+        ref.watch(getNutritionHistoryPaginatedUseCaseProvider);
+    _getNutritionHistoryCount =
+        _injectedGetCount ?? ref.watch(getNutritionHistoryCountUseCaseProvider);
+    return const PaginatedNutritionState();
+  }
 
   /// Load the first page of nutrition history.
   Future<void> loadInitial() async {
@@ -107,10 +119,7 @@ final getNutritionHistoryCountUseCaseProvider =
 });
 
 /// Provider for paginated nutrition state.
-final paginatedNutritionProvider = 
-    StateNotifierProvider<PaginatedNutritionNotifier, PaginatedNutritionState>((ref) {
-  return PaginatedNutritionNotifier(
-    ref.watch(getNutritionHistoryPaginatedUseCaseProvider),
-    ref.watch(getNutritionHistoryCountUseCaseProvider),
-  );
-});
+final paginatedNutritionProvider =
+    NotifierProvider<PaginatedNutritionNotifier, PaginatedNutritionState>(
+  PaginatedNutritionNotifier.new,
+);

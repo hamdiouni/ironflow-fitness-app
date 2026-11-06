@@ -54,22 +54,25 @@ final notificationSettingsProvider =
 // Notification settings notifier
 // ---------------------------------------------------------------------------
 
-class NotificationSettingsNotifier
-    extends StateNotifier<NotificationSettings> {
-  final HiveNotificationSettingsDataSource _dataSource;
-  final ScheduleWorkoutReminderUseCase _scheduleReminder;
+class NotificationSettingsNotifier extends Notifier<NotificationSettings> {
+  late HiveNotificationSettingsDataSource _dataSource;
+  late ScheduleWorkoutReminderUseCase _scheduleReminder;
+  bool _disposed = false;
 
-  NotificationSettingsNotifier(
-    this._dataSource,
-    this._scheduleReminder,
-  ) : super(NotificationSettings.defaults()) {
+  @override
+  NotificationSettings build() {
+    _disposed = false;
+    ref.onDispose(() => _disposed = true);
+    _dataSource = ref.watch(notificationSettingsDataSourceProvider);
+    _scheduleReminder = ref.watch(scheduleReminderUseCaseProvider);
     _load();
+    return NotificationSettings.defaults();
   }
 
   /// Loads persisted settings, replacing the defaults once available.
   Future<void> _load() async {
     final settings = await _dataSource.getSettings();
-    if (mounted) state = settings;
+    if (!_disposed) state = settings;
   }
 
   /// Updates notification settings and reschedules reminder if needed.
@@ -123,10 +126,6 @@ class NotificationSettingsNotifier
 // ---------------------------------------------------------------------------
 
 final notificationSettingsNotifierProvider =
-    StateNotifierProvider<NotificationSettingsNotifier, NotificationSettings>(
-  (ref) {
-    final dataSource = ref.watch(notificationSettingsDataSourceProvider);
-    final scheduleReminder = ref.watch(scheduleReminderUseCaseProvider);
-    return NotificationSettingsNotifier(dataSource, scheduleReminder);
-  },
+    NotifierProvider<NotificationSettingsNotifier, NotificationSettings>(
+  NotificationSettingsNotifier.new,
 );

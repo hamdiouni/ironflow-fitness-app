@@ -2,28 +2,30 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/reminder_settings.dart';
 import '../../domain/repositories/reminder_settings_repository.dart';
 import '../../domain/services/notification_service.dart';
+import '../providers/notification_providers.dart';
 
-/// State notifier for managing reminder settings
-class ReminderSettingsNotifier extends StateNotifier<AsyncValue<ReminderSettings>> {
-  final ReminderSettingsRepository _repository;
-  final NotificationService _notificationService;
+/// AsyncNotifier for managing reminder settings (Wave 3.2).
+class ReminderSettingsNotifier extends AsyncNotifier<ReminderSettings> {
+  ReminderSettingsNotifier([
+    this._injectedRepository,
+    this._injectedNotificationService,
+  ]);
 
-  ReminderSettingsNotifier(this._repository, this._notificationService)
-      : super(const AsyncValue.loading()) {
-    _loadSettings();
-  }
+  final ReminderSettingsRepository? _injectedRepository;
+  final NotificationService? _injectedNotificationService;
 
-  /// Load settings from repository
-  Future<void> _loadSettings() async {
-    try {
-      final settings = await _repository.getSettings();
-      state = AsyncValue.data(settings);
-      
-      // Schedule notifications based on loaded settings
-      await _scheduleNotifications(settings);
-    } catch (e, stack) {
-      state = AsyncValue.error(e, stack);
-    }
+  late ReminderSettingsRepository _repository;
+  late NotificationService _notificationService;
+
+  @override
+  Future<ReminderSettings> build() async {
+    _repository =
+        _injectedRepository ?? ref.watch(reminderSettingsRepositoryProvider);
+    _notificationService =
+        _injectedNotificationService ?? ref.watch(notificationServiceProvider);
+    final settings = await _repository.getSettings();
+    await _scheduleNotifications(settings);
+    return settings;
   }
 
   /// Update workout reminder settings

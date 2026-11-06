@@ -5,6 +5,19 @@ This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html) 
 
 ---
 
+## [1.2.0+3] — 2026-11-06
+
+### Architecture & Data (Wave 3)
+- **Toolchain & Dependency Upgrades (`3.1`)**: Upgraded `com.android.tools:desugar_jdk_libs` (`2.0.4 -> 2.1.4`) and safe non-breaking packages (`uuid 4.6.0`, `image_picker 1.2.4`, `flutter_cache_manager 3.5.0`, `flutter_svg 2.3.2`, `path_provider 2.1.6`) with `0` CVEs (`docs/architecture/WAVE3_TOOLCHAIN_AND_DEPENDENCY_UPGRADES.md`).
+- **Riverpod `Notifier` Migration (`3.2`, `ADR-007`)**: Migrated all `27` `StateNotifier` files (`29` classes) in `lib/` to modern Riverpod `Notifier`, `AsyncNotifier`, and `FamilyNotifier` (`0` legacy `StateNotifier` classes remaining in `lib/`).
+- **Split All Giant Files `< 800` Lines (`3.3`)**: Added characterization tests and decomposed all `21` non-generated `.dart` files over `800` lines in `lib/` into cohesive sub-widgets, bottom sheets, dialogs, catalog shards, and helper services with zero visual or behavior changes.
+- **Static Catalogs, Alias Migration & Isolate Index (`3.4`, `ADR-008`)**: Deduplicated exercises (`150` raw -> `129` canonical, `0` duplicate IDs/names, Rickroll URLs stripped), added Body Map muscle regions (`primaryRegions`, `secondaryRegions`) and provenance on `ExerciseDefinition`, added `ExerciseAliasResolver` + idempotent `DataMigration` step, exported `assets/data/exercises_catalog.json` (`103.7 KB`) and `assets/data/foods_catalog.json` (`282` unique foods, `208.1 KB`), and built `CatalogSearchIndex` (`compute` isolate prefix index).
+- **Architecture Hygiene & Isolation (`3.5`)**: Eliminated all `25` domain-layer boundary violations (`0` `domain -> data/presentation` imports); isolated debug/preview routes in `lib/dev/dev_routes.dart`; gated mock auth/user datasources behind `kReleaseMode` `StateError` + compile-time tree-shaking; enforced all guards in `test/architecture/architecture_hygiene_test.dart`.
+- **Zero Deprecations & Stricter Lints (`3.6`, `ADR-006`)**: Replaced all `50` `.withOpacity(` calls with `.withValues(alpha: ...)`, fixed Wasm `avoid_double_and_int_checks`, replaced deprecated `SwitchListTile(activeColor:)` calls, and tightened `analysis_options.yaml` (`0` analyzer errors, `0` warnings).
+- **Data Layer & Multi-User Isolation (`3.7`)**: Fixed `LocalDataWiper` (`W2-F1`) so account wipe only purges active user records without touching other local users' scoped Hive entries; added `PrivacyPreferencesRepository` and `AiPreferencesRepository` abstractions so zero screens call `Hive` or `SharedPreferences` directly.
+
+---
+
 ## [1.1.0+2] — 2026-11-06
 
 ### Security & Backend (Wave 1)

@@ -1,6 +1,7 @@
 import 'package:hive/hive.dart';
 import 'package:progression_tracker/core/utils/app_logger.dart';
-import 'package:progression_tracker/features/workout/data/exercise_database.dart';
+import 'package:progression_tracker/features/workout/domain/services/exercise_alias_resolver.dart';
+import 'package:progression_tracker/features/workout/domain/services/exercise_catalog.dart';
 
 /// One-time local schema migrations for Hive data.
 ///
@@ -33,7 +34,9 @@ import 'package:progression_tracker/features/workout/data/exercise_database.dart
 /// path, so dropping them loses nothing syncable.
 class DataMigration {
   static const int currentSchemaVersion = 3;
+  static const int currentAliasMigrationVersion = 1;
   static const String _versionKey = 'schema_version';
+  static const String _aliasMigrationKey = 'exercise_alias_migration_version';
 
   static const String _appSettingsBox = 'app_settings';
   static const String _workoutsBox = 'workouts';
@@ -57,26 +60,33 @@ class DataMigration {
       final settings = Hive.box<String>(_appSettingsBox);
       final stored =
           int.tryParse(settings.get(_versionKey) ?? '') ?? 1;
-      if (stored >= currentSchemaVersion) return;
+      if (stored < currentSchemaVersion) {
+        AppLogger.debug(
+          '🔄 [Migration] Upgrading local schema v$stored → '
+          'v$currentSchemaVersion',
+        );
 
-      AppLogger.debug(
-        '🔄 [Migration] Upgrading local schema v$stored → '
-        'v$currentSchemaVersion',
-      );
+        if (stored < 2) {
+          await _migrateWorkouts(currentUserId);
+          await _migrateMeals(currentUserId);
+          await _migrateBodyEntries(currentUserId);
+          await _migrateActivePrograms(currentUserId);
+        }
+        if (stored < 3) {
+          await _purgeLegacySyncQueueEntries();
+        }
 
-      if (stored < 2) {
-        await _migrateWorkouts(currentUserId);
-        await _migrateMeals(currentUserId);
-        await _migrateBodyEntries(currentUserId);
-        await _migrateActivePrograms(currentUserId);
+        await settings.put(_versionKey, '$currentSchemaVersion');
+        AppLogger.debug('✅ [Migration] Local schema is now '
+            'v$currentSchemaVersion');
       }
-      if (stored < 3) {
-        await _purgeLegacySyncQueueEntries();
-      }
 
-      await settings.put(_versionKey, '$currentSchemaVersion');
-      AppLogger.debug('✅ [Migration] Local schema is now '
-          'v$currentSchemaVersion');
+      final aliasVersion =
+          int.tryParse(settings.get(_aliasMigrationKey) ?? '') ?? 0;
+      if (aliasVersion < currentAliasMigrationVersion) {
+        await migrateCanonicalExerciseAliases();
+        await settings.put(_aliasMigrationKey, '$currentAliasMigrationVersion');
+      }
     } catch (e, st) {
       // Never block startup. The version stamp is only written after a
       // fully successful run, so a failed migration retries next launch.
@@ -245,16 +255,82 @@ class DataMigration {
     return true;
   }
 
-  /// Resolves `exerciseDefinitionId` from the catalog by exercise name.
-  /// Returns true when a change was made.
+  /// Resolves or repairs `exerciseDefinitionId` from the canonical catalog
+  /// and alias map (`ExerciseAliasResolver`). Returns true when a change was made.
   static bool _backfillDefinitionId(Map exercise, {required String nameKey}) {
-    if (exercise['exerciseDefinitionId'] != null) return false;
-    final name = exercise[nameKey];
-    if (name is! String) return false;
-    final definition = ExerciseDatabase.getByName(name);
-    if (definition == null) return false;
-    exercise['exerciseDefinitionId'] = definition.id;
+    final existingId = exercise['exerciseDefinitionId'] as String?;
+    final name = exercise[nameKey] as String?;
+    final resolvedId = ExerciseAliasResolver.resolveCanonicalId(
+      storedDefinitionId: existingId,
+      exerciseName: name,
+      canonicalIdByName: (normName) => ExerciseCatalog.getByName(normName)?.id,
+    );
+    if (resolvedId == null || resolvedId == existingId) return false;
+    exercise['exerciseDefinitionId'] = resolvedId;
     return true;
+  }
+
+  /// Wave 3.4 / 3.7: Idempotent migration that repairs colliding or retired
+  /// `exerciseDefinitionId` links across stored `workouts` and `active_program`
+  /// records (even for databases already at `schema_version == 3`).
+  static Future<int> migrateCanonicalExerciseAliases() async {
+    var totalUpdated = 0;
+
+    final workoutsBox = _openMapBox(_workoutsBox);
+    if (workoutsBox != null) {
+      for (final key in workoutsBox.keys.toList()) {
+        final raw = workoutsBox.get(key);
+        if (raw is! Map) continue;
+        final record = _deepCopy(raw);
+        var dirty = false;
+        final exercises = record['exercises'];
+        if (exercises is List) {
+          for (final ex in exercises) {
+            if (ex is Map) {
+              dirty |= _backfillDefinitionId(ex, nameKey: 'name');
+            }
+          }
+        }
+        if (dirty) {
+          await workoutsBox.put(key, record);
+          totalUpdated++;
+        }
+      }
+    }
+
+    final programBox = _openMapBox(_activeProgramBox);
+    if (programBox != null) {
+      for (final key in programBox.keys.toList()) {
+        final raw = programBox.get(key);
+        if (raw is! Map) continue;
+        final record = _deepCopy(raw);
+        var dirty = false;
+        final program = record['program'];
+        if (program is Map) {
+          final days = program['days'];
+          if (days is List) {
+            for (final day in days) {
+              if (day is! Map) continue;
+              final exercises = day['exercises'];
+              if (exercises is List) {
+                for (final ex in exercises) {
+                  if (ex is Map) {
+                    dirty |=
+                        _backfillDefinitionId(ex, nameKey: 'exerciseName');
+                  }
+                }
+              }
+            }
+          }
+        }
+        if (dirty) {
+          await programBox.put(key, record);
+          totalUpdated++;
+        }
+      }
+    }
+
+    return totalUpdated;
   }
 
   /// Deep-copies a raw Hive map into mutable, string-keyed structures, so

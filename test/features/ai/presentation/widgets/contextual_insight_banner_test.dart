@@ -44,10 +44,10 @@ void main() {
     }) {
       return ProviderScope(
         overrides: [
-          globalAIProvider.overrideWith((ref) => FakeGlobalAINotifier(state)),
+          globalAIProvider.overrideWith(() => FakeGlobalAINotifier(state)),
           if (initialDismissed != null)
             bannerDismissalProvider.overrideWith(
-              (ref) => BannerDismissalNotifier(initial: initialDismissed),
+              () => BannerDismissalNotifier(initial: initialDismissed),
             ),
         ],
         child: MaterialApp(

@@ -90,10 +90,9 @@ final exerciseRefreshProvider = FutureProvider<void>((ref) async {
 
 /// Provider for upload status
 final exerciseUploadStatusProvider =
-    StateNotifierProvider<ExerciseUploadNotifier, ExerciseUploadState>((ref) {
-  final firestore = ref.watch(firestoreProvider);
-  return ExerciseUploadNotifier(firestore);
-});
+    NotifierProvider<ExerciseUploadNotifier, ExerciseUploadState>(
+  ExerciseUploadNotifier.new,
+);
 
 /// State for exercise upload
 class ExerciseUploadState {
@@ -129,11 +128,17 @@ class ExerciseUploadState {
 }
 
 /// Notifier for exercise upload
-class ExerciseUploadNotifier extends StateNotifier<ExerciseUploadState> {
-  final FirebaseFirestore _firestore;
+class ExerciseUploadNotifier extends Notifier<ExerciseUploadState> {
+  ExerciseUploadNotifier([this._injectedFirestore]);
 
-  ExerciseUploadNotifier(this._firestore)
-      : super(ExerciseUploadState(totalCount: ExerciseDatabase.all.length));
+  final FirebaseFirestore? _injectedFirestore;
+  late FirebaseFirestore _firestore;
+
+  @override
+  ExerciseUploadState build() {
+    _firestore = _injectedFirestore ?? ref.watch(firestoreProvider);
+    return ExerciseUploadState(totalCount: ExerciseDatabase.all.length);
+  }
 
   /// Upload all exercises to Firestore
   Future<void> uploadExercises() async {

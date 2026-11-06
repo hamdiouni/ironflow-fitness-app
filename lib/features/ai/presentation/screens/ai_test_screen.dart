@@ -272,7 +272,7 @@ class _AITestScreenState extends State<AITestScreen> {
                   decoration: BoxDecoration(
                     color: bgColor,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: textColor.withOpacity(0.2)),
+                    border: Border.all(color: textColor.withValues(alpha: 0.2)),
                   ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -320,7 +320,7 @@ class _AITestScreenState extends State<AITestScreen> {
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withValues(alpha: 0.1),
                   blurRadius: 4,
                   offset: const Offset(0, -2),
                 ),

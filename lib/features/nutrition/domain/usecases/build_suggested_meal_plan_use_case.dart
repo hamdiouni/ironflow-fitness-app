@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 
 import '../../../onboarding/domain/entities/user_profile.dart';
-import '../../data/verified_foods_data.dart';
+import '../services/food_catalog.dart';
 import '../entities/diet_plan.dart';
 import '../entities/food_item.dart';
 

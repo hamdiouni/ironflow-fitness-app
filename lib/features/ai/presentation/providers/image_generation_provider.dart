@@ -37,10 +37,17 @@ class ImageGenerationState {
 }
 
 /// Provider for image generation state
-class ImageGenerationNotifier extends StateNotifier<ImageGenerationState> {
-  final ImageGenerationService _service;
+class ImageGenerationNotifier extends Notifier<ImageGenerationState> {
+  ImageGenerationNotifier([this._injectedService]);
 
-  ImageGenerationNotifier(this._service) : super(ImageGenerationState());
+  final ImageGenerationService? _injectedService;
+  late ImageGenerationService _service;
+
+  @override
+  ImageGenerationState build() {
+    _service = _injectedService ?? ref.watch(imageGenerationServiceProvider);
+    return ImageGenerationState();
+  }
 
   /// Generate an image from a prompt
   Future<void> generateImage(String prompt) async {
@@ -108,7 +115,6 @@ class ImageGenerationNotifier extends StateNotifier<ImageGenerationState> {
 
 /// Provider for image generation notifier
 final imageGenerationProvider =
-    StateNotifierProvider<ImageGenerationNotifier, ImageGenerationState>((ref) {
-  final service = ref.watch(imageGenerationServiceProvider);
-  return ImageGenerationNotifier(service);
-});
+    NotifierProvider<ImageGenerationNotifier, ImageGenerationState>(
+  ImageGenerationNotifier.new,
+);

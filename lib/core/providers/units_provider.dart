@@ -12,30 +12,37 @@ enum UnitsSystem {
 ///
 /// Persists units preference to Hive storage.
 /// **Validates: Requirements 10.2 (Units System)**
-final unitsProvider = StateNotifierProvider<UnitsNotifier, UnitsSystem>((ref) {
-  return UnitsNotifier();
-});
+final unitsProvider =
+    NotifierProvider<UnitsNotifier, UnitsSystem>(UnitsNotifier.new);
 
-/// Notifier for managing units system state.
-class UnitsNotifier extends StateNotifier<UnitsSystem> {
+/// Notifier for managing units system state (Wave 3.2).
+class UnitsNotifier extends Notifier<UnitsSystem> {
   static const String _boxName = 'app_settings';
   static const String _unitsKey = 'units_system';
+  bool _disposed = false;
 
-  UnitsNotifier() : super(UnitsSystem.metric) {
+  @override
+  UnitsSystem build() {
+    _disposed = false;
+    ref.onDispose(() => _disposed = true);
     _loadUnits();
+    return UnitsSystem.metric;
   }
 
   /// Loads units preference from Hive storage.
   Future<void> _loadUnits() async {
     try {
       final box = await Hive.openBox<String>(_boxName);
+      if (_disposed) return;
       final unitsStr = box.get(_unitsKey, defaultValue: 'metric');
       
       final units = unitsStr == 'imperial' ? UnitsSystem.imperial : UnitsSystem.metric;
       state = units;
     } catch (e) {
       AppLogger.debug('Error loading units: $e');
-      state = UnitsSystem.metric;
+      if (!_disposed) {
+        state = UnitsSystem.metric;
+      }
     }
   }
 

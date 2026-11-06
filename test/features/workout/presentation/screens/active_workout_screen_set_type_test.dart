@@ -19,27 +19,40 @@ class FakeGetProgressionSuggestionUseCase
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-class FakeActiveProgramNotifier
-    extends StateNotifier<AsyncValue<ActiveProgram?>>
+class FakeActiveProgramNotifier extends Notifier<AsyncValue<ActiveProgram?>>
     implements ActiveProgramNotifier {
-  FakeActiveProgramNotifier([ActiveProgram? program])
-      : super(AsyncValue.data(program));
+  FakeActiveProgramNotifier([this._program]);
+
+  final ActiveProgram? _program;
+
+  @override
+  AsyncValue<ActiveProgram?> build() => AsyncValue.data(_program);
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-class FakeGlobalAINotifier extends StateNotifier<GlobalAIState>
+class FakeGlobalAINotifier extends Notifier<GlobalAIState>
     implements GlobalAINotifier {
-  FakeGlobalAINotifier([super.state = const GlobalAIState()]);
+  FakeGlobalAINotifier([this._initial = const GlobalAIState()]);
+
+  final GlobalAIState _initial;
+
+  @override
+  GlobalAIState build() => _initial;
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-class TestWorkoutNotifier extends StateNotifier<WorkoutState>
+class TestWorkoutNotifier extends Notifier<WorkoutState>
     implements WorkoutNotifier {
-  TestWorkoutNotifier(super.initialState);
+  TestWorkoutNotifier(this._initialState);
+
+  final WorkoutState _initialState;
+
+  @override
+  WorkoutState build() => _initialState;
 
   final List<MapEntry<String, SetEntry>> loggedSets = [];
   final List<(String, int, SetType)> updatedSetTypes = [];
@@ -124,13 +137,13 @@ void main() {
 
     return ProviderScope(
       overrides: [
-        workoutNotifierProvider.overrideWith((ref) => notifier),
+        workoutNotifierProvider.overrideWith(() => notifier),
         progressionSuggestionUseCaseProvider
             .overrideWithValue(FakeGetProgressionSuggestionUseCase()),
         activeProgramProvider
-            .overrideWith((ref) => FakeActiveProgramNotifier(null)),
+            .overrideWith(() => FakeActiveProgramNotifier(null)),
         globalAIProvider
-            .overrideWith((ref) => FakeGlobalAINotifier(const GlobalAIState())),
+            .overrideWith(() => FakeGlobalAINotifier(const GlobalAIState())),
         currentDayExercisesProvider.overrideWith((ref) => []),
       ],
       child: MaterialApp.router(

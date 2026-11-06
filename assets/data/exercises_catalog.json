@@ -1,0 +1,3320 @@
+{
+  "version": "2.0.0",
+  "canonicalCount": 129,
+  "legacyRawCount": 150,
+  "provenance": "IronFlow Exercise Catalog v2",
+  "license": "First-Party / Original",
+  "exercises": [
+    {
+      "id": "chest_001",
+      "name": "Bench Press",
+      "muscleGroup": "chest",
+      "subMuscle": "Pectoralis Major",
+      "equipment": "barbell",
+      "difficulty": "intermediate",
+      "imageUrl": "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400",
+      "animationUrl": "https://www.youtube.com/embed/rT7DgCr-3pg",
+      "instructions": "Lie flat on a bench and grip the barbell slightly wider than shoulder-width. Lower the bar to your chest, then press it back up to full extension.",
+      "primaryMuscles": [
+        "chest",
+        "arms",
+        "shoulders"
+      ],
+      "secondaryMuscles": [
+        "arms",
+        "shoulders"
+      ],
+      "primaryRegions": [
+        "chest"
+      ],
+      "secondaryRegions": [
+        "biceps",
+        "triceps",
+        "front_delts",
+        "side_delts"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "chest_002",
+      "name": "Incline Bench Press",
+      "muscleGroup": "chest",
+      "subMuscle": "Upper Pectoralis Major",
+      "equipment": "barbell",
+      "difficulty": "intermediate",
+      "imageUrl": "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400",
+      "animationUrl": "https://www.youtube.com/embed/jx4JNyYvv8A",
+      "instructions": "Set the bench to a 30–45° incline and press the barbell from upper chest to full extension. Keep your feet flat and back against the pad.",
+      "primaryMuscles": [
+        "chest",
+        "shoulders",
+        "arms"
+      ],
+      "secondaryMuscles": [
+        "shoulders",
+        "arms"
+      ],
+      "primaryRegions": [
+        "chest",
+        "front_delts"
+      ],
+      "secondaryRegions": [
+        "side_delts",
+        "biceps",
+        "triceps"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "chest_003",
+      "name": "Decline Bench Press",
+      "muscleGroup": "chest",
+      "subMuscle": "Lower Pectoralis Major",
+      "equipment": "barbell",
+      "difficulty": "intermediate",
+      "imageUrl": "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400",
+      "animationUrl": "https://www.youtube.com/embed/LbfXVmjLLKE",
+      "instructions": "Secure your legs on a decline bench and press the barbell from lower chest to full extension. Focus on squeezing the lower chest at the top.",
+      "primaryMuscles": [
+        "chest",
+        "arms"
+      ],
+      "secondaryMuscles": [
+        "arms"
+      ],
+      "primaryRegions": [
+        "chest"
+      ],
+      "secondaryRegions": [
+        "biceps",
+        "triceps"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "chest_004",
+      "name": "Dumbbell Fly",
+      "muscleGroup": "chest",
+      "subMuscle": "Pectoralis Major",
+      "equipment": "dumbbell",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400",
+      "animationUrl": "https://www.youtube.com/embed/eozdVDA5x5c",
+      "instructions": "Lie on a flat bench holding dumbbells above your chest with a slight elbow bend. Lower them in a wide arc and bring them back together at the top.",
+      "primaryMuscles": [
+        "chest"
+      ],
+      "secondaryMuscles": [],
+      "primaryRegions": [
+        "chest"
+      ],
+      "secondaryRegions": [],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "chest_005",
+      "name": "Cable Crossover",
+      "muscleGroup": "chest",
+      "subMuscle": "Pectoralis Major",
+      "equipment": "cable",
+      "difficulty": "intermediate",
+      "imageUrl": "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400",
+      "animationUrl": "https://www.youtube.com/embed/f4bBZFXcuEo",
+      "instructions": "Stand between two high cable pulleys and pull the handles down and together in front of your chest. Squeeze at the centre and return slowly.",
+      "primaryMuscles": [
+        "chest"
+      ],
+      "secondaryMuscles": [],
+      "primaryRegions": [
+        "chest"
+      ],
+      "secondaryRegions": [],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "chest_006",
+      "name": "Push-Up",
+      "muscleGroup": "chest",
+      "subMuscle": "Pectoralis Major",
+      "equipment": "bodyweight",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400",
+      "animationUrl": "https://www.youtube.com/embed/IODxDxX7oi4",
+      "instructions": "Start in a high plank with hands shoulder-width apart. Lower your chest to the floor, then push back up while keeping your core tight.",
+      "primaryMuscles": [
+        "chest",
+        "arms",
+        "shoulders"
+      ],
+      "secondaryMuscles": [
+        "arms",
+        "shoulders"
+      ],
+      "primaryRegions": [
+        "chest"
+      ],
+      "secondaryRegions": [
+        "biceps",
+        "triceps",
+        "front_delts",
+        "side_delts"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "chest_007",
+      "name": "Chest Dip",
+      "muscleGroup": "chest",
+      "subMuscle": "Lower Pectoralis Major",
+      "equipment": "bodyweight",
+      "difficulty": "intermediate",
+      "imageUrl": "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400",
+      "animationUrl": "https://www.youtube.com/embed/z8wbzjMxsQE",
+      "instructions": "Grip parallel bars and lean slightly forward. Lower yourself until your elbows reach 90°, then press back up to full extension.",
+      "primaryMuscles": [
+        "chest",
+        "arms"
+      ],
+      "secondaryMuscles": [
+        "arms"
+      ],
+      "primaryRegions": [
+        "chest"
+      ],
+      "secondaryRegions": [
+        "biceps",
+        "triceps"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "chest_008",
+      "name": "Pec Deck",
+      "muscleGroup": "chest",
+      "subMuscle": "Pectoralis Major",
+      "equipment": "machine",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400",
+      "animationUrl": "https://www.youtube.com/embed/ryQcBaAr-QI",
+      "instructions": "Sit at the pec deck machine and place your forearms on the pads. Bring the pads together in front of your chest, then return slowly.",
+      "primaryMuscles": [
+        "chest"
+      ],
+      "secondaryMuscles": [],
+      "primaryRegions": [
+        "chest"
+      ],
+      "secondaryRegions": [],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "back_001",
+      "name": "Deadlift",
+      "muscleGroup": "back",
+      "subMuscle": "Erector Spinae",
+      "equipment": "barbell",
+      "difficulty": "advanced",
+      "imageUrl": "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=400",
+      "animationUrl": "https://www.youtube.com/embed/r4MzxtBKyNE",
+      "instructions": "Stand with feet hip-width apart and grip the barbell just outside your legs. Drive through your heels to lift the bar, keeping your back flat throughout.",
+      "primaryMuscles": [
+        "back",
+        "legs",
+        "glutes"
+      ],
+      "secondaryMuscles": [
+        "legs",
+        "glutes"
+      ],
+      "primaryRegions": [
+        "lower_back"
+      ],
+      "secondaryRegions": [
+        "quads",
+        "hamstrings",
+        "glutes"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "back_002",
+      "name": "Barbell Row",
+      "muscleGroup": "back",
+      "subMuscle": "Latissimus Dorsi",
+      "equipment": "barbell",
+      "difficulty": "intermediate",
+      "imageUrl": "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=400",
+      "animationUrl": "https://www.youtube.com/embed/Syt3A25LV0M",
+      "instructions": "Hinge at the hips with a flat back and pull the barbell to your lower chest. Squeeze your shoulder blades together at the top.",
+      "primaryMuscles": [
+        "back",
+        "arms"
+      ],
+      "secondaryMuscles": [
+        "arms"
+      ],
+      "primaryRegions": [
+        "lats"
+      ],
+      "secondaryRegions": [
+        "biceps",
+        "triceps"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "back_003",
+      "name": "Pull-Up",
+      "muscleGroup": "back",
+      "subMuscle": "Latissimus Dorsi",
+      "equipment": "bodyweight",
+      "difficulty": "intermediate",
+      "imageUrl": "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=400",
+      "animationUrl": "https://www.youtube.com/embed/eGo4IYlbE5g",
+      "instructions": "Hang from a bar with an overhand grip and pull your chin above the bar. Lower yourself fully before the next rep.",
+      "primaryMuscles": [
+        "back",
+        "arms"
+      ],
+      "secondaryMuscles": [
+        "arms"
+      ],
+      "primaryRegions": [
+        "lats"
+      ],
+      "secondaryRegions": [
+        "biceps",
+        "triceps"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "back_004",
+      "name": "Lat Pulldown",
+      "muscleGroup": "back",
+      "subMuscle": "Latissimus Dorsi",
+      "equipment": "machine",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=400",
+      "animationUrl": "https://www.youtube.com/embed/CAwf7n6Luuc",
+      "instructions": "Sit at the lat pulldown machine and pull the bar to your upper chest. Control the weight on the way back up.",
+      "primaryMuscles": [
+        "back",
+        "arms"
+      ],
+      "secondaryMuscles": [
+        "arms"
+      ],
+      "primaryRegions": [
+        "lats"
+      ],
+      "secondaryRegions": [
+        "biceps",
+        "triceps"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "back_005",
+      "name": "Seated Cable Row",
+      "muscleGroup": "back",
+      "subMuscle": "Rhomboids",
+      "equipment": "cable",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=400",
+      "animationUrl": "https://www.youtube.com/embed/GZbfZ033f74",
+      "instructions": "Sit upright at a cable row station and pull the handle to your abdomen. Keep your torso still and squeeze your back at the end of each rep.",
+      "primaryMuscles": [
+        "back",
+        "arms"
+      ],
+      "secondaryMuscles": [
+        "arms"
+      ],
+      "primaryRegions": [
+        "middle_back"
+      ],
+      "secondaryRegions": [
+        "biceps",
+        "triceps"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "back_006",
+      "name": "Dumbbell Row",
+      "muscleGroup": "back",
+      "subMuscle": "Latissimus Dorsi",
+      "equipment": "dumbbell",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=400",
+      "animationUrl": "https://www.youtube.com/embed/pYcpY20QaFM",
+      "instructions": "Place one knee and hand on a bench for support. Pull the dumbbell to your hip, keeping your elbow close to your body.",
+      "primaryMuscles": [
+        "back",
+        "arms"
+      ],
+      "secondaryMuscles": [
+        "arms"
+      ],
+      "primaryRegions": [
+        "lats"
+      ],
+      "secondaryRegions": [
+        "biceps",
+        "triceps"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "back_007",
+      "name": "T-Bar Row",
+      "muscleGroup": "back",
+      "subMuscle": "Middle Trapezius",
+      "equipment": "barbell",
+      "difficulty": "intermediate",
+      "imageUrl": "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=400",
+      "animationUrl": "https://www.youtube.com/embed/6EYYUiIKV9I",
+      "instructions": "Straddle the T-bar and pull the weight to your chest with a neutral grip. Keep your back flat and drive your elbows back.",
+      "primaryMuscles": [
+        "back",
+        "arms"
+      ],
+      "secondaryMuscles": [
+        "arms"
+      ],
+      "primaryRegions": [
+        "middle_back",
+        "upper_traps"
+      ],
+      "secondaryRegions": [
+        "biceps",
+        "triceps"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "back_008",
+      "name": "Face Pull",
+      "muscleGroup": "back",
+      "subMuscle": "Rear Deltoid",
+      "equipment": "cable",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=400",
+      "animationUrl": "https://www.youtube.com/embed/eIuIGqZB8iw",
+      "instructions": "Set a cable at head height and pull the rope attachment toward your face, flaring your elbows out. Squeeze your rear delts at the end of the movement.",
+      "primaryMuscles": [
+        "back",
+        "shoulders"
+      ],
+      "secondaryMuscles": [
+        "shoulders"
+      ],
+      "primaryRegions": [
+        "rear_delts"
+      ],
+      "secondaryRegions": [
+        "front_delts",
+        "side_delts"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "legs_001",
+      "name": "Squat",
+      "muscleGroup": "legs",
+      "subMuscle": "Quadriceps",
+      "equipment": "barbell",
+      "difficulty": "intermediate",
+      "imageUrl": "https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=400",
+      "animationUrl": "https://www.youtube.com/embed/A94wNF2HkWA",
+      "instructions": "Place the barbell on your upper traps and squat until your thighs are parallel to the floor. Drive through your heels to stand back up.",
+      "primaryMuscles": [
+        "legs",
+        "glutes"
+      ],
+      "secondaryMuscles": [
+        "glutes"
+      ],
+      "primaryRegions": [
+        "quads"
+      ],
+      "secondaryRegions": [
+        "glutes"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "legs_002",
+      "name": "Romanian Deadlift",
+      "muscleGroup": "legs",
+      "subMuscle": "Hamstrings",
+      "equipment": "barbell",
+      "difficulty": "intermediate",
+      "imageUrl": "https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=400",
+      "animationUrl": "https://www.youtube.com/embed/JCXUZjGWroM",
+      "instructions": "Hold the barbell at hip height and hinge forward, lowering it along your legs until you feel a hamstring stretch. Return to standing by driving your hips forward.",
+      "primaryMuscles": [
+        "legs",
+        "glutes",
+        "back"
+      ],
+      "secondaryMuscles": [
+        "glutes",
+        "back"
+      ],
+      "primaryRegions": [
+        "hamstrings"
+      ],
+      "secondaryRegions": [
+        "glutes",
+        "lats",
+        "middle_back"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "legs_003",
+      "name": "Leg Press",
+      "muscleGroup": "legs",
+      "subMuscle": "Quadriceps",
+      "equipment": "machine",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=400",
+      "animationUrl": "https://www.youtube.com/embed/IZxyjW7MIAI",
+      "instructions": "Sit in the leg press machine and push the platform away until your legs are nearly straight. Lower it back until your knees reach 90°.",
+      "primaryMuscles": [
+        "legs",
+        "glutes"
+      ],
+      "secondaryMuscles": [
+        "glutes"
+      ],
+      "primaryRegions": [
+        "quads"
+      ],
+      "secondaryRegions": [
+        "glutes"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "legs_004",
+      "name": "Leg Curl",
+      "muscleGroup": "legs",
+      "subMuscle": "Hamstrings",
+      "equipment": "machine",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=400",
+      "animationUrl": "https://www.youtube.com/embed/JL7NZ8q7Ry0",
+      "instructions": "Lie face-down on the leg curl machine and curl the pad toward your glutes. Lower slowly and repeat.",
+      "primaryMuscles": [
+        "legs"
+      ],
+      "secondaryMuscles": [],
+      "primaryRegions": [
+        "hamstrings"
+      ],
+      "secondaryRegions": [],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "legs_005",
+      "name": "Leg Extension",
+      "muscleGroup": "legs",
+      "subMuscle": "Quadriceps",
+      "equipment": "machine",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=400",
+      "animationUrl": "https://www.youtube.com/embed/Eo9a46qP8PY",
+      "instructions": "Sit in the leg extension machine and extend your legs to full lockout. Lower the weight slowly back to the start position.",
+      "primaryMuscles": [
+        "legs"
+      ],
+      "secondaryMuscles": [],
+      "primaryRegions": [
+        "quads"
+      ],
+      "secondaryRegions": [],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "legs_006",
+      "name": "Lunges",
+      "muscleGroup": "legs",
+      "subMuscle": "Quadriceps",
+      "equipment": "dumbbell",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=400",
+      "animationUrl": "https://www.youtube.com/embed/D6R1V_QyIEE",
+      "instructions": "Hold dumbbells at your sides and step forward, lowering your back knee toward the floor. Push off your front foot to return to standing.",
+      "primaryMuscles": [
+        "legs",
+        "glutes"
+      ],
+      "secondaryMuscles": [
+        "glutes"
+      ],
+      "primaryRegions": [
+        "quads"
+      ],
+      "secondaryRegions": [
+        "glutes"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "legs_007",
+      "name": "Bulgarian Split Squat",
+      "muscleGroup": "legs",
+      "subMuscle": "Quadriceps",
+      "equipment": "dumbbell",
+      "difficulty": "intermediate",
+      "imageUrl": "https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=400",
+      "animationUrl": "https://www.youtube.com/embed/2IcnqA1dInI",
+      "instructions": "Rest your rear foot on a bench and hold dumbbells at your sides. Lower your front knee until your thigh is parallel to the floor, then drive back up.",
+      "primaryMuscles": [
+        "legs",
+        "glutes"
+      ],
+      "secondaryMuscles": [
+        "glutes"
+      ],
+      "primaryRegions": [
+        "quads"
+      ],
+      "secondaryRegions": [
+        "glutes"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "legs_008",
+      "name": "Calf Raise",
+      "muscleGroup": "legs",
+      "subMuscle": "Gastrocnemius",
+      "equipment": "machine",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=400",
+      "animationUrl": "https://www.youtube.com/embed/j3QcABbD_qQ",
+      "instructions": "Stand on the calf raise machine with the balls of your feet on the platform. Rise onto your toes as high as possible, then lower slowly.",
+      "primaryMuscles": [
+        "legs"
+      ],
+      "secondaryMuscles": [],
+      "primaryRegions": [
+        "calves"
+      ],
+      "secondaryRegions": [],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "legs_009",
+      "name": "Hack Squat",
+      "muscleGroup": "legs",
+      "subMuscle": "Quadriceps",
+      "equipment": "machine",
+      "difficulty": "intermediate",
+      "imageUrl": "https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=400",
+      "animationUrl": "https://www.youtube.com/embed/6uc033-msKY",
+      "instructions": "Position yourself in the hack squat machine with your back flat against the pad. Lower until your thighs are parallel, then press back up.",
+      "primaryMuscles": [
+        "legs",
+        "glutes"
+      ],
+      "secondaryMuscles": [
+        "glutes"
+      ],
+      "primaryRegions": [
+        "quads"
+      ],
+      "secondaryRegions": [
+        "glutes"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "legs_010",
+      "name": "Sumo Deadlift",
+      "muscleGroup": "legs",
+      "subMuscle": "Adductors",
+      "equipment": "barbell",
+      "difficulty": "advanced",
+      "imageUrl": "https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=400",
+      "animationUrl": "https://www.youtube.com/embed/pmLXQUcVXJ0",
+      "instructions": "Stand with a wide stance and grip the bar inside your legs. Keep your chest up and drive through your heels to lift the bar to hip height.",
+      "primaryMuscles": [
+        "legs",
+        "glutes",
+        "back"
+      ],
+      "secondaryMuscles": [
+        "glutes",
+        "back"
+      ],
+      "primaryRegions": [
+        "adductors"
+      ],
+      "secondaryRegions": [
+        "glutes",
+        "lats",
+        "middle_back"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "shoulders_001",
+      "name": "Overhead Press",
+      "muscleGroup": "shoulders",
+      "subMuscle": "Anterior Deltoid",
+      "equipment": "barbell",
+      "difficulty": "intermediate",
+      "imageUrl": "https://images.unsplash.com/photo-1532029837206-abbe2b7620e3?w=400",
+      "animationUrl": "",
+      "instructions": "Stand with the barbell at shoulder height and press it overhead to full extension. Lower it back to your shoulders under control.",
+      "primaryMuscles": [
+        "shoulders",
+        "arms"
+      ],
+      "secondaryMuscles": [
+        "arms"
+      ],
+      "primaryRegions": [
+        "front_delts"
+      ],
+      "secondaryRegions": [
+        "biceps",
+        "triceps"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "shoulders_002",
+      "name": "Dumbbell Shoulder Press",
+      "muscleGroup": "shoulders",
+      "subMuscle": "Anterior Deltoid",
+      "equipment": "dumbbell",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1532029837206-abbe2b7620e3?w=400",
+      "animationUrl": "",
+      "instructions": "Sit or stand holding dumbbells at shoulder height and press them overhead until your arms are fully extended. Lower back to the start.",
+      "primaryMuscles": [
+        "shoulders",
+        "arms"
+      ],
+      "secondaryMuscles": [
+        "arms"
+      ],
+      "primaryRegions": [
+        "front_delts"
+      ],
+      "secondaryRegions": [
+        "biceps",
+        "triceps"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "shoulders_003",
+      "name": "Lateral Raise",
+      "muscleGroup": "shoulders",
+      "subMuscle": "Lateral Deltoid",
+      "equipment": "dumbbell",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1532029837206-abbe2b7620e3?w=400",
+      "animationUrl": "",
+      "instructions": "Hold dumbbells at your sides and raise them out to shoulder height with a slight elbow bend. Lower slowly back to your sides.",
+      "primaryMuscles": [
+        "shoulders"
+      ],
+      "secondaryMuscles": [],
+      "primaryRegions": [
+        "side_delts"
+      ],
+      "secondaryRegions": [],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "shoulders_004",
+      "name": "Front Raise",
+      "muscleGroup": "shoulders",
+      "subMuscle": "Anterior Deltoid",
+      "equipment": "dumbbell",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1532029837206-abbe2b7620e3?w=400",
+      "animationUrl": "",
+      "instructions": "Hold dumbbells in front of your thighs and raise them forward to shoulder height. Lower under control and repeat.",
+      "primaryMuscles": [
+        "shoulders"
+      ],
+      "secondaryMuscles": [],
+      "primaryRegions": [
+        "front_delts"
+      ],
+      "secondaryRegions": [],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "shoulders_005",
+      "name": "Reverse Fly",
+      "muscleGroup": "shoulders",
+      "subMuscle": "Posterior Deltoid",
+      "equipment": "dumbbell",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1532029837206-abbe2b7620e3?w=400",
+      "animationUrl": "",
+      "instructions": "Hinge forward at the hips and raise the dumbbells out to the sides until they reach shoulder height. Squeeze your rear delts at the top.",
+      "primaryMuscles": [
+        "shoulders",
+        "back"
+      ],
+      "secondaryMuscles": [
+        "back"
+      ],
+      "primaryRegions": [
+        "rear_delts"
+      ],
+      "secondaryRegions": [
+        "lats",
+        "middle_back"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "shoulders_006",
+      "name": "Arnold Press",
+      "muscleGroup": "shoulders",
+      "subMuscle": "Anterior Deltoid",
+      "equipment": "dumbbell",
+      "difficulty": "intermediate",
+      "imageUrl": "https://images.unsplash.com/photo-1532029837206-abbe2b7620e3?w=400",
+      "animationUrl": "",
+      "instructions": "Start with dumbbells in front of your face, palms facing you. Rotate your palms outward as you press overhead, then reverse on the way down.",
+      "primaryMuscles": [
+        "shoulders",
+        "arms"
+      ],
+      "secondaryMuscles": [
+        "arms"
+      ],
+      "primaryRegions": [
+        "front_delts"
+      ],
+      "secondaryRegions": [
+        "biceps",
+        "triceps"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "arms_001",
+      "name": "Barbell Curl",
+      "muscleGroup": "arms",
+      "subMuscle": "Biceps Brachii",
+      "equipment": "barbell",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=400",
+      "animationUrl": "",
+      "instructions": "Stand holding a barbell with an underhand grip and curl it to shoulder height. Lower slowly back to the start.",
+      "primaryMuscles": [
+        "arms"
+      ],
+      "secondaryMuscles": [],
+      "primaryRegions": [
+        "biceps"
+      ],
+      "secondaryRegions": [],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "arms_002",
+      "name": "Dumbbell Curl",
+      "muscleGroup": "arms",
+      "subMuscle": "Biceps Brachii",
+      "equipment": "dumbbell",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=400",
+      "animationUrl": "",
+      "instructions": "Hold dumbbells at your sides and curl them alternately or together to shoulder height. Keep your elbows pinned to your sides.",
+      "primaryMuscles": [
+        "arms"
+      ],
+      "secondaryMuscles": [],
+      "primaryRegions": [
+        "biceps"
+      ],
+      "secondaryRegions": [],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "arms_003",
+      "name": "Hammer Curl",
+      "muscleGroup": "arms",
+      "subMuscle": "Brachialis",
+      "equipment": "dumbbell",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=400",
+      "animationUrl": "",
+      "instructions": "Hold dumbbells with a neutral (hammer) grip and curl them to shoulder height. This targets the brachialis and brachioradialis.",
+      "primaryMuscles": [
+        "arms"
+      ],
+      "secondaryMuscles": [],
+      "primaryRegions": [
+        "biceps",
+        "forearms"
+      ],
+      "secondaryRegions": [],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "arms_004",
+      "name": "Preacher Curl",
+      "muscleGroup": "arms",
+      "subMuscle": "Biceps Brachii",
+      "equipment": "machine",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=400",
+      "animationUrl": "",
+      "instructions": "Rest your upper arms on the preacher pad and curl the weight up to shoulder height. Lower fully to stretch the biceps.",
+      "primaryMuscles": [
+        "arms"
+      ],
+      "secondaryMuscles": [],
+      "primaryRegions": [
+        "biceps"
+      ],
+      "secondaryRegions": [],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "arms_005",
+      "name": "Tricep Pushdown",
+      "muscleGroup": "arms",
+      "subMuscle": "Triceps Brachii",
+      "equipment": "cable",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=400",
+      "animationUrl": "",
+      "instructions": "Stand at a high cable pulley and push the bar or rope down until your arms are fully extended. Keep your elbows tucked at your sides.",
+      "primaryMuscles": [
+        "arms"
+      ],
+      "secondaryMuscles": [],
+      "primaryRegions": [
+        "triceps"
+      ],
+      "secondaryRegions": [],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "arms_006",
+      "name": "Skull Crusher",
+      "muscleGroup": "arms",
+      "subMuscle": "Triceps Brachii",
+      "equipment": "barbell",
+      "difficulty": "intermediate",
+      "imageUrl": "https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=400",
+      "animationUrl": "",
+      "instructions": "Lie on a bench and hold a barbell above your chest. Bend your elbows to lower the bar toward your forehead, then extend back up.",
+      "primaryMuscles": [
+        "arms"
+      ],
+      "secondaryMuscles": [],
+      "primaryRegions": [
+        "triceps"
+      ],
+      "secondaryRegions": [],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "arms_007",
+      "name": "Overhead Tricep Extension",
+      "muscleGroup": "arms",
+      "subMuscle": "Triceps Brachii",
+      "equipment": "dumbbell",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=400",
+      "animationUrl": "",
+      "instructions": "Hold a dumbbell overhead with both hands and lower it behind your head by bending your elbows. Extend back to the start.",
+      "primaryMuscles": [
+        "arms"
+      ],
+      "secondaryMuscles": [],
+      "primaryRegions": [
+        "triceps"
+      ],
+      "secondaryRegions": [],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "arms_008",
+      "name": "Close Grip Bench Press",
+      "muscleGroup": "arms",
+      "subMuscle": "Triceps Brachii",
+      "equipment": "barbell",
+      "difficulty": "intermediate",
+      "imageUrl": "https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=400",
+      "animationUrl": "",
+      "instructions": "Grip the barbell with hands shoulder-width apart and press it from your chest to full extension. Keep your elbows close to your body.",
+      "primaryMuscles": [
+        "arms",
+        "chest"
+      ],
+      "secondaryMuscles": [
+        "chest"
+      ],
+      "primaryRegions": [
+        "triceps"
+      ],
+      "secondaryRegions": [
+        "chest"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "abs_001",
+      "name": "Crunch",
+      "muscleGroup": "abs",
+      "subMuscle": "Rectus Abdominis",
+      "equipment": "bodyweight",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400",
+      "animationUrl": "",
+      "instructions": "Lie on your back with knees bent and hands behind your head. Curl your shoulders off the floor, squeezing your abs, then lower back down.",
+      "primaryMuscles": [
+        "abs"
+      ],
+      "secondaryMuscles": [],
+      "primaryRegions": [
+        "upper_abs",
+        "lower_abs"
+      ],
+      "secondaryRegions": [],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "abs_002",
+      "name": "Plank",
+      "muscleGroup": "abs",
+      "subMuscle": "Transverse Abdominis",
+      "equipment": "bodyweight",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400",
+      "animationUrl": "",
+      "instructions": "Hold a forearm plank position with your body in a straight line from head to heels. Brace your core and hold for the desired duration.",
+      "primaryMuscles": [
+        "abs",
+        "fullBody"
+      ],
+      "secondaryMuscles": [
+        "fullBody"
+      ],
+      "primaryRegions": [
+        "upper_abs",
+        "lower_abs"
+      ],
+      "secondaryRegions": [],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "abs_003",
+      "name": "Leg Raise",
+      "muscleGroup": "abs",
+      "subMuscle": "Lower Rectus Abdominis",
+      "equipment": "bodyweight",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400",
+      "animationUrl": "",
+      "instructions": "Lie flat on your back and raise your straight legs to 90°. Lower them slowly without letting your lower back arch off the floor.",
+      "primaryMuscles": [
+        "abs"
+      ],
+      "secondaryMuscles": [],
+      "primaryRegions": [
+        "lower_abs"
+      ],
+      "secondaryRegions": [],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "abs_004",
+      "name": "Cable Crunch",
+      "muscleGroup": "abs",
+      "subMuscle": "Rectus Abdominis",
+      "equipment": "cable",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400",
+      "animationUrl": "",
+      "instructions": "Kneel at a high cable pulley and crunch your elbows toward your knees. Keep your hips still and focus on contracting your abs.",
+      "primaryMuscles": [
+        "abs"
+      ],
+      "secondaryMuscles": [],
+      "primaryRegions": [
+        "upper_abs",
+        "lower_abs"
+      ],
+      "secondaryRegions": [],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "abs_005",
+      "name": "Russian Twist",
+      "muscleGroup": "abs",
+      "subMuscle": "Obliques",
+      "equipment": "bodyweight",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400",
+      "animationUrl": "",
+      "instructions": "Sit with your knees bent and feet off the floor. Rotate your torso from side to side, touching the floor beside your hips each time.",
+      "primaryMuscles": [
+        "abs"
+      ],
+      "secondaryMuscles": [],
+      "primaryRegions": [
+        "obliques"
+      ],
+      "secondaryRegions": [],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "cardio_001",
+      "name": "Running",
+      "muscleGroup": "cardio",
+      "subMuscle": "Full Body",
+      "equipment": "bodyweight",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1538805060514-97d9cc17730c?w=400",
+      "animationUrl": "",
+      "instructions": "Run at a steady pace, maintaining an upright posture and relaxed arm swing. Adjust speed and duration to match your fitness level.",
+      "primaryMuscles": [
+        "cardio",
+        "legs"
+      ],
+      "secondaryMuscles": [
+        "legs"
+      ],
+      "primaryRegions": [
+        "quads",
+        "chest",
+        "lats",
+        "front_delts",
+        "upper_abs"
+      ],
+      "secondaryRegions": [
+        "hamstrings"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "cardio_002",
+      "name": "Cycling",
+      "muscleGroup": "cardio",
+      "subMuscle": "Quadriceps",
+      "equipment": "machine",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1538805060514-97d9cc17730c?w=400",
+      "animationUrl": "",
+      "instructions": "Pedal at a consistent cadence on a stationary bike. Adjust resistance to increase intensity as your fitness improves.",
+      "primaryMuscles": [
+        "cardio",
+        "legs"
+      ],
+      "secondaryMuscles": [
+        "legs"
+      ],
+      "primaryRegions": [
+        "quads"
+      ],
+      "secondaryRegions": [
+        "hamstrings"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "cardio_003",
+      "name": "Rowing Machine",
+      "muscleGroup": "cardio",
+      "subMuscle": "Full Body",
+      "equipment": "machine",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1538805060514-97d9cc17730c?w=400",
+      "animationUrl": "",
+      "instructions": "Drive with your legs first, then lean back and pull the handle to your lower chest. Reverse the sequence to return to the start.",
+      "primaryMuscles": [
+        "cardio",
+        "back",
+        "legs"
+      ],
+      "secondaryMuscles": [
+        "back",
+        "legs"
+      ],
+      "primaryRegions": [
+        "quads",
+        "chest",
+        "lats",
+        "front_delts",
+        "upper_abs"
+      ],
+      "secondaryRegions": [
+        "middle_back",
+        "hamstrings"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "cardio_004",
+      "name": "Jump Rope",
+      "muscleGroup": "cardio",
+      "subMuscle": "Calves",
+      "equipment": "bodyweight",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1538805060514-97d9cc17730c?w=400",
+      "animationUrl": "",
+      "instructions": "Jump with both feet as the rope passes under them. Keep a light bounce and use your wrists to rotate the rope.",
+      "primaryMuscles": [
+        "cardio",
+        "legs"
+      ],
+      "secondaryMuscles": [
+        "legs"
+      ],
+      "primaryRegions": [
+        "calves"
+      ],
+      "secondaryRegions": [
+        "quads",
+        "hamstrings"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "cardio_005",
+      "name": "Stair Climber",
+      "muscleGroup": "cardio",
+      "subMuscle": "Glutes",
+      "equipment": "machine",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1538805060514-97d9cc17730c?w=400",
+      "animationUrl": "",
+      "instructions": "Step at a steady pace on the stair climber, keeping your torso upright. Avoid leaning heavily on the handrails.",
+      "primaryMuscles": [
+        "cardio",
+        "legs",
+        "glutes"
+      ],
+      "secondaryMuscles": [
+        "legs",
+        "glutes"
+      ],
+      "primaryRegions": [
+        "glutes"
+      ],
+      "secondaryRegions": [
+        "quads",
+        "hamstrings"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "glutes_001",
+      "name": "Hip Thrust",
+      "muscleGroup": "glutes",
+      "subMuscle": "Gluteus Maximus",
+      "equipment": "barbell",
+      "difficulty": "intermediate",
+      "imageUrl": "https://images.unsplash.com/photo-1434682881908-b43d0467b798?w=400",
+      "animationUrl": "",
+      "instructions": "Rest your upper back on a bench with a barbell across your hips. Drive your hips up until your body forms a straight line, then lower back down.",
+      "primaryMuscles": [
+        "glutes",
+        "legs"
+      ],
+      "secondaryMuscles": [
+        "legs"
+      ],
+      "primaryRegions": [
+        "glutes"
+      ],
+      "secondaryRegions": [
+        "quads",
+        "hamstrings"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "glutes_002",
+      "name": "Glute Bridge",
+      "muscleGroup": "glutes",
+      "subMuscle": "Gluteus Maximus",
+      "equipment": "bodyweight",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1434682881908-b43d0467b798?w=400",
+      "animationUrl": "",
+      "instructions": "Lie on your back with knees bent and feet flat. Push your hips toward the ceiling, squeezing your glutes at the top, then lower back down.",
+      "primaryMuscles": [
+        "glutes",
+        "legs"
+      ],
+      "secondaryMuscles": [
+        "legs"
+      ],
+      "primaryRegions": [
+        "glutes"
+      ],
+      "secondaryRegions": [
+        "quads",
+        "hamstrings"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "glutes_003",
+      "name": "Cable Kickback",
+      "muscleGroup": "glutes",
+      "subMuscle": "Gluteus Maximus",
+      "equipment": "cable",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1434682881908-b43d0467b798?w=400",
+      "animationUrl": "",
+      "instructions": "Attach an ankle cuff to a low cable and kick your leg back until your glute is fully contracted. Return slowly and repeat.",
+      "primaryMuscles": [
+        "glutes"
+      ],
+      "secondaryMuscles": [],
+      "primaryRegions": [
+        "glutes"
+      ],
+      "secondaryRegions": [],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "glutes_004",
+      "name": "Donkey Kick",
+      "muscleGroup": "glutes",
+      "subMuscle": "Gluteus Maximus",
+      "equipment": "bodyweight",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1434682881908-b43d0467b798?w=400",
+      "animationUrl": "",
+      "instructions": "Start on all fours and kick one leg back and up, keeping the knee bent at 90°. Squeeze your glute at the top and lower back to start.",
+      "primaryMuscles": [
+        "glutes"
+      ],
+      "secondaryMuscles": [],
+      "primaryRegions": [
+        "glutes"
+      ],
+      "secondaryRegions": [],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "glutes_005",
+      "name": "Step Up",
+      "muscleGroup": "glutes",
+      "subMuscle": "Gluteus Medius",
+      "equipment": "dumbbell",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1434682881908-b43d0467b798?w=400",
+      "animationUrl": "",
+      "instructions": "Hold dumbbells at your sides and step onto a box or bench with one foot. Drive through your heel to bring your other foot up, then step back down.",
+      "primaryMuscles": [
+        "glutes",
+        "legs"
+      ],
+      "secondaryMuscles": [
+        "legs"
+      ],
+      "primaryRegions": [
+        "glutes",
+        "abductors"
+      ],
+      "secondaryRegions": [
+        "quads",
+        "hamstrings"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "chest_009",
+      "name": "Machine Chest Press",
+      "muscleGroup": "chest",
+      "subMuscle": "Pectoralis Major",
+      "equipment": "machine",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400",
+      "animationUrl": "",
+      "instructions": "Sit at the machine and grip the handles at chest height. Press forward until arms are extended, then return slowly.",
+      "primaryMuscles": [
+        "chest"
+      ],
+      "secondaryMuscles": [],
+      "primaryRegions": [
+        "chest"
+      ],
+      "secondaryRegions": [],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "chest_010",
+      "name": "Smith Machine Bench Press",
+      "muscleGroup": "chest",
+      "subMuscle": "Pectoralis Major",
+      "equipment": "machine",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400",
+      "animationUrl": "",
+      "instructions": "Lie on the bench and press the bar upward in a fixed path. Lower to chest level and repeat.",
+      "primaryMuscles": [
+        "chest",
+        "arms"
+      ],
+      "secondaryMuscles": [
+        "arms"
+      ],
+      "primaryRegions": [
+        "chest"
+      ],
+      "secondaryRegions": [
+        "biceps",
+        "triceps"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "back_009",
+      "name": "Assisted Pull-Up",
+      "muscleGroup": "back",
+      "subMuscle": "Latissimus Dorsi",
+      "equipment": "machine",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=400",
+      "animationUrl": "",
+      "instructions": "Use the assisted pull-up machine to reduce body weight. Pull your chin above the bar and lower slowly.",
+      "primaryMuscles": [
+        "back",
+        "arms"
+      ],
+      "secondaryMuscles": [
+        "arms"
+      ],
+      "primaryRegions": [
+        "lats"
+      ],
+      "secondaryRegions": [
+        "biceps",
+        "triceps"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "back_010",
+      "name": "Chin-Up",
+      "muscleGroup": "back",
+      "subMuscle": "Biceps Brachii",
+      "equipment": "bodyweight",
+      "difficulty": "intermediate",
+      "imageUrl": "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=400",
+      "animationUrl": "",
+      "instructions": "Hang from a bar with an underhand grip and pull your chin above the bar. Lower yourself fully.",
+      "primaryMuscles": [
+        "back",
+        "arms"
+      ],
+      "secondaryMuscles": [
+        "arms"
+      ],
+      "primaryRegions": [
+        "biceps"
+      ],
+      "secondaryRegions": [
+        "triceps"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "back_011",
+      "name": "Machine Row",
+      "muscleGroup": "back",
+      "subMuscle": "Latissimus Dorsi",
+      "equipment": "machine",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=400",
+      "animationUrl": "",
+      "instructions": "Sit at the machine and pull the handles toward your body. Squeeze your back and return slowly.",
+      "primaryMuscles": [
+        "back"
+      ],
+      "secondaryMuscles": [],
+      "primaryRegions": [
+        "lats"
+      ],
+      "secondaryRegions": [],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "legs_011",
+      "name": "Goblet Squat",
+      "muscleGroup": "legs",
+      "subMuscle": "Quadriceps",
+      "equipment": "dumbbell",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=400",
+      "animationUrl": "",
+      "instructions": "Hold a dumbbell at chest height and squat until thighs are parallel to the floor. Drive through heels to stand.",
+      "primaryMuscles": [
+        "legs",
+        "glutes"
+      ],
+      "secondaryMuscles": [
+        "glutes"
+      ],
+      "primaryRegions": [
+        "quads"
+      ],
+      "secondaryRegions": [
+        "glutes"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "legs_012",
+      "name": "Sissy Squat",
+      "muscleGroup": "legs",
+      "subMuscle": "Quadriceps",
+      "equipment": "bodyweight",
+      "difficulty": "intermediate",
+      "imageUrl": "https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=400",
+      "animationUrl": "",
+      "instructions": "Hold onto a support and lean back while bending your knees. Lower your body until thighs are nearly parallel.",
+      "primaryMuscles": [
+        "legs"
+      ],
+      "secondaryMuscles": [],
+      "primaryRegions": [
+        "quads"
+      ],
+      "secondaryRegions": [],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "legs_013",
+      "name": "Pendulum Squat",
+      "muscleGroup": "legs",
+      "subMuscle": "Quadriceps",
+      "equipment": "machine",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=400",
+      "animationUrl": "",
+      "instructions": "Sit in the pendulum machine and push the platform away. Lower slowly and repeat.",
+      "primaryMuscles": [
+        "legs",
+        "glutes"
+      ],
+      "secondaryMuscles": [
+        "glutes"
+      ],
+      "primaryRegions": [
+        "quads"
+      ],
+      "secondaryRegions": [
+        "glutes"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "legs_014",
+      "name": "Leg Abduction",
+      "muscleGroup": "legs",
+      "subMuscle": "Abductors",
+      "equipment": "machine",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=400",
+      "animationUrl": "",
+      "instructions": "Sit at the machine and push your legs outward against resistance. Return slowly to start.",
+      "primaryMuscles": [
+        "legs"
+      ],
+      "secondaryMuscles": [],
+      "primaryRegions": [
+        "abductors"
+      ],
+      "secondaryRegions": [],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "legs_015",
+      "name": "Leg Adduction",
+      "muscleGroup": "legs",
+      "subMuscle": "Adductors",
+      "equipment": "machine",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=400",
+      "animationUrl": "",
+      "instructions": "Sit at the machine and pull your legs together against resistance. Return slowly to start.",
+      "primaryMuscles": [
+        "legs"
+      ],
+      "secondaryMuscles": [],
+      "primaryRegions": [
+        "adductors"
+      ],
+      "secondaryRegions": [],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "shoulders_007",
+      "name": "Machine Shoulder Press",
+      "muscleGroup": "shoulders",
+      "subMuscle": "Anterior Deltoid",
+      "equipment": "machine",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1532029837206-abbe2b7620e3?w=400",
+      "animationUrl": "",
+      "instructions": "Sit at the machine and press the handles upward. Lower slowly and repeat.",
+      "primaryMuscles": [
+        "shoulders"
+      ],
+      "secondaryMuscles": [],
+      "primaryRegions": [
+        "front_delts"
+      ],
+      "secondaryRegions": [],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "shoulders_008",
+      "name": "Shrug",
+      "muscleGroup": "shoulders",
+      "subMuscle": "Trapezius",
+      "equipment": "barbell",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1532029837206-abbe2b7620e3?w=400",
+      "animationUrl": "",
+      "instructions": "Hold a barbell at hip height and shrug your shoulders up toward your ears. Lower slowly.",
+      "primaryMuscles": [
+        "shoulders"
+      ],
+      "secondaryMuscles": [],
+      "primaryRegions": [
+        "upper_traps"
+      ],
+      "secondaryRegions": [],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "shoulders_009",
+      "name": "Dumbbell Shrug",
+      "muscleGroup": "shoulders",
+      "subMuscle": "Trapezius",
+      "equipment": "dumbbell",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1532029837206-abbe2b7620e3?w=400",
+      "animationUrl": "",
+      "instructions": "Hold dumbbells at your sides and shrug your shoulders up. Lower slowly and repeat.",
+      "primaryMuscles": [
+        "shoulders"
+      ],
+      "secondaryMuscles": [],
+      "primaryRegions": [
+        "upper_traps"
+      ],
+      "secondaryRegions": [],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "arms_009",
+      "name": "Cable Curl",
+      "muscleGroup": "arms",
+      "subMuscle": "Biceps Brachii",
+      "equipment": "cable",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=400",
+      "animationUrl": "",
+      "instructions": "Stand at a cable machine and curl the bar toward your shoulders. Lower slowly.",
+      "primaryMuscles": [
+        "arms"
+      ],
+      "secondaryMuscles": [],
+      "primaryRegions": [
+        "biceps"
+      ],
+      "secondaryRegions": [],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "arms_010",
+      "name": "Machine Curl",
+      "muscleGroup": "arms",
+      "subMuscle": "Biceps Brachii",
+      "equipment": "machine",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=400",
+      "animationUrl": "",
+      "instructions": "Sit at the machine and curl the handles toward you. Lower slowly and repeat.",
+      "primaryMuscles": [
+        "arms"
+      ],
+      "secondaryMuscles": [],
+      "primaryRegions": [
+        "biceps"
+      ],
+      "secondaryRegions": [],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "arms_011",
+      "name": "Dips",
+      "muscleGroup": "arms",
+      "subMuscle": "Triceps Brachii",
+      "equipment": "bodyweight",
+      "difficulty": "intermediate",
+      "imageUrl": "https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=400",
+      "animationUrl": "",
+      "instructions": "Grip parallel bars and lower your body until elbows reach 90°. Press back up to full extension.",
+      "primaryMuscles": [
+        "arms",
+        "chest"
+      ],
+      "secondaryMuscles": [
+        "chest"
+      ],
+      "primaryRegions": [
+        "triceps"
+      ],
+      "secondaryRegions": [
+        "chest"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "arms_012",
+      "name": "Assisted Dips",
+      "muscleGroup": "arms",
+      "subMuscle": "Triceps Brachii",
+      "equipment": "machine",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=400",
+      "animationUrl": "",
+      "instructions": "Use the assisted dips machine to reduce body weight. Lower until elbows reach 90° and press back up.",
+      "primaryMuscles": [
+        "arms"
+      ],
+      "secondaryMuscles": [],
+      "primaryRegions": [
+        "triceps"
+      ],
+      "secondaryRegions": [],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "abs_006",
+      "name": "Hanging Leg Raise",
+      "muscleGroup": "abs",
+      "subMuscle": "Lower Rectus Abdominis",
+      "equipment": "bodyweight",
+      "difficulty": "intermediate",
+      "imageUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400",
+      "animationUrl": "",
+      "instructions": "Hang from a bar and raise your legs to 90°. Lower slowly without swinging.",
+      "primaryMuscles": [
+        "abs"
+      ],
+      "secondaryMuscles": [],
+      "primaryRegions": [
+        "lower_abs"
+      ],
+      "secondaryRegions": [],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "abs_007",
+      "name": "Ab Wheel Rollout",
+      "muscleGroup": "abs",
+      "subMuscle": "Rectus Abdominis",
+      "equipment": "bodyweight",
+      "difficulty": "advanced",
+      "imageUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400",
+      "animationUrl": "",
+      "instructions": "Kneel and roll the ab wheel forward, extending your body. Roll back to start.",
+      "primaryMuscles": [
+        "abs"
+      ],
+      "secondaryMuscles": [],
+      "primaryRegions": [
+        "upper_abs",
+        "lower_abs"
+      ],
+      "secondaryRegions": [],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "abs_008",
+      "name": "Decline Sit-Up",
+      "muscleGroup": "abs",
+      "subMuscle": "Rectus Abdominis",
+      "equipment": "bodyweight",
+      "difficulty": "intermediate",
+      "imageUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400",
+      "animationUrl": "",
+      "instructions": "Sit on a decline bench and perform a sit-up. Lower slowly and repeat.",
+      "primaryMuscles": [
+        "abs"
+      ],
+      "secondaryMuscles": [],
+      "primaryRegions": [
+        "upper_abs",
+        "lower_abs"
+      ],
+      "secondaryRegions": [],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "cardio_006",
+      "name": "Elliptical Machine",
+      "muscleGroup": "cardio",
+      "subMuscle": "Full Body",
+      "equipment": "machine",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1538805060514-97d9cc17730c?w=400",
+      "animationUrl": "",
+      "instructions": "Step onto the elliptical and maintain a steady pace. Adjust resistance as needed.",
+      "primaryMuscles": [
+        "cardio",
+        "legs"
+      ],
+      "secondaryMuscles": [
+        "legs"
+      ],
+      "primaryRegions": [
+        "quads",
+        "chest",
+        "lats",
+        "front_delts",
+        "upper_abs"
+      ],
+      "secondaryRegions": [
+        "hamstrings"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "cardio_007",
+      "name": "Treadmill",
+      "muscleGroup": "cardio",
+      "subMuscle": "Legs",
+      "equipment": "machine",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1538805060514-97d9cc17730c?w=400",
+      "animationUrl": "",
+      "instructions": "Run or walk on the treadmill at your desired pace. Adjust incline for added difficulty.",
+      "primaryMuscles": [
+        "cardio",
+        "legs"
+      ],
+      "secondaryMuscles": [
+        "legs"
+      ],
+      "primaryRegions": [
+        "quads",
+        "hamstrings",
+        "calves"
+      ],
+      "secondaryRegions": [],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "cardio_008",
+      "name": "Burpees",
+      "muscleGroup": "cardio",
+      "subMuscle": "Full Body",
+      "equipment": "bodyweight",
+      "difficulty": "advanced",
+      "imageUrl": "https://images.unsplash.com/photo-1538805060514-97d9cc17730c?w=400",
+      "animationUrl": "",
+      "instructions": "Start standing, drop to a plank, do a push-up, jump your feet back, and jump up.",
+      "primaryMuscles": [
+        "cardio",
+        "chest",
+        "legs"
+      ],
+      "secondaryMuscles": [
+        "chest",
+        "legs"
+      ],
+      "primaryRegions": [
+        "quads",
+        "chest",
+        "lats",
+        "front_delts",
+        "upper_abs"
+      ],
+      "secondaryRegions": [
+        "hamstrings"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "cardio_009",
+      "name": "Mountain Climbers",
+      "muscleGroup": "cardio",
+      "subMuscle": "Core",
+      "equipment": "bodyweight",
+      "difficulty": "intermediate",
+      "imageUrl": "https://images.unsplash.com/photo-1538805060514-97d9cc17730c?w=400",
+      "animationUrl": "",
+      "instructions": "Start in a plank position and alternate bringing your knees toward your chest rapidly.",
+      "primaryMuscles": [
+        "cardio",
+        "abs"
+      ],
+      "secondaryMuscles": [
+        "abs"
+      ],
+      "primaryRegions": [
+        "upper_abs",
+        "lower_abs",
+        "obliques"
+      ],
+      "secondaryRegions": [],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "glutes_006",
+      "name": "Leg Press (Glute Focus)",
+      "muscleGroup": "glutes",
+      "subMuscle": "Gluteus Maximus",
+      "equipment": "machine",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1434682881908-b43d0467b798?w=400",
+      "animationUrl": "",
+      "instructions": "Position feet high on the platform and press away. Lower slowly to emphasize glutes.",
+      "primaryMuscles": [
+        "glutes",
+        "legs"
+      ],
+      "secondaryMuscles": [
+        "legs"
+      ],
+      "primaryRegions": [
+        "glutes"
+      ],
+      "secondaryRegions": [
+        "quads",
+        "hamstrings"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "glutes_007",
+      "name": "Smith Machine Squat",
+      "muscleGroup": "glutes",
+      "subMuscle": "Gluteus Maximus",
+      "equipment": "machine",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1434682881908-b43d0467b798?w=400",
+      "animationUrl": "",
+      "instructions": "Position yourself under the bar and squat until thighs are parallel. Press back up.",
+      "primaryMuscles": [
+        "glutes",
+        "legs"
+      ],
+      "secondaryMuscles": [
+        "legs"
+      ],
+      "primaryRegions": [
+        "glutes"
+      ],
+      "secondaryRegions": [
+        "quads",
+        "hamstrings"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "glutes_008",
+      "name": "Banded Glute Bridge",
+      "muscleGroup": "glutes",
+      "subMuscle": "Gluteus Maximus",
+      "equipment": "bodyweight",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1434682881908-b43d0467b798?w=400",
+      "animationUrl": "",
+      "instructions": "Place a resistance band around your thighs and perform a glute bridge. Squeeze at the top.",
+      "primaryMuscles": [
+        "glutes"
+      ],
+      "secondaryMuscles": [],
+      "primaryRegions": [
+        "glutes"
+      ],
+      "secondaryRegions": [],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "specialty_001",
+      "name": "Kettlebell Swing",
+      "muscleGroup": "back",
+      "subMuscle": "Posterior Chain",
+      "equipment": "dumbbell",
+      "difficulty": "intermediate",
+      "imageUrl": "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=400",
+      "animationUrl": "",
+      "instructions": "Hold a kettlebell with both hands and swing it from hip to shoulder height. Drive with your hips.",
+      "primaryMuscles": [
+        "back",
+        "glutes",
+        "legs"
+      ],
+      "secondaryMuscles": [
+        "glutes",
+        "legs"
+      ],
+      "primaryRegions": [
+        "lower_back",
+        "hamstrings",
+        "glutes"
+      ],
+      "secondaryRegions": [
+        "quads"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "specialty_002",
+      "name": "Battle Ropes",
+      "muscleGroup": "cardio",
+      "subMuscle": "Full Body",
+      "equipment": "bodyweight",
+      "difficulty": "advanced",
+      "imageUrl": "https://images.unsplash.com/photo-1538805060514-97d9cc17730c?w=400",
+      "animationUrl": "",
+      "instructions": "Hold both ends of the rope and create waves by moving your arms up and down alternately.",
+      "primaryMuscles": [
+        "cardio",
+        "arms",
+        "shoulders"
+      ],
+      "secondaryMuscles": [
+        "arms",
+        "shoulders"
+      ],
+      "primaryRegions": [
+        "quads",
+        "chest",
+        "lats",
+        "front_delts",
+        "upper_abs"
+      ],
+      "secondaryRegions": [
+        "biceps",
+        "triceps",
+        "side_delts"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "specialty_003",
+      "name": "Sled Push",
+      "muscleGroup": "legs",
+      "subMuscle": "Quadriceps",
+      "equipment": "machine",
+      "difficulty": "intermediate",
+      "imageUrl": "https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=400",
+      "animationUrl": "",
+      "instructions": "Push the sled forward with your legs, maintaining an upright posture. Return to start.",
+      "primaryMuscles": [
+        "legs",
+        "cardio"
+      ],
+      "secondaryMuscles": [
+        "cardio"
+      ],
+      "primaryRegions": [
+        "quads"
+      ],
+      "secondaryRegions": [],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "specialty_004",
+      "name": "Sled Pull",
+      "muscleGroup": "back",
+      "subMuscle": "Posterior Chain",
+      "equipment": "machine",
+      "difficulty": "intermediate",
+      "imageUrl": "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=400",
+      "animationUrl": "",
+      "instructions": "Pull the sled toward you using your legs and back. Maintain good posture throughout.",
+      "primaryMuscles": [
+        "back",
+        "legs",
+        "cardio"
+      ],
+      "secondaryMuscles": [
+        "legs",
+        "cardio"
+      ],
+      "primaryRegions": [
+        "lower_back",
+        "hamstrings",
+        "glutes"
+      ],
+      "secondaryRegions": [
+        "quads"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "specialty_005",
+      "name": "Box Jump",
+      "muscleGroup": "legs",
+      "subMuscle": "Quadriceps",
+      "equipment": "bodyweight",
+      "difficulty": "advanced",
+      "imageUrl": "https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=400",
+      "animationUrl": "",
+      "instructions": "Jump onto a box from a standing position. Step down and repeat.",
+      "primaryMuscles": [
+        "legs",
+        "glutes",
+        "cardio"
+      ],
+      "secondaryMuscles": [
+        "glutes",
+        "cardio"
+      ],
+      "primaryRegions": [
+        "quads"
+      ],
+      "secondaryRegions": [
+        "glutes"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "specialty_006",
+      "name": "Tire Flip",
+      "muscleGroup": "back",
+      "subMuscle": "Full Body",
+      "equipment": "bodyweight",
+      "difficulty": "advanced",
+      "imageUrl": "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=400",
+      "animationUrl": "",
+      "instructions": "Grip the tire and flip it end over end. Maintain explosive power throughout.",
+      "primaryMuscles": [
+        "back",
+        "legs",
+        "chest"
+      ],
+      "secondaryMuscles": [
+        "legs",
+        "chest"
+      ],
+      "primaryRegions": [
+        "quads",
+        "chest",
+        "lats",
+        "front_delts",
+        "upper_abs"
+      ],
+      "secondaryRegions": [
+        "hamstrings"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "specialty_007",
+      "name": "Farmer Carry",
+      "muscleGroup": "back",
+      "subMuscle": "Traps",
+      "equipment": "dumbbell",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=400",
+      "animationUrl": "",
+      "instructions": "Hold heavy dumbbells at your sides and walk forward. Maintain upright posture.",
+      "primaryMuscles": [
+        "back",
+        "shoulders"
+      ],
+      "secondaryMuscles": [
+        "shoulders"
+      ],
+      "primaryRegions": [
+        "upper_traps"
+      ],
+      "secondaryRegions": [
+        "front_delts",
+        "side_delts"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "specialty_008",
+      "name": "Landmine Press",
+      "muscleGroup": "shoulders",
+      "subMuscle": "Anterior Deltoid",
+      "equipment": "barbell",
+      "difficulty": "intermediate",
+      "imageUrl": "https://images.unsplash.com/photo-1532029837206-abbe2b7620e3?w=400",
+      "animationUrl": "",
+      "instructions": "Hold the end of a barbell in a landmine and press upward at an angle.",
+      "primaryMuscles": [
+        "shoulders",
+        "chest"
+      ],
+      "secondaryMuscles": [
+        "chest"
+      ],
+      "primaryRegions": [
+        "front_delts"
+      ],
+      "secondaryRegions": [
+        "chest"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "specialty_009",
+      "name": "Landmine Row",
+      "muscleGroup": "back",
+      "subMuscle": "Latissimus Dorsi",
+      "equipment": "barbell",
+      "difficulty": "intermediate",
+      "imageUrl": "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=400",
+      "animationUrl": "",
+      "instructions": "Hold the end of a barbell in a landmine and row it toward your chest.",
+      "primaryMuscles": [
+        "back",
+        "arms"
+      ],
+      "secondaryMuscles": [
+        "arms"
+      ],
+      "primaryRegions": [
+        "lats"
+      ],
+      "secondaryRegions": [
+        "biceps",
+        "triceps"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "specialty_010",
+      "name": "Trap Bar Deadlift",
+      "muscleGroup": "back",
+      "subMuscle": "Erector Spinae",
+      "equipment": "barbell",
+      "difficulty": "advanced",
+      "imageUrl": "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=400",
+      "animationUrl": "",
+      "instructions": "Stand inside the trap bar and lift it to hip height. Keep your back flat throughout.",
+      "primaryMuscles": [
+        "back",
+        "legs"
+      ],
+      "secondaryMuscles": [
+        "legs"
+      ],
+      "primaryRegions": [
+        "lower_back"
+      ],
+      "secondaryRegions": [
+        "quads",
+        "hamstrings"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "chest_011",
+      "name": "Resistance Band Chest Press",
+      "muscleGroup": "chest",
+      "subMuscle": "Pectoralis Major",
+      "equipment": "cable",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400",
+      "animationUrl": "",
+      "instructions": "Anchor a resistance band and press forward against the resistance. Return to start.",
+      "primaryMuscles": [
+        "chest"
+      ],
+      "secondaryMuscles": [],
+      "primaryRegions": [
+        "chest"
+      ],
+      "secondaryRegions": [],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "chest_012",
+      "name": "Plate-Loaded Chest Press",
+      "muscleGroup": "chest",
+      "subMuscle": "Pectoralis Major",
+      "equipment": "machine",
+      "difficulty": "intermediate",
+      "imageUrl": "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400",
+      "animationUrl": "",
+      "instructions": "Load plates onto the machine and press forward. Maintain control throughout.",
+      "primaryMuscles": [
+        "chest",
+        "arms"
+      ],
+      "secondaryMuscles": [
+        "arms"
+      ],
+      "primaryRegions": [
+        "chest"
+      ],
+      "secondaryRegions": [
+        "biceps",
+        "triceps"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "chest_013",
+      "name": "Dumbbell Squeeze Press",
+      "muscleGroup": "chest",
+      "subMuscle": "Pectoralis Major",
+      "equipment": "dumbbell",
+      "difficulty": "intermediate",
+      "imageUrl": "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400",
+      "animationUrl": "",
+      "instructions": "Press dumbbells together while pressing upward. Squeeze at the top of the movement.",
+      "primaryMuscles": [
+        "chest"
+      ],
+      "secondaryMuscles": [],
+      "primaryRegions": [
+        "chest"
+      ],
+      "secondaryRegions": [],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "chest_014",
+      "name": "Isometric Chest Hold",
+      "muscleGroup": "chest",
+      "subMuscle": "Pectoralis Major",
+      "equipment": "bodyweight",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400",
+      "animationUrl": "",
+      "instructions": "Hold dumbbells or a barbell at chest level without moving. Hold for time.",
+      "primaryMuscles": [
+        "chest"
+      ],
+      "secondaryMuscles": [],
+      "primaryRegions": [
+        "chest"
+      ],
+      "secondaryRegions": [],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "chest_015",
+      "name": "Incline Dumbbell Fly",
+      "muscleGroup": "chest",
+      "subMuscle": "Upper Pectoralis Major",
+      "equipment": "dumbbell",
+      "difficulty": "intermediate",
+      "imageUrl": "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400",
+      "animationUrl": "",
+      "instructions": "On an incline bench, perform a fly motion with dumbbells. Focus on chest contraction.",
+      "primaryMuscles": [
+        "chest"
+      ],
+      "secondaryMuscles": [],
+      "primaryRegions": [
+        "chest",
+        "front_delts"
+      ],
+      "secondaryRegions": [],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "back_016",
+      "name": "Seal Row",
+      "muscleGroup": "back",
+      "subMuscle": "Latissimus Dorsi",
+      "equipment": "barbell",
+      "difficulty": "intermediate",
+      "imageUrl": "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=400",
+      "animationUrl": "",
+      "instructions": "Lie on an incline bench and row the barbell to your chest. Isolate the back muscles.",
+      "primaryMuscles": [
+        "back"
+      ],
+      "secondaryMuscles": [],
+      "primaryRegions": [
+        "lats"
+      ],
+      "secondaryRegions": [],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "back_017",
+      "name": "Inverted Row",
+      "muscleGroup": "back",
+      "subMuscle": "Latissimus Dorsi",
+      "equipment": "barbell",
+      "difficulty": "intermediate",
+      "imageUrl": "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=400",
+      "animationUrl": "",
+      "instructions": "Hang under a bar and pull your chest to the bar. Keep your body straight.",
+      "primaryMuscles": [
+        "back",
+        "arms"
+      ],
+      "secondaryMuscles": [
+        "arms"
+      ],
+      "primaryRegions": [
+        "lats"
+      ],
+      "secondaryRegions": [
+        "biceps",
+        "triceps"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "back_012",
+      "name": "Pendulum Row",
+      "muscleGroup": "back",
+      "subMuscle": "Latissimus Dorsi",
+      "equipment": "machine",
+      "difficulty": "intermediate",
+      "imageUrl": "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=400",
+      "animationUrl": "",
+      "instructions": "Load the pendulum machine and row the handles toward you. Maintain control.",
+      "primaryMuscles": [
+        "back",
+        "arms"
+      ],
+      "secondaryMuscles": [
+        "arms"
+      ],
+      "primaryRegions": [
+        "lats"
+      ],
+      "secondaryRegions": [
+        "biceps",
+        "triceps"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "back_015",
+      "name": "Reverse Grip Lat Pulldown",
+      "muscleGroup": "back",
+      "subMuscle": "Latissimus Dorsi",
+      "equipment": "machine",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=400",
+      "animationUrl": "",
+      "instructions": "Use an underhand grip on the lat pulldown and pull to your upper chest.",
+      "primaryMuscles": [
+        "back",
+        "arms"
+      ],
+      "secondaryMuscles": [
+        "arms"
+      ],
+      "primaryRegions": [
+        "lats"
+      ],
+      "secondaryRegions": [
+        "biceps",
+        "triceps"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "legs_016",
+      "name": "V-Squat",
+      "muscleGroup": "legs",
+      "subMuscle": "Quadriceps",
+      "equipment": "machine",
+      "difficulty": "intermediate",
+      "imageUrl": "https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=400",
+      "animationUrl": "",
+      "instructions": "Use the V-squat machine to perform a squat with a V-shaped path.",
+      "primaryMuscles": [
+        "legs",
+        "glutes"
+      ],
+      "secondaryMuscles": [
+        "glutes"
+      ],
+      "primaryRegions": [
+        "quads"
+      ],
+      "secondaryRegions": [
+        "glutes"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "shoulders_011",
+      "name": "Pike Push-Up",
+      "muscleGroup": "shoulders",
+      "subMuscle": "Anterior Deltoid",
+      "equipment": "bodyweight",
+      "difficulty": "intermediate",
+      "imageUrl": "https://images.unsplash.com/photo-1532029837206-abbe2b7620e3?w=400",
+      "animationUrl": "",
+      "instructions": "Start in downward dog position and lower your head toward the ground.",
+      "primaryMuscles": [
+        "shoulders"
+      ],
+      "secondaryMuscles": [],
+      "primaryRegions": [
+        "front_delts"
+      ],
+      "secondaryRegions": [],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "shoulders_012",
+      "name": "Upright Row",
+      "muscleGroup": "shoulders",
+      "subMuscle": "Lateral Deltoid",
+      "equipment": "barbell",
+      "difficulty": "intermediate",
+      "imageUrl": "https://images.unsplash.com/photo-1532029837206-abbe2b7620e3?w=400",
+      "animationUrl": "",
+      "instructions": "Hold a barbell and pull it up to shoulder height, elbows high.",
+      "primaryMuscles": [
+        "shoulders"
+      ],
+      "secondaryMuscles": [],
+      "primaryRegions": [
+        "side_delts"
+      ],
+      "secondaryRegions": [],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "cardio_010",
+      "name": "Swimming",
+      "muscleGroup": "cardio",
+      "subMuscle": "Full Body",
+      "equipment": "bodyweight",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1538805060514-97d9cc17730c?w=400",
+      "animationUrl": "",
+      "instructions": "Swim laps at a steady pace. Use different strokes for variety.",
+      "primaryMuscles": [
+        "cardio",
+        "back",
+        "chest"
+      ],
+      "secondaryMuscles": [
+        "back",
+        "chest"
+      ],
+      "primaryRegions": [
+        "quads",
+        "chest",
+        "lats",
+        "front_delts",
+        "upper_abs"
+      ],
+      "secondaryRegions": [
+        "middle_back"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "glutes_009",
+      "name": "Smith Machine Hip Thrust",
+      "muscleGroup": "glutes",
+      "subMuscle": "Gluteus Maximus",
+      "equipment": "machine",
+      "difficulty": "intermediate",
+      "imageUrl": "https://images.unsplash.com/photo-1434682881908-b43d0467b798?w=400",
+      "animationUrl": "",
+      "instructions": "Use the Smith machine for a hip thrust. Drive hips up to full extension.",
+      "primaryMuscles": [
+        "glutes"
+      ],
+      "secondaryMuscles": [],
+      "primaryRegions": [
+        "glutes"
+      ],
+      "secondaryRegions": [],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "glutes_010",
+      "name": "Banded Hip Thrust",
+      "muscleGroup": "glutes",
+      "subMuscle": "Gluteus Maximus",
+      "equipment": "cable",
+      "difficulty": "intermediate",
+      "imageUrl": "https://images.unsplash.com/photo-1434682881908-b43d0467b798?w=400",
+      "animationUrl": "",
+      "instructions": "Place a resistance band around your hips and thrust upward.",
+      "primaryMuscles": [
+        "glutes"
+      ],
+      "secondaryMuscles": [],
+      "primaryRegions": [
+        "glutes"
+      ],
+      "secondaryRegions": [],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "glutes_011",
+      "name": "Glute Kickback",
+      "muscleGroup": "glutes",
+      "subMuscle": "Gluteus Maximus",
+      "equipment": "machine",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1434682881908-b43d0467b798?w=400",
+      "animationUrl": "",
+      "instructions": "Use the glute kickback machine to extend your leg backward.",
+      "primaryMuscles": [
+        "glutes"
+      ],
+      "secondaryMuscles": [],
+      "primaryRegions": [
+        "glutes"
+      ],
+      "secondaryRegions": [],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "glutes_012",
+      "name": "Cable Pull-Through",
+      "muscleGroup": "glutes",
+      "subMuscle": "Gluteus Maximus",
+      "equipment": "cable",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1434682881908-b43d0467b798?w=400",
+      "animationUrl": "",
+      "instructions": "Stand facing away from a cable machine and pull the rope through your legs.",
+      "primaryMuscles": [
+        "glutes",
+        "back"
+      ],
+      "secondaryMuscles": [
+        "back"
+      ],
+      "primaryRegions": [
+        "glutes"
+      ],
+      "secondaryRegions": [
+        "lats",
+        "middle_back"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "glutes_013",
+      "name": "Single-Leg Hip Thrust",
+      "muscleGroup": "glutes",
+      "subMuscle": "Gluteus Maximus",
+      "equipment": "bodyweight",
+      "difficulty": "intermediate",
+      "imageUrl": "https://images.unsplash.com/photo-1434682881908-b43d0467b798?w=400",
+      "animationUrl": "",
+      "instructions": "Perform a hip thrust with one leg extended. Alternate legs.",
+      "primaryMuscles": [
+        "glutes"
+      ],
+      "secondaryMuscles": [],
+      "primaryRegions": [
+        "glutes"
+      ],
+      "secondaryRegions": [],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "fullbody_001",
+      "name": "Burpee",
+      "muscleGroup": "fullBody",
+      "subMuscle": "Full Body",
+      "equipment": "bodyweight",
+      "difficulty": "advanced",
+      "imageUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400",
+      "animationUrl": "",
+      "instructions": "Squat down, jump back to plank, do a push-up, jump back, and jump up.",
+      "primaryMuscles": [
+        "fullBody",
+        "cardio"
+      ],
+      "secondaryMuscles": [
+        "cardio"
+      ],
+      "primaryRegions": [
+        "quads",
+        "chest",
+        "lats",
+        "front_delts",
+        "upper_abs"
+      ],
+      "secondaryRegions": [],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "fullbody_002",
+      "name": "Mountain Climber",
+      "muscleGroup": "fullBody",
+      "subMuscle": "Full Body",
+      "equipment": "bodyweight",
+      "difficulty": "intermediate",
+      "imageUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400",
+      "animationUrl": "",
+      "instructions": "In a plank position, alternate bringing knees toward chest rapidly.",
+      "primaryMuscles": [
+        "fullBody",
+        "cardio"
+      ],
+      "secondaryMuscles": [
+        "cardio"
+      ],
+      "primaryRegions": [
+        "quads",
+        "chest",
+        "lats",
+        "front_delts",
+        "upper_abs"
+      ],
+      "secondaryRegions": [],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "fullbody_005",
+      "name": "Medicine Ball Slam",
+      "muscleGroup": "fullBody",
+      "subMuscle": "Full Body",
+      "equipment": "dumbbell",
+      "difficulty": "advanced",
+      "imageUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400",
+      "animationUrl": "",
+      "instructions": "Hold a medicine ball overhead and slam it to the ground with force.",
+      "primaryMuscles": [
+        "fullBody",
+        "cardio"
+      ],
+      "secondaryMuscles": [
+        "cardio"
+      ],
+      "primaryRegions": [
+        "quads",
+        "chest",
+        "lats",
+        "front_delts",
+        "upper_abs"
+      ],
+      "secondaryRegions": [],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "specialty_011",
+      "name": "Dumbbell Snatch",
+      "muscleGroup": "fullBody",
+      "subMuscle": "Full Body",
+      "equipment": "dumbbell",
+      "difficulty": "advanced",
+      "imageUrl": "https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=400",
+      "animationUrl": "",
+      "instructions": "Explosively pull a dumbbell from the ground to overhead in one motion.",
+      "primaryMuscles": [
+        "fullBody",
+        "shoulders",
+        "legs"
+      ],
+      "secondaryMuscles": [
+        "shoulders",
+        "legs"
+      ],
+      "primaryRegions": [
+        "quads",
+        "chest",
+        "lats",
+        "front_delts",
+        "upper_abs"
+      ],
+      "secondaryRegions": [
+        "side_delts",
+        "hamstrings"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "specialty_012",
+      "name": "Dumbbell Clean",
+      "muscleGroup": "fullBody",
+      "subMuscle": "Full Body",
+      "equipment": "dumbbell",
+      "difficulty": "advanced",
+      "imageUrl": "https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=400",
+      "animationUrl": "",
+      "instructions": "Pull a dumbbell from the ground to shoulder height explosively.",
+      "primaryMuscles": [
+        "fullBody",
+        "legs",
+        "back"
+      ],
+      "secondaryMuscles": [
+        "legs",
+        "back"
+      ],
+      "primaryRegions": [
+        "quads",
+        "chest",
+        "lats",
+        "front_delts",
+        "upper_abs"
+      ],
+      "secondaryRegions": [
+        "hamstrings",
+        "middle_back"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "specialty_013",
+      "name": "Barbell Snatch",
+      "muscleGroup": "fullBody",
+      "subMuscle": "Full Body",
+      "equipment": "barbell",
+      "difficulty": "advanced",
+      "imageUrl": "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=400",
+      "animationUrl": "",
+      "instructions": "Explosively pull a barbell from the ground to overhead in one motion.",
+      "primaryMuscles": [
+        "fullBody",
+        "shoulders",
+        "legs"
+      ],
+      "secondaryMuscles": [
+        "shoulders",
+        "legs"
+      ],
+      "primaryRegions": [
+        "quads",
+        "chest",
+        "lats",
+        "front_delts",
+        "upper_abs"
+      ],
+      "secondaryRegions": [
+        "side_delts",
+        "hamstrings"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "specialty_014",
+      "name": "Barbell Clean",
+      "muscleGroup": "fullBody",
+      "subMuscle": "Full Body",
+      "equipment": "barbell",
+      "difficulty": "advanced",
+      "imageUrl": "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=400",
+      "animationUrl": "",
+      "instructions": "Pull a barbell from the ground to shoulder height explosively.",
+      "primaryMuscles": [
+        "fullBody",
+        "legs",
+        "back"
+      ],
+      "secondaryMuscles": [
+        "legs",
+        "back"
+      ],
+      "primaryRegions": [
+        "quads",
+        "chest",
+        "lats",
+        "front_delts",
+        "upper_abs"
+      ],
+      "secondaryRegions": [
+        "hamstrings",
+        "middle_back"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "specialty_015",
+      "name": "Barbell Jerk",
+      "muscleGroup": "shoulders",
+      "subMuscle": "Anterior Deltoid",
+      "equipment": "barbell",
+      "difficulty": "advanced",
+      "imageUrl": "https://images.unsplash.com/photo-1532029837206-abbe2b7620e3?w=400",
+      "animationUrl": "",
+      "instructions": "From shoulder height, explosively press a barbell overhead.",
+      "primaryMuscles": [
+        "shoulders",
+        "legs"
+      ],
+      "secondaryMuscles": [
+        "legs"
+      ],
+      "primaryRegions": [
+        "front_delts"
+      ],
+      "secondaryRegions": [
+        "quads",
+        "hamstrings"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "specialty_016",
+      "name": "Power Clean",
+      "muscleGroup": "fullBody",
+      "subMuscle": "Full Body",
+      "equipment": "barbell",
+      "difficulty": "advanced",
+      "imageUrl": "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=400",
+      "animationUrl": "",
+      "instructions": "Perform a clean with explosive power from the ground.",
+      "primaryMuscles": [
+        "fullBody",
+        "legs",
+        "back"
+      ],
+      "secondaryMuscles": [
+        "legs",
+        "back"
+      ],
+      "primaryRegions": [
+        "quads",
+        "chest",
+        "lats",
+        "front_delts",
+        "upper_abs"
+      ],
+      "secondaryRegions": [
+        "hamstrings",
+        "middle_back"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "specialty_017",
+      "name": "Front Squat",
+      "muscleGroup": "legs",
+      "subMuscle": "Quadriceps",
+      "equipment": "barbell",
+      "difficulty": "advanced",
+      "imageUrl": "https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=400",
+      "animationUrl": "",
+      "instructions": "Hold a barbell at shoulder height and squat down. Keep chest up.",
+      "primaryMuscles": [
+        "legs",
+        "glutes"
+      ],
+      "secondaryMuscles": [
+        "glutes"
+      ],
+      "primaryRegions": [
+        "quads"
+      ],
+      "secondaryRegions": [
+        "glutes"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "specialty_018",
+      "name": "Back Squat",
+      "muscleGroup": "legs",
+      "subMuscle": "Quadriceps",
+      "equipment": "barbell",
+      "difficulty": "intermediate",
+      "imageUrl": "https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=400",
+      "animationUrl": "",
+      "instructions": "Place barbell on upper back and squat down. Drive through heels.",
+      "primaryMuscles": [
+        "legs",
+        "glutes",
+        "back"
+      ],
+      "secondaryMuscles": [
+        "glutes",
+        "back"
+      ],
+      "primaryRegions": [
+        "quads"
+      ],
+      "secondaryRegions": [
+        "glutes",
+        "lats",
+        "middle_back"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "specialty_019",
+      "name": "Incline Treadmill Walk",
+      "muscleGroup": "cardio",
+      "subMuscle": "Glutes",
+      "equipment": "machine",
+      "difficulty": "beginner",
+      "imageUrl": "https://images.unsplash.com/photo-1538805060514-97d9cc17730c?w=400",
+      "animationUrl": "",
+      "instructions": "Walk on a treadmill at a high incline. Great for glute activation.",
+      "primaryMuscles": [
+        "cardio",
+        "glutes",
+        "legs"
+      ],
+      "secondaryMuscles": [
+        "glutes",
+        "legs"
+      ],
+      "primaryRegions": [
+        "glutes"
+      ],
+      "secondaryRegions": [
+        "quads",
+        "hamstrings"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "specialty_020",
+      "name": "Sled Drag",
+      "muscleGroup": "cardio",
+      "subMuscle": "Full Body",
+      "equipment": "machine",
+      "difficulty": "intermediate",
+      "imageUrl": "https://images.unsplash.com/photo-1538805060514-97d9cc17730c?w=400",
+      "animationUrl": "",
+      "instructions": "Drag a sled backward using a rope. Maintain steady pace.",
+      "primaryMuscles": [
+        "cardio",
+        "legs",
+        "back"
+      ],
+      "secondaryMuscles": [
+        "legs",
+        "back"
+      ],
+      "primaryRegions": [
+        "quads",
+        "chest",
+        "lats",
+        "front_delts",
+        "upper_abs"
+      ],
+      "secondaryRegions": [
+        "hamstrings",
+        "middle_back"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "specialty_021",
+      "name": "Prowler Push",
+      "muscleGroup": "legs",
+      "subMuscle": "Quadriceps",
+      "equipment": "machine",
+      "difficulty": "intermediate",
+      "imageUrl": "https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=400",
+      "animationUrl": "",
+      "instructions": "Push a prowler sled forward using your legs. Maintain low body position.",
+      "primaryMuscles": [
+        "legs",
+        "cardio"
+      ],
+      "secondaryMuscles": [
+        "cardio"
+      ],
+      "primaryRegions": [
+        "quads"
+      ],
+      "secondaryRegions": [],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "specialty_022",
+      "name": "Reverse Sled Drag",
+      "muscleGroup": "cardio",
+      "subMuscle": "Full Body",
+      "equipment": "machine",
+      "difficulty": "intermediate",
+      "imageUrl": "https://images.unsplash.com/photo-1538805060514-97d9cc17730c?w=400",
+      "animationUrl": "",
+      "instructions": "Drag a sled forward facing backward. Great for posterior chain.",
+      "primaryMuscles": [
+        "cardio",
+        "back",
+        "legs"
+      ],
+      "secondaryMuscles": [
+        "back",
+        "legs"
+      ],
+      "primaryRegions": [
+        "quads",
+        "chest",
+        "lats",
+        "front_delts",
+        "upper_abs"
+      ],
+      "secondaryRegions": [
+        "middle_back",
+        "hamstrings"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "specialty_023",
+      "name": "Sled Leg Press",
+      "muscleGroup": "legs",
+      "subMuscle": "Quadriceps",
+      "equipment": "machine",
+      "difficulty": "intermediate",
+      "imageUrl": "https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=400",
+      "animationUrl": "",
+      "instructions": "Push a sled using your legs from a seated position.",
+      "primaryMuscles": [
+        "legs",
+        "glutes"
+      ],
+      "secondaryMuscles": [
+        "glutes"
+      ],
+      "primaryRegions": [
+        "quads"
+      ],
+      "secondaryRegions": [
+        "glutes"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "specialty_024",
+      "name": "Rope Climb",
+      "muscleGroup": "back",
+      "subMuscle": "Latissimus Dorsi",
+      "equipment": "bodyweight",
+      "difficulty": "advanced",
+      "imageUrl": "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=400",
+      "animationUrl": "",
+      "instructions": "Climb a rope using your arms and legs. Maintain control.",
+      "primaryMuscles": [
+        "back",
+        "arms",
+        "cardio"
+      ],
+      "secondaryMuscles": [
+        "arms",
+        "cardio"
+      ],
+      "primaryRegions": [
+        "lats"
+      ],
+      "secondaryRegions": [
+        "biceps",
+        "triceps"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "specialty_025",
+      "name": "Wall Ball",
+      "muscleGroup": "fullBody",
+      "subMuscle": "Full Body",
+      "equipment": "dumbbell",
+      "difficulty": "intermediate",
+      "imageUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400",
+      "animationUrl": "",
+      "instructions": "Squat and throw a medicine ball at a wall. Catch and repeat.",
+      "primaryMuscles": [
+        "fullBody",
+        "legs",
+        "shoulders"
+      ],
+      "secondaryMuscles": [
+        "legs",
+        "shoulders"
+      ],
+      "primaryRegions": [
+        "quads",
+        "chest",
+        "lats",
+        "front_delts",
+        "upper_abs"
+      ],
+      "secondaryRegions": [
+        "hamstrings",
+        "side_delts"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    },
+    {
+      "id": "specialty_026",
+      "name": "Sled Sprint",
+      "muscleGroup": "cardio",
+      "subMuscle": "Full Body",
+      "equipment": "machine",
+      "difficulty": "advanced",
+      "imageUrl": "https://images.unsplash.com/photo-1538805060514-97d9cc17730c?w=400",
+      "animationUrl": "",
+      "instructions": "Sprint while pushing a sled. Explosive power and speed.",
+      "primaryMuscles": [
+        "cardio",
+        "legs",
+        "fullBody"
+      ],
+      "secondaryMuscles": [
+        "legs",
+        "fullBody"
+      ],
+      "primaryRegions": [
+        "quads",
+        "chest",
+        "lats",
+        "front_delts",
+        "upper_abs"
+      ],
+      "secondaryRegions": [
+        "hamstrings"
+      ],
+      "provenance": "IronFlow Exercise Catalog v2",
+      "license": "First-Party / Original"
+    }
+  ]
+}

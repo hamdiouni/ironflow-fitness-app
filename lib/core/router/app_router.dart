@@ -32,15 +32,13 @@ import '../../features/auth/presentation/providers/auth_notifier.dart';
 import '../../features/onboarding/data/user_profile_storage.dart';
 import '../../features/notifications/presentation/screens/reminder_settings_screen.dart';
 import '../../features/ai/presentation/screens/ai_chat_screen.dart';
-import '../../features/ai/presentation/screens/ai_test_screen.dart';
-import '../../features/design_system/presentation/screens/design_gallery_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/settings/presentation/screens/export_settings_screen.dart';
 import '../../features/settings/presentation/screens/privacy_settings_screen.dart';
 import '../../features/workout/domain/entities/exercise.dart';
 import '../../features/workout/domain/entities/exercise_definition.dart';
 import '../../features/tools/presentation/screens/tools_hub_screen.dart';
-import '../../dev/design_lab/main_design_lab.dart';
+import '../../dev/dev_routes.dart';
 
 // ---------------------------------------------------------------------------
 // Route path constants
@@ -413,19 +411,6 @@ List<RouteBase> buildAppRoutes({
           );
         },
       ),
-      if (includeDebugRoutes) ...[
-        GoRoute(
-          path: AppRoutes.designPreview,
-          builder: (context, state) => const DesignLabScreen(),
-        ),
-        GoRoute(
-          path: AppRoutes.designGallery,
-          builder: (context, state) => const DesignGalleryScreen(),
-        ),
-        GoRoute(
-          path: AppRoutes.aiTest,
-          builder: (context, state) => const AITestScreen(),
-        ),
-      ],
+      if (!kReleaseMode && includeDebugRoutes) ...buildDebugRoutes(),
     ];
 }

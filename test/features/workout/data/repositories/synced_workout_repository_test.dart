@@ -9,7 +9,7 @@ import 'package:progression_tracker/features/nutrition/data/models/nutrition_tar
 import 'package:progression_tracker/features/sync/data/datasources/firestore_sync_datasource.dart';
 import 'package:progression_tracker/features/sync/data/datasources/hive_sync_queue_datasource.dart';
 import 'package:progression_tracker/features/sync/domain/entities/sync_action.dart';
-import 'package:progression_tracker/features/sync/domain/services/sync_service.dart';
+import 'package:progression_tracker/features/sync/data/services/sync_service.dart';
 import 'package:progression_tracker/features/workout/data/datasources/hive_active_program_datasource.dart';
 import 'package:progression_tracker/features/workout/data/datasources/hive_workout_data_source.dart';
 import 'package:progression_tracker/features/workout/data/models/active_program_model.dart';

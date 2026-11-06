@@ -27,9 +27,8 @@ final notificationServiceProvider = Provider<NotificationService>((ref) {
   return NotificationService();
 });
 
-/// Provider for reminder settings state
-final reminderSettingsProvider = StateNotifierProvider<ReminderSettingsNotifier, AsyncValue<ReminderSettings>>((ref) {
-  final repository = ref.watch(reminderSettingsRepositoryProvider);
-  final notificationService = ref.watch(notificationServiceProvider);
-  return ReminderSettingsNotifier(repository, notificationService);
-});
+/// Provider for reminder settings state (Wave 3.2 AsyncNotifier).
+final reminderSettingsProvider =
+    AsyncNotifierProvider<ReminderSettingsNotifier, ReminderSettings>(
+  ReminderSettingsNotifier.new,
+);

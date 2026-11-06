@@ -38,24 +38,38 @@ class AuthState {
 }
 
 /// Auth notifier
-class AuthNotifier extends StateNotifier<AuthState> {
-  final SignUpUseCase _signUpUseCase;
-  final SignInUseCase _signInUseCase;
-  final SignOutUseCase _signOutUseCase;
-  final Ref _ref;
-
+class AuthNotifier extends Notifier<AuthState> {
   AuthNotifier({
-    required SignUpUseCase signUpUseCase,
-    required SignInUseCase signInUseCase,
-    required SignOutUseCase signOutUseCase,
-    required Ref ref,
-  })  : _signUpUseCase = signUpUseCase,
-        _signInUseCase = signInUseCase,
-        _signOutUseCase = signOutUseCase,
-        _ref = ref,
-        super(const AuthState()) {
+    SignUpUseCase? signUpUseCase,
+    SignInUseCase? signInUseCase,
+    SignOutUseCase? signOutUseCase,
+  })  : _injectedSignUpUseCase = signUpUseCase,
+        _injectedSignInUseCase = signInUseCase,
+        _injectedSignOutUseCase = signOutUseCase;
+
+  final SignUpUseCase? _injectedSignUpUseCase;
+  final SignInUseCase? _injectedSignInUseCase;
+  final SignOutUseCase? _injectedSignOutUseCase;
+
+  late SignUpUseCase _signUpUseCase;
+  late SignInUseCase _signInUseCase;
+  late SignOutUseCase _signOutUseCase;
+  bool _disposed = false;
+
+  @override
+  AuthState build() {
+    _disposed = false;
+    ref.onDispose(() {
+      _disposed = true;
+    });
+    _signUpUseCase = _injectedSignUpUseCase ?? ref.watch(signUpUseCaseProvider);
+    _signInUseCase = _injectedSignInUseCase ?? ref.watch(signInUseCaseProvider);
+    _signOutUseCase =
+        _injectedSignOutUseCase ?? ref.watch(signOutUseCaseProvider);
+
     // Check for existing session on initialization
     _checkExistingSession();
+    return const AuthState();
   }
 
   /// Check for existing session on app start
@@ -67,6 +81,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       // Try to get current user from repository (which checks session storage)
       final user = await _signInUseCase.repository.getCurrentUser();
+      if (_disposed) return;
 
       if (user != null) {
         if (kDebugMode) {
@@ -127,7 +142,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       
       // Track sign up event
       try {
-        final analytics = _ref.read(analyticsServiceProvider);
+        final analytics = ref.read(analyticsServiceProvider);
         await analytics.logSignUp('email');
         if (kDebugMode) {
           AppLogger.debug('📊 [Analytics] Sign up event logged');
@@ -194,7 +209,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       
       // Track login event
       try {
-        final analytics = _ref.read(analyticsServiceProvider);
+        final analytics = ref.read(analyticsServiceProvider);
         await analytics.logLogin('email');
         if (kDebugMode) {
           AppLogger.debug('📊 [Analytics] Login event logged');
@@ -255,7 +270,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       
       // Track login event
       try {
-        final analytics = _ref.read(analyticsServiceProvider);
+        final analytics = ref.read(analyticsServiceProvider);
         await analytics.logLogin('google');
         if (kDebugMode) {
           AppLogger.debug('📊 [Analytics] Google login event logged');
@@ -331,7 +346,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       
       // Track logout event
       try {
-        final analytics = _ref.read(analyticsServiceProvider);
+        final analytics = ref.read(analyticsServiceProvider);
         await analytics.logLogout();
         if (kDebugMode) {
           AppLogger.debug('📊 [Analytics] Logout event logged');
@@ -408,14 +423,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
 }
 
 /// Auth notifier provider
-final authNotifierProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
-  return AuthNotifier(
-    signUpUseCase: ref.watch(signUpUseCaseProvider),
-    signInUseCase: ref.watch(signInUseCaseProvider),
-    signOutUseCase: ref.watch(signOutUseCaseProvider),
-    ref: ref,
-  );
-});
+final authNotifierProvider = NotifierProvider<AuthNotifier, AuthState>(
+  AuthNotifier.new,
+);
 
 /// The signed-in user's id, or null while signed out.
 ///

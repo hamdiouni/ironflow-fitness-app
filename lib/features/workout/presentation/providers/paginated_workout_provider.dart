@@ -21,19 +21,28 @@ class PaginatedWorkoutState with _$PaginatedWorkoutState {
 }
 
 /// Notifier for managing paginated workout loading.
-class PaginatedWorkoutNotifier extends StateNotifier<PaginatedWorkoutState> {
-  final GetWorkoutsPaginatedUseCase _getWorkoutsPaginated;
-  final GetWorkoutCountUseCase _getWorkoutCount;
-  final Ref _ref;
+class PaginatedWorkoutNotifier extends Notifier<PaginatedWorkoutState> {
+  PaginatedWorkoutNotifier([
+    this._injectedGetWorkoutsPaginated,
+    this._injectedGetWorkoutCount,
+  ]);
+
+  final GetWorkoutsPaginatedUseCase? _injectedGetWorkoutsPaginated;
+  final GetWorkoutCountUseCase? _injectedGetWorkoutCount;
+
+  late GetWorkoutsPaginatedUseCase _getWorkoutsPaginated;
+  late GetWorkoutCountUseCase _getWorkoutCount;
 
   static const int _pageSize = 20;
 
-  PaginatedWorkoutNotifier(
-    this._getWorkoutsPaginated,
-    this._getWorkoutCount,
-    this._ref,
-  ) : super(const PaginatedWorkoutState()) {
+  @override
+  PaginatedWorkoutState build() {
+    _getWorkoutsPaginated = _injectedGetWorkoutsPaginated ??
+        ref.watch(getWorkoutsPaginatedUseCaseProvider);
+    _getWorkoutCount =
+        _injectedGetWorkoutCount ?? ref.watch(getWorkoutCountUseCaseProvider);
     _listenToWorkoutChanges();
+    return const PaginatedWorkoutState();
   }
 
   /// Load the first page of workouts.
@@ -103,7 +112,7 @@ class PaginatedWorkoutNotifier extends StateNotifier<PaginatedWorkoutState> {
   /// is the ONLY subscription — the provider below previously listened
   /// to the same counter again, refreshing twice per change.
   void _listenToWorkoutChanges() {
-    _ref.listen(workoutsStreamProvider, (previous, next) {
+    ref.listen(workoutsStreamProvider, (previous, next) {
       if (previous != next) {
         refresh();
       }
@@ -126,10 +135,7 @@ final getWorkoutCountUseCaseProvider = Provider<GetWorkoutCountUseCase>((ref) {
 ///
 /// Refresh-on-change is handled inside the notifier via
 /// `workoutsStreamProvider` (see `_listenToWorkoutChanges`).
-final paginatedWorkoutProvider = StateNotifierProvider<PaginatedWorkoutNotifier, PaginatedWorkoutState>((ref) {
-  return PaginatedWorkoutNotifier(
-    ref.watch(getWorkoutsPaginatedUseCaseProvider),
-    ref.watch(getWorkoutCountUseCaseProvider),
-    ref,
-  );
-});
+final paginatedWorkoutProvider =
+    NotifierProvider<PaginatedWorkoutNotifier, PaginatedWorkoutState>(
+  PaginatedWorkoutNotifier.new,
+);

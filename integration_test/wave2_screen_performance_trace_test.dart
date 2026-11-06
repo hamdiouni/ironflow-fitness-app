@@ -30,37 +30,55 @@ import 'package:progression_tracker/features/workout/presentation/screens/home_s
 import 'package:progression_tracker/features/workout/presentation/screens/workout_screen.dart';
 import 'package:progression_tracker/features/workout/presentation/screens/workout_summary_screen.dart';
 
-class _TraceGlobalAINotifier extends StateNotifier<GlobalAIState>
+class _TraceGlobalAINotifier extends Notifier<GlobalAIState>
     implements GlobalAINotifier {
-  _TraceGlobalAINotifier(super.state);
+  _TraceGlobalAINotifier(this._initial);
+
+  final GlobalAIState _initial;
+
+  @override
+  GlobalAIState build() => _initial;
 
   @override
   dynamic noSuchMethod(Invocation invocation) => null;
 }
 
-class _TraceActiveProgramNotifier
-    extends StateNotifier<AsyncValue<ActiveProgram?>>
+class _TraceActiveProgramNotifier extends Notifier<AsyncValue<ActiveProgram?>>
     implements ActiveProgramNotifier {
-  _TraceActiveProgramNotifier(ActiveProgram? program)
-      : super(AsyncValue.data(program));
+  _TraceActiveProgramNotifier(this._program);
+
+  final ActiveProgram? _program;
+
+  @override
+  AsyncValue<ActiveProgram?> build() => AsyncValue.data(_program);
 
   @override
   dynamic noSuchMethod(Invocation invocation) => null;
 }
 
 class _TraceDailyNutritionNotifier
-    extends StateNotifier<AsyncValue<DailyNutritionSummary>>
+    extends FamilyNotifier<AsyncValue<DailyNutritionSummary>, String>
     implements DailyNutritionNotifier {
-  _TraceDailyNutritionNotifier(DailyNutritionSummary summary)
-      : super(AsyncValue.data(summary));
+  _TraceDailyNutritionNotifier(this._summary);
+
+  final DailyNutritionSummary _summary;
+
+  @override
+  AsyncValue<DailyNutritionSummary> build(String arg) =>
+      AsyncValue.data(_summary);
 
   @override
   dynamic noSuchMethod(Invocation invocation) => null;
 }
 
-class _TraceWorkoutNotifier extends StateNotifier<WorkoutState>
+class _TraceWorkoutNotifier extends Notifier<WorkoutState>
     implements WorkoutNotifier {
-  _TraceWorkoutNotifier(super.state);
+  _TraceWorkoutNotifier(this._initial);
+
+  final WorkoutState _initial;
+
+  @override
+  WorkoutState build() => _initial;
 
   @override
   Future<void> start({List<Exercise>? initialExercises}) async {}
@@ -135,25 +153,24 @@ void main() {
   );
 
   Widget wrapWithProviders(Widget child) {
-    final todayKey = todayNutritionDayKey();
     return ProviderScope(
       overrides: [
         globalAIProvider.overrideWith(
-          (ref) => _TraceGlobalAINotifier(const GlobalAIState()),
+          () => _TraceGlobalAINotifier(const GlobalAIState()),
         ),
         isOnlineProvider.overrideWith((ref) => Stream.value(true)),
         homeWorkoutDataProvider.overrideWith((ref) async => [sampleWorkout]),
         workoutHistoryProvider.overrideWith((ref) async => [sampleWorkout]),
         activeProgramProvider.overrideWith(
-          (ref) => _TraceActiveProgramNotifier(sampleProgram),
+          () => _TraceActiveProgramNotifier(sampleProgram),
         ),
         workoutNotifierProvider.overrideWith(
-          (ref) => _TraceWorkoutNotifier(
+          () => _TraceWorkoutNotifier(
             WorkoutState.inProgress(sampleWorkout, now),
           ),
         ),
-        dailyNutritionSummaryProvider(todayKey).overrideWith(
-          (ref) => _TraceDailyNutritionNotifier(
+        dailyNutritionSummaryProvider.overrideWith(
+          () => _TraceDailyNutritionNotifier(
             DailyNutritionSummary(
               date: DateTime(now.year, now.month, now.day),
               meals: const [],

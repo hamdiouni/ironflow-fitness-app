@@ -34,8 +34,10 @@ class FoodSearchState {
   }
 }
 
-class FoodSearchNotifier extends StateNotifier<FoodSearchState> {
-  FoodSearchNotifier() : super(const FoodSearchState());
+class FoodSearchNotifier extends Notifier<FoodSearchState> {
+  @override
+  FoodSearchState build() => const FoodSearchState();
+
   void setQuery(String q) => state = state.copyWith(query: q);
   void setCategory(FoodCategory? c) => state = c == null
       ? state.copyWith(clearCategory: true)
@@ -45,8 +47,9 @@ class FoodSearchNotifier extends StateNotifier<FoodSearchState> {
       : state.copyWith(budgetTier: b);
 }
 
-final foodSearchProvider = StateNotifierProvider<FoodSearchNotifier, FoodSearchState>(
-  (ref) => FoodSearchNotifier(),
+final foodSearchProvider =
+    NotifierProvider<FoodSearchNotifier, FoodSearchState>(
+  FoodSearchNotifier.new,
 );
 
 final filteredFoodProvider = Provider<List<FoodItem>>((ref) {
@@ -58,15 +61,27 @@ final filteredFoodProvider = Provider<List<FoodItem>>((ref) {
   );
 });
 
-/// Custom Foods StateNotifier for managing user-created foods
-class CustomFoodsNotifier extends StateNotifier<AsyncValue<List<FoodItemFull>>> {
-  CustomFoodsNotifier(this._repository) : super(const AsyncValue.loading()) {
-    _loadCustomFoods();
-  }
+/// Custom Foods Notifier for managing user-created foods
+class CustomFoodsNotifier extends Notifier<AsyncValue<List<FoodItemFull>>> {
+  CustomFoodsNotifier([this._injectedRepository]);
+
+  final FoodRepository? _injectedRepository;
 
   // Was `dynamic` (F-10): with a single typed foodRepositoryProvider
   // this can be the real interface again.
-  final FoodRepository _repository;
+  late FoodRepository _repository;
+  bool _disposed = false;
+
+  @override
+  AsyncValue<List<FoodItemFull>> build() {
+    _disposed = false;
+    ref.onDispose(() {
+      _disposed = true;
+    });
+    _repository = _injectedRepository ?? ref.watch(foodRepositoryProvider);
+    _loadCustomFoods();
+    return const AsyncValue.loading();
+  }
 
   /// Load custom foods from repository
   Future<void> _loadCustomFoods() async {
@@ -76,6 +91,7 @@ class CustomFoodsNotifier extends StateNotifier<AsyncValue<List<FoodItemFull>>> 
       }
       
       final foods = await _repository.getCustomFoods();
+      if (_disposed) return;
       
       if (kDebugMode) {
         AppLogger.debug('✅ [CustomFoods] Loaded ${foods.length} custom foods');
@@ -83,6 +99,7 @@ class CustomFoodsNotifier extends StateNotifier<AsyncValue<List<FoodItemFull>>> 
       
       state = AsyncValue.data(foods);
     } catch (e, stackTrace) {
+      if (_disposed) return;
       if (kDebugMode) {
         AppLogger.debug('❌ [CustomFoods] Failed to load custom foods: $e');
       }
@@ -163,26 +180,13 @@ class CustomFoodsNotifier extends StateNotifier<AsyncValue<List<FoodItemFull>>> 
 }
 
 /// Provider for custom foods with instant updates
-final customFoodsProvider = StateNotifierProvider<CustomFoodsNotifier, AsyncValue<List<FoodItemFull>>>((ref) {
-  final repository = ref.watch(foodRepositoryProvider);
-  return CustomFoodsNotifier(repository);
-});
+final customFoodsProvider =
+    NotifierProvider<CustomFoodsNotifier, AsyncValue<List<FoodItemFull>>>(
+  CustomFoodsNotifier.new,
+);
 
 // The food repository provider lives in food_repository_provider.dart
 // (Phase 3, F-10) — there used to be three same-named definitions.
-
-/// Provider for Firestore instance - DISABLED
-// final firestoreProvider = Provider<FirebaseFirestore>((ref) {
-//   return FirebaseFirestore.instance;
-// });
-
-/// Provider for Firestore food datasource - DISABLED
-// final firestoreFoodDatasourceProvider =
-//     Provider<FirestoreFoodDatasource>((ref) {
-//   final firestore = ref.watch(firestoreProvider);
-//   return FirestoreFoodDatasource(firestore);
-// });
-
 
 /// State for food upload
 class FoodUploadState {
@@ -216,57 +220,3 @@ class FoodUploadState {
     );
   }
 }
-
-/// Notifier for food upload - DISABLED (Firebase not available)
-// class FoodUploadNotifier extends StateNotifier<FoodUploadState> {
-//   final FirebaseFirestore _firestore;
-//
-//   FoodUploadNotifier(this._firestore)
-//       : super(const FoodUploadState());
-//
-//   /// Upload all foods to Firestore
-//   Future<void> uploadFoods() async {
-//     state = state.copyWith(isLoading: true, error: null, isSuccess: false);
-//     try {
-//       // Import the upload script function
-//       // This will be called from the upload script
-//       state = state.copyWith(
-//         isLoading: false,
-//         isSuccess: true,
-//         error: null,
-//       );
-//     } catch (e) {
-//       state = state.copyWith(
-//         isLoading: false,
-//         error: e.toString(),
-//       );
-//     }
-//   }
-//
-//   /// Verify foods in Firestore
-//   Future<bool> verifyFoods() async {
-//     state = state.copyWith(isLoading: true);
-//     try {
-//       final datasource = FirestoreFoodDatasource(_firestore);
-//       final foods = await datasource.getAllFoods();
-//       state = state.copyWith(
-//         isLoading: false,
-//         uploadedCount: foods.length,
-//       );
-//       return true;
-//     } catch (e) {
-//       state = state.copyWith(
-//         isLoading: false,
-//         error: e.toString(),
-//       );
-//       return false;
-//     }
-//   }
-// }
-
-/// Provider for food upload status - DISABLED (Firebase not available)
-// final foodUploadStatusProvider =
-//     StateNotifierProvider<FoodUploadNotifier, FoodUploadState>((ref) {
-//   final firestore = ref.watch(firestoreProvider);
-//   return FoodUploadNotifier(firestore);
-// });

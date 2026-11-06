@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 
 /// Animated count-up text that counts from 0 to target on mount with tabular figures.

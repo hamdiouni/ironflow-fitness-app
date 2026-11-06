@@ -1,6 +1,6 @@
 import '../../../onboarding/domain/entities/user_profile.dart' show BudgetLevel;
 import '../entities/food_item.dart';
-import '../../data/food_database.dart';
+import '../services/food_catalog.dart';
 
 class SearchFoodUseCase {
   List<FoodItem> call({
@@ -8,7 +8,7 @@ class SearchFoodUseCase {
     FoodCategory? category,
     BudgetLevel? budgetTier,
   }) {
-    var results = FoodDatabase.foods;
+    var results = FoodCatalog.foods;
     if (query != null && query.trim().isNotEmpty) {
       final q = query.toLowerCase().trim();
       results =

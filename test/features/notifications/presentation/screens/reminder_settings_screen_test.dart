@@ -8,11 +8,14 @@ import 'package:progression_tracker/features/notifications/presentation/notifier
 import 'package:progression_tracker/features/notifications/presentation/providers/notification_providers.dart';
 import 'package:progression_tracker/features/notifications/presentation/screens/reminder_settings_screen.dart';
 
-class FakeReminderSettingsNotifier
-    extends StateNotifier<AsyncValue<ReminderSettings>>
+class FakeReminderSettingsNotifier extends AsyncNotifier<ReminderSettings>
     implements ReminderSettingsNotifier {
-  FakeReminderSettingsNotifier(ReminderSettings settings)
-      : super(AsyncValue.data(settings));
+  FakeReminderSettingsNotifier(this._initial);
+
+  final ReminderSettings _initial;
+
+  @override
+  Future<ReminderSettings> build() async => _initial;
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -39,7 +42,7 @@ void main() {
     return ProviderScope(
       overrides: [
         reminderSettingsProvider.overrideWith(
-          (ref) => FakeReminderSettingsNotifier(settings),
+          () => FakeReminderSettingsNotifier(settings),
         ),
       ],
       child: MaterialApp(

@@ -70,7 +70,7 @@ class AIResponseWidget extends StatelessWidget {
                 Text(
                   'Generating...',
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 ),
               ],
@@ -126,7 +126,7 @@ class AISuggestionCard extends StatelessWidget {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.green.withOpacity(0.2),
+                      color: Colors.green.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
@@ -228,7 +228,7 @@ class AIProgramPreview extends StatelessWidget {
               'Exercises:',
               style: theme.textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.w600,
-                color: theme.colorScheme.onSurface.withOpacity(0.7),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
               ),
             ),
             const SizedBox(height: 4),
@@ -239,7 +239,7 @@ class AIProgramPreview extends StatelessWidget {
                       Icon(
                         Icons.circle,
                         size: 6,
-                        color: theme.colorScheme.onSurface.withOpacity(0.5),
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                       ),
                       const SizedBox(width: 8),
                       Text(
@@ -255,7 +255,7 @@ class AIProgramPreview extends StatelessWidget {
                 child: Text(
                   'and ${exercises.length - 5} more...',
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 ),
               ),
@@ -263,7 +263,7 @@ class AIProgramPreview extends StatelessWidget {
             Text(
               setsRepsOverview,
               style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.7),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
               ),
             ),
             if (onViewFull != null) ...[
@@ -332,7 +332,7 @@ class AIMealPlanPreview extends StatelessWidget {
                       Icon(
                         Icons.circle,
                         size: 6,
-                        color: theme.colorScheme.onSurface.withOpacity(0.5),
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
@@ -350,7 +350,7 @@ class AIMealPlanPreview extends StatelessWidget {
                                 meal['description']!,
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   color: theme.colorScheme.onSurface
-                                      .withOpacity(0.7),
+                                      .withValues(alpha: 0.7),
                                 ),
                               ),
                           ],
@@ -364,7 +364,7 @@ class AIMealPlanPreview extends StatelessWidget {
               'Total Macros:',
               style: theme.textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.w600,
-                color: theme.colorScheme.onSurface.withOpacity(0.7),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
               ),
             ),
             const SizedBox(height: 4),
@@ -437,7 +437,7 @@ class AIAnalysisWidget extends StatelessWidget {
                 'Key Insights:',
                 style: theme.textTheme.bodySmall?.copyWith(
                   fontWeight: FontWeight.w600,
-                  color: theme.colorScheme.onSurface.withOpacity(0.7),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                 ),
               ),
               const SizedBox(height: 4),
@@ -468,7 +468,7 @@ class AIAnalysisWidget extends StatelessWidget {
                 'Recommendations:',
                 style: theme.textTheme.bodySmall?.copyWith(
                   fontWeight: FontWeight.w600,
-                  color: theme.colorScheme.onSurface.withOpacity(0.7),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                 ),
               ),
               const SizedBox(height: 4),

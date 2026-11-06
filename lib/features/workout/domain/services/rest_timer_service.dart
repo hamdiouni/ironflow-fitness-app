@@ -1,12 +1,12 @@
 import 'dart:async';
 import '../../../notifications/domain/services/notification_service.dart';
-import '../../presentation/managers/workout_state_manager.dart';
+import '../repositories/rest_timer_state_persistence.dart';
 
 /// Service for managing rest timer between sets using an absolute end timestamp
 /// as the source of truth, integrated with inexact local notifications (TRN-02).
 class RestTimerService {
   final NotificationService? _notificationService;
-  final WorkoutStateManager? _stateManager;
+  final RestTimerStatePersistence? _stateManager;
   final String? Function()? _currentUserId;
 
   Timer? _timer;
@@ -22,7 +22,7 @@ class RestTimerService {
 
   RestTimerService({
     NotificationService? notificationService,
-    WorkoutStateManager? stateManager,
+    RestTimerStatePersistence? stateManager,
     String? Function()? currentUserId,
   })  : _notificationService = notificationService,
         _stateManager = stateManager,

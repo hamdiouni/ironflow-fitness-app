@@ -818,18 +818,36 @@ void defineWave2Journeys() {
     });
 
     test(
-      'J6b KNOWN ISSUE W2-F1 (characterization): deleting one account also wipes '
-      'another account\'s unsynced local records on the same device',
+      'J6b W2-F1 RESOLVED: deleting one account preserves another account\'s '
+      'unsynced local records on the same device',
       () async {
-        // Current behaviour, recorded so a fix is a visible, reviewed change.
-        // LocalDataWiper clears whole shared boxes ('workouts', 'meals', ...)
-        // instead of only the deleted user's records. Owner approval is needed
-        // before changing this (storage behaviour). When fixed, flip the last
-        // expectation to `hasLength(1)`.
+        // Wave 3.7 fix: LocalDataWiper inspects per-record userId ownership in
+        // shared Hive boxes ('workouts', 'meals', ...) and keeps records owned
+        // by other accounts on the same device.
         await _workoutRepoFor('uid_a')
             .saveWorkout(_workout(id: 'w_a', userId: 'uid_a', date: DateTime.now()));
         await _workoutRepoFor('uid_b')
             .saveWorkout(_workout(id: 'w_b', userId: 'uid_b', date: DateTime.now()));
+        await _nutritionRepoFor('uid_a').saveMealEntry(_meal(
+          id: 'm_a',
+          name: 'A meal',
+          calories: 400,
+          protein: 30,
+          carbs: 40,
+          fats: 12,
+          timestamp: _todayAt(12),
+          userId: 'uid_a',
+        ));
+        await _nutritionRepoFor('uid_b').saveMealEntry(_meal(
+          id: 'm_b',
+          name: 'B meal',
+          calories: 550,
+          protein: 35,
+          carbs: 55,
+          fats: 18,
+          timestamp: _todayAt(12),
+          userId: 'uid_b',
+        ));
 
         await LocalDataWiper(
           secureStorage: _NoopSecureStorage(),
@@ -838,10 +856,16 @@ void defineWave2Journeys() {
         ).wipeAllUserData('uid_a');
 
         expect(await _workoutRepoFor('uid_a').getAllWorkouts(), isEmpty);
+        expect(await _nutritionRepoFor('uid_a').getMealsByDate(_todayAt(12)), isEmpty);
         expect(
           await _workoutRepoFor('uid_b').getAllWorkouts(),
-          isEmpty,
-          reason: 'W2-F1: user B data is lost today; expected to be kept after the fix',
+          hasLength(1),
+          reason: 'W2-F1 fixed: user B workouts are preserved when user A wipes data',
+        );
+        expect(
+          await _nutritionRepoFor('uid_b').getMealsByDate(_todayAt(12)),
+          hasLength(1),
+          reason: 'W2-F1 fixed: user B meals are preserved when user A wipes data',
         );
       },
     );

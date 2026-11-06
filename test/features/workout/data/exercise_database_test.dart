@@ -4,9 +4,15 @@ import 'package:progression_tracker/features/workout/domain/entities/exercise_de
 
 void main() {
   group('ExerciseDatabase Library Audit & Queries', () {
-    test('all exercises have valid names and mandatory fields', () {
+    test('all exercises have unique IDs, unique names, and mandatory fields', () {
       final exercises = ExerciseDatabase.all;
-      expect(exercises.length, 150);
+      expect(ExerciseDatabase.legacyRawCount, 150);
+      expect(exercises.length, 129);
+
+      final ids = exercises.map((e) => e.id).toSet();
+      final names = exercises.map((e) => e.name.toLowerCase()).toSet();
+      expect(ids.length, exercises.length, reason: 'Duplicate IDs detected');
+      expect(names.length, exercises.length, reason: 'Duplicate names detected');
 
       for (final ex in exercises) {
         expect(ex.id.trim().isNotEmpty, isTrue, reason: 'Empty ID');
@@ -14,7 +20,35 @@ void main() {
         expect(ex.subMuscle.trim().isNotEmpty, isTrue, reason: 'Empty subMuscle for ${ex.id}');
         expect(ex.instructions.trim().isNotEmpty, isTrue, reason: 'Empty instructions for ${ex.id}');
         expect(ex.primaryMuscles.isNotEmpty, isTrue, reason: 'Empty primaryMuscles for ${ex.id}');
+        expect(ex.primaryRegions.isNotEmpty, isTrue, reason: 'Empty primaryRegions for ${ex.id}');
       }
+    });
+
+    test('alias map resolves retired duplicate IDs and colliding ID+name pairs', () {
+      // Retired duplicate IDs resolve to canonical IDs
+      expect(ExerciseDatabase.getById('back_013')?.id, 'back_009');
+      expect(ExerciseDatabase.getById('back_014')?.id, 'back_010');
+      expect(ExerciseDatabase.getById('shoulders_010')?.id, 'shoulders_008');
+      expect(ExerciseDatabase.getById('fullbody_003')?.id, 'specialty_001');
+      expect(ExerciseDatabase.getById('fullbody_004')?.id, 'specialty_002');
+
+      // Colliding legacy IDs disambiguate when exerciseName is supplied
+      expect(
+        ExerciseDatabase.getById('back_010', exerciseName: 'Chin-Up')?.id,
+        'back_010',
+      );
+      expect(
+        ExerciseDatabase.getById('back_010', exerciseName: 'Seal Row')?.id,
+        'back_016',
+      );
+      expect(
+        ExerciseDatabase.getById('glutes_004', exerciseName: 'Smith Machine Hip Thrust')?.id,
+        'glutes_009',
+      );
+
+      // Name alias resolution
+      expect(ExerciseDatabase.getByName('Elliptical')?.id, 'cardio_006');
+      expect(ExerciseDatabase.getByName('Elliptical')?.name, 'Elliptical Machine');
     });
 
     test('getById returns matching exercise definition or null', () {

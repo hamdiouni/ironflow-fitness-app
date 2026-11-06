@@ -7,17 +7,21 @@ import 'package:hive/hive.dart';
 ///
 /// Persists language preference to Hive storage.
 /// **Validates: Requirements 10.1 (Multi-Language Support)**
-final languageProvider = StateNotifierProvider<LanguageNotifier, Locale>((ref) {
-  return LanguageNotifier();
-});
+final languageProvider =
+    NotifierProvider<LanguageNotifier, Locale>(LanguageNotifier.new);
 
-/// Notifier for managing language state.
-class LanguageNotifier extends StateNotifier<Locale> {
+/// Notifier for managing language state (Wave 3.2).
+class LanguageNotifier extends Notifier<Locale> {
   static const String _boxName = 'app_settings';
   static const String _languageKey = 'language_code';
+  bool _disposed = false;
 
-  LanguageNotifier() : super(const Locale('en')) {
+  @override
+  Locale build() {
+    _disposed = false;
+    ref.onDispose(() => _disposed = true);
     _loadLanguage();
+    return const Locale('en');
   }
 
   /// Supported locales for the app.
@@ -54,10 +58,14 @@ class LanguageNotifier extends StateNotifier<Locale> {
         orElse: () => const Locale('en'),
       );
       
-      state = locale;
+      if (!_disposed) {
+        state = locale;
+      }
     } catch (e) {
       AppLogger.debug('Error loading language: $e');
-      state = const Locale('en');
+      if (!_disposed) {
+        state = const Locale('en');
+      }
     }
   }
 

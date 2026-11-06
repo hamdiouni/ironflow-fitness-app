@@ -16,6 +16,11 @@ class ExerciseDefinition {
     required this.animationUrl,
     required this.instructions,
     required this.primaryMuscles,
+    this.secondaryMuscles = const [],
+    this.primaryRegions = const [],
+    this.secondaryRegions = const [],
+    this.provenance = 'IronFlow Exercise Catalog v2',
+    this.license = 'First-Party / Original',
   });
 
   final String id;
@@ -36,6 +41,76 @@ class ExerciseDefinition {
 
   /// List of muscles highlighted on the body diagram.
   final List<MuscleGroup> primaryMuscles;
+
+  /// Secondary coarse muscle groups engaged by this exercise.
+  final List<MuscleGroup> secondaryMuscles;
+
+  /// Canonical anatomical primary muscle region IDs for the Body Map (Wave 4).
+  final List<String> primaryRegions;
+
+  /// Canonical anatomical secondary muscle region IDs for the Body Map (Wave 4).
+  final List<String> secondaryRegions;
+
+  /// Data provenance and license metadata (Wave 3.4).
+  final String provenance;
+  final String license;
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'muscleGroup': muscleGroup.name,
+        'subMuscle': subMuscle,
+        'equipment': equipment.name,
+        'difficulty': difficulty.name,
+        'imageUrl': imageUrl,
+        'animationUrl': animationUrl,
+        'instructions': instructions,
+        'primaryMuscles': primaryMuscles.map((m) => m.name).toList(),
+        'secondaryMuscles': secondaryMuscles.map((m) => m.name).toList(),
+        'primaryRegions': primaryRegions,
+        'secondaryRegions': secondaryRegions,
+        'provenance': provenance,
+        'license': license,
+      };
+
+  factory ExerciseDefinition.fromJson(Map<String, dynamic> json) {
+    MuscleGroup parseMuscle(String raw) => MuscleGroup.values.firstWhere(
+          (m) => m.name == raw,
+          orElse: () => MuscleGroup.fullBody,
+        );
+    return ExerciseDefinition(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      muscleGroup: parseMuscle(json['muscleGroup'] as String? ?? 'fullBody'),
+      subMuscle: json['subMuscle'] as String? ?? '',
+      equipment: Equipment.values.firstWhere(
+        (e) => e.name == (json['equipment'] as String? ?? 'bodyweight'),
+        orElse: () => Equipment.bodyweight,
+      ),
+      difficulty: Difficulty.values.firstWhere(
+        (d) => d.name == (json['difficulty'] as String? ?? 'intermediate'),
+        orElse: () => Difficulty.intermediate,
+      ),
+      imageUrl: json['imageUrl'] as String? ?? '',
+      animationUrl: json['animationUrl'] as String? ?? '',
+      instructions: json['instructions'] as String? ?? '',
+      primaryMuscles: (json['primaryMuscles'] as List<dynamic>? ?? const [])
+          .map((e) => parseMuscle(e.toString()))
+          .toList(),
+      secondaryMuscles: (json['secondaryMuscles'] as List<dynamic>? ?? const [])
+          .map((e) => parseMuscle(e.toString()))
+          .toList(),
+      primaryRegions: (json['primaryRegions'] as List<dynamic>? ?? const [])
+          .map((e) => e.toString())
+          .toList(),
+      secondaryRegions: (json['secondaryRegions'] as List<dynamic>? ?? const [])
+          .map((e) => e.toString())
+          .toList(),
+      provenance:
+          json['provenance'] as String? ?? 'IronFlow Exercise Catalog v2',
+      license: json['license'] as String? ?? 'First-Party / Original',
+    );
+  }
 }
 
 enum MuscleGroup {

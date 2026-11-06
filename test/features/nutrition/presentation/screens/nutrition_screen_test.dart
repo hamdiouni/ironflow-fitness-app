@@ -19,10 +19,15 @@ import 'package:progression_tracker/features/onboarding/presentation/providers/o
 import '../../../ai/integration/screen_integration_test.dart';
 
 class FakeDailyNutritionNotifier
-    extends StateNotifier<AsyncValue<DailyNutritionSummary>>
+    extends FamilyNotifier<AsyncValue<DailyNutritionSummary>, String>
     implements DailyNutritionNotifier {
-  FakeDailyNutritionNotifier(DailyNutritionSummary summary)
-      : super(AsyncValue.data(summary));
+  FakeDailyNutritionNotifier(this._summary);
+
+  final DailyNutritionSummary _summary;
+
+  @override
+  AsyncValue<DailyNutritionSummary> build(String arg) =>
+      AsyncValue.data(_summary);
 
   final List<Meal> addedMeals = [];
   final List<String> deletedMealIds = [];
@@ -104,10 +109,10 @@ void main() {
     return ProviderScope(
       overrides: [
         globalAIProvider.overrideWith(
-          (ref) => FakeGlobalAINotifier(const GlobalAIState()),
+          () => FakeGlobalAINotifier(const GlobalAIState()),
         ),
-        dailyNutritionSummaryProvider(nutritionDayKey(today)).overrideWith(
-          (ref) => effectiveNotifier,
+        dailyNutritionSummaryProvider.overrideWith(
+          () => effectiveNotifier,
         ),
         recentFoodsProvider.overrideWith(
           (ref) async => recentFoods ?? [],

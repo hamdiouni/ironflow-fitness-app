@@ -1,4 +1,5 @@
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:progression_tracker/shared/presentation/services/app_haptics.dart';
 
@@ -92,15 +93,18 @@ void main() {
     });
 
     test('HapticsNotifier toggles enabled state', () async {
-      final notifier = HapticsNotifier();
-      expect(notifier.state, isTrue);
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      final notifier = container.read(hapticsEnabledProvider.notifier);
+      expect(container.read(hapticsEnabledProvider), isTrue);
 
       await notifier.toggle(false);
-      expect(notifier.state, isFalse);
+      expect(container.read(hapticsEnabledProvider), isFalse);
       expect(AppHaptics.shared.isEnabled, isFalse);
 
       await notifier.toggle(true);
-      expect(notifier.state, isTrue);
+      expect(container.read(hapticsEnabledProvider), isTrue);
       expect(AppHaptics.shared.isEnabled, isTrue);
     });
   });

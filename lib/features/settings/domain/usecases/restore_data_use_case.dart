@@ -4,20 +4,14 @@ import 'package:path_provider/path_provider.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:progression_tracker/features/workout/domain/repositories/workout_repository.dart';
 import 'package:progression_tracker/features/workout/domain/entities/workout.dart';
-import 'package:progression_tracker/features/workout/domain/entities/exercise.dart';
-import 'package:progression_tracker/features/workout/domain/entities/exercise_type.dart';
-import 'package:progression_tracker/features/workout/domain/entities/set_entry.dart';
-import 'package:progression_tracker/features/workout/data/models/workout_model.dart';
 import 'package:progression_tracker/features/nutrition/domain/repositories/nutrition_repository.dart';
 import 'package:progression_tracker/features/nutrition/domain/entities/meal.dart';
-import 'package:progression_tracker/features/nutrition/data/models/meal_model.dart';
 import 'package:progression_tracker/features/body/domain/repositories/body_repository.dart';
 import 'package:progression_tracker/features/body/domain/entities/body_entry.dart';
-import 'package:progression_tracker/features/body/domain/entities/measurement_type.dart';
-import 'package:progression_tracker/features/body/data/models/body_entry_model.dart';
 import 'package:progression_tracker/features/auth/domain/repositories/auth_repository.dart';
 import 'package:progression_tracker/features/auth/domain/entities/user_profile.dart';
 import 'package:progression_tracker/core/utils/record_ownership.dart';
+import 'package:progression_tracker/features/settings/domain/services/backup_record_codec.dart';
 import 'package:progression_tracker/features/settings/domain/usecases/backup_data_use_case.dart';
 
 /// Result of a restore operation.
@@ -677,175 +671,14 @@ class RestoreDataUseCase {
     } catch (_) {}
   }
 
-  Workout _parseWorkout(Map<String, dynamic> data) {
-    // Phase 3 (F-13): backups from export_version 2.0 store canonical
-    // WorkoutModel JSON (marked by `durationSeconds`) — parse through
-    // the real model so link fields survive. The hand parser below
-    // remains only for pre-2.0 backups in the legacy snake_case dialect.
-    if (data.containsKey('durationSeconds')) {
-      return WorkoutModel.fromJson(data).toEntity();
-    }
-    final id = data['id'] as String? ?? 'workout_${DateTime.now().millisecondsSinceEpoch}';
-    final dateStr = data['date'] as String?;
-    final date = dateStr != null ? DateTime.parse(dateStr) : DateTime.now();
-    final durationMinutes = (data['duration_minutes'] as num?)?.toInt() ?? 0;
-    final totalVolume = ((data['total_volume'] ?? data['total_volume_kg']) as num?)?.toDouble() ?? 0.0;
-    final caloriesBurned = (data['calories_burned'] as num?)?.toDouble() ?? 0.0;
+  Workout _parseWorkout(Map<String, dynamic> data) =>
+      BackupRecordCodec.parseWorkout(data);
 
-    final exercisesList = data['exercises'] as List<dynamic>? ?? [];
-    final exercises = exercisesList.map((eData) {
-      final eMap = eData as Map<String, dynamic>;
-      final eId = eMap['id'] as String? ?? 'ex_${DateTime.now().millisecondsSinceEpoch}';
-      final name = eMap['name'] as String? ?? 'Exercise';
-      final rawType = (eMap['type'] as String? ?? 'strength').replaceAll('ExerciseType.', '').toLowerCase();
-      final type = ExerciseType.values.firstWhere(
-        (t) => t.name.toLowerCase() == rawType,
-        orElse: () => ExerciseType.strength,
-      );
+  Meal _parseMeal(Map<String, dynamic> data) =>
+      BackupRecordCodec.parseMeal(data);
 
-      final setsList = eMap['sets'] as List<dynamic>? ?? [];
-      final sets = setsList.asMap().entries.map((entry) {
-        final idx = entry.key;
-        final sMap = entry.value as Map<String, dynamic>;
-        return SetEntry(
-          id: sMap['id'] as String? ?? 'set_${idx + 1}',
-          reps: (sMap['reps'] as num).toInt(),
-          weight: ((sMap['weight'] ?? sMap['weight_kg']) as num).toDouble(),
-          rpe: (sMap['rpe'] as num?)?.toInt(),
-          timestamp: sMap.containsKey('timestamp') && sMap['timestamp'] != null
-              ? DateTime.parse(sMap['timestamp'] as String)
-              : date,
-        );
-      }).toList();
-
-      return Exercise(
-        id: eId,
-        name: name,
-        type: type,
-        sets: sets,
-      );
-    }).toList();
-
-    return Workout(
-      id: id,
-      date: date,
-      exercises: exercises,
-      duration: Duration(minutes: durationMinutes),
-      totalVolume: totalVolume,
-      caloriesBurned: caloriesBurned,
-    );
-  }
-
-  Meal _parseMeal(Map<String, dynamic> data) {
-    // Phase 3 (F-13): canonical MealModel JSON carries the full
-    // nutrient groups; parse through the real model (preserving
-    // userId/foodItemId links). Older exports kept only a `macros`
-    // map per meal and fall through to the legacy parser below.
-    if (data.containsKey('micros') &&
-        data.containsKey('vitamins') &&
-        data.containsKey('minerals')) {
-      try {
-        return MealModel.fromJson(data).toEntity();
-      } catch (_) {
-        // Not model-shaped after all — try the legacy dialect.
-      }
-    }
-    final id = data['id'] as String? ?? 'meal_${DateTime.now().millisecondsSinceEpoch}';
-    final name = data['name'] as String? ?? 'Meal';
-    final timestamp = data.containsKey('timestamp') && data['timestamp'] != null
-        ? DateTime.parse(data['timestamp'] as String)
-        : DateTime.now();
-
-    final macrosMap = data['macros'] as Map<String, dynamic>? ?? {};
-    final macros = MealMacros(
-      calories: ((data['total_calories'] ?? macrosMap['calories']) as num?)?.toDouble() ?? 0.0,
-      protein: ((data['total_protein'] ?? macrosMap['protein']) as num?)?.toDouble() ?? 0.0,
-      carbs: ((data['total_carbs'] ?? macrosMap['carbs']) as num?)?.toDouble() ?? 0.0,
-      fats: ((data['total_fats'] ?? macrosMap['fats']) as num?)?.toDouble() ?? 0.0,
-    );
-
-    final microsMap = data['micros'] as Map<String, dynamic>?;
-    final micros = microsMap != null
-        ? MealMicros(
-            fiber: (microsMap['fiber'] as num?)?.toDouble() ?? 0.0,
-            sugar: (microsMap['sugar'] as num?)?.toDouble() ?? 0.0,
-            sodium: (microsMap['sodium'] as num?)?.toDouble() ?? 0.0,
-            potassium: (microsMap['potassium'] as num?)?.toDouble() ?? 0.0,
-          )
-        : const MealMicros(fiber: 0, sugar: 0, sodium: 0, potassium: 0);
-
-    final vitaminsMap = data['vitamins'] as Map<String, dynamic>?;
-    final vitamins = vitaminsMap != null
-        ? MealVitamins(
-            vitaminA: (vitaminsMap['vitaminA'] as num?)?.toDouble() ?? 0.0,
-            vitaminB: (vitaminsMap['vitaminB'] as num?)?.toDouble() ?? 0.0,
-            vitaminC: (vitaminsMap['vitaminC'] as num?)?.toDouble() ?? 0.0,
-            vitaminD: (vitaminsMap['vitaminD'] as num?)?.toDouble() ?? 0.0,
-            vitaminE: (vitaminsMap['vitaminE'] as num?)?.toDouble() ?? 0.0,
-          )
-        : const MealVitamins(vitaminA: 0, vitaminB: 0, vitaminC: 0, vitaminD: 0, vitaminE: 0);
-
-    final mineralsMap = data['minerals'] as Map<String, dynamic>?;
-    final minerals = mineralsMap != null
-        ? MealMinerals(
-            calcium: (mineralsMap['calcium'] as num?)?.toDouble() ?? 0.0,
-            iron: (mineralsMap['iron'] as num?)?.toDouble() ?? 0.0,
-            magnesium: (mineralsMap['magnesium'] as num?)?.toDouble() ?? 0.0,
-            zinc: (mineralsMap['zinc'] as num?)?.toDouble() ?? 0.0,
-          )
-        : const MealMinerals(calcium: 0, iron: 0, magnesium: 0, zinc: 0);
-
-    return Meal(
-      id: id,
-      name: name,
-      macros: macros,
-      micros: micros,
-      vitamins: vitamins,
-      minerals: minerals,
-      timestamp: timestamp,
-    );
-  }
-
-  BodyEntry _parseBodyEntry(Map<String, dynamic> data) {
-    // Phase 3 (F-13): canonical BodyEntryModel JSON uses camelCase
-    // (`photoPath`); the legacy dialect used `photo_path` and stays on
-    // the hand parser below so old backups keep their photo paths.
-    if (data.containsKey('photoPath')) {
-      try {
-        return BodyEntryModel.fromJson(data).toEntity();
-      } catch (_) {
-        // Not model-shaped after all — try the legacy dialect.
-      }
-    }
-    final id = data['id'] as String? ?? 'body_${DateTime.now().millisecondsSinceEpoch}';
-    final dateStr = data['date'] as String?;
-    final date = dateStr != null ? DateTime.parse(dateStr) : DateTime.now();
-    final weight = (data['weight'] as num).toDouble();
-    final photoPath = data['photo_path'] as String?;
-
-    final rawMeasurements = data['measurements'] as Map<dynamic, dynamic>? ?? {};
-    final measurements = <MeasurementType, double>{};
-    for (final entry in rawMeasurements.entries) {
-      final keyStr = entry.key.toString();
-      final val = (entry.value as num?)?.toDouble();
-      if (val != null) {
-        for (final type in MeasurementType.values) {
-          if (type.name.toLowerCase() == keyStr.toLowerCase()) {
-            measurements[type] = val;
-            break;
-          }
-        }
-      }
-    }
-
-    return BodyEntry(
-      id: id,
-      date: date,
-      weight: weight,
-      measurements: measurements,
-      photoPath: photoPath,
-    );
-  }
+  BodyEntry _parseBodyEntry(Map<String, dynamic> data) =>
+      BackupRecordCodec.parseBodyEntry(data);
 
   /// Clears existing user data.
   Future<void> _clearExistingData() async {
@@ -922,16 +755,12 @@ class RestoreDataUseCase {
     }
   }
 
-  // Phase 3 (F-13): safety snapshots use the same canonical model JSON
-  // as backups (previously a third hand-written copy of the dialect,
-  // which also dropped schema-v2 link fields — a rollback would have
-  // silently unlinked every restored record).
   Map<String, dynamic> _workoutToMap(Workout w) =>
-      WorkoutModel.fromEntity(w).toJson();
+      BackupRecordCodec.workoutToMap(w);
 
   Map<String, dynamic> _mealToMap(Meal m) =>
-      MealModel.fromEntity(m).toJson();
+      BackupRecordCodec.mealToMap(m);
 
   Map<String, dynamic> _bodyEntryToMap(BodyEntry b) =>
-      BodyEntryModel.fromEntity(b).toJson();
+      BackupRecordCodec.bodyEntryToMap(b);
 }

@@ -9,10 +9,17 @@ import 'package:progression_tracker/features/workout/domain/entities/workout_pro
 import 'package:progression_tracker/features/workout/presentation/providers/active_program_providers.dart';
 import 'package:progression_tracker/features/workout/presentation/screens/program_selection_screen.dart';
 
-class MockActiveProgramNotifier extends StateNotifier<AsyncValue<ActiveProgram?>>
+class MockActiveProgramNotifier extends Notifier<AsyncValue<ActiveProgram?>>
     implements ActiveProgramNotifier {
-  MockActiveProgramNotifier(ActiveProgram? initial)
-      : super(AsyncValue.data(initial));
+  MockActiveProgramNotifier(this._initial);
+
+  final ActiveProgram? _initial;
+
+  @override
+  AsyncValue<ActiveProgram?> build() => AsyncValue.data(_initial);
+
+  @override
+  AsyncValue<ActiveProgram?> get state => super.state;
 
   ActiveProgram? archivedProgram;
   WorkoutProgram? lastSavedProgram;
@@ -98,7 +105,7 @@ void main() {
     return ProviderScope(
       overrides: [
         userProfileProvider.overrideWith((ref) => Future.value(profile)),
-        activeProgramProvider.overrideWith((ref) => effectiveNotifier),
+        activeProgramProvider.overrideWith(() => effectiveNotifier),
       ],
       child: MaterialApp(
         themeMode: ThemeMode.dark,

@@ -18,25 +18,25 @@ import 'package:progression_tracker/features/nutrition/domain/entities/daily_nut
 import 'package:progression_tracker/features/nutrition/presentation/providers/nutrition_providers.dart';
 
 class _FakeDailyNutritionNotifier
-    extends StateNotifier<AsyncValue<DailyNutritionSummary>>
+    extends FamilyNotifier<AsyncValue<DailyNutritionSummary>, String>
     implements DailyNutritionNotifier {
-  _FakeDailyNutritionNotifier()
-      : super(AsyncValue.data(
-          DailyNutritionSummary(
-            date: DateTime(2026, 1, 1),
-            meals: const [],
-            target: null,
-          ),
-        ));
+  @override
+  AsyncValue<DailyNutritionSummary> build(String arg) => AsyncValue.data(
+        DailyNutritionSummary(
+          date: DateTime(2026, 1, 1),
+          meals: const [],
+          target: null,
+        ),
+      );
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-class _FakeActiveProgramNotifier
-    extends StateNotifier<AsyncValue<ActiveProgram?>>
+class _FakeActiveProgramNotifier extends Notifier<AsyncValue<ActiveProgram?>>
     implements ActiveProgramNotifier {
-  _FakeActiveProgramNotifier() : super(const AsyncValue.data(null));
+  @override
+  AsyncValue<ActiveProgram?> build() => const AsyncValue.data(null);
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -106,13 +106,13 @@ void main() {
             homeWorkoutDataProvider.overrideWith((ref) async => []),
             userProfileProvider.overrideWith((ref) async => null),
             globalAIProvider.overrideWith(
-              (ref) => FakeGlobalAINotifier(const GlobalAIState()),
+              () => FakeGlobalAINotifier(const GlobalAIState()),
             ),
             activeProgramProvider.overrideWith(
-              (ref) => _FakeActiveProgramNotifier(),
+              () => _FakeActiveProgramNotifier(),
             ),
             dailyNutritionSummaryProvider.overrideWith(
-              (ref, dayKey) => _FakeDailyNutritionNotifier(),
+              () => _FakeDailyNutritionNotifier(),
             ),
           ],
           child: const MaterialApp(
@@ -148,7 +148,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            activeProgramProvider.overrideWith((ref) => _FakeActiveProgramNotifier()),
+            activeProgramProvider.overrideWith(() => _FakeActiveProgramNotifier()),
           ],
           child: const MaterialApp(
             home: ProgramEditorScreen(),

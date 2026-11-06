@@ -90,23 +90,89 @@ class LocalDataWiper {
     }
   }
 
-  Future<void> _clearBoxSafely(String boxName) async {
+  static bool _belongsToAnotherUser(
+    dynamic key,
+    dynamic value,
+    String targetUserId,
+  ) {
+    if (targetUserId.isEmpty) return false;
+
+    if (value is Map) {
+      final directOwner = value['userId'];
+      if (directOwner is String &&
+          directOwner.isNotEmpty &&
+          directOwner != targetUserId) {
+        return true;
+      }
+      final nestedData = value['data'];
+      if (nestedData is Map) {
+        final nestedOwner = nestedData['userId'];
+        if (nestedOwner is String &&
+            nestedOwner.isNotEmpty &&
+            nestedOwner != targetUserId) {
+          return true;
+        }
+      }
+    }
+
+    final keyStr = key.toString();
+    for (final prefix in const [
+      'active_program_',
+      'macro_targets_',
+      'nutrition_targets_',
+      'current_workout_',
+      'start_time_',
+      'rest_timer_end_time_',
+      'rest_timer_total_seconds_',
+    ]) {
+      if (keyStr.startsWith(prefix)) {
+        final keyOwner = keyStr.substring(prefix.length);
+        if (keyOwner.isNotEmpty && keyOwner != targetUserId) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  Future<void> _wipeEntriesInTypedBox<T>(
+    Box<T> box,
+    String targetUserId,
+  ) async {
+    if (targetUserId.isEmpty) {
+      await box.clear();
+      return;
+    }
+    final keysToDelete = <dynamic>[];
+    for (final key in box.keys) {
+      final val = box.get(key);
+      if (!_belongsToAnotherUser(key, val, targetUserId)) {
+        keysToDelete.add(key);
+      }
+    }
+    if (keysToDelete.isNotEmpty) {
+      await box.deleteAll(keysToDelete);
+    }
+  }
+
+  Future<void> _clearBoxSafely(String boxName, {String userId = ''}) async {
     if (Hive.isBoxOpen(boxName)) {
       try {
-        await Hive.box<dynamic>(boxName).clear();
+        await _wipeEntriesInTypedBox<dynamic>(Hive.box<dynamic>(boxName), userId);
         return;
       } catch (_) {}
       try {
-        await Hive.box<Map>(boxName).clear();
+        await _wipeEntriesInTypedBox<Map>(Hive.box<Map>(boxName), userId);
         return;
       } catch (_) {}
       try {
-        await Hive.box<String>(boxName).clear();
+        await _wipeEntriesInTypedBox<String>(Hive.box<String>(boxName), userId);
         return;
       } catch (_) {}
     } else {
       final box = await Hive.openBox<dynamic>(boxName);
-      await box.clear();
+      await _wipeEntriesInTypedBox<dynamic>(box, userId);
     }
   }
 
@@ -117,7 +183,7 @@ class LocalDataWiper {
         continue;
       }
       try {
-        await _clearBoxSafely(boxName);
+        await _clearBoxSafely(boxName, userId: userId);
       } catch (e) {
         if (kDebugMode) {
           AppLogger.debug('⚠️ [LocalDataWiper] Could not clear box $boxName: $e');
@@ -140,7 +206,7 @@ class LocalDataWiper {
     // App state box keys (active_workout_state, active_program)
     try {
       if (Hive.isBoxOpen('app_state')) {
-        await _clearBoxSafely('app_state');
+        await _clearBoxSafely('app_state', userId: userId);
       }
     } catch (_) {}
 

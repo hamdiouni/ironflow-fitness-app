@@ -1,14 +1,19 @@
+import 'package:flutter/foundation.dart';
 import 'package:progression_tracker/features/auth/domain/entities/user_profile.dart';
+import 'auth_datasource.dart';
 
-/// Simple mock user datasource for development
-abstract class MockUserDataSource {
-  Future<void> createUserProfile(UserProfile profile);
-  Future<UserProfile?> getUserProfile(String userId);
-  Future<void> updateUserProfile(UserProfile profile);
-  Future<void> deleteUserProfile(String userId);
-}
+/// Backward-compatible alias for [UserProfileRemoteDataSource].
+typedef MockUserDataSource = UserProfileRemoteDataSource;
 
-class MockUserDataSourceImpl implements MockUserDataSource {
+class MockUserDataSourceImpl implements UserProfileRemoteDataSource {
+  MockUserDataSourceImpl() {
+    if (kReleaseMode) {
+      throw StateError(
+        'MockUserDataSourceImpl is forbidden in release builds (SEC-02 / Wave 3.5).',
+      );
+    }
+  }
+
   // Simple in-memory storage
   static final Map<String, UserProfile> _profiles = {};
 

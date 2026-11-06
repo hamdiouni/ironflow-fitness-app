@@ -21,21 +21,29 @@ import 'package:progression_tracker/shared/presentation/components/app_card.dart
 
 import '../../../ai/integration/screen_integration_test.dart';
 
-class _FakeActiveProgramNotifier
-    extends StateNotifier<AsyncValue<ActiveProgram?>>
+class _FakeActiveProgramNotifier extends Notifier<AsyncValue<ActiveProgram?>>
     implements ActiveProgramNotifier {
-  _FakeActiveProgramNotifier(ActiveProgram? program)
-      : super(AsyncValue.data(program));
+  _FakeActiveProgramNotifier(this._program);
+
+  final ActiveProgram? _program;
+
+  @override
+  AsyncValue<ActiveProgram?> build() => AsyncValue.data(_program);
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 class _FakeDailyNutritionNotifier
-    extends StateNotifier<AsyncValue<DailyNutritionSummary>>
+    extends FamilyNotifier<AsyncValue<DailyNutritionSummary>, String>
     implements DailyNutritionNotifier {
-  _FakeDailyNutritionNotifier(DailyNutritionSummary summary)
-      : super(AsyncValue.data(summary));
+  _FakeDailyNutritionNotifier(this._summary);
+
+  final DailyNutritionSummary _summary;
+
+  @override
+  AsyncValue<DailyNutritionSummary> build(String arg) =>
+      AsyncValue.data(_summary);
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -81,7 +89,6 @@ void main() {
     required List<Workout> workouts,
     int workoutDaysPerWeek = 3,
   }) {
-    final todayKey = todayNutritionDayKey();
     final aiState = GlobalAIState(
       insights: {
         InsightContext.home: [
@@ -101,14 +108,14 @@ void main() {
 
     return ProviderScope(
       overrides: [
-        globalAIProvider.overrideWith((ref) => FakeGlobalAINotifier(aiState)),
+        globalAIProvider.overrideWith(() => FakeGlobalAINotifier(aiState)),
         isOnlineProvider.overrideWith((ref) => Stream.value(true)),
         homeWorkoutDataProvider.overrideWith((ref) async => workouts),
         activeProgramProvider.overrideWith(
-          (ref) => _FakeActiveProgramNotifier(buildActiveProgram()),
+          () => _FakeActiveProgramNotifier(buildActiveProgram()),
         ),
-        dailyNutritionSummaryProvider(todayKey).overrideWith(
-          (ref) => _FakeDailyNutritionNotifier(
+        dailyNutritionSummaryProvider.overrideWith(
+          () => _FakeDailyNutritionNotifier(
             DailyNutritionSummary(
               date: DateTime(now.year, now.month, now.day),
               meals: const [],

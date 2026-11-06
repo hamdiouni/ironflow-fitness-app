@@ -81,28 +81,27 @@ class AppHaptics {
   }
 }
 
-/// State notifier managing the persisted haptic feedback setting.
-class HapticsNotifier extends StateNotifier<bool> {
+/// Notifier managing the persisted haptic feedback setting (Wave 3.2).
+class HapticsNotifier extends Notifier<bool> {
   static const String _boxName = 'app_settings';
   static const String _hapticsKey = 'haptics_enabled';
 
-  HapticsNotifier() : super(true) {
-    _loadPreference();
-  }
-
-  void _loadPreference() {
+  @override
+  bool build() {
     try {
       if (Hive.isBoxOpen(_boxName)) {
         final box = Hive.box<String>(_boxName);
         final val = box.get(_hapticsKey);
         if (val != null) {
-          state = val == 'true';
-          AppHaptics.shared.isEnabled = state;
+          final enabled = val == 'true';
+          AppHaptics.shared.isEnabled = enabled;
+          return enabled;
         }
       }
     } catch (_) {
       // Default remains true on storage error
     }
+    return true;
   }
 
   Future<void> toggle(bool value) async {
@@ -118,9 +117,8 @@ class HapticsNotifier extends StateNotifier<bool> {
 }
 
 /// Provider managing the enabled/disabled state of haptics.
-final hapticsEnabledProvider = StateNotifierProvider<HapticsNotifier, bool>((ref) {
-  return HapticsNotifier();
-});
+final hapticsEnabledProvider =
+    NotifierProvider<HapticsNotifier, bool>(HapticsNotifier.new);
 
 /// Riverpod provider exposing the central [AppHaptics] service.
 final appHapticsProvider = Provider<AppHaptics>((ref) {

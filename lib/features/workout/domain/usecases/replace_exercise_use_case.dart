@@ -1,6 +1,6 @@
 import '../entities/workout_program.dart';
 import '../repositories/active_program_repository.dart';
-import '../../data/exercise_database.dart';
+import '../services/exercise_catalog.dart';
 
 /// Replace an exercise in the active program while preserving parameters.
 /// 
@@ -30,7 +30,7 @@ class ReplaceExerciseUseCase {
     updatedExercises[exerciseIndex] = ProgramExercise(
       exerciseName: newExerciseName,
       exerciseDefinitionId:
-          ExerciseDatabase.getByName(newExerciseName)?.id,
+          ExerciseCatalog.getByName(newExerciseName)?.id,
       sets: oldExercise.sets,
       reps: oldExercise.reps,
       restSeconds: oldExercise.restSeconds,

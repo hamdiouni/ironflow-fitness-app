@@ -23,13 +23,11 @@ class _FakeAuthRepository implements AuthRepository {
 
 class _TestAuthNotifier extends AuthNotifier {
   _TestAuthNotifier({
-    required Ref ref,
     required AuthRepository repository,
   }) : super(
           signUpUseCase: SignUpUseCase(repository),
           signInUseCase: SignInUseCase(repository),
           signOutUseCase: SignOutUseCase(repository),
-          ref: ref,
         );
 
   void setUser(User? user) {
@@ -58,9 +56,8 @@ void main() {
   setUp(() {
     container = ProviderContainer(
       overrides: [
-        authNotifierProvider.overrideWith((ref) {
+        authNotifierProvider.overrideWith(() {
           authNotifier = _TestAuthNotifier(
-            ref: ref,
             repository: _FakeAuthRepository(),
           );
           return authNotifier;

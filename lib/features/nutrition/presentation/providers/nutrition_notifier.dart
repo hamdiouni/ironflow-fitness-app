@@ -7,9 +7,11 @@ import '../../domain/entities/nutrition_targets.dart';
 import '../../domain/repositories/food_repository.dart';
 import '../../domain/repositories/nutrition_repository.dart';
 import '../../../../shared/presentation/services/app_haptics.dart';
+import 'food_repository_provider.dart';
+import 'nutrition_providers.dart' show nutritionRepositoryProvider;
 import 'nutrition_state.dart';
 
-/// Unified Nutrition State Notifier - Single Source of Truth
+/// Unified Nutrition Notifier - Single Source of Truth
 /// 
 /// This notifier manages ALL nutrition state:
 /// - Loading all foods (preloaded + custom)
@@ -22,16 +24,33 @@ import 'nutrition_state.dart';
 /// 2. INSTANT UPDATES: UI rebuilds automatically via ref.watch
 /// 3. SINGLE SOURCE OF TRUTH: All nutrition data in one place
 /// 4. OFFLINE-FIRST: Save to local storage immediately
-class NutritionNotifier extends StateNotifier<NutritionState> {
-  NutritionNotifier(
-    this._nutritionRepository,
-    this._foodRepository,
-  ) : super(NutritionState(currentDate: _today())) {
-    _initialize();
+class NutritionNotifier extends Notifier<NutritionState> {
+  NutritionNotifier([
+    this._injectedNutritionRepository,
+    this._injectedFoodRepository,
+  ]);
+
+  final NutritionRepository? _injectedNutritionRepository;
+  final FoodRepository? _injectedFoodRepository;
+
+  late NutritionRepository _nutritionRepository;
+  late FoodRepository _foodRepository;
+  bool _disposed = false;
+
+  @override
+  NutritionState build() {
+    _disposed = false;
+    ref.onDispose(() {
+      _disposed = true;
+    });
+    _nutritionRepository =
+        _injectedNutritionRepository ?? ref.watch(nutritionRepositoryProvider);
+    _foodRepository =
+        _injectedFoodRepository ?? ref.watch(foodRepositoryProvider);
+    final initialDate = _today();
+    _initialize(emitLoading: false, targetDate: initialDate);
+    return NutritionState(currentDate: initialDate, isLoading: true);
   }
-  
-  final NutritionRepository _nutritionRepository;
-  final FoodRepository _foodRepository;
   
   /// Get today's date with time zeroed out
   static DateTime _today() {
@@ -44,8 +63,11 @@ class NutritionNotifier extends StateNotifier<NutritionState> {
   // ---------------------------------------------------------------------------
   
   /// Initialize: Load all data in parallel
-  Future<void> _initialize() async {
-    state = state.copyWith(isLoading: true, error: null);
+  Future<void> _initialize({bool emitLoading = true, DateTime? targetDate}) async {
+    if (emitLoading && !_disposed) {
+      state = state.copyWith(isLoading: true, error: null);
+    }
+    final dateToLoad = targetDate ?? state.currentDate;
     
     try {
       if (kDebugMode) {
@@ -56,9 +78,10 @@ class NutritionNotifier extends StateNotifier<NutritionState> {
       final results = await Future.wait([
         _foodRepository.getAllFoods(),
         _foodRepository.getCustomFoods(),
-        _nutritionRepository.getMealsByDate(state.currentDate),
+        _nutritionRepository.getMealsByDate(dateToLoad),
         _nutritionRepository.getNutritionTargets(),
       ]);
+      if (_disposed) return;
       
       final allFoods = results[0] as List<FoodItemFull>;
       final customFoods = results[1] as List<FoodItemFull>;
@@ -465,3 +488,6 @@ class NutritionNotifier extends StateNotifier<NutritionState> {
     }
   }
 }
+
+final nutritionNotifierProvider =
+    NotifierProvider<NutritionNotifier, NutritionState>(NutritionNotifier.new);

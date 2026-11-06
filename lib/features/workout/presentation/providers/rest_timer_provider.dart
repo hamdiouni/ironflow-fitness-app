@@ -78,14 +78,24 @@ final restTimerServiceProvider = Provider<RestTimerService>((ref) {
 });
 
 /// Provider for rest timer state
-class RestTimerNotifier extends StateNotifier<RestTimerState> {
-  final RestTimerService _service;
-  final Ref _ref;
+class RestTimerNotifier extends Notifier<RestTimerState> {
+  RestTimerNotifier([this._injectedService]);
 
-  RestTimerNotifier(this._service, this._ref) : super(RestTimerState()) {
+  final RestTimerService? _injectedService;
+  late RestTimerService _service;
+  bool _disposed = false;
+
+  @override
+  RestTimerState build() {
+    _disposed = false;
+    ref.onDispose(() {
+      _disposed = true;
+    });
+    _service = _injectedService ?? ref.watch(restTimerServiceProvider);
     // Set up callbacks
     _service.onTick = _onTick;
     _service.onComplete = _onComplete;
+    return RestTimerState();
   }
 
   /// Start the timer
@@ -102,7 +112,7 @@ class RestTimerNotifier extends StateNotifier<RestTimerState> {
     
     // Track rest timer started
     try {
-      final analytics = _ref.read(analyticsServiceProvider);
+      final analytics = ref.read(analyticsServiceProvider);
       analytics.logRestTimerStarted(durationSeconds: durationSeconds);
     } catch (e) {
       if (kDebugMode) {
@@ -154,7 +164,7 @@ class RestTimerNotifier extends StateNotifier<RestTimerState> {
     
     // Track rest timer skipped
     try {
-      final analytics = _ref.read(analyticsServiceProvider);
+      final analytics = ref.read(analyticsServiceProvider);
       analytics.logRestTimerSkipped(remainingSeconds: remainingSeconds);
     } catch (e) {
       if (kDebugMode) {
@@ -178,6 +188,7 @@ class RestTimerNotifier extends StateNotifier<RestTimerState> {
 
   /// Handle tick callback
   void _onTick(int remainingSeconds) {
+    if (_disposed) return;
     state = state.copyWith(
       remainingSeconds: remainingSeconds,
       targetEndTime: _service.targetEndTime,
@@ -187,6 +198,7 @@ class RestTimerNotifier extends StateNotifier<RestTimerState> {
 
   /// Handle completion callback
   void _onComplete() {
+    if (_disposed) return;
     final durationSeconds = state.totalSeconds;
     
     state = state.copyWith(
@@ -198,11 +210,11 @@ class RestTimerNotifier extends StateNotifier<RestTimerState> {
     );
     
     // Trigger haptic feedback for rest timer completion
-    _ref.read(appHapticsProvider).restTimerComplete();
+    ref.read(appHapticsProvider).restTimerComplete();
     
     // Track rest timer completed
     try {
-      final analytics = _ref.read(analyticsServiceProvider);
+      final analytics = ref.read(analyticsServiceProvider);
       analytics.logRestTimerCompleted(durationSeconds: durationSeconds);
     } catch (e) {
       if (kDebugMode) {
@@ -214,10 +226,7 @@ class RestTimerNotifier extends StateNotifier<RestTimerState> {
 
 /// Provider for rest timer notifier
 final restTimerProvider =
-    StateNotifierProvider<RestTimerNotifier, RestTimerState>((ref) {
-  final service = ref.watch(restTimerServiceProvider);
-  return RestTimerNotifier(service, ref);
-});
+    NotifierProvider<RestTimerNotifier, RestTimerState>(RestTimerNotifier.new);
 
 /// Common rest durations (in seconds)
 class RestDurations {

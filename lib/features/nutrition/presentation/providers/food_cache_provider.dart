@@ -98,14 +98,22 @@ final cachedFoodCountProvider = FutureProvider((ref) async {
 });
 
 /// Invalidate food cache
-final invalidateFoodCacheProvider = StateNotifierProvider((ref) {
-  return InvalidateFoodCacheNotifier(ref.watch(foodRepositoryProvider));
-});
+final invalidateFoodCacheProvider =
+    NotifierProvider<InvalidateFoodCacheNotifier, AsyncValue<void>>(
+  InvalidateFoodCacheNotifier.new,
+);
 
-class InvalidateFoodCacheNotifier extends StateNotifier<AsyncValue<void>> {
-  final FoodRepository repository;
+class InvalidateFoodCacheNotifier extends Notifier<AsyncValue<void>> {
+  InvalidateFoodCacheNotifier([this._injectedRepository]);
 
-  InvalidateFoodCacheNotifier(this.repository) : super(const AsyncValue.data(null));
+  final FoodRepository? _injectedRepository;
+  late FoodRepository repository;
+
+  @override
+  AsyncValue<void> build() {
+    repository = _injectedRepository ?? ref.watch(foodRepositoryProvider);
+    return const AsyncValue.data(null);
+  }
 
   Future<void> invalidate() async {
     state = const AsyncValue.loading();

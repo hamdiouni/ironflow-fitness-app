@@ -118,21 +118,44 @@ final getFoodAlternativesUseCaseProvider =
 });
 
 // ---------------------------------------------------------------------------
-// Daily nutrition summary provider (StateNotifier for instant updates)
+// Daily nutrition summary provider (FamilyNotifier for instant updates)
 // ---------------------------------------------------------------------------
 
-/// State notifier for managing daily nutrition summary with instant UI updates.
+/// Notifier for managing daily nutrition summary with instant UI updates.
 /// 
 /// This notifier ensures that when meals are added or deleted, the UI updates
 /// immediately without requiring manual refresh.
-class DailyNutritionNotifier extends StateNotifier<AsyncValue<DailyNutritionSummary>> {
-  DailyNutritionNotifier(this._repository, this._date, this._ref) : super(const AsyncValue.loading()) {
-    _loadSummary();
-  }
+class DailyNutritionNotifier
+    extends FamilyNotifier<AsyncValue<DailyNutritionSummary>, String> {
+  DailyNutritionNotifier([this._injectedRepository]);
 
-  final NutritionRepository _repository;
-  final DateTime _date;
-  final Ref _ref;
+  final NutritionRepository? _injectedRepository;
+  late NutritionRepository _repository;
+  late DateTime _date;
+  bool _disposed = false;
+
+  @override
+  AsyncValue<DailyNutritionSummary> build(String arg) {
+    _disposed = false;
+    ref.onDispose(() {
+      _disposed = true;
+    });
+    _repository = _injectedRepository ?? ref.watch(nutritionRepositoryProvider);
+    _date = DateTime.parse(arg);
+
+    // Phase 3 (F-12): reload when meals/targets change outside this
+    // notifier (sync pull, another screen, restore). Own writes also
+    // tick the stream; the reload converges to the same summary as the
+    // optimistic in-memory patch in addMeal/deleteMeal.
+    ref.listen(nutritionChangesProvider, (previous, next) {
+      if (previous != null && next.hasValue) {
+        refresh();
+      }
+    });
+
+    _loadSummary();
+    return const AsyncValue.loading();
+  }
 
   /// Load the daily nutrition summary from repository
   Future<void> _loadSummary() async {
@@ -146,7 +169,7 @@ class DailyNutritionNotifier extends StateNotifier<AsyncValue<DailyNutritionSumm
 
       // The family instance may have been disposed while loading
       // (external box-change refreshes make this more likely).
-      if (!mounted) return;
+      if (_disposed) return;
 
       if (kDebugMode) {
         AppLogger.debug('✅ [Nutrition] Daily nutrition summary retrieved successfully');
@@ -155,7 +178,7 @@ class DailyNutritionNotifier extends StateNotifier<AsyncValue<DailyNutritionSumm
 
       state = AsyncValue.data(summary);
     } catch (e, stackTrace) {
-      if (!mounted) return;
+      if (_disposed) return;
       if (kDebugMode) {
         AppLogger.debug('❌ [Nutrition] Failed to fetch daily nutrition summary: $e');
         AppLogger.debug('🔍 [Nutrition] Stack trace: $stackTrace');
@@ -202,7 +225,7 @@ class DailyNutritionNotifier extends StateNotifier<AsyncValue<DailyNutritionSumm
       // (DATABASE_AND_SYNC_AUDIT F-06). Fire-and-forget: failures must not
       // block or fail meal logging.
       try {
-        _ref.read(globalAIProvider.notifier).onMealLogged();
+        ref.read(globalAIProvider.notifier).onMealLogged();
       } catch (e) {
         if (kDebugMode) {
           AppLogger.debug('⚠️ [Nutrition] AI meal notification skipped: $e');
@@ -211,7 +234,7 @@ class DailyNutritionNotifier extends StateNotifier<AsyncValue<DailyNutritionSumm
 
       // Track meal logged event
       try {
-        final analytics = _ref.read(analyticsServiceProvider);
+        final analytics = ref.read(analyticsServiceProvider);
         await analytics.logMealLogged(
           mealType: 'meal', // Generic meal type since Meal entity doesn't have this property
           calories: meal.macros.calories.toInt(),
@@ -287,24 +310,10 @@ class DailyNutritionNotifier extends StateNotifier<AsyncValue<DailyNutritionSumm
 /// Keyed by the `yyyy-MM-dd` string from [nutritionDayKey] (Phase 3,
 /// F-07 residual): the old [DateTime] key let `DateTime.now()` and
 /// `DateTime(y, m, d)` create two different notifiers for the same day.
-final dailyNutritionSummaryProvider = StateNotifierProvider.family<
+final dailyNutritionSummaryProvider = NotifierProvider.family<
     DailyNutritionNotifier,
     AsyncValue<DailyNutritionSummary>,
-    String>((ref, dayKey) {
-  final repository = ref.watch(nutritionRepositoryProvider);
-  final notifier =
-      DailyNutritionNotifier(repository, DateTime.parse(dayKey), ref);
-  // Phase 3 (F-12): reload when meals/targets change outside this
-  // notifier (sync pull, another screen, restore). Own writes also
-  // tick the stream; the reload converges to the same summary as the
-  // optimistic in-memory patch in addMeal/deleteMeal.
-  ref.listen(nutritionChangesProvider, (previous, next) {
-    if (previous != null && next.hasValue) {
-      notifier.refresh();
-    }
-  });
-  return notifier;
-});
+    String>(DailyNutritionNotifier.new);
 
 // ---------------------------------------------------------------------------
 // Recent foods provider (derived from existing logs, no new storage)
@@ -409,7 +418,7 @@ final mealSuggestionsProvider = FutureProvider.family<
 /// Provides filtered foods based on search query.
 ///
 /// Renamed from `foodSearchProvider` (Phase 3, F-10): that name now
-/// belongs solely to the `StateNotifier` UI-state provider in
+/// belongs solely to the `Notifier` UI-state provider in
 /// `food_providers.dart` used by the food search screen.
 final foodSearchResultsProvider =
     FutureProvider.family<List<FoodItemFull>, String>((ref, query) async {

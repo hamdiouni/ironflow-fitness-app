@@ -91,7 +91,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            globalAIProvider.overrideWith((ref) {
+            globalAIProvider.overrideWith(() {
               return FakeGlobalAINotifier(mockState);
             }),
           ],
@@ -120,7 +120,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            globalAIProvider.overrideWith((ref) {
+            globalAIProvider.overrideWith(() {
               return FakeGlobalAINotifier(mockState);
             }),
           ],
@@ -148,7 +148,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            globalAIProvider.overrideWith((ref) {
+            globalAIProvider.overrideWith(() {
               return FakeGlobalAINotifier(mockState);
             }),
           ],
@@ -176,7 +176,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            globalAIProvider.overrideWith((ref) {
+            globalAIProvider.overrideWith(() {
               return FakeGlobalAINotifier(mockState);
             }),
           ],
@@ -218,7 +218,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            globalAIProvider.overrideWith((ref) {
+            globalAIProvider.overrideWith(() {
               return FakeGlobalAINotifier(stateWithQuickFeedback);
             }),
           ],
@@ -280,7 +280,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            globalAIProvider.overrideWith((ref) => notifier),
+            globalAIProvider.overrideWith(() => notifier),
           ],
           child: MaterialApp(
             home: Builder(
@@ -329,7 +329,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            globalAIProvider.overrideWith((ref) {
+            globalAIProvider.overrideWith(() {
               return FakeGlobalAINotifier(loadingState);
             }),
           ],
@@ -363,7 +363,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            globalAIProvider.overrideWith((ref) {
+            globalAIProvider.overrideWith(() {
               return FakeGlobalAINotifier(errorState);
             }),
           ],
@@ -399,7 +399,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            globalAIProvider.overrideWith((ref) {
+            globalAIProvider.overrideWith(() {
               return FakeGlobalAINotifier(emptyState);
             }),
           ],
@@ -426,19 +426,14 @@ void main() {
 
 /// Fake GlobalAINotifier for testing
 class FakeGlobalAINotifier extends GlobalAINotifier {
-  FakeGlobalAINotifier(GlobalAIState initialState)
-      : super(
-          insightsEngine: FakeAIInsightsEngine(),
-          cacheService: FakeInsightCacheService(),
-          changeDetectionService: FakeChangeDetectionService(),
-          workoutRepository: FakeWorkoutRepository(),
-          nutritionRepository: FakeNutritionRepository(),
-          bodyRepository: FakeBodyRepository(),
-        ) {
-    state = initialState;
-  }
+  FakeGlobalAINotifier(this._initialState);
+
+  final GlobalAIState _initialState;
 
   bool dismissQuickFeedbackCalled = false;
+
+  @override
+  GlobalAIState build() => _initialState;
 
   @override
   Future<List<Insight>> getInsights(

@@ -66,15 +66,16 @@ bool get kUseFirebaseAuth => shouldUseFirebaseAuth(
       useFirebaseAuthFlag: _kUseFirebaseAuthEnv,
     );
 
-// Repository Provider — mock by default, real Firebase behind the flag.
-// Both Firebase implementations also implement the mock interfaces, so
-// AuthRepositoryImpl is unaffected by the choice.
+// Repository Provider — compile-time gated (`kReleaseMode`) so release builds
+// tree-shake `MockAuthDataSourceImpl` and `MockUserDataSourceImpl` (Wave 3.5).
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepositoryImpl(
-    authDataSource:
-        kUseFirebaseAuth ? FirebaseAuthDataSourceImpl() : MockAuthDataSourceImpl(),
-    userDataSource:
-        kUseFirebaseAuth ? FirestoreUserDataSourceImpl() : MockUserDataSourceImpl(),
+    authDataSource: (kReleaseMode || kUseFirebaseAuth)
+        ? FirebaseAuthDataSourceImpl()
+        : MockAuthDataSourceImpl(),
+    userDataSource: (kReleaseMode || kUseFirebaseAuth)
+        ? FirestoreUserDataSourceImpl()
+        : MockUserDataSourceImpl(),
   );
 });
 

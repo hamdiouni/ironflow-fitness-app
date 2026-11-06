@@ -154,40 +154,60 @@ final workoutStateManagerProvider = Provider<WorkoutStateManager>((ref) {
 // WorkoutNotifier
 // ---------------------------------------------------------------------------
 
-class WorkoutNotifier extends StateNotifier<WorkoutState> {
-  final StartWorkoutUseCase _startWorkout;
-  final AddExerciseToWorkoutUseCase _addExercise;
-  final LogSetUseCase _logSet;
-  final SaveWorkoutUseCase _saveWorkout;
-  final CompleteWorkoutUseCase? _completeWorkout;
-  final DetectPersonalRecordUseCase _detectPR;
-  final WorkoutStateManager _stateManager;
-  final Ref _ref;
-
+class WorkoutNotifier extends Notifier<WorkoutState> {
   WorkoutNotifier({
-    required StartWorkoutUseCase startWorkout,
-    required AddExerciseToWorkoutUseCase addExercise,
-    required LogSetUseCase logSet,
-    required SaveWorkoutUseCase saveWorkout,
+    StartWorkoutUseCase? startWorkout,
+    AddExerciseToWorkoutUseCase? addExercise,
+    LogSetUseCase? logSet,
+    SaveWorkoutUseCase? saveWorkout,
     // Phase 3: when provided, finish() persists + advances the active
     // program as one unit. Optional so existing constructions (tests)
     // keep working with plain save semantics.
     CompleteWorkoutUseCase? completeWorkout,
-    required DetectPersonalRecordUseCase detectPR,
-    required WorkoutStateManager stateManager,
-    required Ref ref,
-  })  : _startWorkout = startWorkout,
-        _addExercise = addExercise,
-        _logSet = logSet,
-        _saveWorkout = saveWorkout,
-        _completeWorkout = completeWorkout,
-        _detectPR = detectPR,
-        _stateManager = stateManager,
-        _ref = ref,
-        super(const WorkoutState.initial());
+    DetectPersonalRecordUseCase? detectPR,
+    WorkoutStateManager? stateManager,
+  })  : _injectedStartWorkout = startWorkout,
+        _injectedAddExercise = addExercise,
+        _injectedLogSet = logSet,
+        _injectedSaveWorkout = saveWorkout,
+        _injectedCompleteWorkout = completeWorkout,
+        _injectedDetectPR = detectPR,
+        _injectedStateManager = stateManager;
+
+  final StartWorkoutUseCase? _injectedStartWorkout;
+  final AddExerciseToWorkoutUseCase? _injectedAddExercise;
+  final LogSetUseCase? _injectedLogSet;
+  final SaveWorkoutUseCase? _injectedSaveWorkout;
+  final CompleteWorkoutUseCase? _injectedCompleteWorkout;
+  final DetectPersonalRecordUseCase? _injectedDetectPR;
+  final WorkoutStateManager? _injectedStateManager;
+
+  late StartWorkoutUseCase _startWorkout;
+  late AddExerciseToWorkoutUseCase _addExercise;
+  late LogSetUseCase _logSet;
+  late SaveWorkoutUseCase _saveWorkout;
+  CompleteWorkoutUseCase? _completeWorkout;
+  late DetectPersonalRecordUseCase _detectPR;
+  late WorkoutStateManager _stateManager;
+
+  @override
+  WorkoutState build() {
+    _startWorkout =
+        _injectedStartWorkout ?? ref.watch(startWorkoutUseCaseProvider);
+    _addExercise = _injectedAddExercise ?? AddExerciseToWorkoutUseCase();
+    _logSet = _injectedLogSet ?? LogSetUseCase();
+    _saveWorkout =
+        _injectedSaveWorkout ?? ref.watch(saveWorkoutUseCaseProvider);
+    _completeWorkout =
+        _injectedCompleteWorkout ?? ref.watch(completeWorkoutUseCaseProvider);
+    _detectPR = _injectedDetectPR ?? ref.watch(detectPRUseCaseProvider);
+    _stateManager =
+        _injectedStateManager ?? ref.watch(workoutStateManagerProvider);
+    return const WorkoutState.initial();
+  }
 
   String get _activeStateUserId =>
-      _ref.read(currentUserIdProvider) ?? RecordOwnershipRules.guestUserId;
+      ref.read(currentUserIdProvider) ?? RecordOwnershipRules.guestUserId;
 
   /// Starts a new workout session and transitions to [WorkoutState.inProgress].
   /// If [initialExercises] are passed, uses them directly. Otherwise, loads from the active program,
@@ -231,7 +251,7 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
       
       // Track workout started
       try {
-        final analytics = _ref.read(analyticsServiceProvider);
+        final analytics = ref.read(analyticsServiceProvider);
         await analytics.logWorkoutStarted(
           workoutId: workout.id,
         );
@@ -318,7 +338,7 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
       
       // Track exercise added
       try {
-        final analytics = _ref.read(analyticsServiceProvider);
+        final analytics = ref.read(analyticsServiceProvider);
         await analytics.logExerciseAdded(
           exerciseId: exercise.id,
           exerciseName: exercise.name,
@@ -404,7 +424,7 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
       
       // Track set completed
       try {
-        final analytics = _ref.read(analyticsServiceProvider);
+        final analytics = ref.read(analyticsServiceProvider);
         await analytics.logSetCompleted(
           exerciseId: exerciseId,
           setNumber: updatedExercise.sets.length,
@@ -503,8 +523,8 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
       // zero callers), so the stored streak never moved
       // (DATABASE_AND_SYNC_AUDIT F-06). Best-effort: must not fail finish().
       try {
-        await _ref.read(streakNotifierProvider.notifier).updateAfterWorkout();
-        _ref.invalidate(streakProvider);
+        await ref.read(streakNotifierProvider.notifier).updateAfterWorkout();
+        ref.invalidate(streakProvider);
         AppLogger.debug('✅ [Workout] Streak updated');
       } catch (e) {
         AppLogger.debug('⚠️ [Workout] Failed to update streak: $e');
@@ -512,7 +532,7 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
 
       // Track workout completed
       try {
-        final analytics = _ref.read(analyticsServiceProvider);
+        final analytics = ref.read(analyticsServiceProvider);
         final totalSets = WorkoutMetrics.workingSetCount(completedWorkout);
         await analytics.logWorkoutCompleted(
           workoutId: completedWorkout.id,
@@ -528,7 +548,7 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
       // Notify Global AI Provider about workout completion for insights and quick feedback
       AppLogger.debug('📊 [Workout] Notifying Global AI Provider about workout completion...');
       try {
-        await _ref.read(globalAIProvider.notifier).onWorkoutCompleted(completedWorkout);
+        await ref.read(globalAIProvider.notifier).onWorkoutCompleted(completedWorkout);
         AppLogger.debug('✅ [Workout] Global AI Provider notified successfully');
       } catch (e) {
         AppLogger.debug('⚠️ [Workout] Failed to notify Global AI Provider: $e');
@@ -592,18 +612,7 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
 // ---------------------------------------------------------------------------
 
 final workoutNotifierProvider =
-    StateNotifierProvider<WorkoutNotifier, WorkoutState>((ref) {
-  return WorkoutNotifier(
-    startWorkout: ref.watch(startWorkoutUseCaseProvider),
-    addExercise: AddExerciseToWorkoutUseCase(),
-    logSet: LogSetUseCase(),
-    saveWorkout: ref.watch(saveWorkoutUseCaseProvider),
-    completeWorkout: ref.watch(completeWorkoutUseCaseProvider),
-    detectPR: ref.watch(detectPRUseCaseProvider),
-    stateManager: ref.watch(workoutStateManagerProvider),
-    ref: ref,
-  );
-});
+    NotifierProvider<WorkoutNotifier, WorkoutState>(WorkoutNotifier.new);
 
 // ---------------------------------------------------------------------------
 // workoutHistoryProvider

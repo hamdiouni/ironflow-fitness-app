@@ -98,24 +98,33 @@ class HomeScreenState {
   }
 }
 
-/// StateNotifier for home screen data
-class HomeScreenNotifier extends StateNotifier<AsyncValue<HomeScreenState>> {
-  HomeScreenNotifier(this._ref) : super(const AsyncValue.loading()) {
-    _loadData();
+/// Notifier for home screen data
+class HomeScreenNotifier extends Notifier<AsyncValue<HomeScreenState>> {
+  bool _disposed = false;
+
+  @override
+  AsyncValue<HomeScreenState> build() {
+    _disposed = false;
+    ref.onDispose(() {
+      _disposed = true;
+    });
+    _loadData(emitLoading: false);
+    return const AsyncValue.loading();
   }
 
-  final Ref _ref;
-
   /// Load all data for home screen
-  Future<void> _loadData() async {
-    state = const AsyncValue.loading();
+  Future<void> _loadData({bool emitLoading = true}) async {
+    if (emitLoading && !_disposed) {
+      state = const AsyncValue.loading();
+    }
     
     try {
       // Load data
-      final workouts = await _ref.read(homeWorkoutDataProvider.future);
-      final UserProfile? profile = await _ref.read(userProfileProvider.future);
-      final ActiveProgram? activeProgram = await _ref.read(activeProgramRepositoryProvider).loadActiveProgram();
-      final DailyNutritionSummary nutritionSummary = await _ref.read(nutritionRepositoryProvider).getDailyNutrition(DateTime.now());
+      final workouts = await ref.read(homeWorkoutDataProvider.future);
+      final UserProfile? profile = await ref.read(userProfileProvider.future);
+      final ActiveProgram? activeProgram = await ref.read(activeProgramRepositoryProvider).loadActiveProgram();
+      final DailyNutritionSummary nutritionSummary = await ref.read(nutritionRepositoryProvider).getDailyNutrition(DateTime.now());
+      if (_disposed) return;
 
       // Calculate weekly workout count
       final now = DateTime.now();
@@ -185,6 +194,7 @@ class HomeScreenNotifier extends StateNotifier<AsyncValue<HomeScreenState>> {
         weeklyTarget: weeklyTarget,
       ));
     } catch (error, stackTrace) {
+      if (_disposed) return;
       state = AsyncValue.error(error, stackTrace);
     }
   }
@@ -192,13 +202,13 @@ class HomeScreenNotifier extends StateNotifier<AsyncValue<HomeScreenState>> {
   /// Refresh all data
   Future<void> refresh() async {
     // Invalidate all providers
-    _ref.invalidate(homeWorkoutDataProvider);
-    _ref.invalidate(userProfileProvider);
-    _ref.invalidate(activeProgramProvider);
+    ref.invalidate(homeWorkoutDataProvider);
+    ref.invalidate(userProfileProvider);
+    ref.invalidate(activeProgramProvider);
     // The family is keyed by the yyyy-MM-dd day string (Phase 3), so
     // there's exactly one canonical key for today. See F-07 in
     // docs/architecture/DATABASE_AND_SYNC_AUDIT.md.
-    _ref.invalidate(
+    ref.invalidate(
       dailyNutritionSummaryProvider(todayNutritionDayKey()),
     );
     
@@ -215,6 +225,7 @@ class HomeScreenNotifier extends StateNotifier<AsyncValue<HomeScreenState>> {
 /// `dailyNutritionSummaryProvider`, program via `activeProgramProvider`).
 /// Kept only because exploration tests still exercise it; do not build
 /// new UI on it.
-final homeScreenProvider = StateNotifierProvider<HomeScreenNotifier, AsyncValue<HomeScreenState>>((ref) {
-  return HomeScreenNotifier(ref);
-});
+final homeScreenProvider =
+    NotifierProvider<HomeScreenNotifier, AsyncValue<HomeScreenState>>(
+  HomeScreenNotifier.new,
+);

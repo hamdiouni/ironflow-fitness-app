@@ -1,3 +1,4 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:progression_tracker/features/onboarding/domain/entities/user_profile.dart';
 import 'package:progression_tracker/features/onboarding/data/user_profile_storage.dart';
@@ -138,13 +139,21 @@ void main() {
       final fakeActiveProgramRepo = FakeActiveProgramRepository();
       final fakeDietRepo = FakeDietPlanRepository();
 
-      final notifier = OnboardingNotifier(
-        fakeStorage,
-        GenerateWorkoutProgramUseCase(),
-        SetActiveProgramUseCase(fakeActiveProgramRepo),
-        GenerateDietPlanUseCase(),
-        SaveDietPlanUseCase(fakeDietRepo),
+      final container = ProviderContainer(
+        overrides: [
+          onboardingNotifierProvider.overrideWith(
+            () => OnboardingNotifier(
+              fakeStorage,
+              GenerateWorkoutProgramUseCase(),
+              SetActiveProgramUseCase(fakeActiveProgramRepo),
+              GenerateDietPlanUseCase(),
+              SaveDietPlanUseCase(fakeDietRepo),
+            ),
+          ),
+        ],
       );
+      addTearDown(container.dispose);
+      final notifier = container.read(onboardingNotifierProvider.notifier);
 
       // Create a customized program where user swapped an exercise
       final useCase = GenerateWorkoutProgramUseCase();
@@ -177,13 +186,21 @@ void main() {
       final fakeActiveProgramRepo = FakeActiveProgramRepository();
       final fakeDietRepo = FakeDietPlanRepository();
 
-      final notifier = OnboardingNotifier(
-        fakeStorage,
-        GenerateWorkoutProgramUseCase(),
-        SetActiveProgramUseCase(fakeActiveProgramRepo),
-        GenerateDietPlanUseCase(),
-        SaveDietPlanUseCase(fakeDietRepo),
+      final container = ProviderContainer(
+        overrides: [
+          onboardingNotifierProvider.overrideWith(
+            () => OnboardingNotifier(
+              fakeStorage,
+              GenerateWorkoutProgramUseCase(),
+              SetActiveProgramUseCase(fakeActiveProgramRepo),
+              GenerateDietPlanUseCase(),
+              SaveDietPlanUseCase(fakeDietRepo),
+            ),
+          ),
+        ],
       );
+      addTearDown(container.dispose);
+      final notifier = container.read(onboardingNotifierProvider.notifier);
 
       await notifier.completeOnboarding(
         baseProfile,

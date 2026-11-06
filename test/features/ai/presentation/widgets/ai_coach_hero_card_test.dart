@@ -50,7 +50,7 @@ void main() {
     }) {
       return ProviderScope(
         overrides: [
-          globalAIProvider.overrideWith((ref) => FakeGlobalAINotifier(state)),
+          globalAIProvider.overrideWith(() => FakeGlobalAINotifier(state)),
           isOnlineProvider.overrideWith((ref) => Stream.value(isOnline)),
         ],
         child: MaterialApp(

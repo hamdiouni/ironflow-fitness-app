@@ -3,54 +3,16 @@ import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:progression_tracker/features/auth/domain/entities/user.dart';
-import 'mock_auth_datasource.dart';
+import 'auth_datasource.dart';
 
-abstract class FirebaseAuthDataSource {
-  Future<User> signUpWithEmail({
-    required String email,
-    required String password,
-  });
-
-  Future<User> signInWithEmail({
-    required String email,
-    required String password,
-  });
-
-  Future<User> signInWithGoogle();
-
-  Future<User> signInWithApple();
-
-  Future<void> signOut();
-
-  Future<User?> getCurrentUser();
-
-  Future<bool> isAuthenticated();
-
-  Future<void> deleteAccount();
-
-  Future<void> reauthenticateWithPassword(String password);
-
-  Future<void> reauthenticateWithGoogle();
-
-  Future<void> resetPassword(String email);
-}
+abstract class FirebaseAuthDataSource implements AuthRemoteDataSource {}
 
 /// Real Firebase auth implementation.
 ///
-/// Phase 1 (DATABASE_AND_SYNC_AUDIT F-01): also implements
-/// [MockAuthDataSource] — the two interfaces are method-identical — so
-/// [AuthRepositoryImpl] can be pointed at real Firebase auth behind the
-/// `USE_FIREBASE_AUTH` flag (see auth_provider.dart) without changing the
-/// repository.
-///
-/// Caveat before enabling: Google sign-in still requires the normal
-/// Firebase/Google platform configuration (Android SHA fingerprints, web
-/// OAuth client, iOS URL scheme/client IDs). Enabling the flag also changes
-/// user ids (mock `user_<hash>` → Firebase uid), so local records stamped
-/// with mock ids should be treated as a fresh account or migrated
-/// deliberately.
+/// Implements [AuthRemoteDataSource] so [AuthRepositoryImpl] never depends on
+/// mock data sources in production paths (Wave 3.5).
 class FirebaseAuthDataSourceImpl
-    implements FirebaseAuthDataSource, MockAuthDataSource {
+    implements FirebaseAuthDataSource, AuthRemoteDataSource {
   final firebase_auth.FirebaseAuth _firebaseAuth;
   final GoogleSignIn _googleSignIn;
 

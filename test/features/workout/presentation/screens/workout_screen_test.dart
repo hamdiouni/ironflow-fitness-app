@@ -15,10 +15,14 @@ import 'package:progression_tracker/features/workout/presentation/screens/workou
 
 import '../../../ai/integration/screen_integration_test.dart';
 
-class FakeActiveProgramNotifier extends StateNotifier<AsyncValue<ActiveProgram?>>
+class FakeActiveProgramNotifier extends Notifier<AsyncValue<ActiveProgram?>>
     implements ActiveProgramNotifier {
-  FakeActiveProgramNotifier(ActiveProgram? program)
-      : super(AsyncValue.data(program));
+  FakeActiveProgramNotifier(this._program);
+
+  final ActiveProgram? _program;
+
+  @override
+  AsyncValue<ActiveProgram?> build() => AsyncValue.data(_program);
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -33,10 +37,10 @@ void main() {
     return ProviderScope(
       overrides: [
         globalAIProvider.overrideWith(
-          (ref) => FakeGlobalAINotifier(const GlobalAIState()),
+          () => FakeGlobalAINotifier(const GlobalAIState()),
         ),
         activeProgramProvider.overrideWith(
-          (ref) => FakeActiveProgramNotifier(activeProgram),
+          () => FakeActiveProgramNotifier(activeProgram),
         ),
         workoutHistoryProvider.overrideWith(
           (ref) => Future.value(history),

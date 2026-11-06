@@ -75,7 +75,7 @@ void main() {
   }) {
     return ProviderScope(
       overrides: [
-        globalAIProvider.overrideWith((ref) => FakeGlobalAINotifier(
+        globalAIProvider.overrideWith(() => FakeGlobalAINotifier(
               const GlobalAIState(),
             )),
         weightTrendProvider.overrideWith((ref) async => weightPoints ?? mockWeightPoints),

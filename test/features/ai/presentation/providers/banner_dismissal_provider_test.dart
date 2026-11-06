@@ -1,3 +1,4 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:progression_tracker/features/ai/presentation/providers/banner_dismissal_provider.dart';
@@ -13,21 +14,38 @@ void main() {
     return Future<void>.delayed(const Duration(milliseconds: 1));
   }
 
+  ProviderContainer createUserContainer(String userId) {
+    final container = ProviderContainer(
+      overrides: [
+        bannerDismissalProvider.overrideWith(
+          () => BannerDismissalNotifier(userId: userId),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+    container.read(bannerDismissalProvider);
+    return container;
+  }
+
   setUp(() {
     SharedPreferences.setMockInitialValues({});
   });
 
   test('dismissals are stored separately for each user', () async {
-    final aliceNotifier = BannerDismissalNotifier(userId: 'Alice');
-    final bobNotifier = BannerDismissalNotifier(userId: 'bob');
+    final aliceContainer = createUserContainer('Alice');
+    final bobContainer = createUserContainer('bob');
     await waitForLoad();
 
-    await aliceNotifier.dismiss('Alice-insight');
-    await bobNotifier.dismiss('bob-insight');
+    await aliceContainer
+        .read(bannerDismissalProvider.notifier)
+        .dismiss('Alice-insight');
+    await bobContainer
+        .read(bannerDismissalProvider.notifier)
+        .dismiss('bob-insight');
 
     final prefs = await SharedPreferences.getInstance();
-    expect(aliceNotifier.state, <String>{'Alice-insight'});
-    expect(bobNotifier.state, <String>{'bob-insight'});
+    expect(aliceContainer.read(bannerDismissalProvider), <String>{'Alice-insight'});
+    expect(bobContainer.read(bannerDismissalProvider), <String>{'bob-insight'});
     expect(prefs.getStringList(aliceKey), <String>['Alice-insight']);
     expect(prefs.getStringList(bobKey), <String>['bob-insight']);
     expect(prefs.getStringList(legacyKey), isNull);
@@ -38,30 +56,34 @@ void main() {
       legacyKey: <String>['legacy-insight'],
     });
 
-    final aliceNotifier = BannerDismissalNotifier(userId: 'Alice');
+    final aliceContainer = createUserContainer('Alice');
     await waitForLoad();
-    final bobNotifier = BannerDismissalNotifier(userId: 'bob');
+    final bobContainer = createUserContainer('bob');
     await waitForLoad();
 
     final prefs = await SharedPreferences.getInstance();
-    expect(aliceNotifier.state, <String>{'legacy-insight'});
-    expect(bobNotifier.state, isEmpty);
+    expect(aliceContainer.read(bannerDismissalProvider), <String>{'legacy-insight'});
+    expect(bobContainer.read(bannerDismissalProvider), isEmpty);
     expect(prefs.getStringList(aliceKey), <String>['legacy-insight']);
     expect(prefs.getStringList(legacyKey), isNull);
   });
 
   test('reset removes only the scoped user dismissals', () async {
-    final aliceNotifier = BannerDismissalNotifier(userId: 'Alice');
-    final bobNotifier = BannerDismissalNotifier(userId: 'bob');
+    final aliceContainer = createUserContainer('Alice');
+    final bobContainer = createUserContainer('bob');
     await waitForLoad();
-    await aliceNotifier.dismiss('Alice-insight');
-    await bobNotifier.dismiss('bob-insight');
+    await aliceContainer
+        .read(bannerDismissalProvider.notifier)
+        .dismiss('Alice-insight');
+    await bobContainer
+        .read(bannerDismissalProvider.notifier)
+        .dismiss('bob-insight');
 
-    await aliceNotifier.reset();
+    await aliceContainer.read(bannerDismissalProvider.notifier).reset();
 
     final prefs = await SharedPreferences.getInstance();
-    expect(aliceNotifier.state, isEmpty);
-    expect(bobNotifier.state, <String>{'bob-insight'});
+    expect(aliceContainer.read(bannerDismissalProvider), isEmpty);
+    expect(bobContainer.read(bannerDismissalProvider), <String>{'bob-insight'});
     expect(prefs.getStringList(aliceKey), isNull);
     expect(prefs.getStringList(bobKey), <String>['bob-insight']);
   });

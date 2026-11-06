@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import '../../domain/services/sync_service.dart';
+import '../../data/services/sync_service.dart';
 import '../../domain/entities/sync_status.dart';
 import '../../data/datasources/hive_sync_queue_datasource.dart';
 import '../../data/datasources/firestore_sync_datasource.dart';

@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../data/repositories/privacy_preferences_repository_impl.dart';
 import '../../data/repositories/remote_data_purger_impl.dart';
+import '../../domain/repositories/privacy_preferences_repository.dart';
 import '../../domain/repositories/remote_data_purger.dart';
 import '../../domain/services/local_data_wiper.dart';
 import '../../domain/usecases/delete_account_use_case.dart';
@@ -83,4 +85,9 @@ final deleteAccountUseCaseProvider = Provider<DeleteAccountUseCase>((ref) {
     remoteDataPurger: purger,
     localDataWiper: wiper,
   );
+});
+
+final privacyPreferencesRepositoryProvider =
+    Provider<PrivacyPreferencesRepository>((ref) {
+  return PrivacyPreferencesRepositoryImpl();
 });

@@ -1,53 +1,45 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/utils/record_ownership.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart'
     show currentUserIdProvider;
+import 'ai_provider.dart' show aiPreferencesRepositoryProvider;
 
-const String _kDismissedBannersKey = 'ironflow_dismissed_ai_banners';
+/// Notifier managing dismissed AI insight banner IDs via [AIPreferencesRepository].
+class BannerDismissalNotifier extends Notifier<Set<String>> {
+  BannerDismissalNotifier({Set<String>? initial, String? userId})
+      : _initial = initial,
+        _injectedUserId = userId;
 
-String _dismissedBannersKeyForUser(String? userId) {
-  final scopeUserId = RecordOwnershipRules.storageScope(userId);
-  return scopeUserId == null
-      ? _kDismissedBannersKey
-      : '${_kDismissedBannersKey}_$scopeUserId';
-}
+  final Set<String>? _initial;
+  final String? _injectedUserId;
+  String? _userId;
+  bool _disposed = false;
 
-/// State notifier managing dismissed AI insight banner IDs using local [SharedPreferences].
-class BannerDismissalNotifier extends StateNotifier<Set<String>> {
-  /// Account that owns these dismissals. Direct constructions without a
-  /// user keep using the legacy preference key.
-  final String? userId;
+  /// Account that owns these dismissals.
+  String? get userId => _userId;
 
-  BannerDismissalNotifier({Set<String>? initial, this.userId})
-      : super(initial ?? {}) {
+  @override
+  Set<String> build() {
+    _disposed = false;
+    ref.onDispose(() {
+      _disposed = true;
+    });
+    _userId = _injectedUserId ??
+        (_initial != null
+            ? null
+            : (ref.watch(currentUserIdProvider) ??
+                RecordOwnershipRules.guestUserId));
     _loadFromPrefs();
+    return _initial ?? <String>{};
   }
-
-  String get _storageKey => _dismissedBannersKeyForUser(userId);
 
   Future<void> _loadFromPrefs() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      var list = prefs.getStringList(_storageKey);
-
-      if (list == null && _storageKey != _kDismissedBannersKey) {
-        // One-time adoption of pre-scoping dismissals, only when no
-        // account-scoped dismissal list exists yet.
-        final hasScopedDismissals = prefs
-            .getKeys()
-            .any((key) => key.startsWith('${_kDismissedBannersKey}_'));
-        final legacyList = prefs.getStringList(_kDismissedBannersKey);
-        if (!hasScopedDismissals && legacyList != null) {
-          list = legacyList;
-          await prefs.setStringList(_storageKey, legacyList);
-          await prefs.remove(_kDismissedBannersKey);
-        }
-      }
-
-      if (list != null && mounted) {
-        state = list.toSet();
+      final repo = ref.read(aiPreferencesRepositoryProvider);
+      final loaded = await repo.loadDismissedBanners(userId: _userId);
+      if (loaded != null && !_disposed) {
+        state = loaded;
       }
     } catch (_) {
       // Gracefully fall back to in-memory state on error (e.g., in unit tests without prefs mock)
@@ -60,8 +52,8 @@ class BannerDismissalNotifier extends StateNotifier<Set<String>> {
     final updated = {...state, insightId};
     state = updated;
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setStringList(_storageKey, updated.toList());
+      final repo = ref.read(aiPreferencesRepositoryProvider);
+      await repo.saveDismissedBanners(userId: _userId, dismissedIds: updated);
     } catch (_) {
       // In-memory state already updated
     }
@@ -74,16 +66,14 @@ class BannerDismissalNotifier extends StateNotifier<Set<String>> {
   Future<void> reset() async {
     state = {};
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(_storageKey);
+      final repo = ref.read(aiPreferencesRepositoryProvider);
+      await repo.clearDismissedBanners(userId: _userId);
     } catch (_) {}
   }
 }
 
 /// Global provider for tracking dismissed AI insight banner IDs.
 final bannerDismissalProvider =
-    StateNotifierProvider<BannerDismissalNotifier, Set<String>>((ref) {
-  final userId =
-      ref.watch(currentUserIdProvider) ?? RecordOwnershipRules.guestUserId;
-  return BannerDismissalNotifier(userId: userId);
-});
+    NotifierProvider<BannerDismissalNotifier, Set<String>>(
+  BannerDismissalNotifier.new,
+);

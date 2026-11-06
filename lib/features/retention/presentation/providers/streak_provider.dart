@@ -31,11 +31,14 @@ final streakProvider = FutureProvider<Streak>((ref) async {
 // Streak notifier
 // ---------------------------------------------------------------------------
 
-class StreakNotifier extends StateNotifier<Streak> {
-  final HiveStreakDataSource _dataSource;
+class StreakNotifier extends Notifier<Streak> {
+  late HiveStreakDataSource _dataSource;
 
-  StreakNotifier(this._dataSource, Streak initialStreak)
-      : super(initialStreak);
+  @override
+  Streak build() {
+    _dataSource = ref.watch(streakDataSourceProvider);
+    return Streak.initial();
+  }
 
   /// Updates streak after a new workout is logged
   Future<void> updateAfterWorkout() async {
@@ -68,7 +71,4 @@ class StreakNotifier extends StateNotifier<Streak> {
 // ---------------------------------------------------------------------------
 
 final streakNotifierProvider =
-    StateNotifierProvider<StreakNotifier, Streak>((ref) {
-  final dataSource = ref.watch(streakDataSourceProvider);
-  return StreakNotifier(dataSource, Streak.initial());
-});
+    NotifierProvider<StreakNotifier, Streak>(StreakNotifier.new);

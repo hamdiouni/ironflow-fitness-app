@@ -206,7 +206,7 @@ void main() {
   }) {
     return ProviderScope(
       overrides: [
-        globalAIProvider.overrideWith((ref) => FakeGlobalAINotifier(
+        globalAIProvider.overrideWith(() => FakeGlobalAINotifier(
               const GlobalAIState(),
             )),
         userProfileProvider.overrideWith((ref) async => profile),

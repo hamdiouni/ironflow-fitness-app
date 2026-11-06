@@ -1,3 +1,4 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:mockito/annotations.dart';
@@ -32,6 +33,7 @@ void main() {
     late MockWorkoutRepository mockWorkoutRepository;
     late MockNutritionRepository mockNutritionRepository;
     late MockBodyRepository mockBodyRepository;
+    late ProviderContainer container;
     late GlobalAINotifier notifier;
 
     setUp(() {
@@ -42,14 +44,25 @@ void main() {
       mockNutritionRepository = MockNutritionRepository();
       mockBodyRepository = MockBodyRepository();
 
-      notifier = GlobalAINotifier(
-        insightsEngine: mockInsightsEngine,
-        cacheService: mockCacheService,
-        changeDetectionService: mockChangeDetectionService,
-        workoutRepository: mockWorkoutRepository,
-        nutritionRepository: mockNutritionRepository,
-        bodyRepository: mockBodyRepository,
+      container = ProviderContainer(
+        overrides: [
+          globalAIProvider.overrideWith(
+            () => GlobalAINotifier(
+              insightsEngine: mockInsightsEngine,
+              cacheService: mockCacheService,
+              changeDetectionService: mockChangeDetectionService,
+              workoutRepository: mockWorkoutRepository,
+              nutritionRepository: mockNutritionRepository,
+              bodyRepository: mockBodyRepository,
+            ),
+          ),
+        ],
       );
+      notifier = container.read(globalAIProvider.notifier);
+    });
+
+    tearDown(() {
+      container.dispose();
     });
 
     group('init', () {
@@ -63,7 +76,7 @@ void main() {
 
         // Assert
         verify(mockCacheService.init()).called(1);
-        expect(notifier.state, equals(const GlobalAIState()));
+        expect(container.read(globalAIProvider), equals(const GlobalAIState()));
       });
 
       test('should restore cached insights for all contexts', () async {
@@ -122,10 +135,10 @@ void main() {
         verify(mockCacheService.getCachedInsights(InsightContext.nutrition)).called(1);
         verify(mockCacheService.getCachedInsights(InsightContext.profile)).called(1);
 
-        expect(notifier.state.insights[InsightContext.home], equals([homeInsight]));
-        expect(notifier.state.insights[InsightContext.workout], equals([workoutInsight]));
-        expect(notifier.state.lastUpdated[InsightContext.home], equals(now));
-        expect(notifier.state.lastUpdated[InsightContext.workout], equals(now));
+        expect(container.read(globalAIProvider).insights[InsightContext.home], equals([homeInsight]));
+        expect(container.read(globalAIProvider).insights[InsightContext.workout], equals([workoutInsight]));
+        expect(container.read(globalAIProvider).lastUpdated[InsightContext.home], equals(now));
+        expect(container.read(globalAIProvider).lastUpdated[InsightContext.workout], equals(now));
       });
 
       test('should skip stale cached insights', () async {
@@ -167,8 +180,8 @@ void main() {
         verify(mockCacheService.isCacheStale(staleCache)).called(1);
 
         // State should remain empty since stale cache was skipped
-        expect(notifier.state.insights[InsightContext.home], isNull);
-        expect(notifier.state.lastUpdated[InsightContext.home], isNull);
+        expect(container.read(globalAIProvider).insights[InsightContext.home], isNull);
+        expect(container.read(globalAIProvider).lastUpdated[InsightContext.home], isNull);
       });
 
       test('should handle cache service initialization failure gracefully', () async {
@@ -179,7 +192,7 @@ void main() {
         await notifier.init();
 
         verify(mockCacheService.init()).called(1);
-        expect(notifier.state, equals(const GlobalAIState()));
+        expect(container.read(globalAIProvider), equals(const GlobalAIState()));
       });
 
       test('should handle individual context cache retrieval failure gracefully', () async {
@@ -220,12 +233,12 @@ void main() {
         verify(mockCacheService.init()).called(1);
         
         // Should still restore successful contexts
-        expect(notifier.state.insights[InsightContext.workout], equals([workoutInsight]));
-        expect(notifier.state.lastUpdated[InsightContext.workout], equals(now));
+        expect(container.read(globalAIProvider).insights[InsightContext.workout], equals([workoutInsight]));
+        expect(container.read(globalAIProvider).lastUpdated[InsightContext.workout], equals(now));
         
         // Failed context should not be in state
-        expect(notifier.state.insights[InsightContext.home], isNull);
-        expect(notifier.state.lastUpdated[InsightContext.home], isNull);
+        expect(container.read(globalAIProvider).insights[InsightContext.home], isNull);
+        expect(container.read(globalAIProvider).lastUpdated[InsightContext.home], isNull);
       });
     });
 
@@ -253,7 +266,7 @@ void main() {
         );
 
         // Set up initial state with existing insights
-        notifier.state = notifier.state.copyWith(
+        notifier.debugState = container.read(globalAIProvider).copyWith(
           insights: {InsightContext.home: [existingInsight]},
           lastUpdated: {InsightContext.home: now.subtract(const Duration(minutes: 30))},
         );
@@ -277,9 +290,9 @@ void main() {
 
         // Assert
         expect(result, equals([newInsight]));
-        expect(notifier.state.insights[InsightContext.home], equals([newInsight]));
-        expect(notifier.state.isLoading[InsightContext.home], equals(false));
-        expect(notifier.state.errors[InsightContext.home], isNull);
+        expect(container.read(globalAIProvider).insights[InsightContext.home], equals([newInsight]));
+        expect(container.read(globalAIProvider).isLoading[InsightContext.home], equals(false));
+        expect(container.read(globalAIProvider).errors[InsightContext.home], isNull);
 
         // Verify cache was invalidated and fresh insights were generated
         verify(mockInsightsEngine.generateInsights(any)).called(1);
@@ -318,14 +331,14 @@ void main() {
         final refreshFuture = notifier.refreshInsights(InsightContext.workout);
         
         // Check that loading state was set to true
-        expect(notifier.state.isLoading[InsightContext.workout], equals(true));
+        expect(container.read(globalAIProvider).isLoading[InsightContext.workout], equals(true));
         loadingStateSet = true;
         
         // Wait for completion
         await refreshFuture;
         
         // Check that loading state was set back to false
-        expect(notifier.state.isLoading[InsightContext.workout], equals(false));
+        expect(container.read(globalAIProvider).isLoading[InsightContext.workout], equals(false));
         expect(loadingStateSet, isTrue);
       });
 
@@ -342,7 +355,7 @@ void main() {
         );
 
         // Set up initial state with error
-        notifier.state = notifier.state.copyWith(
+        notifier.debugState = container.read(globalAIProvider).copyWith(
           errors: {InsightContext.nutrition: 'Previous error'},
         );
 
@@ -363,7 +376,7 @@ void main() {
         await notifier.refreshInsights(InsightContext.nutrition);
 
         // Assert
-        expect(notifier.state.errors[InsightContext.nutrition], isNull);
+        expect(container.read(globalAIProvider).errors[InsightContext.nutrition], isNull);
       });
 
       test('should handle insight generation failure gracefully', () async {
@@ -385,10 +398,10 @@ void main() {
 
         // Assert
         expect(result, equals([])); // Should return empty list
-        expect(notifier.state.isLoading[InsightContext.profile], equals(false));
+        expect(container.read(globalAIProvider).isLoading[InsightContext.profile], equals(false));
         // Note: Since the insight generation succeeds (returns empty list), 
         // there should be no error in the state
-        expect(notifier.state.errors[InsightContext.profile], isNull);
+        expect(container.read(globalAIProvider).errors[InsightContext.profile], isNull);
       });
 
       test('should handle complete insight generation failure gracefully', () async {
@@ -408,9 +421,9 @@ void main() {
 
         // Assert
         expect(result, equals([])); // Should return empty list on failure
-        expect(notifier.state.isLoading[InsightContext.profile], equals(false));
-        expect(notifier.state.errors[InsightContext.profile], isNotNull);
-        expect(notifier.state.errors[InsightContext.profile], contains('Failed to refresh insights'));
+        expect(container.read(globalAIProvider).isLoading[InsightContext.profile], equals(false));
+        expect(container.read(globalAIProvider).errors[InsightContext.profile], isNotNull);
+        expect(container.read(globalAIProvider).errors[InsightContext.profile], contains('Failed to refresh insights'));
       });
 
       test('should handle cache invalidation failure gracefully', () async {
@@ -445,9 +458,9 @@ void main() {
 
         // Assert - should still succeed despite cache invalidation failure
         expect(result, equals([newInsight]));
-        expect(notifier.state.insights[InsightContext.home], equals([newInsight]));
-        expect(notifier.state.isLoading[InsightContext.home], equals(false));
-        expect(notifier.state.errors[InsightContext.home], isNull);
+        expect(container.read(globalAIProvider).insights[InsightContext.home], equals([newInsight]));
+        expect(container.read(globalAIProvider).isLoading[InsightContext.home], equals(false));
+        expect(container.read(globalAIProvider).errors[InsightContext.home], isNull);
 
         verify(mockInsightsEngine.generateInsights(any)).called(1);
       });
@@ -483,9 +496,9 @@ void main() {
 
         // Assert - should still succeed despite cache update failure
         expect(result, equals([newInsight]));
-        expect(notifier.state.insights[InsightContext.workout], equals([newInsight]));
-        expect(notifier.state.isLoading[InsightContext.workout], equals(false));
-        expect(notifier.state.errors[InsightContext.workout], isNull);
+        expect(container.read(globalAIProvider).insights[InsightContext.workout], equals([newInsight]));
+        expect(container.read(globalAIProvider).isLoading[InsightContext.workout], equals(false));
+        expect(container.read(globalAIProvider).errors[InsightContext.workout], isNull);
 
         verify(mockInsightsEngine.generateInsights(any)).called(1);
       });
@@ -605,8 +618,8 @@ void main() {
 
         // Assert - should return cached insights due to timeout
         expect(result, equals([cachedInsight]));
-        expect(notifier.state.insights[InsightContext.home], equals([cachedInsight]));
-        expect(notifier.state.isLoading[InsightContext.home], equals(false));
+        expect(container.read(globalAIProvider).insights[InsightContext.home], equals([cachedInsight]));
+        expect(container.read(globalAIProvider).isLoading[InsightContext.home], equals(false));
       });
 
       test('should handle timeout in getInsights and return fallback insights when no cache', () async {
@@ -640,7 +653,7 @@ void main() {
         expect(result.first.icon, equals('💪'));
         expect(result.last.title, equals('Progressive Overload'));
         expect(result.last.icon, equals('⬆️'));
-        expect(notifier.state.isLoading[InsightContext.workout], equals(false));
+        expect(container.read(globalAIProvider).isLoading[InsightContext.workout], equals(false));
       });
 
       test('should handle timeout in refreshInsights and return empty list', () async {
@@ -668,8 +681,8 @@ void main() {
 
         // Assert - should return empty list due to timeout (no fallback for refresh)
         expect(result, equals([]));
-        expect(notifier.state.isLoading[InsightContext.nutrition], equals(false));
-        expect(notifier.state.errors[InsightContext.nutrition], contains('timed out'));
+        expect(container.read(globalAIProvider).isLoading[InsightContext.nutrition], equals(false));
+        expect(container.read(globalAIProvider).errors[InsightContext.nutrition], contains('timed out'));
       });
 
       test('should generate appropriate fallback insights for each context', () async {
@@ -758,7 +771,7 @@ void main() {
           generatedAt: DateTime.now().subtract(const Duration(hours: 1)),
         );
 
-        notifier.state = notifier.state.copyWith(
+        notifier.debugState = container.read(globalAIProvider).copyWith(
           insights: {
             InsightContext.home: [existingHomeInsight],
             InsightContext.workout: [existingWorkoutInsight],
@@ -783,17 +796,17 @@ void main() {
 
         // Assert
         // Quick feedback should be set
-        expect(notifier.state.quickFeedback, equals(quickFeedback));
+        expect(container.read(globalAIProvider).quickFeedback, equals(quickFeedback));
 
         // Home and Workout contexts should be invalidated (removed from memory cache)
-        expect(notifier.state.insights[InsightContext.home], isNull);
-        expect(notifier.state.insights[InsightContext.workout], isNull);
-        expect(notifier.state.lastUpdated[InsightContext.home], isNull);
-        expect(notifier.state.lastUpdated[InsightContext.workout], isNull);
+        expect(container.read(globalAIProvider).insights[InsightContext.home], isNull);
+        expect(container.read(globalAIProvider).insights[InsightContext.workout], isNull);
+        expect(container.read(globalAIProvider).lastUpdated[InsightContext.home], isNull);
+        expect(container.read(globalAIProvider).lastUpdated[InsightContext.workout], isNull);
 
         // Nutrition context should remain unchanged
-        expect(notifier.state.insights[InsightContext.nutrition], equals([existingNutritionInsight]));
-        expect(notifier.state.lastUpdated[InsightContext.nutrition], isNotNull);
+        expect(container.read(globalAIProvider).insights[InsightContext.nutrition], equals([existingNutritionInsight]));
+        expect(container.read(globalAIProvider).lastUpdated[InsightContext.nutrition], isNotNull);
 
         // Verify method calls
         verify(mockWorkoutRepository.getWorkoutsByDateRange(any, any)).called(1);
@@ -823,7 +836,7 @@ void main() {
           generatedAt: DateTime.now().subtract(const Duration(hours: 1)),
         );
 
-        notifier.state = notifier.state.copyWith(
+        notifier.debugState = container.read(globalAIProvider).copyWith(
           insights: {InsightContext.home: [existingHomeInsight]},
           lastUpdated: {InsightContext.home: DateTime.now().subtract(const Duration(hours: 1))},
         );
@@ -838,11 +851,11 @@ void main() {
 
         // Assert
         // Quick feedback should not be set due to failure
-        expect(notifier.state.quickFeedback, isNull);
+        expect(container.read(globalAIProvider).quickFeedback, isNull);
 
         // Cache invalidation should still happen (Home and Workout contexts removed)
-        expect(notifier.state.insights[InsightContext.home], isNull);
-        expect(notifier.state.lastUpdated[InsightContext.home], isNull);
+        expect(container.read(globalAIProvider).insights[InsightContext.home], isNull);
+        expect(container.read(globalAIProvider).lastUpdated[InsightContext.home], isNull);
 
         // Verify repository was called despite failure
         verify(mockWorkoutRepository.getWorkoutsByDateRange(any, any)).called(1);
@@ -882,11 +895,11 @@ void main() {
 
         // Assert
         // Quick feedback should still be set despite cache invalidation failure
-        expect(notifier.state.quickFeedback, equals(quickFeedback));
+        expect(container.read(globalAIProvider).quickFeedback, equals(quickFeedback));
 
         // Memory cache should still be invalidated
-        expect(notifier.state.insights[InsightContext.home], isNull);
-        expect(notifier.state.insights[InsightContext.workout], isNull);
+        expect(container.read(globalAIProvider).insights[InsightContext.home], isNull);
+        expect(container.read(globalAIProvider).insights[InsightContext.workout], isNull);
 
         // Verify method calls
         verify(mockWorkoutRepository.getWorkoutsByDateRange(any, any)).called(1);
@@ -991,7 +1004,7 @@ void main() {
           generatedAt: DateTime.now().subtract(const Duration(hours: 1)),
         );
 
-        notifier.state = notifier.state.copyWith(
+        notifier.debugState = container.read(globalAIProvider).copyWith(
           insights: {
             InsightContext.home: [homeInsight],
             InsightContext.workout: [workoutInsight],
@@ -1026,14 +1039,14 @@ void main() {
 
         // Assert
         // Home and Workout contexts should be invalidated
-        expect(notifier.state.insights[InsightContext.home], isNull);
-        expect(notifier.state.insights[InsightContext.workout], isNull);
+        expect(container.read(globalAIProvider).insights[InsightContext.home], isNull);
+        expect(container.read(globalAIProvider).insights[InsightContext.workout], isNull);
 
         // Nutrition and Profile contexts should remain unchanged
-        expect(notifier.state.insights[InsightContext.nutrition], equals([nutritionInsight]));
-        expect(notifier.state.insights[InsightContext.profile], equals([profileInsight]));
-        expect(notifier.state.lastUpdated[InsightContext.nutrition], isNotNull);
-        expect(notifier.state.lastUpdated[InsightContext.profile], isNotNull);
+        expect(container.read(globalAIProvider).insights[InsightContext.nutrition], equals([nutritionInsight]));
+        expect(container.read(globalAIProvider).insights[InsightContext.profile], equals([profileInsight]));
+        expect(container.read(globalAIProvider).lastUpdated[InsightContext.nutrition], isNotNull);
+        expect(container.read(globalAIProvider).lastUpdated[InsightContext.profile], isNotNull);
       });
     });
 
@@ -1078,7 +1091,7 @@ void main() {
           generatedAt: DateTime.now().subtract(const Duration(hours: 1)),
         );
 
-        notifier.state = notifier.state.copyWith(
+        notifier.debugState = container.read(globalAIProvider).copyWith(
           insights: {
             InsightContext.home: [homeInsight],
             InsightContext.workout: [workoutInsight],
@@ -1101,16 +1114,16 @@ void main() {
 
         // Assert
         // Home and Nutrition contexts should be invalidated (removed from memory cache)
-        expect(notifier.state.insights[InsightContext.home], isNull);
-        expect(notifier.state.insights[InsightContext.nutrition], isNull);
-        expect(notifier.state.lastUpdated[InsightContext.home], isNull);
-        expect(notifier.state.lastUpdated[InsightContext.nutrition], isNull);
+        expect(container.read(globalAIProvider).insights[InsightContext.home], isNull);
+        expect(container.read(globalAIProvider).insights[InsightContext.nutrition], isNull);
+        expect(container.read(globalAIProvider).lastUpdated[InsightContext.home], isNull);
+        expect(container.read(globalAIProvider).lastUpdated[InsightContext.nutrition], isNull);
 
         // Workout and Profile contexts should remain unchanged
-        expect(notifier.state.insights[InsightContext.workout], equals([workoutInsight]));
-        expect(notifier.state.insights[InsightContext.profile], equals([profileInsight]));
-        expect(notifier.state.lastUpdated[InsightContext.workout], isNotNull);
-        expect(notifier.state.lastUpdated[InsightContext.profile], isNotNull);
+        expect(container.read(globalAIProvider).insights[InsightContext.workout], equals([workoutInsight]));
+        expect(container.read(globalAIProvider).insights[InsightContext.profile], equals([profileInsight]));
+        expect(container.read(globalAIProvider).lastUpdated[InsightContext.workout], isNotNull);
+        expect(container.read(globalAIProvider).lastUpdated[InsightContext.profile], isNotNull);
 
         // Verify cache invalidation was called for the correct contexts
         verify(mockCacheService.invalidateCache(InsightContext.home)).called(1);
@@ -1131,7 +1144,7 @@ void main() {
           generatedAt: DateTime.now().subtract(const Duration(hours: 1)),
         );
 
-        notifier.state = notifier.state.copyWith(
+        notifier.debugState = container.read(globalAIProvider).copyWith(
           insights: {
             InsightContext.home: [homeInsight],
           },
@@ -1154,8 +1167,8 @@ void main() {
         await tester.pump(const Duration(seconds: 6));
 
         // Memory cache should still be invalidated despite Hive cache failure
-        expect(notifier.state.insights[InsightContext.home], isNull);
-        expect(notifier.state.lastUpdated[InsightContext.home], isNull);
+        expect(container.read(globalAIProvider).insights[InsightContext.home], isNull);
+        expect(container.read(globalAIProvider).lastUpdated[InsightContext.home], isNull);
 
         // Verify cache invalidation was attempted
         verify(mockCacheService.invalidateCache(InsightContext.home)).called(1);
@@ -1171,7 +1184,7 @@ void main() {
 
         // Assert
         // Quick feedback should remain null (no quick feedback for meal logging)
-        expect(notifier.state.quickFeedback, isNull);
+        expect(container.read(globalAIProvider).quickFeedback, isNull);
 
         // Verify that generateQuickFeedback was never called
         verifyNever(mockInsightsEngine.generateQuickFeedback(any, any));

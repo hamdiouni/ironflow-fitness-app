@@ -1,4 +1,4 @@
-import 'package:progression_tracker/features/nutrition/data/food_database.dart';
+import 'package:progression_tracker/features/nutrition/domain/services/food_catalog.dart';
 import 'package:progression_tracker/features/nutrition/domain/entities/food_item.dart';
 import 'package:progression_tracker/features/nutrition/domain/entities/meal.dart';
 import 'package:progression_tracker/features/onboarding/domain/entities/user_profile.dart' show BudgetLevel;
@@ -86,7 +86,7 @@ class GetBudgetFoodAlternativesUseCase {
     final isCarbDominant = (targetCarbs * 4.0) / targetCalories >= 0.45 || targetCarbs >= 25.0;
     final isFatDominant = (targetFat * 9.0) / targetCalories >= 0.45;
 
-    final allFoods = FoodDatabase.foods;
+    final allFoods = FoodCatalog.foods;
     final results = <BudgetFoodAlternative>[];
 
     for (final candidate in allFoods) {

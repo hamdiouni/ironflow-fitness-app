@@ -1,5 +1,5 @@
 import '../entities/exercise_definition.dart';
-import '../../data/exercise_database.dart';
+import '../services/exercise_catalog.dart';
 
 /// Returns all exercises, optionally filtered by muscle group, equipment, and/or difficulty.
 class GetExercisesUseCase {
@@ -9,7 +9,7 @@ class GetExercisesUseCase {
     Equipment? equipment,
     Difficulty? difficulty,
   }) {
-    var results = ExerciseDatabase.all;
+    var results = ExerciseCatalog.all;
 
     if (query != null && query.isNotEmpty) {
       final q = query.toLowerCase();

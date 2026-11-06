@@ -10,9 +10,9 @@ void main() {
       useCase = GetExercisesUseCase();
     });
 
-    test('returns all exercises when no filters supplied', () {
+    test('returns all canonical deduplicated exercises when no filters supplied', () {
       final results = useCase();
-      expect(results.length, 150);
+      expect(results.length, 129);
     });
 
     test('filters by query string matching name or subMuscle', () {

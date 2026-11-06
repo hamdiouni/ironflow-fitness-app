@@ -1,20 +1,15 @@
 import '../../domain/entities/user.dart';
 import '../../domain/entities/user_profile.dart';
 import '../../domain/repositories/auth_repository.dart';
-// Firebase datasources - DISABLED
-// import '../datasources/firebase_auth_datasource.dart';
-// import '../datasources/firestore_user_datasource.dart';
-// Mock datasources for development
-import '../datasources/mock_auth_datasource.dart';
-import '../datasources/mock_user_datasource.dart';
+import '../datasources/auth_datasource.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
-  final MockAuthDataSource _authDataSource;
-  final MockUserDataSource _userDataSource;
+  final AuthRemoteDataSource _authDataSource;
+  final UserProfileRemoteDataSource _userDataSource;
 
   AuthRepositoryImpl({
-    required MockAuthDataSource authDataSource,
-    required MockUserDataSource userDataSource,
+    required AuthRemoteDataSource authDataSource,
+    required UserProfileRemoteDataSource userDataSource,
   })  : _authDataSource = authDataSource,
         _userDataSource = userDataSource;
 

@@ -1,9 +1,11 @@
 import 'dart:io';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:progression_tracker/features/notifications/domain/entities/reminder_settings.dart';
 import 'package:progression_tracker/features/notifications/domain/repositories/reminder_settings_repository.dart';
 import 'package:progression_tracker/features/notifications/domain/services/notification_service.dart';
 import 'package:progression_tracker/features/notifications/presentation/notifiers/reminder_settings_notifier.dart';
+import 'package:progression_tracker/features/notifications/presentation/providers/notification_providers.dart';
 
 class _FakeReminderRepository implements ReminderSettingsRepository {
   ReminderSettings stored = const ReminderSettings(
@@ -76,9 +78,17 @@ void main() {
     test('ReminderSettingsNotifier does not request permissions on load, only when user enables a reminder toggle', () async {
       final repo = _FakeReminderRepository();
       final spyNotifications = _SpyNotificationService();
+      final container = ProviderContainer(
+        overrides: [
+          reminderSettingsProvider.overrideWith(
+            () => ReminderSettingsNotifier(repo, spyNotifications),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
 
-      final notifier = ReminderSettingsNotifier(repo, spyNotifications);
-      await Future<void>.delayed(const Duration(milliseconds: 20));
+      await container.read(reminderSettingsProvider.future);
+      final notifier = container.read(reminderSettingsProvider.notifier);
 
       // Initial load must NOT trigger permission prompt
       expect(spyNotifications.requestPermissionsCallCount, equals(0));

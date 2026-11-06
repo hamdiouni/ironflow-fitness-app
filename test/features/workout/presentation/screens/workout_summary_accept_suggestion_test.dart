@@ -6,11 +6,14 @@ import 'package:progression_tracker/features/workout/presentation/providers/acti
 import 'package:progression_tracker/features/workout/presentation/providers/workout_providers.dart';
 import 'package:progression_tracker/features/workout/presentation/screens/workout_summary_screen.dart';
 
-class TestActiveProgramNotifier
-    extends StateNotifier<AsyncValue<ActiveProgram?>>
+class TestActiveProgramNotifier extends Notifier<AsyncValue<ActiveProgram?>>
     implements ActiveProgramNotifier {
-  TestActiveProgramNotifier(ActiveProgram? program)
-      : super(AsyncValue.data(program));
+  TestActiveProgramNotifier(this._program);
+
+  final ActiveProgram? _program;
+
+  @override
+  AsyncValue<ActiveProgram?> build() => AsyncValue.data(_program);
 
   final List<ActiveProgram> updatedPrograms = [];
 
@@ -77,7 +80,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          activeProgramProvider.overrideWith((ref) => notifier),
+          activeProgramProvider.overrideWith(() => notifier),
           progressionSuggestionProvider('Squat').overrideWith((ref) async => suggestion),
         ],
         child: const MaterialApp(
@@ -149,7 +152,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          activeProgramProvider.overrideWith((ref) => notifier),
+          activeProgramProvider.overrideWith(() => notifier),
           progressionSuggestionProvider('Squat').overrideWith((ref) async => suggestion),
         ],
         child: const MaterialApp(
@@ -191,7 +194,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          activeProgramProvider.overrideWith((ref) => notifier),
+          activeProgramProvider.overrideWith(() => notifier),
           progressionSuggestionProvider('Squat').overrideWith((ref) async => suggestion),
         ],
         child: const MaterialApp(

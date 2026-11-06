@@ -1,9 +1,11 @@
 import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:progression_tracker/features/ai/domain/entities/chat_message.dart';
+import 'package:progression_tracker/features/ai/domain/repositories/ai_preferences_repository.dart';
 import 'package:progression_tracker/features/ai/domain/services/local_ai_coach.dart';
 import 'package:progression_tracker/features/ai/data/datasources/gemini_ai_service.dart';
 import 'package:progression_tracker/features/ai/data/datasources/ai_chat_storage.dart';
+import 'package:progression_tracker/features/ai/data/repositories/ai_preferences_repository_impl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
@@ -30,23 +32,41 @@ final geminiAIServiceProvider = Provider<GeminiAIService>((ref) {
   return GeminiAIService();
 });
 
-/// StateNotifier for AI personalization consent (Privacy-first: default is false)
-final aiPersonalizationConsentProvider =
-    StateNotifierProvider<AIPersonalizationConsentNotifier, bool>((ref) {
-  final userId =
-      ref.watch(currentUserIdProvider) ?? RecordOwnershipRules.guestUserId;
-  return AIPersonalizationConsentNotifier(userId: userId);
+/// Provider for AI preferences storage repository
+final aiPreferencesRepositoryProvider = Provider<AIPreferencesRepository>((ref) {
+  return AIPreferencesRepositoryImpl();
 });
 
-class AIPersonalizationConsentNotifier extends StateNotifier<bool> {
+/// Notifier for AI personalization consent (Privacy-first: default is false)
+final aiPersonalizationConsentProvider =
+    NotifierProvider<AIPersonalizationConsentNotifier, bool>(
+  AIPersonalizationConsentNotifier.new,
+);
+
+class AIPersonalizationConsentNotifier extends Notifier<bool> {
   static const String key = 'ai_personalization_consent';
 
-  /// Account that owns this consent value. Direct constructions without
-  /// a user keep using the legacy preference key.
-  final String? userId;
+  AIPersonalizationConsentNotifier({String? userId})
+      : _injectedUserId = userId;
 
-  AIPersonalizationConsentNotifier({this.userId}) : super(false) {
+  final String? _injectedUserId;
+  String? _userId;
+  bool _disposed = false;
+
+  /// Account that owns this consent value.
+  String? get userId => _userId;
+
+  @override
+  bool build() {
+    _disposed = false;
+    ref.onDispose(() {
+      _disposed = true;
+    });
+    _userId = _injectedUserId ??
+        ref.watch(currentUserIdProvider) ??
+        RecordOwnershipRules.guestUserId;
     _loadConsent();
+    return false;
   }
 
   static String keyForUser(String? userId) {
@@ -54,48 +74,31 @@ class AIPersonalizationConsentNotifier extends StateNotifier<bool> {
     return scopeUserId == null ? key : '${key}_$scopeUserId';
   }
 
-  String get _storageKey => keyForUser(userId);
-
   /// Loads the stored consent for [userId], applying the one-time
   /// legacy migration used by the provider and privacy screen.
   static Future<bool> loadStoredConsent(
     SharedPreferences prefs, {
     String? userId,
-  }) async {
-    final storageKey = keyForUser(userId);
-    var consent = prefs.getBool(storageKey);
-
-    if (consent == null && storageKey != key) {
-      // One-time adoption of a pre-scoping choice, only when no
-      // account-scoped consent exists yet. After scoped values exist,
-      // the legacy value cannot be attributed safely to this account.
-      final hasScopedConsent = prefs
-          .getKeys()
-          .any((storedKey) => storedKey.startsWith('${key}_'));
-      final legacyConsent = prefs.getBool(key);
-      if (!hasScopedConsent && legacyConsent != null) {
-        consent = legacyConsent;
-        await prefs.setBool(storageKey, legacyConsent);
-        await prefs.remove(key);
-      }
-    }
-
-    return consent ?? false;
+  }) {
+    return AIPreferencesRepositoryImpl.loadStoredConsentFromPrefs(
+      prefs,
+      userId: userId,
+    );
   }
 
   Future<void> _loadConsent() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final consent = await loadStoredConsent(prefs, userId: userId);
-      if (mounted) state = consent;
+      final repo = ref.read(aiPreferencesRepositoryProvider);
+      final consent = await repo.loadPersonalizationConsent(userId: userId);
+      if (!_disposed) state = consent;
     } catch (_) {}
   }
 
   Future<void> setConsent(bool consent) async {
     state = consent;
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool(_storageKey, consent);
+      final repo = ref.read(aiPreferencesRepositoryProvider);
+      await repo.savePersonalizationConsent(userId: userId, consent: consent);
     } catch (_) {}
   }
 
@@ -144,32 +147,50 @@ class AIChatState {
   }
 }
 
-class AIChatNotifier extends StateNotifier<AIChatState> {
-  final LocalAICoach _localCoach;
-  final GeminiAIService _geminiService;
-  final Ref _ref;
-  final AIChatStorage? _chatStorage;
-
+class AIChatNotifier extends Notifier<AIChatState> {
   AIChatNotifier({
-    required LocalAICoach localCoach,
-    required GeminiAIService geminiService,
-    required Ref ref,
+    LocalAICoach? localCoach,
+    GeminiAIService? geminiService,
     AIChatStorage? chatStorage,
-  })  : _localCoach = localCoach,
-        _geminiService = geminiService,
-        _ref = ref,
-        _chatStorage = chatStorage,
-        super(AIChatState(
-          isKeyMissing: !geminiService.isConfigured,
-        )) {
+    bool useInjectedStorage = false,
+  })  : _injectedLocalCoach = localCoach,
+        _injectedGeminiService = geminiService,
+        _injectedChatStorage = chatStorage,
+        _useInjectedStorage = useInjectedStorage;
+
+  final LocalAICoach? _injectedLocalCoach;
+  final GeminiAIService? _injectedGeminiService;
+  final AIChatStorage? _injectedChatStorage;
+  final bool _useInjectedStorage;
+
+  late LocalAICoach _localCoach;
+  late GeminiAIService _geminiService;
+  AIChatStorage? _chatStorage;
+  bool _disposed = false;
+
+  @override
+  AIChatState build() {
+    _disposed = false;
+    ref.onDispose(() {
+      _disposed = true;
+    });
+    _localCoach = _injectedLocalCoach ?? ref.watch(localAICoachProvider);
+    _geminiService =
+        _injectedGeminiService ?? ref.watch(geminiAIServiceProvider);
+    _chatStorage = _useInjectedStorage
+        ? _injectedChatStorage
+        : (_injectedChatStorage ?? ref.watch(aiChatStorageProvider));
     _loadHistory();
+    return AIChatState(
+      isKeyMissing: !_geminiService.isConfigured,
+    );
   }
 
   Future<void> _loadHistory() async {
     if (_chatStorage == null) return;
     try {
-      final history = await _chatStorage.loadMessages();
-      if (history.isNotEmpty && mounted) {
+      final history = await _chatStorage!.loadMessages();
+      if (history.isNotEmpty && !_disposed) {
         state = state.copyWith(messages: history);
       }
     } catch (_) {}
@@ -231,7 +252,7 @@ class AIChatNotifier extends StateNotifier<AIChatState> {
       AppLogger.debug('═══════════════════════════════════════');
       
       // Gather user data if personalization consent is granted
-      final hasConsent = _ref.read(aiPersonalizationConsentProvider);
+      final hasConsent = ref.read(aiPersonalizationConsentProvider);
       UserProfile? profile;
       List<Workout> recentWorkouts = const [];
       List<DailyNutritionSummary> nutritionHistory = const [];
@@ -241,10 +262,10 @@ class AIChatNotifier extends StateNotifier<AIChatState> {
       if (hasConsent) {
         AppLogger.debug('📊 [AI CHAT] Step 1: Personalization consent ENABLED. Gathering user data...');
         try {
-          final authRepo = _ref.read(authRepositoryProvider);
-          final workoutRepo = _ref.read(workoutRepositoryProvider);
-          final nutritionRepo = _ref.read(nutritionRepositoryProvider);
-          final bodyRepo = _ref.read(bodyRepositoryProvider);
+          final authRepo = ref.read(authRepositoryProvider);
+          final workoutRepo = ref.read(workoutRepositoryProvider);
+          final nutritionRepo = ref.read(nutritionRepositoryProvider);
+          final bodyRepo = ref.read(bodyRepositoryProvider);
 
           final user = await authRepo.getCurrentUser();
           profile = user != null ? await authRepo.getUserProfile(user.id) : null;
@@ -363,7 +384,7 @@ class AIChatNotifier extends StateNotifier<AIChatState> {
       
       // Track AI query event
       try {
-        final analytics = _ref.read(analyticsServiceProvider);
+        final analytics = ref.read(analyticsServiceProvider);
         await analytics.logAIQuery(
           queryType: 'chat',
           query: message,
@@ -486,11 +507,6 @@ class AIChatNotifier extends StateNotifier<AIChatState> {
 }
 
 /// Provider for AI chat notifier
-final aiChatProvider = StateNotifierProvider<AIChatNotifier, AIChatState>((ref) {
-  return AIChatNotifier(
-    localCoach: ref.watch(localAICoachProvider),
-    geminiService: ref.watch(geminiAIServiceProvider),
-    chatStorage: ref.watch(aiChatStorageProvider),
-    ref: ref,
-  );
-});
+final aiChatProvider = NotifierProvider<AIChatNotifier, AIChatState>(
+  AIChatNotifier.new,
+);
