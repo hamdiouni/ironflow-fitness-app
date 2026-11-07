@@ -385,26 +385,34 @@ class AuthNotifier extends Notifier<AuthState> {
 
   /// Convert technical errors to user-friendly messages
   String _getUserFriendlyError(String error) {
-    if (error.contains('weak-password') || error.contains('too weak')) {
+    final lower = error.toLowerCase();
+    if (lower.contains('weak-password') || lower.contains('too weak')) {
       return 'Password is too weak. Use at least 6 characters.';
-    } else if (error.contains('email-already-in-use') || error.contains('already exists')) {
+    } else if (lower.contains('email-already-in-use') || lower.contains('already exists')) {
       return 'This email is already registered. Try logging in instead.';
-    } else if (error.contains('invalid-email') || error.contains('not valid')) {
+    } else if (lower.contains('invalid-email') || lower.contains('not valid')) {
       return 'Please enter a valid email address.';
-    } else if (error.contains('user-not-found') || error.contains('No user found')) {
+    } else if (lower.contains('user-not-found') || lower.contains('no user found')) {
       return 'No account found with this email. Please sign up first.';
-    } else if (error.contains('wrong-password') || error.contains('Wrong password')) {
+    } else if (lower.contains('wrong-password') || lower.contains('wrong password')) {
       return 'Incorrect password. Please try again.';
-    } else if (error.contains('cancelled')) {
+    } else if (lower.contains('operation-not-allowed') || lower.contains('not enabled')) {
+      return 'Email/Password sign-in is not enabled in Firebase Console. Please enable the Email/Password provider in project ironflow-5b79d (Authentication > Sign-in method).';
+    } else if (lower.contains('popup-closed') || lower.contains('closed before completing')) {
+      return 'Sign-in popup was closed before completing authentication.';
+    } else if (lower.contains('popup-blocked') || lower.contains('blocked by your browser') || lower.contains('cross-origin-opener-policy')) {
+      return 'Google sign-in popup was blocked by browser cross-origin policy. Please allow popups or use email sign-in.';
+    } else if (lower.contains('cancelled')) {
       return 'Sign in was cancelled.';
-    } else if (error.contains('network')) {
+    } else if (lower.contains('network')) {
       return 'Network error. Please check your connection.';
-    } else if (error.contains('Google Sign-In') || error.contains('not configured')) {
-      return 'Google Sign-In is not available yet. Please use email/password.';
-    } else if (error.contains('Apple Sign-In')) {
+    } else if (lower.contains('google sign-in') || lower.contains('not configured')) {
+      return 'Google Sign-In is not configured yet for this domain. Please enable Google in Firebase Console.';
+    } else if (lower.contains('apple sign-in')) {
       return 'Apple Sign-In is not available yet. Please use email/password.';
     } else {
-      return 'An error occurred. Please try again.';
+      final cleaned = error.replaceAll('Exception: ', '').trim();
+      return cleaned.isNotEmpty ? cleaned : 'An error occurred. Please try again.';
     }
   }
 

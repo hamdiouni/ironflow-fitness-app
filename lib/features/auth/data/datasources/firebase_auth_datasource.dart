@@ -252,8 +252,17 @@ class FirebaseAuthDataSourceImpl
         return Exception('No user found for that email.');
       case 'wrong-password':
         return Exception('Wrong password provided for that user.');
+      case 'operation-not-allowed':
+        return Exception(
+          'Email/Password sign-in is not enabled in the Firebase Console. '
+          'Please enable Email/Password under Authentication > Sign-in method in project ironflow-5b79d.',
+        );
+      case 'popup-closed-by-user':
+        return Exception('Sign-in popup was closed before completing authentication.');
+      case 'popup-blocked':
+        return Exception('Sign-in popup was blocked by your browser. Please allow popups for localhost / this domain.');
       default:
-        return Exception('Authentication error: ${e.message}');
+        return Exception('Authentication error: ${e.message ?? e.code}');
     }
   }
 }
