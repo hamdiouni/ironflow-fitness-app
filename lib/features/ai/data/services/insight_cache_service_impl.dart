@@ -70,6 +70,12 @@ class InsightCacheServiceImpl implements InsightCacheService {
         AppLogger.debug('✅ [InsightCache] Box already open');
         return;
       }
+
+      if (Hive.isBoxOpen(boxName)) {
+        _box = Hive.box<Map>(boxName);
+        AppLogger.debug('✅ [InsightCache] Reusing open Hive box: $boxName');
+        return;
+      }
       
       _box = await Hive.openBox<Map>(boxName);
       

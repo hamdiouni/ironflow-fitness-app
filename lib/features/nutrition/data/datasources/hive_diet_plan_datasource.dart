@@ -33,7 +33,9 @@ class HiveDietPlanDataSource {
   static const String boxName = 'diet_plan';
   static const String key = 'current_diet_plan';
 
-  Future<Box<Map>> get _box async => await Hive.openBox<Map>(boxName);
+  Future<Box<Map>> get _box async => Hive.isBoxOpen(boxName)
+      ? Hive.box<Map>(boxName)
+      : await Hive.openBox<Map>(boxName);
 
   String? _sessionUserId() {
     if (!Hive.isBoxOpen('auth_session')) return null;

@@ -18,7 +18,8 @@ class UserProfileStorage {
   static const _legacyDraftStepKey = 'draft_step';
   static const _legacyDraftDataKey = 'draft_data';
 
-  Future<Box> get _box async => Hive.openBox(_boxName);
+  Future<Box> get _box async =>
+      Hive.isBoxOpen(_boxName) ? Hive.box(_boxName) : Hive.openBox(_boxName);
 
   String? _resolveCurrentUserId(String? userId) {
     if (userId != null && userId.isNotEmpty) return userId;

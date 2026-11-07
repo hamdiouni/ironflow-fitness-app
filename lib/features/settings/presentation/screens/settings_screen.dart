@@ -254,7 +254,7 @@ class SettingsScreen extends ConsumerWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'STRIPE DARK DASHBOARD',
+                                  'DARK MODE',
                                   style: TextStyle(
                                     fontFamily: AppTypography.displayFontFamily,
                                     fontSize: 12,
@@ -265,8 +265,8 @@ class SettingsScreen extends ConsumerWidget {
                                 const SizedBox(height: 2),
                                 Text(
                                   isDark
-                                      ? 'Deep navy brand shell (#1C1E54)'
-                                      : 'Light mode canvas',
+                                      ? 'Soft & Layered charcoal canvas (#12131A)'
+                                      : 'Warm Linen light canvas (#F8F7F4)',
                                   style: TextStyle(
                                     fontFamily: AppTypography.bodyFontFamily,
                                     fontSize: 11,

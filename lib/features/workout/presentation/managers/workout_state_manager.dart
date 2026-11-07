@@ -25,8 +25,12 @@ class WorkoutStateManager implements RestTimerStatePersistence {
 
   Box<dynamic>? _box;
 
-  /// Opens the Hive box. Must be called before any other method.
+  /// Opens the Hive box (reusing the already-open encrypted box from HiveManager when present).
   Future<void> init() async {
+    if (Hive.isBoxOpen(_boxName)) {
+      _box = Hive.box<dynamic>(_boxName);
+      return;
+    }
     _box = await Hive.openBox<dynamic>(_boxName);
   }
 

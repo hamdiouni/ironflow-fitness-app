@@ -79,10 +79,10 @@ if ($Dev) {
     flutter run -d web-server --web-port=$Port --web-hostname=localhost
 } else {
     if (-not (Test-Path "build\web\index.html")) {
-        Write-Host "Building web bundle first (flutter build web)..." -ForegroundColor Cyan
-        flutter build web
+        Write-Host "Building web bundle first (flutter build web --release --pwa-strategy=none)..." -ForegroundColor Cyan
+        flutter build web --release --pwa-strategy=none
     }
-    Write-Host "Serving build\web on http://localhost:$Port..." -ForegroundColor Cyan
-    python -m http.server $Port --directory build\web
+    Write-Host "Serving build\web (No-Cache SPA) on http://localhost:$Port..." -ForegroundColor Cyan
+    python scripts\serve_web_nocache.py $Port build\web
 }
 

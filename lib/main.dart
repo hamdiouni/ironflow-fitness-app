@@ -65,10 +65,16 @@ void main() async {
       }
     }
 
-    // Initialize Firebase
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
+    // Initialize Firebase (best-effort so 100% offline cold boot never blocks UI)
+    try {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+    } catch (e) {
+      if (kDebugMode) {
+        AppLogger.debug('⚠️ Firebase initialization skipped/offline: $e');
+      }
+    }
 
     // Initialize Firebase App Check (staged monitor mode in Wave 1 Step 7)
     await AppCheckService.initialize();
@@ -153,6 +159,10 @@ void main() async {
     // Catch errors that occur outside of Flutter's error handling
     if (!kIsWeb) {
       FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    } else {
+      FlutterError.dumpErrorToConsole(
+        FlutterErrorDetails(exception: error, stack: stack),
+      );
     }
   });
 }

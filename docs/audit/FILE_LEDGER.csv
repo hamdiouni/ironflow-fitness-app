@@ -761,6 +761,8 @@ legal/PRIVACY_POLICY.md,root-config,230,no,N/A (non-lib),KEEP,Reviewed; conforms
 legal/TERMS_OF_SERVICE.md,root-config,366,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 lib/core/utils/retry_helper.dart,core,69,no,78.9%,KEEP,Exponential backoff retry helper with jitter,Low,Wave 5.6
 lib/features/ai/domain/services/ai_question_normalizer.dart,235,235,100.0%,KEEP,AI question normalizer and cost estimator service (Wave 6.1)
+lib/features/auth/data/services/local_sample_data_seeder.dart,435,0,N/A,KEEP,Offline-first local guest & interactive demo showcase Hive seeder (Wave 1/6 Web Launch)
+lib/features/auth/presentation/widgets/offline_access_section.dart,166,0,N/A,KEEP,Direction 4 Soft & Layered offline local access & demo card on Login/SignUp
 lib/features/body/domain/entities/muscle_recovery_status.dart,body/domain,128,no,22.7%,KEEP,Muscle recovery tiers and status models,low,Wave 4 - Body Map
 lib/features/body/domain/entities/muscle_region.dart,body/domain,246,no,100.0%,KEEP,Canonical 20-region anatomical muscle model,low,Wave 4 - Body Map
 lib/features/body/domain/services/muscle_recovery_calculator.dart,body/domain,289,no,87.5%,KEEP,Scientific recovery engine and volume load aggregator,low,Wave 4 - Body Map
@@ -773,10 +775,12 @@ lib/shared/presentation/components/medical_disclaimer_banner.dart,144,0,N/A,KEEP
 LICENSE,root-config,21,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 README.md,root-config,613,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 scripts/check_perf_budgets.py,scripts,123,no,N/A,KEEP,CI performance and size budget gate script,Low,Wave 5.1
+scripts/serve_web_nocache.py,70,0,N/A,KEEP,No-cache SPA HTTP server with strict Cache-Control headers for localhost web builds
 test/accessibility/text_scale_and_semantics_test.dart,test,156,no,N/A,KEEP,"Accessibility verification (reduced motion, semantics, 2x text scale)",Low,Wave 5.4
 test/core/utils/retry_helper_test.dart,test,82,no,N/A,KEEP,Unit tests for RetryHelper withExponentialBackoff,Low,Wave 5.6
 test/features/ai/ai_prompt_evaluation_test.dart,165,165,100.0%,KEEP,25-prompt golden evaluation suite with safety rubric (Wave 6.1)
 test/features/ai/ai_question_normalizer_test.dart,110,110,100.0%,KEEP,Unit tests for AI question normalization and cost estimator (Wave 6.1)
+test/features/auth/local_offline_and_demo_mode_test.dart,227,227,100.0%,KEEP,"Unit and widget regression tests for offline local mode, demo showcase, and Google auth error surfacing"
 test/features/body/domain/muscle_recovery_calculator_test.dart,test,157,no,0.0%,KEEP,Unit test suite for MuscleRecoveryCalculator,low,Wave 4 - Body Map
 test/features/body/domain/muscle_region_test.dart,test,66,no,0.0%,KEEP,Unit test suite for MuscleRegion canonical model,low,Wave 4 - Body Map
 test/features/body/presentation/body_map_paths_test.dart,test,110,no,0.0%,KEEP,Geometry and hit-test verification for BodyMapPaths,low,Wave 4 - Body Map

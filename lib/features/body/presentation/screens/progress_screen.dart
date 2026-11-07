@@ -158,11 +158,32 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen>
                 letterSpacing: 0.8,
               ),
               dividerColor: Colors.transparent,
+              labelPadding: const EdgeInsets.symmetric(horizontal: 6),
               tabs: const [
-                Tab(text: 'LIFTS & VOLUME'),
-                Tab(text: 'BODY MAP'),
-                Tab(text: 'BODY WEIGHT'),
-                Tab(text: 'PHOTOS'),
+                Tab(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text('LIFTS & VOLUME'),
+                  ),
+                ),
+                Tab(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text('BODY MAP'),
+                  ),
+                ),
+                Tab(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text('BODY WEIGHT'),
+                  ),
+                ),
+                Tab(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text('PHOTOS'),
+                  ),
+                ),
               ],
             ),
           ),

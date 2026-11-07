@@ -9,6 +9,7 @@ import 'package:progression_tracker/features/auth/presentation/providers/auth_no
 import 'package:progression_tracker/features/onboarding/presentation/providers/onboarding_provider.dart';
 import 'package:progression_tracker/shared/presentation/components/components.dart';
 import 'package:progression_tracker/shared/presentation/services/app_haptics.dart';
+import '../widgets/offline_access_section.dart';
 
 /// Stripe Design System Authentication Screen.
 class LoginScreen extends ConsumerStatefulWidget {
@@ -94,6 +95,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       await ref.read(authNotifierProvider.notifier).signInWithGoogle();
 
       if (!mounted) return;
+      if (!ref.read(authNotifierProvider).isAuthenticated) return;
       final isOnboarded = await ref.read(isOnboardedProvider.future);
       if (!mounted) return;
       if (isOnboarded) {
@@ -555,27 +557,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             : _handleGoogleSignIn,
                       ),
 
-                      if (kDebugMode) ...[
-                        const SizedBox(height: 12),
-                        AppButton(
-                          label: 'Explore Demo Account',
-                          variant: AppButtonVariant.ghost,
-                          isFullWidth: true,
-                          icon: Icon(
-                            Icons.auto_awesome_rounded,
-                            size: 18,
-                            color: tokens.kineticAccent,
-                          ),
-                          onPressed: authState.isLoading
-                              ? null
-                              : () async {
-                                  _fillDemoCredentials();
-                                  await _handleEmailSignIn();
-                                },
-                        ),
-                      ],
+                      const SizedBox(height: 16),
 
-                      const SizedBox(height: 28),
+                      OfflineAccessSection(
+                        postAuthRouteResolver: _resolvePostLoginRoute,
+                      ),
+
+                      const SizedBox(height: 24),
 
                       // Sign-up Link
                       Wrap(

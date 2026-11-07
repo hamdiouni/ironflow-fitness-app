@@ -14,16 +14,18 @@ abstract class FirebaseAuthDataSource implements AuthRemoteDataSource {}
 class FirebaseAuthDataSourceImpl
     implements FirebaseAuthDataSource, AuthRemoteDataSource {
   final firebase_auth.FirebaseAuth _firebaseAuth;
-  final GoogleSignIn _googleSignIn;
+  final GoogleSignIn? _googleSignIn;
 
   FirebaseAuthDataSourceImpl({
     firebase_auth.FirebaseAuth? firebaseAuth,
     GoogleSignIn? googleSignIn,
   })  : _firebaseAuth = firebaseAuth ?? firebase_auth.FirebaseAuth.instance,
         _googleSignIn = googleSignIn ??
-            GoogleSignIn(
-              scopes: const <String>['email', 'profile'],
-            );
+            (kIsWeb
+                ? null
+                : GoogleSignIn(
+                    scopes: const <String>['email', 'profile'],
+                  ));
 
   @override
   Future<User> signUpWithEmail({
@@ -83,7 +85,7 @@ class FirebaseAuthDataSourceImpl
           ..setCustomParameters(<String, String>{'prompt': 'select_account'});
         userCredential = await _firebaseAuth.signInWithPopup(provider);
       } else {
-        final googleUser = await _googleSignIn.signIn();
+        final googleUser = await _googleSignIn?.signIn();
         if (googleUser == null) {
           throw Exception('Google sign in cancelled');
         }
@@ -146,7 +148,7 @@ class FirebaseAuthDataSourceImpl
     try {
       await _firebaseAuth.signOut();
       try {
-        await _googleSignIn.signOut();
+        await _googleSignIn?.signOut();
       } catch (_) {
         // Best effort: the Firebase session is already closed. Google
         // plugin state must not turn a successful sign-out into a failure.
@@ -251,14 +253,20 @@ class FirebaseAuthDataSourceImpl
       case 'user-not-found':
         return Exception('No user found for that email.');
       case 'wrong-password':
-        return Exception('Wrong password provided for that user.');
+      case 'invalid-credential':
+        return Exception('Wrong password or invalid credentials provided.');
       case 'operation-not-allowed':
         return Exception(
           'Email/Password sign-in is not enabled in the Firebase Console. '
           'Please enable Email/Password under Authentication > Sign-in method in project ironflow-5b79d.',
         );
+      case 'unauthorized-domain':
+        return Exception(
+          'This domain is not authorized for Google Sign-In in Firebase Console. '
+          'Add localhost under Authentication > Settings > Authorized domains.',
+        );
       case 'popup-closed-by-user':
-        return Exception('Sign-in popup was closed before completing authentication.');
+        return Exception('popup-closed-by-user: Sign-in popup was closed before completing authentication.');
       case 'popup-blocked':
         return Exception('Sign-in popup was blocked by your browser. Please allow popups for localhost / this domain.');
       default:

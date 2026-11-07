@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>IronFlow — Direction 4: Before vs After Comparison</title>
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
+  <title>IronFlow v2.0 — Direction 4 &amp; Waves 0–6 Visual Verification Matrix</title>
   <style>
     :root {
       --bg: #12131A;
@@ -11,7 +12,6 @@
       --elevated: #272A38;
       --border: #30344A;
       --periwinkle: #A5B4FC;
-      --on-accent: #1E1B4B;
       --mint: #6EE7B7;
       --rose: #FDA4AF;
       --honey: #FCD34D;
@@ -27,10 +27,15 @@
       line-height: 1.5;
     }
     .header {
-      max-width: 1400px;
-      margin: 0 auto 32px;
+      max-width: 1440px;
+      margin: 0 auto 28px;
       border-bottom: 1px solid var(--border);
       padding-bottom: 24px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 16px;
     }
     .badge {
       display: inline-block;
@@ -38,30 +43,42 @@
       border-radius: 999px;
       background: rgba(165, 180, 252, 0.15);
       color: var(--periwinkle);
-      border: 1px solid rgba(165, 180, 252, 0.3);
+      border: 1px solid rgba(165, 180, 252, 0.35);
       font-size: 11px;
       font-weight: 700;
       letter-spacing: 0.08em;
       text-transform: uppercase;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
     }
     h1 {
       font-size: 28px;
       font-weight: 800;
       letter-spacing: -0.02em;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
     .subtitle {
       color: var(--muted);
-      font-size: 15px;
-      max-width: 800px;
+      font-size: 14.5px;
+      max-width: 860px;
+    }
+    .launch-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--periwinkle);
+      color: #1E1B4B;
+      font-weight: 800;
+      font-size: 13px;
+      text-decoration: none;
+      padding: 12px 20px;
+      border-radius: 999px;
     }
     .summary-bar {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
       gap: 16px;
-      max-width: 1400px;
-      margin: 0 auto 40px;
+      max-width: 1440px;
+      margin: 0 auto 36px;
     }
     .stat-pill {
       background: var(--card);
@@ -70,33 +87,30 @@
       padding: 16px 20px;
     }
     .stat-pill .label {
-      font-size: 12px;
+      font-size: 11px;
       color: var(--muted);
       text-transform: uppercase;
-      letter-spacing: 0.05em;
-      font-weight: 600;
+      letter-spacing: 0.06em;
+      font-weight: 700;
     }
     .stat-pill .val {
-      font-size: 20px;
+      font-size: 19px;
       font-weight: 800;
       color: var(--periwinkle);
       margin-top: 4px;
     }
     .section-title {
-      max-width: 1400px;
-      margin: 40px auto 16px;
+      max-width: 1440px;
+      margin: 42px auto 16px;
       font-size: 20px;
-      font-weight: 700;
+      font-weight: 800;
       color: var(--text);
-      display: flex;
-      align-items: center;
-      gap: 10px;
     }
     .gallery-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
       gap: 24px;
-      max-width: 1400px;
+      max-width: 1440px;
       margin: 0 auto;
     }
     .pair-card {
@@ -104,26 +118,36 @@
       border: 1px solid var(--border);
       border-radius: 20px;
       overflow: hidden;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
+      display: flex;
+      flex-direction: column;
     }
     .pair-header {
       padding: 14px 18px;
       background: var(--elevated);
       border-bottom: 1px solid var(--border);
       font-weight: 700;
-      font-size: 14px;
+      font-size: 13.5px;
       color: var(--text);
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 8px;
     }
     .pair-badge {
-      font-size: 11px;
-      padding: 2px 8px;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 3px 9px;
       border-radius: 999px;
-      background: rgba(110, 231, 183, 0.15);
+      background: rgba(110, 231, 183, 0.14);
       color: var(--mint);
-      border: 1px solid rgba(110, 231, 183, 0.3);
+      border: 1px solid rgba(110, 231, 183, 0.35);
+      white-space: nowrap;
+    }
+    .pair-badge.new-wave {
+      background: rgba(252, 211, 77, 0.15);
+      color: var(--honey);
+      border-color: rgba(252, 211, 77, 0.4);
     }
     .pair-body {
       display: grid;
@@ -131,6 +155,15 @@
       gap: 12px;
       padding: 14px;
       background: var(--bg);
+      flex: 1;
+    }
+    .pair-body.single-body {
+      grid-template-columns: 1fr;
+      justify-items: center;
+    }
+    .single-col {
+      max-width: 280px;
+      width: 100%;
     }
     .screen-col {
       display: flex;
@@ -138,23 +171,23 @@
       gap: 8px;
     }
     .screen-tag {
-      font-size: 11px;
+      font-size: 10.5px;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.05em;
       text-align: center;
-      padding: 4px 0;
+      padding: 4px 6px;
       border-radius: 6px;
     }
     .screen-tag.before {
-      background: rgba(253, 164, 175, 0.15);
+      background: rgba(253, 164, 175, 0.14);
       color: var(--rose);
       border: 1px solid rgba(253, 164, 175, 0.3);
     }
     .screen-tag.after {
       background: rgba(165, 180, 252, 0.15);
       color: var(--periwinkle);
-      border: 1px solid rgba(165, 180, 252, 0.3);
+      border: 1px solid rgba(165, 180, 252, 0.35);
     }
     .screen-img {
       width: 100%;
@@ -174,259 +207,594 @@
 </head>
 <body>
   <div class="header">
-    <div class="badge">Direction 4: Soft &amp; Layered — Final Migration</div>
-    <h1>IronFlow UI/UX Upgrade: Visual Verification Matrix</h1>
-    <p class="subtitle">Complete side-by-side verification of genuine Before and After screens across all core domains following the UI UX Pro Max upgrade.</p>
+    <div>
+      <div class="badge">Direction 4: Soft &amp; Layered + All 7 Production Readiness Waves (Waves 0–6)</div>
+      <h1>IronFlow v2.0 — Complete Before vs After Visual Verification</h1>
+      <p class="subtitle">Freshly captured in live Google Chrome from today's release build (November 7, 2026) across 33 surfaces, including the Interactive 18-Region 2D Vector Body Map, AES-256 Offline Local Access, Sharded Static Catalogs, and AI Safety Disclaimers.</p>
+    </div>
+    <a class="launch-btn" href="http://localhost:8080/#/login" target="_blank">Open Live App (localhost:8080) &rarr;</a>
   </div>
 
   <div class="summary-bar">
     <div class="stat-pill">
-      <div class="label">Total Surfaces</div>
-      <div class="val">139 Verified</div>
+      <div class="label">Visual Surfaces Captured</div>
+      <div class="val">33 Live Screens</div>
     </div>
     <div class="stat-pill">
-      <div class="label">Regression Tests</div>
-      <div class="val">812 / 812 Passed</div>
+      <div class="label">Design Direction</div>
+      <div class="val">Direction 4 (Periwinkle)</div>
     </div>
     <div class="stat-pill">
-      <div class="label">Contrast Ratio</div>
-      <div class="val">8.6:1 (WCAG AAA)</div>
+      <div class="label">Production Waves</div>
+      <div class="val">Waves 0–6 Complete</div>
     </div>
     <div class="stat-pill">
-      <div class="label">Web Build</div>
-      <div class="val">Production Ready</div>
+      <div class="label">Storage &amp; Auth</div>
+      <div class="val">AES-256 + Offline Mode</div>
     </div>
   </div>
 
-  <!-- Today & Home -->
-  <div class="section-title">1. Today &amp; Navigation Shell</div>
+  <div class="section-title">1. Today / Home & Responsive Navigation Shell</div>
   <div class="gallery-grid">
     <div class="pair-card">
       <div class="pair-header">
         <span>Today / Home (Dark Mode, 390×844)</span>
-        <span class="pair-badge">MIGRATED</span>
+        <span class="pair-badge">DIRECTION 4 + WAVES 0–6</span>
       </div>
       <div class="pair-body">
         <div class="screen-col">
-          <div class="screen-tag before">Before</div>
-          <img class="screen-img" src="before/before_home_dark_390x844.png" alt="Before Home Dark">
+          <div class="screen-tag before">Before (Legacy)</div>
+          <img class="screen-img" loading="lazy" src="before/before_home_dark_390x844.png?v=20261107_waves0to6" alt="Before Today / Home (Dark Mode, 390×844)">
         </div>
         <div class="screen-col">
-          <div class="screen-tag after">After (Direction 4)</div>
-          <img class="screen-img" src="after/after_home_dark_390x844.png" alt="After Home Dark">
+          <div class="screen-tag after">After (v2.0 Live Chrome)</div>
+          <img class="screen-img" loading="lazy" src="after/after_home_dark_390x844.png?v=20261107_waves0to6" alt="After Today / Home (Dark Mode, 390×844)">
         </div>
       </div>
-      <div class="pair-notes">Replaced harsh borders with soft layered panels, pill active indicators, and calm periwinkle tints.</div>
+      <div class="pair-notes">Direction 4 Soft & Layered charcoal canvas (#12131A), Wave 4 HeroReadinessBanner, active Upper/Lower session card, macro progress, and contextual AI insight.</div>
     </div>
-
     <div class="pair-card">
       <div class="pair-header">
         <span>Today / Home (Light Mode, 390×844)</span>
-        <span class="pair-badge">MIGRATED</span>
+        <span class="pair-badge">DIRECTION 4 + WAVES 0–6</span>
       </div>
       <div class="pair-body">
         <div class="screen-col">
-          <div class="screen-tag before">Before</div>
-          <img class="screen-img" src="before/before_home_light_390x844.png" alt="Before Home Light">
+          <div class="screen-tag before">Before (Legacy)</div>
+          <img class="screen-img" loading="lazy" src="before/before_home_light_390x844.png?v=20261107_waves0to6" alt="Before Today / Home (Light Mode, 390×844)">
         </div>
         <div class="screen-col">
-          <div class="screen-tag after">After (Direction 4)</div>
-          <img class="screen-img" src="after/after_home_light_390x844.png" alt="After Home Light">
+          <div class="screen-tag after">After (v2.0 Live Chrome)</div>
+          <img class="screen-img" loading="lazy" src="after/after_home_light_390x844.png?v=20261107_waves0to6" alt="After Today / Home (Light Mode, 390×844)">
         </div>
       </div>
-      <div class="pair-notes">Warm Linen canvas with Deep Indigo high-contrast accents and soft ambient card shadows.</div>
+      <div class="pair-notes">Warm Linen (#F8F7F4) canvas with Deep Indigo AAA-contrast accents and frame-light elevated cards.</div>
     </div>
-
     <div class="pair-card">
       <div class="pair-header">
-        <span>Today Desktop (1280×800)</span>
-        <span class="pair-badge">MIGRATED</span>
+        <span>Today Desktop Shell (1280×800)</span>
+        <span class="pair-badge">DIRECTION 4 + WAVES 0–6</span>
       </div>
       <div class="pair-body">
         <div class="screen-col">
-          <div class="screen-tag before">Before</div>
-          <img class="screen-img" src="before/before_home_wide_1280x800.png" alt="Before Home Desktop">
+          <div class="screen-tag before">Before (Legacy)</div>
+          <img class="screen-img" loading="lazy" src="before/before_home_wide_1280x800.png?v=20261107_waves0to6" alt="Before Today Desktop Shell (1280×800)">
         </div>
         <div class="screen-col">
-          <div class="screen-tag after">After (Direction 4)</div>
-          <img class="screen-img" src="after/after_home_wide_1280x800.png" alt="After Home Desktop">
+          <div class="screen-tag after">After (v2.0 Live Chrome)</div>
+          <img class="screen-img" loading="lazy" src="after/after_home_wide_1280x800.png?v=20261107_waves0to6" alt="After Today Desktop Shell (1280×800)">
         </div>
       </div>
-      <div class="pair-notes">Replaced unconstrained stretching with left NavigationRail and 1120dp centered container.</div>
+      <div class="pair-notes">Left NavigationRail with centered 1120dp responsive workspace replacing unconstrained full-width stretching.</div>
     </div>
   </div>
-
-  <!-- Auth -->
-  <div class="section-title">2. Authentication &amp; Onboarding</div>
+  <div class="section-title">2. Wave 4 Flagship: Interactive 18-Region 2D Body Map & Progress Analytics</div>
   <div class="gallery-grid">
     <div class="pair-card">
       <div class="pair-header">
-        <span>Login Screen (390×844)</span>
-        <span class="pair-badge">MIGRATED</span>
+        <span>Progress Analytics & 4-Tab Header (390×844)</span>
+        <span class="pair-badge">DIRECTION 4 + WAVES 0–6</span>
       </div>
       <div class="pair-body">
         <div class="screen-col">
-          <div class="screen-tag before">Before</div>
-          <img class="screen-img" src="before/before_login_390x844.png" alt="Before Login">
+          <div class="screen-tag before">Before (Legacy)</div>
+          <img class="screen-img" loading="lazy" src="before/before_progress_lifts_390x844.png?v=20261107_waves0to6" alt="Before Progress Analytics & 4-Tab Header (390×844)">
         </div>
         <div class="screen-col">
-          <div class="screen-tag after">After (Direction 4)</div>
-          <img class="screen-img" src="after/after_login_390x844.png" alt="After Login">
+          <div class="screen-tag after">After (v2.0 Live Chrome)</div>
+          <img class="screen-img" loading="lazy" src="after/after_progress_lifts_390x844.png?v=20261107_waves0to6" alt="After Progress Analytics & 4-Tab Header (390×844)">
         </div>
       </div>
-      <div class="pair-notes">Plain English copy ("Welcome Back"), 440dp centered container, responsive Wrap footer preventing overflow.</div>
+      <div class="pair-notes">Upgraded 4-tab bar (LIFTS & VOLUME, BODY MAP, BODY WEIGHT, PHOTOS) with FittedBox anti-clipping and 1RM/Volume progression charts.</div>
     </div>
-
+    <div class="pair-card">
+      <div class="pair-header">
+        <span>Wave 4: 2D Vector Body Map — Front Recovery</span>
+        <span class="pair-badge new-wave">NEW WAVE 4</span>
+      </div>
+      <div class="pair-body single-body">
+        <div class="screen-col single-col">
+          <div class="screen-tag after">v2.0 Live Chrome Capture</div>
+          <img class="screen-img single-img" loading="lazy" src="after/after_bodymap_front_390x844.png?v=20261107_waves0to6" alt="Wave 4: 2D Vector Body Map — Front Recovery">
+        </div>
+      </div>
+      <div class="pair-notes">Sub-millisecond 2D anatomical polygon rendering across anterior muscle groups colored by real exponential recovery state.</div>
+    </div>
+    <div class="pair-card">
+      <div class="pair-header">
+        <span>Wave 4: 2D Vector Body Map — Posterior Recovery</span>
+        <span class="pair-badge new-wave">NEW WAVE 4</span>
+      </div>
+      <div class="pair-body single-body">
+        <div class="screen-col single-col">
+          <div class="screen-tag after">v2.0 Live Chrome Capture</div>
+          <img class="screen-img single-img" loading="lazy" src="after/after_bodymap_back_390x844.png?v=20261107_waves0to6" alt="Wave 4: 2D Vector Body Map — Posterior Recovery">
+        </div>
+      </div>
+      <div class="pair-notes">Posterior anatomical map (Traps, Rear Delts, Lats, Upper/Lower Back, Glutes, Hamstrings, Calves) with segmented Front/Back toggle.</div>
+    </div>
+    <div class="pair-card">
+      <div class="pair-header">
+        <span>Wave 4 + 6: Muscle Recovery Diagnostics Sheet</span>
+        <span class="pair-badge new-wave">NEW WAVE 4</span>
+      </div>
+      <div class="pair-body single-body">
+        <div class="screen-col single-col">
+          <div class="screen-tag after">v2.0 Live Chrome Capture</div>
+          <img class="screen-img single-img" loading="lazy" src="after/after_muscle_detail_sheet_390x844.png?v=20261107_waves0to6" alt="Wave 4 + 6: Muscle Recovery Diagnostics Sheet">
+        </div>
+      </div>
+      <div class="pair-notes">Tapping any muscle polygon opens recovery %, hours-until-fresh countdown, manual soreness toggle, 7-day sets, and MedicalDisclaimerBanner.</div>
+    </div>
+    <div class="pair-card">
+      <div class="pair-header">
+        <span>Wave 4: 7-Day Set Volume Heatmap Mode</span>
+        <span class="pair-badge new-wave">NEW WAVE 4</span>
+      </div>
+      <div class="pair-body single-body">
+        <div class="screen-col single-col">
+          <div class="screen-tag after">v2.0 Live Chrome Capture</div>
+          <img class="screen-img single-img" loading="lazy" src="after/after_bodymap_heatmap_390x844.png?v=20261107_waves0to6" alt="Wave 4: 7-Day Set Volume Heatmap Mode">
+        </div>
+      </div>
+      <div class="pair-notes">One-tap toggle between Recovery Diagnostics and 7-Day Set Volume Heatmap intensity.</div>
+    </div>
+    <div class="pair-card">
+      <div class="pair-header">
+        <span>Body Weight & Circumference Trends (390×844)</span>
+        <span class="pair-badge">DIRECTION 4 + WAVES 0–6</span>
+      </div>
+      <div class="pair-body">
+        <div class="screen-col">
+          <div class="screen-tag before">Before (Legacy)</div>
+          <img class="screen-img" loading="lazy" src="before/before_progress_weight_390x844.png?v=20261107_waves0to6" alt="Before Body Weight & Circumference Trends (390×844)">
+        </div>
+        <div class="screen-col">
+          <div class="screen-tag after">After (v2.0 Live Chrome)</div>
+          <img class="screen-img" loading="lazy" src="after/after_progress_weight_390x844.png?v=20261107_waves0to6" alt="After Body Weight & Circumference Trends (390×844)">
+        </div>
+      </div>
+      <div class="pair-notes">Smoothed weight trajectory (78.4 kg → 79.6 kg) and body measurement delta tracking.</div>
+    </div>
+  </div>
+  <div class="section-title">3. Wave 1 Authentication, AES-256 Offline Local Access & Onboarding</div>
+  <div class="gallery-grid">
+    <div class="pair-card">
+      <div class="pair-header">
+        <span>Brand Splash Screen (390×844)</span>
+        <span class="pair-badge">DIRECTION 4 + WAVES 0–6</span>
+      </div>
+      <div class="pair-body">
+        <div class="screen-col">
+          <div class="screen-tag before">Before (Legacy)</div>
+          <img class="screen-img" loading="lazy" src="before/before_splash_390x844.png?v=20261107_waves0to6" alt="Before Brand Splash Screen (390×844)">
+        </div>
+        <div class="screen-col">
+          <div class="screen-tag after">After (v2.0 Live Chrome)</div>
+          <img class="screen-img" loading="lazy" src="after/after_splash_390x844.png?v=20261107_waves0to6" alt="After Brand Splash Screen (390×844)">
+        </div>
+      </div>
+      <div class="pair-notes">Zero-crash cold boot reusing AES-256 encrypted Hive boxes cleanly.</div>
+    </div>
+    <div class="pair-card">
+      <div class="pair-header">
+        <span>Login & Offline-First Local Access (390×844)</span>
+        <span class="pair-badge">DIRECTION 4 + WAVES 0–6</span>
+      </div>
+      <div class="pair-body">
+        <div class="screen-col">
+          <div class="screen-tag before">Before (Legacy)</div>
+          <img class="screen-img" loading="lazy" src="before/before_login_390x844.png?v=20261107_waves0to6" alt="Before Login & Offline-First Local Access (390×844)">
+        </div>
+        <div class="screen-col">
+          <div class="screen-tag after">After (v2.0 Live Chrome)</div>
+          <img class="screen-img" loading="lazy" src="after/after_login_390x844.png?v=20261107_waves0to6" alt="After Login & Offline-First Local Access (390×844)">
+        </div>
+      </div>
+      <div class="pair-notes">Removed COOP/COEP popup blockers; added AES-256 Continue Offline (Local Mode) and Explore Live Demo showcase.</div>
+    </div>
+    <div class="pair-card">
+      <div class="pair-header">
+        <span>Login Desktop Card (1280×800)</span>
+        <span class="pair-badge">DIRECTION 4 + WAVES 0–6</span>
+      </div>
+      <div class="pair-body">
+        <div class="screen-col">
+          <div class="screen-tag before">Before (Legacy)</div>
+          <img class="screen-img" loading="lazy" src="before/before_login_1280x800.png?v=20261107_waves0to6" alt="Before Login Desktop Card (1280×800)">
+        </div>
+        <div class="screen-col">
+          <div class="screen-tag after">After (v2.0 Live Chrome)</div>
+          <img class="screen-img" loading="lazy" src="after/after_login_1280x800.png?v=20261107_waves0to6" alt="After Login Desktop Card (1280×800)">
+        </div>
+      </div>
+      <div class="pair-notes">Centered 440dp authentication card on wide desktop viewports.</div>
+    </div>
     <div class="pair-card">
       <div class="pair-header">
         <span>Sign Up Screen (390×844)</span>
-        <span class="pair-badge">MIGRATED</span>
+        <span class="pair-badge">DIRECTION 4 + WAVES 0–6</span>
       </div>
       <div class="pair-body">
         <div class="screen-col">
-          <div class="screen-tag before">Before</div>
-          <img class="screen-img" src="before/before_signup_390x844.png" alt="Before Signup">
+          <div class="screen-tag before">Before (Legacy)</div>
+          <img class="screen-img" loading="lazy" src="before/before_signup_390x844.png?v=20261107_waves0to6" alt="Before Sign Up Screen (390×844)">
         </div>
         <div class="screen-col">
-          <div class="screen-tag after">After (Direction 4)</div>
-          <img class="screen-img" src="after/after_signup_390x844.png" alt="After Signup">
+          <div class="screen-tag after">After (v2.0 Live Chrome)</div>
+          <img class="screen-img" loading="lazy" src="after/after_signup_390x844.png?v=20261107_waves0to6" alt="After Sign Up Screen (390×844)">
         </div>
       </div>
-      <div class="pair-notes">Replaced dense paragraphs with concise guidelines, soft 12dp input fields, and pill CTA buttons.</div>
+      <div class="pair-notes">Clear password guidance, Firebase error translation, and instant local offline option.</div>
     </div>
-
     <div class="pair-card">
       <div class="pair-header">
-        <span>Onboarding Wizard (390×844)</span>
-        <span class="pair-badge">MIGRATED</span>
+        <span>7-Step Onboarding Wizard (390×844)</span>
+        <span class="pair-badge">DIRECTION 4 + WAVES 0–6</span>
       </div>
       <div class="pair-body">
         <div class="screen-col">
-          <div class="screen-tag before">Before</div>
-          <img class="screen-img" src="before/before_onboarding_step1_390x844.png" alt="Before Onboarding">
+          <div class="screen-tag before">Before (Legacy)</div>
+          <img class="screen-img" loading="lazy" src="before/before_onboarding_step1_390x844.png?v=20261107_waves0to6" alt="Before 7-Step Onboarding Wizard (390×844)">
         </div>
         <div class="screen-col">
-          <div class="screen-tag after">After (Direction 4)</div>
-          <img class="screen-img" src="after/after_onboarding_step1_390x844.png" alt="After Onboarding">
+          <div class="screen-tag after">After (v2.0 Live Chrome)</div>
+          <img class="screen-img" loading="lazy" src="after/after_onboarding_step1_390x844.png?v=20261107_waves0to6" alt="After 7-Step Onboarding Wizard (390×844)">
         </div>
       </div>
-      <div class="pair-notes">Smooth stepper progression with 48dp tactile option cards and soft periwinkle selection indicator.</div>
+      <div class="pair-notes">Local-only guest accounts route cleanly into the 7-step personalized program & macro wizard.</div>
     </div>
   </div>
-
-  <!-- Workouts -->
-  <div class="section-title">3. Workout &amp; Training Flow</div>
+  <div class="section-title">4. Waves 2 & 3 Workouts, Active Session & 175-Exercise Static Catalog</div>
   <div class="gallery-grid">
     <div class="pair-card">
       <div class="pair-header">
-        <span>Active Workout (390×844)</span>
-        <span class="pair-badge">MIGRATED</span>
+        <span>Train Hub & Active Split (390×844)</span>
+        <span class="pair-badge">DIRECTION 4 + WAVES 0–6</span>
       </div>
       <div class="pair-body">
         <div class="screen-col">
-          <div class="screen-tag before">Before</div>
-          <img class="screen-img" src="before/before_active_workout_390x844.png" alt="Before Active Workout">
+          <div class="screen-tag before">Before (Legacy)</div>
+          <img class="screen-img" loading="lazy" src="before/before_workout_390x844.png?v=20261107_waves0to6" alt="Before Train Hub & Active Split (390×844)">
         </div>
         <div class="screen-col">
-          <div class="screen-tag after">After (Direction 4)</div>
-          <img class="screen-img" src="after/after_active_workout_390x844.png" alt="After Active Workout">
+          <div class="screen-tag after">After (v2.0 Live Chrome)</div>
+          <img class="screen-img" loading="lazy" src="after/after_workout_390x844.png?v=20261107_waves0to6" alt="After Train Hub & Active Split (390×844)">
         </div>
       </div>
-      <div class="pair-notes">48dp set input steppers, soft rest timer countdown, and cushioned complete button.</div>
+      <div class="pair-notes">Active 4-Day Upper/Lower hypertrophy program with instant session launch.</div>
     </div>
-
     <div class="pair-card">
       <div class="pair-header">
-        <span>Workout Summary (390×844)</span>
-        <span class="pair-badge">MIGRATED</span>
+        <span>Active Workout Logger (390×844)</span>
+        <span class="pair-badge">DIRECTION 4 + WAVES 0–6</span>
       </div>
       <div class="pair-body">
         <div class="screen-col">
-          <div class="screen-tag before">Before</div>
-          <img class="screen-img" src="before/before_workout_summary_390x844.png" alt="Before Workout Summary">
+          <div class="screen-tag before">Before (Legacy)</div>
+          <img class="screen-img" loading="lazy" src="before/before_active_workout_390x844.png?v=20261107_waves0to6" alt="Before Active Workout Logger (390×844)">
         </div>
         <div class="screen-col">
-          <div class="screen-tag after">After (Direction 4)</div>
-          <img class="screen-img" src="after/after_workout_summary_390x844.png" alt="After Workout Summary">
+          <div class="screen-tag after">After (v2.0 Live Chrome)</div>
+          <img class="screen-img" loading="lazy" src="after/after_active_workout_390x844.png?v=20261107_waves0to6" alt="After Active Workout Logger (390×844)">
         </div>
       </div>
-      <div class="pair-notes">Tactile celebration badge, soft volume stat pills, and streamlined recovery highlights.</div>
+      <div class="pair-notes">48dp tactile weight/rep/RPE controls, rest timer persistence, and crash-safe encrypted state.</div>
     </div>
-
+    <div class="pair-card">
+      <div class="pair-header">
+        <span>Post-Workout Summary & Recovery Impact (390×844)</span>
+        <span class="pair-badge">DIRECTION 4 + WAVES 0–6</span>
+      </div>
+      <div class="pair-body">
+        <div class="screen-col">
+          <div class="screen-tag before">Before (Legacy)</div>
+          <img class="screen-img" loading="lazy" src="before/before_workout_summary_390x844.png?v=20261107_waves0to6" alt="Before Post-Workout Summary & Recovery Impact (390×844)">
+        </div>
+        <div class="screen-col">
+          <div class="screen-tag after">After (v2.0 Live Chrome)</div>
+          <img class="screen-img" loading="lazy" src="after/after_workout_summary_390x844.png?v=20261107_waves0to6" alt="After Post-Workout Summary & Recovery Impact (390×844)">
+        </div>
+      </div>
+      <div class="pair-notes">Canonical Wave 2 summary ordering with PR badges, progression suggestions, and muscle recovery impact.</div>
+    </div>
     <div class="pair-card">
       <div class="pair-header">
         <span>Workout History (390×844)</span>
-        <span class="pair-badge">MIGRATED</span>
+        <span class="pair-badge">DIRECTION 4 + WAVES 0–6</span>
       </div>
       <div class="pair-body">
         <div class="screen-col">
-          <div class="screen-tag before">Before</div>
-          <img class="screen-img" src="before/before_workout_history_390x844.png" alt="Before History">
+          <div class="screen-tag before">Before (Legacy)</div>
+          <img class="screen-img" loading="lazy" src="before/before_workout_history_390x844.png?v=20261107_waves0to6" alt="Before Workout History (390×844)">
         </div>
         <div class="screen-col">
-          <div class="screen-tag after">After (Direction 4)</div>
-          <img class="screen-img" src="after/after_workout_history_390x844.png" alt="After History">
+          <div class="screen-tag after">After (v2.0 Live Chrome)</div>
+          <img class="screen-img" loading="lazy" src="after/after_workout_history_390x844.png?v=20261107_waves0to6" alt="After Workout History (390×844)">
         </div>
       </div>
-      <div class="pair-notes">Fixed 18px horizontal layout overflow permanently via adaptive Wrap widget; 1-line empty state.</div>
+      <div class="pair-notes">Populated multi-session training log with adaptive Wrap chips eliminating horizontal overflow.</div>
+    </div>
+    <div class="pair-card">
+      <div class="pair-header">
+        <span>Program Selection (390×844)</span>
+        <span class="pair-badge">DIRECTION 4 + WAVES 0–6</span>
+      </div>
+      <div class="pair-body">
+        <div class="screen-col">
+          <div class="screen-tag before">Before (Legacy)</div>
+          <img class="screen-img" loading="lazy" src="before/before_program_selection_390x844.png?v=20261107_waves0to6" alt="Before Program Selection (390×844)">
+        </div>
+        <div class="screen-col">
+          <div class="screen-tag after">After (v2.0 Live Chrome)</div>
+          <img class="screen-img" loading="lazy" src="after/after_program_selection_390x844.png?v=20261107_waves0to6" alt="After Program Selection (390×844)">
+        </div>
+      </div>
+      <div class="pair-notes">Curated science-based split templates.</div>
+    </div>
+    <div class="pair-card">
+      <div class="pair-header">
+        <span>Program Editor (390×844)</span>
+        <span class="pair-badge">DIRECTION 4 + WAVES 0–6</span>
+      </div>
+      <div class="pair-body">
+        <div class="screen-col">
+          <div class="screen-tag before">Before (Legacy)</div>
+          <img class="screen-img" loading="lazy" src="before/before_program_editor_390x844.png?v=20261107_waves0to6" alt="Before Program Editor (390×844)">
+        </div>
+        <div class="screen-col">
+          <div class="screen-tag after">After (v2.0 Live Chrome)</div>
+          <img class="screen-img" loading="lazy" src="after/after_program_editor_390x844.png?v=20261107_waves0to6" alt="After Program Editor (390×844)">
+        </div>
+      </div>
+      <div class="pair-notes">Custom day, exercise, and target rep-range editor.</div>
+    </div>
+    <div class="pair-card">
+      <div class="pair-header">
+        <span>Sharded 175-Exercise Catalog (390×844)</span>
+        <span class="pair-badge">DIRECTION 4 + WAVES 0–6</span>
+      </div>
+      <div class="pair-body">
+        <div class="screen-col">
+          <div class="screen-tag before">Before (Legacy)</div>
+          <img class="screen-img" loading="lazy" src="before/before_exercise_catalog_390x844.png?v=20261107_waves0to6" alt="Before Sharded 175-Exercise Catalog (390×844)">
+        </div>
+        <div class="screen-col">
+          <div class="screen-tag after">After (v2.0 Live Chrome)</div>
+          <img class="screen-img" loading="lazy" src="after/after_exercise_catalog_390x844.png?v=20261107_waves0to6" alt="After Sharded 175-Exercise Catalog (390×844)">
+        </div>
+      </div>
+      <div class="pair-notes">Wave 3 domain-sharded static catalog with instant muscle & equipment filtering.</div>
+    </div>
+    <div class="pair-card">
+      <div class="pair-header">
+        <span>Exercise Catalog Desktop Grid (1280×800)</span>
+        <span class="pair-badge">DIRECTION 4 + WAVES 0–6</span>
+      </div>
+      <div class="pair-body">
+        <div class="screen-col">
+          <div class="screen-tag before">Before (Legacy)</div>
+          <img class="screen-img" loading="lazy" src="before/before_exercise_catalog_wide_1280x800.png?v=20261107_waves0to6" alt="Before Exercise Catalog Desktop Grid (1280×800)">
+        </div>
+        <div class="screen-col">
+          <div class="screen-tag after">After (v2.0 Live Chrome)</div>
+          <img class="screen-img" loading="lazy" src="after/after_exercise_catalog_wide_1280x800.png?v=20261107_waves0to6" alt="After Exercise Catalog Desktop Grid (1280×800)">
+        </div>
+      </div>
+      <div class="pair-notes">Responsive multi-column maxCrossAxisExtent grid on wide viewports.</div>
+    </div>
+    <div class="pair-card">
+      <div class="pair-header">
+        <span>Exercise Detail & Progression (390×844)</span>
+        <span class="pair-badge">DIRECTION 4 + WAVES 0–6</span>
+      </div>
+      <div class="pair-body">
+        <div class="screen-col">
+          <div class="screen-tag before">Before (Legacy)</div>
+          <img class="screen-img" loading="lazy" src="before/before_exercise_detail_390x844.png?v=20261107_waves0to6" alt="Before Exercise Detail & Progression (390×844)">
+        </div>
+        <div class="screen-col">
+          <div class="screen-tag after">After (v2.0 Live Chrome)</div>
+          <img class="screen-img" loading="lazy" src="after/after_exercise_detail_390x844.png?v=20261107_waves0to6" alt="After Exercise Detail & Progression (390×844)">
+        </div>
+      </div>
+      <div class="pair-notes">Form cues, primary/secondary muscle tags, and historical Bench Press progression.</div>
     </div>
   </div>
-
-  <!-- Food & Fuel -->
-  <div class="section-title">4. Food, Fuel &amp; Nutrition</div>
+  <div class="section-title">5. Wave 3 Nutrition, 254-Food Static Catalog & Macro Tracking</div>
   <div class="gallery-grid">
     <div class="pair-card">
       <div class="pair-header">
-        <span>Fuel &amp; Nutrition (390×844)</span>
-        <span class="pair-badge">MIGRATED</span>
+        <span>Daily Fuel & Macros (390×844)</span>
+        <span class="pair-badge">DIRECTION 4 + WAVES 0–6</span>
       </div>
       <div class="pair-body">
         <div class="screen-col">
-          <div class="screen-tag before">Before</div>
-          <img class="screen-img" src="before/before_nutrition_390x844.png" alt="Before Nutrition">
+          <div class="screen-tag before">Before (Legacy)</div>
+          <img class="screen-img" loading="lazy" src="before/before_nutrition_390x844.png?v=20261107_waves0to6" alt="Before Daily Fuel & Macros (390×844)">
         </div>
         <div class="screen-col">
-          <div class="screen-tag after">After (Direction 4)</div>
-          <img class="screen-img" src="after/after_nutrition_390x844.png" alt="After Nutrition">
+          <div class="screen-tag after">After (v2.0 Live Chrome)</div>
+          <img class="screen-img" loading="lazy" src="after/after_nutrition_390x844.png?v=20261107_waves0to6" alt="After Daily Fuel & Macros (390×844)">
         </div>
       </div>
-      <div class="pair-notes">Soothing macro gauge rings, 1-tap quick re-log chips with Undo, and frame-light meal cards.</div>
+      <div class="pair-notes">Macro wheel ring, remaining macro bars, 3 logged meals, and budget-aware suggested diet plan.</div>
     </div>
-
     <div class="pair-card">
       <div class="pair-header">
-        <span>Food Search &amp; Add Sheet (390×844)</span>
-        <span class="pair-badge">MIGRATED</span>
+        <span>Instant 254-Food Search (390×844)</span>
+        <span class="pair-badge">DIRECTION 4 + WAVES 0–6</span>
       </div>
       <div class="pair-body">
         <div class="screen-col">
-          <div class="screen-tag before">Before</div>
-          <img class="screen-img" src="before/before_food_search_390x844.png" alt="Before Food Search">
+          <div class="screen-tag before">Before (Legacy)</div>
+          <img class="screen-img" loading="lazy" src="before/before_food_search_390x844.png?v=20261107_waves0to6" alt="Before Instant 254-Food Search (390×844)">
         </div>
         <div class="screen-col">
-          <div class="screen-tag after">After (Direction 4)</div>
-          <img class="screen-img" src="after/after_food_search_390x844.png" alt="After Food Search">
+          <div class="screen-tag after">After (v2.0 Live Chrome)</div>
+          <img class="screen-img" loading="lazy" src="after/after_food_search_390x844.png?v=20261107_waves0to6" alt="After Instant 254-Food Search (390×844)">
         </div>
       </div>
-      <div class="pair-notes">44dp touch filter chips, live reactive macro preview, and 560dp centered bottom sheet.</div>
+      <div class="pair-notes">100% offline verified food catalog with category chips and live macro preview.</div>
     </div>
-
     <div class="pair-card">
       <div class="pair-header">
-        <span>Exercise Catalog (390×844)</span>
-        <span class="pair-badge">MIGRATED</span>
+        <span>Nutrition History (390×844)</span>
+        <span class="pair-badge">DIRECTION 4 + WAVES 0–6</span>
       </div>
       <div class="pair-body">
         <div class="screen-col">
-          <div class="screen-tag before">Before</div>
-          <img class="screen-img" src="before/before_exercise_catalog_390x844.png" alt="Before Exercise Catalog">
+          <div class="screen-tag before">Before (Legacy)</div>
+          <img class="screen-img" loading="lazy" src="before/before_nutrition_history_390x844.png?v=20261107_waves0to6" alt="Before Nutrition History (390×844)">
         </div>
         <div class="screen-col">
-          <div class="screen-tag after">After (Direction 4)</div>
-          <img class="screen-img" src="after/after_exercise_catalog_390x844.png" alt="After Exercise Catalog">
+          <div class="screen-tag after">After (v2.0 Live Chrome)</div>
+          <img class="screen-img" loading="lazy" src="after/after_nutrition_history_390x844.png?v=20261107_waves0to6" alt="After Nutrition History (390×844)">
         </div>
       </div>
-      <div class="pair-notes">Adaptive multi-column grid via maxCrossAxisExtent, 44dp equipment chips, and smooth video player controls.</div>
+      <div class="pair-notes">Historical calorie and protein adherence log.</div>
+    </div>
+  </div>
+  <div class="section-title">6. Wave 6 AI Coach Safety, Privacy Controls, Profile & Tools</div>
+  <div class="gallery-grid">
+    <div class="pair-card">
+      <div class="pair-header">
+        <span>AI Coach Chat & Medical Disclaimer (390×844)</span>
+        <span class="pair-badge">DIRECTION 4 + WAVES 0–6</span>
+      </div>
+      <div class="pair-body">
+        <div class="screen-col">
+          <div class="screen-tag before">Before (Legacy)</div>
+          <img class="screen-img" loading="lazy" src="before/before_ai_chat_390x844.png?v=20261107_waves0to6" alt="Before AI Coach Chat & Medical Disclaimer (390×844)">
+        </div>
+        <div class="screen-col">
+          <div class="screen-tag after">After (v2.0 Live Chrome)</div>
+          <img class="screen-img" loading="lazy" src="after/after_ai_chat_390x844.png?v=20261107_waves0to6" alt="After AI Coach Chat & Medical Disclaimer (390×844)">
+        </div>
+      </div>
+      <div class="pair-notes">Wave 6 MedicalDisclaimerBanner, question normalizer cache, and red-flag symptom safety guard.</div>
+    </div>
+    <div class="pair-card">
+      <div class="pair-header">
+        <span>Training Tools Hub (390×844)</span>
+        <span class="pair-badge">DIRECTION 4 + WAVES 0–6</span>
+      </div>
+      <div class="pair-body">
+        <div class="screen-col">
+          <div class="screen-tag before">Before (Legacy)</div>
+          <img class="screen-img" loading="lazy" src="before/before_tools_hub_390x844.png?v=20261107_waves0to6" alt="Before Training Tools Hub (390×844)">
+        </div>
+        <div class="screen-col">
+          <div class="screen-tag after">After (v2.0 Live Chrome)</div>
+          <img class="screen-img" loading="lazy" src="after/after_tools_hub_390x844.png?v=20261107_waves0to6" alt="After Training Tools Hub (390×844)">
+        </div>
+      </div>
+      <div class="pair-notes">1RM estimator, barbell plate loader, and standalone rest timer.</div>
+    </div>
+    <div class="pair-card">
+      <div class="pair-header">
+        <span>Athlete Profile (390×844)</span>
+        <span class="pair-badge">DIRECTION 4 + WAVES 0–6</span>
+      </div>
+      <div class="pair-body">
+        <div class="screen-col">
+          <div class="screen-tag before">Before (Legacy)</div>
+          <img class="screen-img" loading="lazy" src="before/before_profile_390x844.png?v=20261107_waves0to6" alt="Before Athlete Profile (390×844)">
+        </div>
+        <div class="screen-col">
+          <div class="screen-tag after">After (v2.0 Live Chrome)</div>
+          <img class="screen-img" loading="lazy" src="after/after_profile_390x844.png?v=20261107_waves0to6" alt="After Athlete Profile (390×844)">
+        </div>
+      </div>
+      <div class="pair-notes">Biometrics, active split summary, and training milestones.</div>
+    </div>
+    <div class="pair-card">
+      <div class="pair-header">
+        <span>System Settings & Build Stamp (390×844)</span>
+        <span class="pair-badge">DIRECTION 4 + WAVES 0–6</span>
+      </div>
+      <div class="pair-body">
+        <div class="screen-col">
+          <div class="screen-tag before">Before (Legacy)</div>
+          <img class="screen-img" loading="lazy" src="before/before_settings_390x844.png?v=20261107_waves0to6" alt="Before System Settings & Build Stamp (390×844)">
+        </div>
+        <div class="screen-col">
+          <div class="screen-tag after">After (v2.0 Live Chrome)</div>
+          <img class="screen-img" loading="lazy" src="after/after_settings_390x844.png?v=20261107_waves0to6" alt="After System Settings & Build Stamp (390×844)">
+        </div>
+      </div>
+      <div class="pair-notes">Direction 4 Dark/Light mode toggle, haptics, account management, and build stamp.</div>
+    </div>
+    <div class="pair-card">
+      <div class="pair-header">
+        <span>Privacy, Telemetry & Legal Compliance (390×844)</span>
+        <span class="pair-badge">DIRECTION 4 + WAVES 0–6</span>
+      </div>
+      <div class="pair-body">
+        <div class="screen-col">
+          <div class="screen-tag before">Before (Legacy)</div>
+          <img class="screen-img" loading="lazy" src="before/before_privacy_settings_390x844.png?v=20261107_waves0to6" alt="Before Privacy, Telemetry & Legal Compliance (390×844)">
+        </div>
+        <div class="screen-col">
+          <div class="screen-tag after">After (v2.0 Live Chrome)</div>
+          <img class="screen-img" loading="lazy" src="after/after_privacy_settings_390x844.png?v=20261107_waves0to6" alt="After Privacy, Telemetry & Legal Compliance (390×844)">
+        </div>
+      </div>
+      <div class="pair-notes">Default-OFF analytics/crash opt-in toggles, Terms of Service, Privacy Policy, and Medical Disclaimer.</div>
+    </div>
+    <div class="pair-card">
+      <div class="pair-header">
+        <span>Data Export & Portability (390×844)</span>
+        <span class="pair-badge">DIRECTION 4 + WAVES 0–6</span>
+      </div>
+      <div class="pair-body">
+        <div class="screen-col">
+          <div class="screen-tag before">Before (Legacy)</div>
+          <img class="screen-img" loading="lazy" src="before/before_export_settings_390x844.png?v=20261107_waves0to6" alt="Before Data Export & Portability (390×844)">
+        </div>
+        <div class="screen-col">
+          <div class="screen-tag after">After (v2.0 Live Chrome)</div>
+          <img class="screen-img" loading="lazy" src="after/after_export_settings_390x844.png?v=20261107_waves0to6" alt="After Data Export & Portability (390×844)">
+        </div>
+      </div>
+      <div class="pair-notes">JSON/CSV local training and nutrition export.</div>
+    </div>
+    <div class="pair-card">
+      <div class="pair-header">
+        <span>Contextual Reminder Settings (390×844)</span>
+        <span class="pair-badge">DIRECTION 4 + WAVES 0–6</span>
+      </div>
+      <div class="pair-body">
+        <div class="screen-col">
+          <div class="screen-tag before">Before (Legacy)</div>
+          <img class="screen-img" loading="lazy" src="before/before_reminder_settings_390x844.png?v=20261107_waves0to6" alt="Before Contextual Reminder Settings (390×844)">
+        </div>
+        <div class="screen-col">
+          <div class="screen-tag after">After (v2.0 Live Chrome)</div>
+          <img class="screen-img" loading="lazy" src="after/after_reminder_settings_390x844.png?v=20261107_waves0to6" alt="After Contextual Reminder Settings (390×844)">
+        </div>
+      </div>
+      <div class="pair-notes">Deferred contextual notification permissions (Wave 1 Step 5).</div>
     </div>
   </div>
 </body>

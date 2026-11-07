@@ -1,6 +1,9 @@
 import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hive/hive.dart';
+import 'package:progression_tracker/features/auth/data/datasources/auth_session_storage.dart';
+import 'package:progression_tracker/features/auth/data/services/local_sample_data_seeder.dart';
 import 'package:progression_tracker/features/auth/domain/entities/user.dart';
 import 'package:progression_tracker/features/auth/domain/usecases/sign_in_use_case.dart';
 import 'package:progression_tracker/features/auth/domain/usecases/sign_out_use_case.dart';
@@ -290,11 +293,11 @@ class AuthNotifier extends Notifier<AuthState> {
         AppLogger.debug('🔍 [Auth] Stack trace: $stackTrace');
       }
       
-      // Check if error is due to user cancellation
+      // Check if error is due to genuine user cancellation (never broad 'user')
       final errorMessage = e.toString().toLowerCase();
-      final isCancelled = errorMessage.contains('cancel') || 
+      final isCancelled = errorMessage.contains('cancel') ||
                          errorMessage.contains('abort') ||
-                         errorMessage.contains('user');
+                         errorMessage.contains('popup-closed-by-user');
       
       state = state.copyWith(
         isLoading: false,
@@ -314,6 +317,61 @@ class AuthNotifier extends Notifier<AuthState> {
         rethrow;
       }
     }
+  }
+
+  /// Continue offline in Local-Only Guest Mode (persisted locally in encrypted Hive).
+  /// Never invokes cloud endpoints or mock cloud credentials.
+  Future<void> signInAsLocalGuest() async {
+    state = state.copyWith(isLoading: true, error: null);
+    final now = DateTime.now();
+    final guestUser = User(
+      id: kLocalGuestUserId,
+      email: 'local@device.offline',
+      displayName: 'Local Athlete',
+      photoUrl: null,
+      createdAt: now,
+      updatedAt: now,
+    );
+    try {
+      if (Hive.isBoxOpen('auth_session')) {
+        await AuthSessionStorage().saveSession(guestUser);
+      }
+    } catch (_) {}
+
+    state = state.copyWith(
+      isLoading: false,
+      user: guestUser,
+      isAuthenticated: true,
+      error: null,
+    );
+  }
+
+  /// Enter Interactive Demo Showcase (persisted locally with sample workouts,
+  /// 18-region Body Map recovery states, weight trends, and nutrition targets).
+  Future<void> signInAsDemoShowcase() async {
+    state = state.copyWith(isLoading: true, error: null);
+    final now = DateTime.now();
+    final demoUser = User(
+      id: kLocalDemoUserId,
+      email: 'showcase@device.offline',
+      displayName: 'Alex Rivera',
+      photoUrl: null,
+      createdAt: now,
+      updatedAt: now,
+    );
+    try {
+      if (Hive.isBoxOpen('auth_session')) {
+        await AuthSessionStorage().saveSession(demoUser);
+      }
+      await const LocalSampleDataSeeder().seedDemoShowcaseIfEmpty();
+    } catch (_) {}
+
+    state = state.copyWith(
+      isLoading: false,
+      user: demoUser,
+      isAuthenticated: true,
+      error: null,
+    );
   }
 
   /// Sign out
@@ -394,10 +452,12 @@ class AuthNotifier extends Notifier<AuthState> {
       return 'Please enter a valid email address.';
     } else if (lower.contains('user-not-found') || lower.contains('no user found')) {
       return 'No account found with this email. Please sign up first.';
-    } else if (lower.contains('wrong-password') || lower.contains('wrong password')) {
-      return 'Incorrect password. Please try again.';
+    } else if (lower.contains('wrong-password') || lower.contains('wrong password') || lower.contains('invalid-credential')) {
+      return 'Incorrect email or password. Please try again.';
     } else if (lower.contains('operation-not-allowed') || lower.contains('not enabled')) {
-      return 'Email/Password sign-in is not enabled in Firebase Console. Please enable the Email/Password provider in project ironflow-5b79d (Authentication > Sign-in method).';
+      return 'Email/Password sign-in is disabled in Firebase Console (project ironflow-5b79d > Authentication > Sign-in method). Enable it there, or tap Continue Offline below.';
+    } else if (lower.contains('unauthorized-domain') || lower.contains('origin_mismatch')) {
+      return 'Google Sign-In requires localhost in Firebase Authorized Domains, or tap Continue Offline below.';
     } else if (lower.contains('popup-closed') || lower.contains('closed before completing')) {
       return 'Sign-in popup was closed before completing authentication.';
     } else if (lower.contains('popup-blocked') || lower.contains('blocked by your browser') || lower.contains('cross-origin-opener-policy')) {

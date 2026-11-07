@@ -40,7 +40,9 @@ class HiveSyncQueueDataSourceImpl implements HiveSyncQueueDataSource {
 
   Future<Box<Map>> get _syncBox async {
     if (_box == null || !_box!.isOpen) {
-      _box = await Hive.openBox<Map>(_boxName);
+      _box = Hive.isBoxOpen(_boxName)
+          ? Hive.box<Map>(_boxName)
+          : await Hive.openBox<Map>(_boxName);
     }
     return _box!;
   }
