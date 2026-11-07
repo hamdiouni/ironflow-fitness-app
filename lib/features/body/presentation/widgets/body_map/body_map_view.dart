@@ -96,16 +96,19 @@ class _BodyMapViewState extends ConsumerState<BodyMapView>
     final isFront = ref.watch(bodyMapViewModeProvider);
     final isHeatmap = ref.watch(bodyMapHeatmapModeProvider);
     final selectedRegion = ref.watch(selectedMuscleRegionProvider);
-    if (selectedRegion != null && !_pulseController.isAnimating) {
+    final disableAnimations = MediaQuery.of(context).disableAnimations;
+    if (!disableAnimations && selectedRegion != null && !_pulseController.isAnimating) {
       _pulseController.repeat(reverse: true);
-    } else if (selectedRegion == null && _pulseController.isAnimating) {
+    } else if ((disableAnimations || selectedRegion == null) && _pulseController.isAnimating) {
       _pulseController.stop();
       _pulseController.value = 0.0;
     }
     final recoveryAsync = ref.watch(muscleRecoveryProvider);
     final recoveryMap = recoveryAsync.valueOrNull ?? const {};
 
-    return Column(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Column(
       children: [
         // Top Toolbar
         if (!widget.compact) ...[
@@ -211,27 +214,48 @@ class _BodyMapViewState extends ConsumerState<BodyMapView>
         ],
 
         // Main Display: Map Canvas or Accessible List
-        Expanded(
-          child: _isListViewMode
-              ? _buildAccessibleListView(
-                  context,
-                  isFront,
-                  recoveryMap,
-                  tokens,
-                )
-              : _buildMapCanvas(
-                  context,
-                  isFront,
-                  isHeatmap,
-                  selectedRegion,
-                  recoveryMap,
-                  tokens,
-                ),
-        ),
+        constraints.hasBoundedHeight
+            ? Expanded(
+                child: _isListViewMode
+                    ? _buildAccessibleListView(
+                        context,
+                        isFront,
+                        recoveryMap,
+                        tokens,
+                      )
+                    : _buildMapCanvas(
+                        context,
+                        isFront,
+                        isHeatmap,
+                        selectedRegion,
+                        recoveryMap,
+                        tokens,
+                      ),
+              )
+            : SizedBox(
+                height: 520,
+                child: _isListViewMode
+                    ? _buildAccessibleListView(
+                        context,
+                        isFront,
+                        recoveryMap,
+                        tokens,
+                      )
+                    : _buildMapCanvas(
+                        context,
+                        isFront,
+                        isHeatmap,
+                        selectedRegion,
+                        recoveryMap,
+                        tokens,
+                      ),
+              ),
 
         // Bottom Legend & Readiness Summary
         if (!widget.compact) _buildBottomLegend(context, isHeatmap, tokens),
       ],
+    );
+      },
     );
   }
 
@@ -241,23 +265,30 @@ class _BodyMapViewState extends ConsumerState<BodyMapView>
     required VoidCallback onTap,
     required AppThemeTokens tokens,
   }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(tokens.radiusPill),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        decoration: BoxDecoration(
-          color: isSelected ? tokens.kineticAccent : Colors.transparent,
-          borderRadius: BorderRadius.circular(tokens.radiusPill),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontFamily: AppTypography.displayFontFamily,
-            fontSize: 10,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 0.5,
-            color: isSelected ? tokens.canvas : tokens.textSecondary,
+    return Semantics(
+      button: true,
+      enabled: true,
+      selected: isSelected,
+      excludeSemantics: true,
+      label: label,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(tokens.radiusPill),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: isSelected ? tokens.kineticAccent : Colors.transparent,
+            borderRadius: BorderRadius.circular(tokens.radiusPill),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontFamily: AppTypography.displayFontFamily,
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.5,
+              color: isSelected ? tokens.canvas : tokens.textSecondary,
+            ),
           ),
         ),
       ),
@@ -330,73 +361,77 @@ class _BodyMapViewState extends ConsumerState<BodyMapView>
             RecoveryTier.sore => const Color(0xFFA855F7),
           };
 
-          return AppCard(
-            padding: const EdgeInsets.all(12),
-            child: InkWell(
-              onTap: () {
-                AppHaptics.shared.selectionChanged();
-                ref.read(selectedMuscleRegionProvider.notifier).select(region);
-                widget.onMuscleSelected?.call(region);
-                _showDetailSheet(context, data);
-              },
-              child: Row(
-                children: [
-                  Container(
-                    width: 10,
-                    height: 10,
-                    decoration: BoxDecoration(
-                      color: tierColor,
-                      shape: BoxShape.circle,
+          return Semantics(
+            button: true,
+            label: '${region.displayName}, ${data.tier.name.toUpperCase()} recovery, $pct percent, ${data.sets7Days} sets in last 7 days',
+            child: AppCard(
+              padding: const EdgeInsets.all(12),
+              child: InkWell(
+                onTap: () {
+                  AppHaptics.shared.selectionChanged();
+                  ref.read(selectedMuscleRegionProvider.notifier).select(region);
+                  widget.onMuscleSelected?.call(region);
+                  _showDetailSheet(context, data);
+                },
+                child: Row(
+                  children: [
+                    Container(
+                      width: 10,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        color: tierColor,
+                        shape: BoxShape.circle,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            region.displayName,
+                            style: TextStyle(
+                              fontFamily: AppTypography.displayFontFamily,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: tokens.textPrimary,
+                            ),
+                          ),
+                          Text(
+                            region.anatomicalName,
+                            style: TextStyle(
+                              fontFamily: AppTypography.bodyFontFamily,
+                              fontSize: 11,
+                              color: tokens.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text(
-                          region.displayName,
+                          '$pct% ${data.tier.label.toUpperCase()}',
                           style: TextStyle(
                             fontFamily: AppTypography.displayFontFamily,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: tokens.textPrimary,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                            color: tierColor,
                           ),
                         ),
                         Text(
-                          region.anatomicalName,
+                          '${data.sets7Days} sets 7d',
                           style: TextStyle(
                             fontFamily: AppTypography.bodyFontFamily,
-                            fontSize: 11,
-                            color: tokens.textSecondary,
+                            fontSize: 10.5,
+                            color: tokens.textMuted,
                           ),
                         ),
                       ],
                     ),
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        '$pct% ${data.tier.label.toUpperCase()}',
-                        style: TextStyle(
-                          fontFamily: AppTypography.displayFontFamily,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800,
-                          color: tierColor,
-                        ),
-                      ),
-                      Text(
-                        '${data.sets7Days} sets 7d',
-                        style: TextStyle(
-                          fontFamily: AppTypography.bodyFontFamily,
-                          fontSize: 10.5,
-                          color: tokens.textMuted,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           );

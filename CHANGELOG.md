@@ -5,6 +5,30 @@ This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html) 
 
 ---
 
+## [1.4.0+5] — 2026-11-07
+
+### Performance, Platforms, Accessibility & Resilience (Wave 5)
+- **Performance Budgets & CI Automation (`5.1`)**: Authored `scripts/check_perf_budgets.py` enforcing size budgets (total asset bundle < 15.0 MB, single assets < 2.0 MB, Web JS bundle < 2.5 MB gzipped, Release APK < 35.0 MB) and integrated into CI pipeline (`.github/workflows/ci.yml`). Authored `test/performance/screen_frame_budget_test.dart` verifying frame layout budgets.
+- **Web, Wasm & Firebase Hosting Security (`5.2`)**: Configured strict security headers in `firebase.json` (`Cross-Origin-Opener-Policy: same-origin-allow-popups`, `Cross-Origin-Embedder-Policy: require-corp`, `Cross-Origin-Resource-Policy: cross-origin`, and `Cache-Control: public, max-age=31536000, immutable` for versioned static assets).
+- **Android System UI & Modern Platform Standards (`5.3`)**:
+  - Configured R8 full minification (`isMinifyEnabled = true`), resource shrinking (`isShrinkResources = true`), and robust keep rules in `android/app/proguard-rules.pro` for Flutter engine, Hive, Firebase Core/Auth/Firestore, AndroidX, and notifications.
+  - Enabled Android 14+ predictive back gestures (`android:enableOnBackInvokedCallback="true"`).
+  - Configured edge-to-edge transparent system navigation and status bars in `lib/main.dart` via `SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge)`.
+  - Authored comprehensive store compliance and privacy data mapping documentation (`docs/platform/STORE_DATA_SAFETY_MAPPING.md`).
+- **Accessibility & Inclusive Design (`5.4`)**:
+  - Added reduced motion awareness (`MediaQuery.of(context).disableAnimations`) in `BodyMapView` to automatically halt animation loops for sensitive users.
+  - Hardened layout against 2.0x text scaling using `LayoutBuilder` constraint checks to eliminate RenderFlex overflow crashes in unbounded viewports.
+  - Enhanced Body Map interactive elements with explicit accessibility semantics (`Semantics(button: true, enabled: true, selected: isSelected, excludeSemantics: true)`).
+  - Provided accessible alternative text summaries and semantic row labels for screen readers in list mode.
+- **Localization Parity & RTL Foundations (`5.5`)**:
+  - Verified 100% key and token parity across all 7 supported locales (`en`, `de`, `es`, `fr`, `ja`, `pt`, `zh`) with automated validation (`test/localization/localization_completeness_and_rtl_test.dart`).
+  - Authored comprehensive localization governance SOP (`docs/localization/TRANSLATION_WORKFLOW.md`).
+- **Resilience & 1-Year Volume Optimization (`5.6`)**:
+  - Authored `RetryHelper` (`lib/core/utils/retry_helper.dart`) providing exponential backoff with randomized jitter and customizable retry predicates for network resilience.
+  - Added target muscle region memoization cache in `MuscleRecoveryCalculator`, reducing 1-year workout recovery calculation overhead across 3,000+ sets from 67ms to <5ms (well within the 50ms budget).
+
+---
+
 ## [1.3.0+4] — 2026-11-06
 
 ### Body Map & Gym-First Experience (Wave 4)

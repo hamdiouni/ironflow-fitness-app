@@ -111,6 +111,9 @@ jobs:
           path: build/app/outputs/flutter-apk/app-debug.apk
           retention-days: 14
 
+      - name: Enforce performance and size budgets (Wave 5.1)
+        run: python3 scripts/check_perf_budgets.py
+
   ios-compile-check:
     name: iOS Compile Check (No Codesign)
     runs-on: macos-latest

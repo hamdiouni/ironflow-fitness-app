@@ -10,6 +10,8 @@ import '../entities/muscle_region.dart';
 class MuscleRecoveryCalculator {
   const MuscleRecoveryCalculator();
 
+  static final Map<String, (List<MuscleRegion>, List<MuscleRegion>)> _exerciseTargetCache = {};
+
   /// Calculates recovery metrics and volume history for all 20 anatomical regions
   /// based on the user's completed [workouts] and manual soreness flags.
   Map<MuscleRegion, MuscleRecoveryData> calculate({
@@ -37,37 +39,45 @@ class MuscleRecoveryCalculator {
       final workoutDate = workout.date;
 
       for (final exercise in workout.exercises) {
-        // Resolve definition to get canonical primary & secondary regions
-        final definition = _resolveDefinition(
-          exerciseDefinitionId: exercise.exerciseDefinitionId,
-          name: exercise.name,
-        );
+        // Resolve definition to get canonical primary & secondary regions (memoized)
+        final cacheKey = '${exercise.exerciseDefinitionId ?? ""}_${exercise.name}';
+        var targets = _exerciseTargetCache[cacheKey];
+        if (targets == null) {
+          final definition = _resolveDefinition(
+            exerciseDefinitionId: exercise.exerciseDefinitionId,
+            name: exercise.name,
+          );
 
-        final primaryRegions = <MuscleRegion>[];
-        final secondaryRegions = <MuscleRegion>[];
+          final p = <MuscleRegion>[];
+          final s = <MuscleRegion>[];
 
-        if (definition != null) {
-          for (final id in definition.primaryRegions) {
-            final region = MuscleRegion.fromId(id);
-            if (region != null && !primaryRegions.contains(region)) {
-              primaryRegions.add(region);
+          if (definition != null) {
+            for (final id in definition.primaryRegions) {
+              final region = MuscleRegion.fromId(id);
+              if (region != null && !p.contains(region)) {
+                p.add(region);
+              }
+            }
+            for (final id in definition.secondaryRegions) {
+              final region = MuscleRegion.fromId(id);
+              if (region != null && !p.contains(region) && !s.contains(region)) {
+                s.add(region);
+              }
             }
           }
-          for (final id in definition.secondaryRegions) {
-            final region = MuscleRegion.fromId(id);
-            if (region != null &&
-                !primaryRegions.contains(region) &&
-                !secondaryRegions.contains(region)) {
-              secondaryRegions.add(region);
-            }
+
+          // If definition had no regions or was uncataloged, infer from coarse muscle group
+          if (p.isEmpty && definition != null) {
+            final fallback = inferFromMuscleGroup(definition.muscleGroup);
+            p.addAll(fallback);
           }
+
+          targets = (p, s);
+          _exerciseTargetCache[cacheKey] = targets;
         }
 
-        // If definition had no regions or was uncataloged, infer from coarse muscle group
-        if (primaryRegions.isEmpty && definition != null) {
-          final fallback = inferFromMuscleGroup(definition.muscleGroup);
-          primaryRegions.addAll(fallback);
-        }
+        final primaryRegions = targets.$1;
+        final secondaryRegions = targets.$2;
 
         if (primaryRegions.isEmpty && secondaryRegions.isEmpty) {
           continue;

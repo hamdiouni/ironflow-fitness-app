@@ -85,6 +85,7 @@ android/.kotlin/errors/errors-1776026881608.log,android,174,no,N/A (non-lib),KEE
 android/.kotlin/errors/errors-1776026953590.log,android,179,no,N/A (non-lib),KEEP,"Added in Wave 1-3 architecture, security, catalog, or modularization work",LOW,W3
 android/app/build.gradle.kts,android,117,no,N/A (non-lib),KEEP,Resolved in W2.5 / W5.3; verified by automated Wave 1-3 gates,LOW,W2.5 / W5.3
 android/app/google-services.json,android,39,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+android/app/proguard-rules.pro,android,45,no,N/A,KEEP,ProGuard and R8 keep rules for release shrinking,Low,Wave 5.1/5.3
 android/app/src/debug/AndroidManifest.xml,android,7,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 android/app/src/main/AndroidManifest.xml,android,93,no,N/A (non-lib),KEEP,Resolved in W2.5 / W5.3; verified by automated Wave 1-3 gates,LOW,W2.5 / W5.3
 android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java,android,139,no,N/A (non-lib),KEEP,"Added in Wave 1-3 architecture, security, catalog, or modularization work",LOW,W3
@@ -532,6 +533,8 @@ docs/guides/QUICK_START_TESTING.md,docs,173,no,N/A (non-lib),KEEP,Reviewed; conf
 docs/guides/START_HERE_FREE_AI.md,docs,161,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/guides/START_HERE_GOOGLE_SIGNIN.md,docs,150,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/guides/USER_TESTING_INSTRUCTIONS.md,docs,103,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+docs/localization/TRANSLATION_WORKFLOW.md,docs,105,no,N/A,KEEP,Translation SOP and ARB management guide,Low,Wave 5.5
+docs/platform/STORE_DATA_SAFETY_MAPPING.md,docs,63,no,N/A,KEEP,Google Play and Apple App Privacy declarations,Low,Wave 5.3
 docs/quality/TEST_STRATEGY_AND_COVERAGE_GATES.md,docs,46,no,N/A (non-lib),KEEP,"Added in Wave 1-3 architecture, security, catalog, or modularization work",LOW,W3
 docs/release/RELEASE_ENGINEERING_AND_SIGNING.md,docs,101,no,N/A (non-lib),KEEP,"Added in Wave 1-3 architecture, security, catalog, or modularization work",LOW,W3
 docs/screenshots/after/after_active_workout_390x844.png,docs,8,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
@@ -748,6 +751,7 @@ l10n.yaml,root-config,3,no,N/A (non-lib),KEEP,Reviewed; conforms to current modu
 legal/LEGAL_SETUP_GUIDE.md,root-config,311,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 legal/PRIVACY_POLICY.md,root-config,230,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 legal/TERMS_OF_SERVICE.md,root-config,366,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+lib/core/utils/retry_helper.dart,core,69,no,78.9%,KEEP,Exponential backoff retry helper with jitter,Low,Wave 5.6
 lib/features/body/domain/entities/muscle_recovery_status.dart,body/domain,128,no,22.7%,KEEP,Muscle recovery tiers and status models,low,Wave 4 - Body Map
 lib/features/body/domain/entities/muscle_region.dart,body/domain,246,no,100.0%,KEEP,Canonical 20-region anatomical muscle model,low,Wave 4 - Body Map
 lib/features/body/domain/services/muscle_recovery_calculator.dart,body/domain,289,no,87.5%,KEEP,Scientific recovery engine and volume load aggregator,low,Wave 4 - Body Map
@@ -756,7 +760,13 @@ lib/features/body/presentation/widgets/body_map/body_map_painter.dart,body/prese
 lib/features/body/presentation/widgets/body_map/body_map_paths.dart,body/presentation,414,no,99.3%,KEEP,Pre-parsed 2D vector paths and viewBox hit-tester,low,Wave 4 - Body Map
 lib/features/body/presentation/widgets/body_map/body_map_view.dart,body/presentation,472,no,84.0%,KEEP,Interactive 2D Body Map view with toolbar and accessibility,low,Wave 4 - Body Map
 lib/features/body/presentation/widgets/body_map/muscle_detail_sheet.dart,body/presentation,419,no,84.0%,KEEP,Muscle recovery detail bottom sheet and Train CTA,low,Wave 4 - Body Map
+scripts/check_perf_budgets.py,scripts,123,no,N/A,KEEP,CI performance and size budget gate script,Low,Wave 5.1
+test/accessibility/text_scale_and_semantics_test.dart,test,156,no,N/A,KEEP,"Accessibility verification (reduced motion, semantics, 2x text scale)",Low,Wave 5.4
+test/core/utils/retry_helper_test.dart,test,82,no,N/A,KEEP,Unit tests for RetryHelper withExponentialBackoff,Low,Wave 5.6
 test/features/body/domain/muscle_recovery_calculator_test.dart,test,157,no,0.0%,KEEP,Unit test suite for MuscleRecoveryCalculator,low,Wave 4 - Body Map
 test/features/body/domain/muscle_region_test.dart,test,66,no,0.0%,KEEP,Unit test suite for MuscleRegion canonical model,low,Wave 4 - Body Map
 test/features/body/presentation/body_map_paths_test.dart,test,110,no,0.0%,KEEP,Geometry and hit-test verification for BodyMapPaths,low,Wave 4 - Body Map
 test/features/body/presentation/body_map_view_test.dart,test,147,no,0.0%,KEEP,Widget test suite for BodyMapView and controls,low,Wave 4 - Body Map
+test/localization/localization_completeness_and_rtl_test.dart,test,140,no,N/A,KEEP,Localization ARB parity across 7 locales and RTL layout tests,Low,Wave 5.5
+test/performance/screen_frame_budget_test.dart,test,101,no,N/A,KEEP,Screen frame budget and render benchmarks,Low,Wave 5.1
+test/performance/yearly_data_benchmark_test.dart,test,124,no,N/A,KEEP,1-year heavy data volume and recovery benchmarks,Low,Wave 5.6

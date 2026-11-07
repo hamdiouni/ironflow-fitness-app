@@ -32,6 +32,18 @@ void main() async {
   runZonedGuarded<Future<void>>(() async {
     WidgetsFlutterBinding.ensureInitialized();
 
+    // Configure transparent edge-to-edge system bars (Android 14+ / iOS)
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        systemNavigationBarColor: Colors.transparent,
+        systemNavigationBarDividerColor: Colors.transparent,
+        systemNavigationBarIconBrightness: Brightness.light,
+      ),
+    );
+
     // Register bundled OFL font licenses (Inter & Space Grotesk) for LicensePage
     LicenseRegistry.addLicense(() async* {
       final licenseText = await rootBundle.loadString('assets/fonts/OFL.txt');
