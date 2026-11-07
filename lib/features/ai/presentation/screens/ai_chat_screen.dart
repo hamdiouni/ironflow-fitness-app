@@ -5,6 +5,7 @@ import 'package:progression_tracker/core/constants/app_theme.dart';
 import 'package:progression_tracker/core/router/app_router.dart';
 import 'package:progression_tracker/features/ai/presentation/providers/ai_provider.dart';
 import 'package:progression_tracker/shared/presentation/services/app_haptics.dart';
+import 'package:progression_tracker/shared/presentation/components/medical_disclaimer_banner.dart';
 import '../widgets/chat/ai_chat_banners_and_chips.dart';
 import '../widgets/chat/ai_chat_message_bubble.dart';
 import '../widgets/chat/ai_tts_settings_sheet.dart';
@@ -272,6 +273,12 @@ class _AIChatScreenState extends ConsumerState<AIChatScreen> {
         children: [
           // Live Status Bar
           AIChatTelemetryStatusBanner(tokens: tokens, state: chatState),
+
+          // Medical & Fitness Disclaimer (Wave 6.2 — LEG-03)
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: MedicalDisclaimerBanner(compact: true),
+          ),
 
           // Contextual Prompt Chips Bar (Today, Workout, Fuel, Progress)
           AIChatContextualChipsBar(

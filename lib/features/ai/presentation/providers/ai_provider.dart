@@ -21,6 +21,7 @@ import 'package:progression_tracker/core/providers/analytics_provider.dart';
 import 'package:progression_tracker/core/utils/record_ownership.dart';
 import 'package:progression_tracker/features/auth/presentation/providers/auth_notifier.dart'
     show currentUserIdProvider;
+import 'package:progression_tracker/features/ai/domain/services/ai_question_normalizer.dart';
 
 /// Provider for local AI coach service (fallback)
 final localAICoachProvider = Provider<LocalAICoach>((ref) {
@@ -30,6 +31,11 @@ final localAICoachProvider = Provider<LocalAICoach>((ref) {
 /// Provider for Gemini AI service (FREE!)
 final geminiAIServiceProvider = Provider<GeminiAIService>((ref) {
   return GeminiAIService();
+});
+
+/// Provider for AI Question Normalizer and Cache (Wave 6.1 — AI-05)
+final aiQuestionNormalizerProvider = Provider<AiQuestionNormalizer>((ref) {
+  return AiQuestionNormalizer();
 });
 
 /// Provider for AI preferences storage repository
@@ -152,19 +158,23 @@ class AIChatNotifier extends Notifier<AIChatState> {
     LocalAICoach? localCoach,
     GeminiAIService? geminiService,
     AIChatStorage? chatStorage,
+    AiQuestionNormalizer? questionNormalizer,
     bool useInjectedStorage = false,
   })  : _injectedLocalCoach = localCoach,
         _injectedGeminiService = geminiService,
         _injectedChatStorage = chatStorage,
+        _injectedQuestionNormalizer = questionNormalizer,
         _useInjectedStorage = useInjectedStorage;
 
   final LocalAICoach? _injectedLocalCoach;
   final GeminiAIService? _injectedGeminiService;
   final AIChatStorage? _injectedChatStorage;
+  final AiQuestionNormalizer? _injectedQuestionNormalizer;
   final bool _useInjectedStorage;
 
   late LocalAICoach _localCoach;
   late GeminiAIService _geminiService;
+  late AiQuestionNormalizer _questionNormalizer;
   AIChatStorage? _chatStorage;
   bool _disposed = false;
 
@@ -177,6 +187,8 @@ class AIChatNotifier extends Notifier<AIChatState> {
     _localCoach = _injectedLocalCoach ?? ref.watch(localAICoachProvider);
     _geminiService =
         _injectedGeminiService ?? ref.watch(geminiAIServiceProvider);
+    _questionNormalizer =
+        _injectedQuestionNormalizer ?? ref.watch(aiQuestionNormalizerProvider);
     _chatStorage = _useInjectedStorage
         ? _injectedChatStorage
         : (_injectedChatStorage ?? ref.watch(aiChatStorageProvider));
@@ -314,7 +326,15 @@ class AIChatNotifier extends Notifier<AIChatState> {
       bool isFallback = false;
       String? errorMessage;
       
-      if (!_geminiService.isConfigured) {
+      // Wave 6.1 — AI-05: Check normalized question cache & canonical FAQs
+      final resolution = _questionNormalizer.resolve(
+        message,
+        includeCanonicalFaqs: !_geminiService.isConfigured,
+      );
+      if (resolution.cachedResponse != null) {
+        AppLogger.debug('⚡ [AI CHAT] Resolved from question cache (${resolution.isCanonicalFaq ? "canonical FAQ" : "cached entry"})');
+        responseText = resolution.cachedResponse!;
+      } else if (!_geminiService.isConfigured) {
         AppLogger.debug('⚠️ [AI CHAT] No Gemini API key configured. Using Local AI Coach...');
         isFallback = true;
         responseText = _localCoach.generateResponse(
@@ -338,6 +358,9 @@ class AIChatNotifier extends Notifier<AIChatState> {
             temperature: 0.7,
             maxTokens: 1000,
           );
+          
+          // Cache successful response for future queries
+          _questionNormalizer.cacheResponse(message, responseText);
           
           AppLogger.debug('═══════════════════════════════════════');
           AppLogger.debug('✅ [AI CHAT] Gemini response received!');
@@ -363,6 +386,15 @@ class AIChatNotifier extends Notifier<AIChatState> {
           );
         }
       }
+
+      // Wave 6.1 — AI-05: Estimate tokens and compute cost for transparency
+      final inTokens = AiCostEstimator.estimateTokenCount(message);
+      final outTokens = AiCostEstimator.estimateTokenCount(responseText);
+      final cost = AiCostEstimator.calculateCostUsd(
+        inputTokens: inTokens,
+        outputTokens: outTokens,
+      );
+      AppLogger.debug('💰 [AI CHAT] Estimated cost: ${AiCostEstimator.formatCostUsd(cost)} ($inTokens in, $outTokens out)');
 
       // Add assistant message
       AppLogger.debug('💾 [AI CHAT] Step 8: Saving response to chat...');

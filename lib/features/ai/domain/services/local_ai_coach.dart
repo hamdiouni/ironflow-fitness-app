@@ -17,8 +17,10 @@ class LocalAICoach {
   }) {
     final message = userMessage.toLowerCase();
     
-    // Analyze what the user is asking about
-    if (_isAboutWorkout(message)) {
+    // Wave 6.1 / LEG-03: Medical & acute safety red flag interception
+    if (_isMedicalOrSafetyRisk(message)) {
+      return _generateMedicalSafetyAdvice(message);
+    } else if (_isAboutWorkout(message)) {
       return _generateWorkoutAdvice(recentWorkouts, profile);
     } else if (_isAboutNutrition(message)) {
       return _generateNutritionAdvice(nutritionHistory, nutritionTargets, profile);
@@ -29,6 +31,32 @@ class LocalAICoach {
     } else {
       return _generateGeneralAdvice(recentWorkouts, nutritionHistory, bodyEntries, profile);
     }
+  }
+
+  bool _isMedicalOrSafetyRisk(String message) {
+    return message.contains('chest pain') ||
+        message.contains('stabbing pain') ||
+        message.contains('dizzy') ||
+        message.contains('dizziness') ||
+        message.contains('breathless') ||
+        message.contains('shortness of breath') ||
+        message.contains('diagnos') ||
+        message.contains('steroid') ||
+        message.contains('prescribe') ||
+        message.contains('medication') ||
+        message.contains('drug') ||
+        message.contains('torn') ||
+        message.contains('fracture') ||
+        message.contains('swollen') ||
+        message.contains('swelling');
+  }
+
+  String _generateMedicalSafetyAdvice(String message) {
+    return '⚠️ **Important Health & Safety Notice**\n\n'
+        'I cannot provide medical diagnoses, prescribe medications, or evaluate acute symptoms.\n\n'
+        '• If you are experiencing acute pain, severe dizziness, chest discomfort, or shortness of breath, please **stop exercising immediately and consult a doctor or emergency medical professional**.\n'
+        '• For persistent musculoskeletal swelling or suspected injuries, obtain a formal clinical evaluation from a licensed healthcare provider before resuming training.\n'
+        '• IronFlow does not provide medical advice or endorse unregulated anabolic compounds.';
   }
   
   bool _isAboutWorkout(String message) {

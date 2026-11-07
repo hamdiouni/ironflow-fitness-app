@@ -6,6 +6,7 @@ import 'package:progression_tracker/core/router/app_router.dart';
 import 'package:progression_tracker/features/workout/domain/services/exercise_catalog.dart';
 import 'package:progression_tracker/features/body/domain/entities/muscle_recovery_status.dart';
 import 'package:progression_tracker/shared/presentation/components/app_card.dart';
+import 'package:progression_tracker/shared/presentation/components/medical_disclaimer_banner.dart';
 import 'package:progression_tracker/shared/presentation/services/app_haptics.dart';
 
 /// Interactive bottom sheet showing recovery diagnostics, training history,
@@ -254,6 +255,13 @@ class MuscleDetailSheet extends ConsumerWidget {
                 ),
               ),
             ),
+          ),
+          const SizedBox(height: 12),
+
+          // Medical & Fitness Disclaimer (Wave 6.2 — LEG-03)
+          const MedicalDisclaimerBanner(
+            compact: true,
+            customText: 'Recovery calculations are mathematical estimates based on volume, not clinical diagnostics.',
           ),
         ],
       ),
