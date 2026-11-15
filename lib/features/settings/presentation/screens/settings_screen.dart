@@ -122,7 +122,7 @@ class SettingsScreen extends ConsumerWidget {
                       subtitle: 'Update targets, training days, and equipment',
                       icon: Icons.edit_note_rounded,
                       tokens: tokens,
-                      onTap: () => context.go(AppRoutes.onboarding),
+                      onTap: () => context.push('${AppRoutes.onboarding}?mode=edit'),
                     ),
                     Divider(color: tokens.borderSubtle, height: 1),
                     SettingsTile(

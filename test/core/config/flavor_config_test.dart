@@ -58,7 +58,7 @@ void main() {
       expect(prod.appName, 'IronFlow');
       expect(prod.appIdSuffix, isEmpty);
       expect(prod.iconVariant, 'production');
-      expect(prod.firebaseProjectId, 'gym-app-fe50c');
+      expect(prod.firebaseProjectId, 'ironflow-5b79d');
       expect(prod.useFirebaseAuth, isTrue);
       expect(prod.allowDirectAiKeys, isFalse);
       expect(prod.appCheckEnforce, isTrue);

@@ -24,6 +24,7 @@ import 'features/workout/presentation/providers/workout_providers.dart';
 import 'features/workout/presentation/providers/rest_timer_provider.dart';
 import 'features/notifications/domain/services/notification_service.dart';
 import 'features/settings/domain/usecases/delete_account_use_case.dart';
+import 'package:progression_tracker/features/settings/presentation/screens/telemetry_consent_screen.dart';
 import 'features/ai/presentation/providers/global_ai_provider.dart';
 import 'shared/presentation/services/app_haptics.dart';
 
@@ -274,6 +275,9 @@ class MainScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      TelemetryConsentScreen.showIfNeeded(context);
+    });
     final currentIndex = navigationShell.currentIndex;
     final tokens = context.tokens;
 

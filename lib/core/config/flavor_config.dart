@@ -217,12 +217,12 @@ class FlavorConfig {
                 firebaseProjectId,
                 const String.fromEnvironment('FIREBASE_PROJECT_ID'),
               ) ??
-              'gym-app-fe50c',
+              'ironflow-5b79d',
           aiProxyUrl: _nonEmpty(
                 aiProxyUrl,
                 const String.fromEnvironment('AI_PROXY_URL'),
               ) ??
-              'https://us-central1-gym-app-fe50c.cloudfunctions.net/aiGenerate',
+              'https://us-central1-ironflow-5b79d.cloudfunctions.net/aiGenerate',
           appCheckEnforce: appCheckEnforce ??
               const bool.fromEnvironment(
                 'APP_CHECK_ENFORCE',

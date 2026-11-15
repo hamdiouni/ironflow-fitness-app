@@ -16,21 +16,29 @@ class TelemetryConsentScreen extends StatefulWidget {
     this.onDecisionSaved,
   });
 
+  static bool _isShowing = false;
+
   /// Shows the consent modal if the user has not yet recorded a telemetry
   /// consent decision.
   static Future<void> showIfNeeded(
     BuildContext context, {
     SharedPreferences? prefs,
   }) async {
+    if (_isShowing) return;
     final alreadyShown = await TelemetryPreferences.hasShownConsentPrompt(prefs);
     if (alreadyShown || !context.mounted) return;
-    await showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => TelemetryConsentScreen(
-        onDecisionSaved: () => Navigator.of(ctx).pop(),
-      ),
-    );
+    _isShowing = true;
+    try {
+      await showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => TelemetryConsentScreen(
+          onDecisionSaved: () => Navigator.of(ctx).pop(),
+        ),
+      );
+    } finally {
+      _isShowing = false;
+    }
   }
 
   @override

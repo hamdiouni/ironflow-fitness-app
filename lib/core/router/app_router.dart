@@ -167,6 +167,10 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       // Case 3: Authenticated AND onboarded user accessing auth or onboarding routes
       if (isAuthRoute || isOnboarding) {
+        // Allow edit mode for already onboarded users
+        if (isOnboarding && state.uri.queryParameters['mode'] == 'edit') {
+          return null;
+        }
         final destination =
             AppRoutes.resolvePostAuthRedirect(state.uri.queryParameters['from']);
         if (kDebugMode) {
