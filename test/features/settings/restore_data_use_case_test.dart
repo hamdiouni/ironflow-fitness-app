@@ -202,7 +202,7 @@ class InMemoryAuthRepository implements AuthRepository {
   Future<User> signInWithGoogle() async => throw UnimplementedError();
 
   @override
-  Future<User> signUpWithEmail({required String email, required String password}) async =>
+  Future<User> signUpWithEmail({required String email, required String password, String? displayName}) async =>
       throw UnimplementedError();
 
   @override

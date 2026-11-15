@@ -60,8 +60,6 @@ class SyncService implements SyncEngine {
   Timer? _periodicSyncTimer;
   StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
 
-  static const Duration _cursorSafetyMargin = Duration(minutes: 5);
-
   static const String _workoutsKey = 'workouts';
   static const String _programsKey = 'programs';
   static const String _nutritionKey = 'nutrition';
@@ -762,14 +760,6 @@ class SyncService implements SyncEngine {
       SyncConflictPolicy.parseIso(e.updatedAt) ??
       SyncConflictPolicy.parseIso(e.date) ??
       SyncConflictPolicy.epoch;
-
-  Future<void> _advanceCursor(String key, String userId) async {
-    await _syncQueue.setCursor(
-      key,
-      DateTime.now().subtract(_cursorSafetyMargin),
-      userId: userId,
-    );
-  }
 
   Future<void> _advanceCursorWithTimestamp(
     String key,
