@@ -24,6 +24,9 @@ class TelemetryPreferences {
     return store.getBool(analyticsEnabledKey) ?? false;
   }
 
+  static Future<bool> isAnalyticsEnabled([SharedPreferences? prefs]) =>
+      analyticsEnabled(prefs);
+
   static Future<bool> crashReportingEnabled([
     SharedPreferences? prefs,
   ]) async {

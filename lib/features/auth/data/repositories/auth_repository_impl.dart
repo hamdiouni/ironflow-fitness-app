@@ -36,20 +36,25 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<User> signUpWithEmail({
     required String email,
     required String password,
+    String? displayName,
   }) async {
     try {
       final user = await _authDataSource.signUpWithEmail(
         email: email,
         password: password,
+        displayName: displayName,
       );
 
       // Best-effort cloud profile creation so a newly created Auth account
       // is never stranded if Firestore is offline or restricted.
       try {
+        final effectiveName = displayName?.trim().isNotEmpty == true
+            ? displayName!.trim()
+            : user.displayName;
         final profile = UserProfile(
           userId: user.id,
           email: user.email,
-          name: user.displayName,
+          name: effectiveName,
           age: null,
           gender: null,
           fitnessLevel: null,
@@ -61,8 +66,13 @@ class AuthRepositoryImpl implements AuthRepository {
         await _userDataSource.createUserProfile(profile);
       } catch (_) {}
 
-      await _saveLocalSessionBestEffort(user);
-      return user;
+      final effectiveUser = (user.displayName == null &&
+              displayName?.trim().isNotEmpty == true)
+          ? user.copyWith(displayName: displayName!.trim())
+          : user;
+
+      await _saveLocalSessionBestEffort(effectiveUser);
+      return effectiveUser;
     } catch (e) {
       throw Exception('Sign up failed: $e');
     }

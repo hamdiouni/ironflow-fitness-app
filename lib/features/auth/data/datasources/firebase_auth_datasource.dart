@@ -31,6 +31,7 @@ class FirebaseAuthDataSourceImpl
   Future<User> signUpWithEmail({
     required String email,
     required String password,
+    String? displayName,
   }) async {
     try {
       final userCredential = await _firebaseAuth.createUserWithEmailAndPassword(
@@ -43,7 +44,13 @@ class FirebaseAuthDataSourceImpl
         throw Exception('User creation failed');
       }
 
-      return _mapFirebaseUserToUser(firebaseUser);
+      if (displayName != null && displayName.trim().isNotEmpty) {
+        await firebaseUser.updateDisplayName(displayName.trim());
+        await firebaseUser.reload();
+      }
+
+      final currentUser = _firebaseAuth.currentUser ?? firebaseUser;
+      return _mapFirebaseUserToUser(currentUser);
     } on firebase_auth.FirebaseAuthException catch (e) {
       throw _handleAuthException(e);
     }

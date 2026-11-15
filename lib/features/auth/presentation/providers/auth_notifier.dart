@@ -114,6 +114,7 @@ class AuthNotifier extends Notifier<AuthState> {
   Future<void> signUpWithEmail({
     required String email,
     required String password,
+    String? displayName,
   }) async {
     if (kDebugMode) {
       AppLogger.debug('📊 [Auth] Starting sign up...');
@@ -129,6 +130,7 @@ class AuthNotifier extends Notifier<AuthState> {
       final user = await _signUpUseCase.call(
         email: email,
         password: password,
+        displayName: displayName,
       );
 
       if (kDebugMode) {

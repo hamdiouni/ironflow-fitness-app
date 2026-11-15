@@ -83,9 +83,6 @@ class SyncedWorkoutRepository implements WorkoutRepository {
       dataId: workout.id,
       data: data,
     );
-
-    // Trigger sync for this user
-    _syncService.syncAll(userId: _userId);
   }
 
   @override
@@ -161,8 +158,5 @@ class SyncedWorkoutRepository implements WorkoutRepository {
       dataId: id,
       data: {'id': id, 'userId': _userId},
     );
-
-    // Trigger sync for this user
-    _syncService.syncAll(userId: _userId);
   }
 }

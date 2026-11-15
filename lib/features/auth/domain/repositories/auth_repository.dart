@@ -7,6 +7,7 @@ abstract class AuthRepository {
   Future<User> signUpWithEmail({
     required String email,
     required String password,
+    String? displayName,
   });
 
   /// Sign in with email and password

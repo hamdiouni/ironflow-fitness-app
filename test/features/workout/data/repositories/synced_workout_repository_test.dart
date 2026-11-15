@@ -48,6 +48,9 @@ class _OfflineConnectivity implements Connectivity {
 
 class _NoOpFirestoreSyncDataSource implements FirestoreSyncDataSource {
   @override
+  DateTime? getLastServerTimestamp(String collection) => null;
+
+  @override
   Future<void> syncWorkout(String userId, WorkoutModel workout) async {}
 
   @override
@@ -253,7 +256,7 @@ void main() {
     expect(action.data['id'], 'w-1');
     expect(action.data['userId'], 'Alice');
     expect(action.data['updatedAt'], stored.single.updatedAt);
-    expect(syncService.syncAllCalls, <String?>['Alice']);
+    expect(syncService.syncAllCalls, isEmpty);
   });
 
   test('save preserves an explicitly supplied owner', () async {
@@ -345,7 +348,7 @@ void main() {
       'id': 'delete',
       'userId': 'Alice',
     });
-    expect(syncService.syncAllCalls, <String?>['Alice']);
+    expect(syncService.syncAllCalls, isEmpty);
   });
 
   test('reads count and pagination exclude foreign workouts', () async {

@@ -1,6 +1,7 @@
 import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/foundation.dart';
+import 'package:progression_tracker/core/services/telemetry_preferences.dart';
 
 /// Service for tracking analytics events throughout the app
 /// Provides centralized analytics tracking with Firebase Analytics
@@ -27,11 +28,13 @@ class AnalyticsService {
 
   /// Track user sign up
   Future<void> logSignUp(String method) async {
+    if (!await TelemetryPreferences.isAnalyticsEnabled()) return;
     await _analytics.logSignUp(signUpMethod: method);
   }
 
   /// Track user login
   Future<void> logLogin(String method) async {
+    if (!await TelemetryPreferences.isAnalyticsEnabled()) return;
     await _analytics.logLogin(loginMethod: method);
   }
 
@@ -46,6 +49,7 @@ class AnalyticsService {
     String? goal,
     int? daysSinceInstall,
   }) async {
+    if (!await TelemetryPreferences.isAnalyticsEnabled()) return;
     if (fitnessLevel != null) {
       await _analytics.setUserProperty(
         name: 'fitness_level',
@@ -303,6 +307,7 @@ class AnalyticsService {
     required String screenName,
     String? screenClass,
   }) async {
+    if (!await TelemetryPreferences.isAnalyticsEnabled()) return;
     await _analytics.logScreenView(
       screenName: screenName,
       screenClass: screenClass,
@@ -314,6 +319,7 @@ class AnalyticsService {
     required String searchTerm,
     required String searchCategory,
   }) async {
+    if (!await TelemetryPreferences.isAnalyticsEnabled()) return;
     await _analytics.logSearch(
       searchTerm: searchTerm,
       parameters: {
@@ -327,6 +333,7 @@ class AnalyticsService {
     required String contentType,
     required String itemId,
   }) async {
+    if (!await TelemetryPreferences.isAnalyticsEnabled()) return;
     await _analytics.logShare(
       contentType: contentType,
       itemId: itemId,
@@ -357,11 +364,13 @@ class AnalyticsService {
 
   /// Track tutorial started
   Future<void> logTutorialBegin() async {
+    if (!await TelemetryPreferences.isAnalyticsEnabled()) return;
     await _analytics.logTutorialBegin();
   }
 
   /// Track tutorial completed
   Future<void> logTutorialComplete() async {
+    if (!await TelemetryPreferences.isAnalyticsEnabled()) return;
     await _analytics.logTutorialComplete();
   }
 
@@ -370,6 +379,7 @@ class AnalyticsService {
     required int level,
     String? character,
   }) async {
+    if (!await TelemetryPreferences.isAnalyticsEnabled()) return;
     await _analytics.logLevelUp(
       level: level,
       character: character,
@@ -385,6 +395,7 @@ class AnalyticsService {
     String name, {
     Map<String, Object?>? parameters,
   }) async {
+    if (!await TelemetryPreferences.isAnalyticsEnabled()) return;
     try {
       // Convert Map<String, Object?> to Map<String, Object> by filtering out null values
       final nonNullParameters = parameters?.map((key, value) => MapEntry(key, value ?? ''))
@@ -406,11 +417,13 @@ class AnalyticsService {
 
   /// Set user ID
   Future<void> setUserId(String? userId) async {
+    if (!await TelemetryPreferences.isAnalyticsEnabled()) return;
     await _analytics.setUserId(id: userId);
   }
 
   /// Reset analytics data (e.g., on logout)
   Future<void> resetAnalyticsData() async {
+    if (!await TelemetryPreferences.isAnalyticsEnabled()) return;
     await _analytics.resetAnalyticsData();
   }
 }

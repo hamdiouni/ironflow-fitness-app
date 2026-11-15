@@ -191,6 +191,25 @@ class LocalDataWiper {
       }
     }
 
+    // Wipe custom foods from the 'foods' box while preserving bundled foods and foods_cache
+    try {
+      final foodsBox = Hive.isBoxOpen('foods')
+          ? Hive.box<dynamic>('foods')
+          : await Hive.openBox<dynamic>('foods');
+      if (userId.isNotEmpty) {
+        await foodsBox.delete('custom_foods_$userId');
+      } else {
+        final customKeys = foodsBox.keys
+            .where((k) => k.toString().startsWith('custom_foods'))
+            .toList();
+        await foodsBox.deleteAll(customKeys);
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        AppLogger.debug('⚠️ [LocalDataWiper] Could not wipe custom foods from foods box: $e');
+      }
+    }
+
     // User-specific keyed profile box (e.g. user_profile_box_${userId})
     if (userId.isNotEmpty) {
       final userSpecificBoxName = 'user_profile_box_$userId';

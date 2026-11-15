@@ -45,6 +45,7 @@ class MockAuthDataSourceImpl implements AuthRemoteDataSource {
   Future<User> signUpWithEmail({
     required String email,
     required String password,
+    String? displayName,
   }) async {
     // Simulate network delay
     await Future.delayed(const Duration(milliseconds: 500));
@@ -55,10 +56,14 @@ class MockAuthDataSourceImpl implements AuthRemoteDataSource {
 
     _users[email] = password;
     
+    final effectiveDisplayName = displayName?.trim().isNotEmpty == true
+        ? displayName!.trim()
+        : email.split('@')[0];
+
     final user = User(
       id: stableUserIdForEmail(email),
       email: email,
-      displayName: email.split('@')[0],
+      displayName: effectiveDisplayName,
       photoUrl: null,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),

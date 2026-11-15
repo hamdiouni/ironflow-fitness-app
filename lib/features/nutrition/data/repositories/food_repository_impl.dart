@@ -65,7 +65,7 @@ class FoodRepositoryImpl implements FoodRepository {
       if (food != null) {
         // Cache it
         final model = FoodItemFullModel.fromEntity(food);
-        await hiveDataSource.cacheFoods([model]);
+        await hiveDataSource.upsertCachedFood(model);
       }
       return food;
     } catch (e) {
