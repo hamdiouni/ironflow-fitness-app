@@ -59,13 +59,45 @@ abstract class FirestoreSyncDataSource {
   // Nutrition targets (singleton document per user)
   Future<void> syncNutritionTargets(String userId, NutritionTargetsModel targets);
   Future<NutritionTargetsModel?> getNutritionTargets(String userId);
+
+  /// Returns the maximum server `syncedAt` watermark seen in the last pull for [collection].
+  DateTime? getLastServerTimestamp(String collection);
 }
 
 class FirestoreSyncDataSourceImpl implements FirestoreSyncDataSource {
   final FirebaseFirestore _firestore;
+  final Map<String, DateTime> _lastServerTimestamps = {};
 
   FirestoreSyncDataSourceImpl({FirebaseFirestore? firestore})
       : _firestore = firestore ?? FirebaseFirestore.instance;
+
+  @override
+  DateTime? getLastServerTimestamp(String collection) =>
+      _lastServerTimestamps[collection];
+
+  void _recordMaxSyncedAt(String collection, List<QueryDocumentSnapshot> docs) {
+    if (docs.isEmpty) {
+      _lastServerTimestamps.remove(collection);
+      return;
+    }
+    DateTime? maxDate;
+    for (final doc in docs) {
+      final data = doc.data() as Map<String, dynamic>?;
+      final raw = data?['syncedAt'];
+      DateTime? dt;
+      if (raw is Timestamp) {
+        dt = raw.toDate();
+      } else if (raw is String) {
+        dt = DateTime.tryParse(raw);
+      }
+      if (dt != null && (maxDate == null || dt.isAfter(maxDate))) {
+        maxDate = dt;
+      }
+    }
+    if (maxDate != null) {
+      _lastServerTimestamps[collection] = maxDate;
+    }
+  }
 
   // Collection names — the single source of truth for the cloud layout.
   static const String workoutsCollection = 'workouts';
@@ -100,6 +132,7 @@ class FirestoreSyncDataSourceImpl implements FirestoreSyncDataSource {
         since: since,
         fallbackOrderField: 'date',
       ).get();
+      _recordMaxSyncedAt(workoutsCollection, snapshot.docs);
       return _parseDocs(snapshot, WorkoutModel.fromJson, 'workout');
     } catch (e) {
       throw Exception('Failed to get workouts: $e');
@@ -145,7 +178,11 @@ class FirestoreSyncDataSourceImpl implements FirestoreSyncDataSource {
       }
 
       final snapshot = await query.limit(1).get();
-      if (snapshot.docs.isEmpty) return null;
+      if (snapshot.docs.isEmpty) {
+        _lastServerTimestamps.remove(programsCollection);
+        return null;
+      }
+      _recordMaxSyncedAt(programsCollection, snapshot.docs);
 
       try {
         return ActiveProgramModel.fromJson(
@@ -200,6 +237,7 @@ class FirestoreSyncDataSourceImpl implements FirestoreSyncDataSource {
         // a nonexistent `date` field, which silently excluded every doc).
         fallbackOrderField: 'timestamp',
       ).get();
+      _recordMaxSyncedAt(nutritionCollection, snapshot.docs);
       return _parseDocs(snapshot, MealModel.fromJson, 'meal');
     } catch (e) {
       throw Exception('Failed to get meals: $e');
@@ -237,6 +275,7 @@ class FirestoreSyncDataSourceImpl implements FirestoreSyncDataSource {
         since: since,
         fallbackOrderField: 'date',
       ).get();
+      _recordMaxSyncedAt(bodyProgressCollection, snapshot.docs);
       return _parseDocs(snapshot, BodyEntryModel.fromJson, 'body entry');
     } catch (e) {
       throw Exception('Failed to get body entries: $e');
@@ -296,6 +335,7 @@ class FirestoreSyncDataSourceImpl implements FirestoreSyncDataSource {
     required String userId,
     required DateTime? since,
     required String fallbackOrderField,
+    int limit = 100,
   }) {
     Query query =
         _firestore.collection(collection).where('userId', isEqualTo: userId);
@@ -306,7 +346,7 @@ class FirestoreSyncDataSourceImpl implements FirestoreSyncDataSource {
     } else {
       query = query.orderBy(fallbackOrderField, descending: true);
     }
-    return query;
+    return query.limit(limit);
   }
 
   /// Parses query documents, skipping (not failing on) individual bad

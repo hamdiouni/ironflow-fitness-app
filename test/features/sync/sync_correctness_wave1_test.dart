@@ -53,6 +53,9 @@ class SharedCloudFirestore implements FirestoreSyncDataSource {
   int workoutPushCallCount = 0;
 
   @override
+  DateTime? getLastServerTimestamp(String collection) => null;
+
+  @override
   Future<void> syncWorkout(String userId, WorkoutModel workout) async {
     workoutPushCallCount++;
     if (failWorkoutIdsOnPush.contains(workout.id)) {
@@ -207,6 +210,7 @@ class InMemorySyncQueue implements HiveSyncQueueDataSource {
     String id,
     SyncStatus status, {
     String? error,
+    int? retryCount,
   }) async {
     final idx = actions.indexWhere((a) => a.id == id);
     if (idx != -1) {
@@ -214,9 +218,10 @@ class InMemorySyncQueue implements HiveSyncQueueDataSource {
       actions[idx] = current.copyWith(
         status: status,
         error: error,
-        retryCount: status == SyncStatus.failed
-            ? current.retryCount + 1
-            : current.retryCount,
+        retryCount: retryCount ??
+            (status == SyncStatus.failed
+                ? current.retryCount + 1
+                : current.retryCount),
       );
     }
   }

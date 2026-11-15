@@ -42,6 +42,9 @@ class FakeFirestoreSyncDataSource implements FirestoreSyncDataSource {
   NutritionTargetsModel? nutritionTargetsToReturn;
   DateTime? recordedSinceFilter;
 
+  @override
+  DateTime? getLastServerTimestamp(String collection) => null;
+
   // Workouts -----------------------------------------------------------------
 
   @override
@@ -142,10 +145,19 @@ class FakeHiveSyncQueueDataSource implements HiveSyncQueueDataSource {
   }
 
   @override
-  Future<void> updateActionStatus(String id, SyncStatus status, {String? error}) async {
+  Future<void> updateActionStatus(
+    String id,
+    SyncStatus status, {
+    String? error,
+    int? retryCount,
+  }) async {
     final idx = actions.indexWhere((a) => a.id == id);
     if (idx != -1) {
-      actions[idx] = actions[idx].copyWith(status: status, error: error);
+      actions[idx] = actions[idx].copyWith(
+        status: status,
+        error: error,
+        retryCount: retryCount ?? actions[idx].retryCount,
+      );
     }
   }
 

@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:progression_tracker/features/settings/domain/usecases/export_all_data_use_case.dart';
 import 'package:progression_tracker/features/auth/domain/repositories/auth_repository.dart';
+import 'package:progression_tracker/features/auth/data/services/local_sample_data_seeder.dart';
 
 /// Entity representing a backup record.
 class BackupRecord {
@@ -93,6 +94,7 @@ class BackupDataUseCase {
   Future<List<BackupRecord>> getAllBackups() async {
     final user = await _authRepository.getCurrentUser();
     if (user == null) throw Exception('User not authenticated');
+    if (isLocalOnlyUserId(user.id)) return [];
 
     final snapshot = await _firestore
         .collection('users')
@@ -112,6 +114,9 @@ class BackupDataUseCase {
   Future<void> deleteBackup(String backupId) async {
     final user = await _authRepository.getCurrentUser();
     if (user == null) throw Exception('User not authenticated');
+    if (isLocalOnlyUserId(user.id)) {
+      throw UnsupportedError('Local-only accounts do not support cloud backups.');
+    }
 
     // Get backup record
     final doc = await _firestore
@@ -142,6 +147,7 @@ class BackupDataUseCase {
   Future<void> cleanupOldBackups({int keepCount = 7}) async {
     final user = await _authRepository.getCurrentUser();
     if (user == null) throw Exception('User not authenticated');
+    if (isLocalOnlyUserId(user.id)) return;
 
     final snapshot = await _firestore
         .collection('users')
@@ -213,6 +219,9 @@ class BackupDataUseCase {
   Future<BackupRecord> _createBackup(BackupType type) async {
     final user = await _authRepository.getCurrentUser();
     if (user == null) throw Exception('User not authenticated');
+    if (isLocalOnlyUserId(user.id)) {
+      throw UnsupportedError('Local-only accounts cannot be backed up to cloud storage.');
+    }
 
     // Get export statistics
     final statistics = await _exportAllDataUseCase.getExportStatistics();
@@ -230,7 +239,10 @@ class BackupDataUseCase {
 
     try {
       // Upload to cloud storage
-      final uploadTask = _storage.ref(cloudPath).putFile(file);
+      final uploadTask = _storage.ref(cloudPath).putFile(
+        file,
+        SettableMetadata(contentType: 'application/json'),
+      );
       await uploadTask;
 
       // Create backup record

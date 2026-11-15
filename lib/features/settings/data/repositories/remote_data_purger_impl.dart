@@ -104,7 +104,7 @@ class RemoteDataPurgerImpl implements RemoteDataPurger {
     }
 
     // 5. Purge known users/{uid} subcollections
-    for (final subcollection in const ['backups', 'nutrition', 'consent']) {
+    for (final subcollection in const ['backups', 'nutrition', 'consent', 'ai_usage']) {
       try {
         final snapshot = await firestore
             .collection('users')

@@ -40,6 +40,7 @@ class _ThrowingGoogleAuthRepository implements AuthRepository {
   Future<User> signUpWithEmail({
     required String email,
     required String password,
+    String? displayName,
   }) async {
     throw UnimplementedError();
   }

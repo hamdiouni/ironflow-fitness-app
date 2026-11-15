@@ -6,6 +6,7 @@ abstract class AuthRemoteDataSource {
   Future<User> signUpWithEmail({
     required String email,
     required String password,
+    String? displayName,
   });
 
   Future<User> signInWithEmail({

@@ -9,10 +9,12 @@ class SignUpUseCase {
   Future<User> call({
     required String email,
     required String password,
+    String? displayName,
   }) async {
     return repository.signUpWithEmail(
       email: email,
       password: password,
+      displayName: displayName,
     );
   }
 }

@@ -25,7 +25,16 @@ class ActiveProgramRepositoryImpl implements ActiveProgramRepository {
   /// save. Optional; tests construct without it.
   final Future<void> Function(ActiveProgram program)? onProgramSaved;
 
-  ActiveProgramRepositoryImpl(this.dataSource, {this.userId, this.onProgramSaved});
+  /// Hook invoked with the cleared program after a successful local clear,
+  /// so the composition root can enqueue a remote deletion sync action.
+  final Future<void> Function(ActiveProgram program)? onProgramCleared;
+
+  ActiveProgramRepositoryImpl(
+    this.dataSource, {
+    this.userId,
+    this.onProgramSaved,
+    this.onProgramCleared,
+  });
 
   /// Stamps userId onto the ActiveProgram and its embedded program when
   /// missing, so workouts started from it inherit a real owner, and bumps
@@ -52,6 +61,16 @@ class ActiveProgramRepositoryImpl implements ActiveProgramRepository {
     } catch (_) {
       // Outbox enqueue is best-effort relative to the local save, which
       // has already succeeded; the next save re-enqueues full state.
+    }
+  }
+
+  Future<void> _notifyCleared(ActiveProgram program) async {
+    final callback = onProgramCleared;
+    if (callback == null) return;
+    try {
+      await callback(program);
+    } catch (_) {
+      // Outbox enqueue is best-effort relative to the local clear.
     }
   }
 
@@ -112,7 +131,11 @@ class ActiveProgramRepositoryImpl implements ActiveProgramRepository {
   @override
   Future<void> clearActiveProgram() async {
     try {
+      final current = await loadActiveProgram();
       await dataSource.clearActiveProgram(userId: userId);
+      if (current != null) {
+        await _notifyCleared(current);
+      }
     } on HiveError catch (e, stackTrace) {
       throw ActiveProgramException(
         message: 'Unable to clear your workout program. Please try again.',

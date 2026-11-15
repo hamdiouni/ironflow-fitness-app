@@ -27,14 +27,18 @@ class InMemoryMockAuthDataSource implements MockAuthDataSource {
   Future<User> signUpWithEmail({
     required String email,
     required String password,
+    String? displayName,
   }) async {
     if (_usersByEmail.containsKey(email)) {
       throw Exception('Email already in use');
     }
+    final effectiveName = displayName?.trim().isNotEmpty == true
+        ? displayName!.trim()
+        : email.split('@').first;
     final user = User(
       id: 'uid_${_usersByEmail.length + 1}',
       email: email,
-      displayName: email.split('@').first,
+      displayName: effectiveName,
       photoUrl: null,
       createdAt: DateTime.utc(2026, 1, 1),
       updatedAt: DateTime.utc(2026, 1, 1),

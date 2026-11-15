@@ -5,6 +5,7 @@ import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:progression_tracker/core/utils/record_ownership.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../auth/data/services/local_sample_data_seeder.dart';
 import '../../../body/data/datasources/hive_body_data_source.dart';
 import '../../../body/data/models/body_entry_model.dart';
 import '../../../nutrition/data/datasources/hive_nutrition_datasource.dart';
@@ -128,6 +129,12 @@ class SyncService implements SyncEngine {
     required String dataId,
     required Map<String, dynamic> data,
   }) async {
+    final uid = _resolveUserId() ?? (data['userId'] as String?);
+    if (isLocalOnlyUserId(uid)) {
+      AppLogger.debug('Local-only user ($uid), skipping sync queue action');
+      return;
+    }
+
     final action = SyncAction(
       id: const Uuid().v4(),
       type: type,
@@ -170,6 +177,10 @@ class SyncService implements SyncEngine {
       final uid = userId ?? _resolveUserId();
       if (uid == null) {
         AppLogger.debug('No user ID provided, sync skipped');
+        return;
+      }
+      if (isLocalOnlyUserId(uid)) {
+        AppLogger.debug('Local-only user ($uid), sync skipped');
         return;
       }
 
@@ -574,8 +585,10 @@ class SyncService implements SyncEngine {
           AppLogger.debug('📥 Pulled workout ${cloud.id}');
         }
       }
+      final maxTimestamp = _firestoreSync.getLastServerTimestamp(_workoutsKey) ??
+          cloudWorkouts.map(_workoutClock).reduce((a, b) => a.isAfter(b) ? a : b);
+      await _advanceCursorWithTimestamp(_workoutsKey, userId, maxTimestamp);
     }
-    await _advanceCursor(_workoutsKey, userId);
   }
 
   Future<void> _pullActiveProgram(
@@ -603,8 +616,10 @@ class SyncService implements SyncEngine {
         await _hivePrograms.saveActiveProgram(cloud, userId: userId);
         AppLogger.debug('📥 Pulled active program ${cloud.id}');
       }
+      final maxTimestamp = _firestoreSync.getLastServerTimestamp(_programsKey) ??
+          SyncConflictPolicy.parseIso(cloud.updatedAt);
+      await _advanceCursorWithTimestamp(_programsKey, userId, maxTimestamp);
     }
-    await _advanceCursor(_programsKey, userId);
   }
 
   Future<void> _pullMeals(
@@ -650,8 +665,10 @@ class SyncService implements SyncEngine {
           AppLogger.debug('📥 Pulled meal ${cloud.id}');
         }
       }
+      final maxTimestamp = _firestoreSync.getLastServerTimestamp(_nutritionKey) ??
+          cloudMeals.map(_mealClock).reduce((a, b) => a.isAfter(b) ? a : b);
+      await _advanceCursorWithTimestamp(_nutritionKey, userId, maxTimestamp);
     }
-    await _advanceCursor(_nutritionKey, userId);
   }
 
   Future<void> _pullBodyEntries(
@@ -698,8 +715,10 @@ class SyncService implements SyncEngine {
           AppLogger.debug('📥 Pulled body entry ${cloud.id}');
         }
       }
+      final maxTimestamp = _firestoreSync.getLastServerTimestamp(_bodyProgressKey) ??
+          cloudEntries.map(_bodyClock).reduce((a, b) => a.isAfter(b) ? a : b);
+      await _advanceCursorWithTimestamp(_bodyProgressKey, userId, maxTimestamp);
     }
-    await _advanceCursor(_bodyProgressKey, userId);
   }
 
   Future<void> _pullNutritionTargets(
@@ -752,6 +771,20 @@ class SyncService implements SyncEngine {
     );
   }
 
+  Future<void> _advanceCursorWithTimestamp(
+    String key,
+    String userId,
+    DateTime? timestamp,
+  ) async {
+    if (timestamp != null) {
+      await _syncQueue.setCursor(
+        key,
+        timestamp,
+        userId: userId,
+      );
+    }
+  }
+
   Future<void> _emitStatus() async {
     if (_syncStatusController.isClosed) return;
     final pendingCount = await _syncQueue.getPendingCount();
@@ -790,7 +823,11 @@ class SyncService implements SyncEngine {
         pendingActions.where((a) => a.status == SyncStatus.failed);
 
     for (final action in failedActions) {
-      await _syncQueue.updateActionStatus(action.id, SyncStatus.pending);
+      await _syncQueue.updateActionStatus(
+        action.id,
+        SyncStatus.pending,
+        retryCount: 0,
+      );
     }
 
     await syncAll(userId: userId);

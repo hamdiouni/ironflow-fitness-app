@@ -7,7 +7,12 @@ import '../../domain/entities/sync_action.dart';
 abstract class HiveSyncQueueDataSource {
   Future<void> addAction(SyncAction action);
   Future<List<SyncAction>> getPendingActions();
-  Future<void> updateActionStatus(String id, SyncStatus status, {String? error});
+  Future<void> updateActionStatus(
+    String id,
+    SyncStatus status, {
+    String? error,
+    int? retryCount,
+  });
   Future<void> deleteAction(String id);
   Future<void> clearCompleted();
   Future<int> getPendingCount();
@@ -84,6 +89,7 @@ class HiveSyncQueueDataSourceImpl implements HiveSyncQueueDataSource {
     String id,
     SyncStatus status, {
     String? error,
+    int? retryCount,
   }) async {
     final box = await _syncBox;
     final actionData = box.get(id);
@@ -93,7 +99,10 @@ class HiveSyncQueueDataSourceImpl implements HiveSyncQueueDataSource {
       final updated = action.copyWith(
         status: status,
         error: error,
-        retryCount: status == SyncStatus.failed ? action.retryCount + 1 : action.retryCount,
+        retryCount: retryCount ??
+            (status == SyncStatus.failed
+                ? action.retryCount + 1
+                : action.retryCount),
       );
       await box.put(id, updated.toJson());
     }

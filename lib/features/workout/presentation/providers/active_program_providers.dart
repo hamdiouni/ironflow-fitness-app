@@ -51,6 +51,12 @@ final activeProgramRepositoryProvider = Provider<ActiveProgramRepository>((ref) 
       dataId: program.id,
       data: ActiveProgramModel.fromEntity(program).toJson(),
     ),
+    onProgramCleared: (program) => syncService.queueAction(
+      type: SyncActionType.delete,
+      dataType: SyncDataType.program,
+      dataId: program.id,
+      data: {'id': program.id, 'userId': userId},
+    ),
   );
 });
 

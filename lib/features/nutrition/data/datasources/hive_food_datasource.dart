@@ -96,6 +96,34 @@ class HiveFoodDataSource {
     }
   }
 
+  /// Upsert a single food item into the shared foods cache without overwriting
+  /// other cached foods.
+  Future<void> upsertCachedFood(FoodItemFullModel food) async {
+    try {
+      final rawList = _box.get(_foodsKey) as List<dynamic>?;
+      final currentList = rawList != null
+          ? List<dynamic>.from(rawList)
+          : <dynamic>[];
+
+      final foodJson = food.toJson();
+      final existingIndex = currentList.indexWhere(
+        (item) => item is Map && item['id'] == food.id,
+      );
+
+      if (existingIndex >= 0) {
+        currentList[existingIndex] = foodJson;
+      } else {
+        currentList.add(foodJson);
+      }
+
+      await _box.put(_foodsKey, currentList);
+      await _box.put(_cacheTimestampKey, DateTime.now().toIso8601String());
+      await _box.put(_cacheVersionKey, _currentCacheVersion);
+    } catch (e) {
+      throw Exception('Failed to upsert cached food: $e');
+    }
+  }
+
   /// Save a custom food created by the user
   Future<void> saveCustomFood(FoodItemFullModel food) async {
     try {
