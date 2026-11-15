@@ -190,6 +190,7 @@ export async function handleAiProxyRequest({
   verifyAppCheckToken,
   enforceAppCheck = false,
   checkAndIncrementDailyQuota,
+  refundDailyQuota,
   dailyQuotaLimit = DEFAULT_DAILY_QUOTA,
   geminiApiKey,
   fetchImpl = globalThis.fetch,
@@ -294,7 +295,21 @@ export async function handleAiProxyRequest({
     };
   }
 
-  // 4. Enforce durable per-user daily quota in Firestore (`users/{uid}/ai_usage/{yyyy-mm-dd}`)
+  // 4. Ensure server-side Gemini API key is configured BEFORE quota check/increment
+  if (!geminiApiKey || typeof geminiApiKey !== 'string' || !geminiApiKey.trim()) {
+    return {
+      status: 503,
+      headers: { 'Content-Type': 'application/json' },
+      body: {
+        error: {
+          code: 'PROXY_MISCONFIGURED',
+          message: 'AI service is temporarily unavailable.',
+        },
+      },
+    };
+  }
+
+  // 5. Enforce durable per-user daily quota in Firestore (`users/{uid}/ai_usage/{yyyy-mm-dd}`)
   const { dateKey, retryAfterSeconds } = getUtcQuotaWindow(now);
   const quotaResult = await checkAndIncrementDailyQuota({
     uid,
@@ -322,20 +337,6 @@ export async function handleAiProxyRequest({
           code: 'RATE_LIMIT_EXCEEDED',
           message: 'Daily AI coaching limit reached. Quota resets at midnight UTC.',
           retryAfterSeconds,
-        },
-      },
-    };
-  }
-
-  // 5. Ensure server-side Gemini API key is configured
-  if (!geminiApiKey || typeof geminiApiKey !== 'string' || !geminiApiKey.trim()) {
-    return {
-      status: 503,
-      headers: { 'Content-Type': 'application/json' },
-      body: {
-        error: {
-          code: 'PROXY_MISCONFIGURED',
-          message: 'AI service is temporarily unavailable.',
         },
       },
     };
@@ -373,17 +374,46 @@ export async function handleAiProxyRequest({
         latencyMs,
       });
 
-      const mappedStatus = upstreamResponse.status === 429 ? 429 : 502;
+      if (typeof refundDailyQuota === 'function') {
+        try {
+          await refundDailyQuota({
+            uid,
+            dateKey,
+            inputChars: validation.totalChars,
+          });
+        } catch (refundErr) {
+          logger({
+            event: 'ai_proxy_refund_error',
+            uidHash: hashUidForLogs(uid),
+            error: sanitizeErrorString(refundErr?.message || refundErr),
+          });
+        }
+      }
+
+      let mappedStatus = 502;
+      let errorCode = 'UPSTREAM_ERROR';
+      let errorMessage = 'Failed to generate AI response from upstream provider.';
+      if (upstreamResponse.status === 429) {
+        mappedStatus = 429;
+        errorCode = 'UPSTREAM_RATE_LIMIT';
+        errorMessage = 'AI service is busy. Please wait a moment and try again.';
+      } else if (upstreamResponse.status === 503) {
+        mappedStatus = 503;
+        errorCode = 'UPSTREAM_UNAVAILABLE';
+        errorMessage = 'AI service is temporarily unavailable. Please try again later.';
+      } else if (upstreamResponse.status === 504) {
+        mappedStatus = 504;
+        errorCode = 'GATEWAY_TIMEOUT';
+        errorMessage = 'AI response timed out. Please try a shorter question.';
+      }
+
       return {
         status: mappedStatus,
         headers: { 'Content-Type': 'application/json' },
         body: {
           error: {
-            code: mappedStatus === 429 ? 'UPSTREAM_RATE_LIMIT' : 'UPSTREAM_ERROR',
-            message:
-                mappedStatus === 429
-                  ? 'AI service is busy. Please wait a moment and try again.'
-                  : 'Failed to generate AI response from upstream provider.',
+            code: errorCode,
+            message: errorMessage,
           },
         },
       };
@@ -430,6 +460,23 @@ export async function handleAiProxyRequest({
       error: sanitizeErrorString(err?.message || err),
       latencyMs: Date.now() - startedAt,
     });
+
+    if (typeof refundDailyQuota === 'function') {
+      try {
+        await refundDailyQuota({
+          uid,
+          dateKey,
+          inputChars: validation.totalChars,
+        });
+      } catch (refundErr) {
+        logger({
+          event: 'ai_proxy_refund_error',
+          uidHash: hashUidForLogs(uid),
+          error: sanitizeErrorString(refundErr?.message || refundErr),
+        });
+      }
+    }
+
     return {
       status: isAbort ? 504 : 502,
       headers: { 'Content-Type': 'application/json' },

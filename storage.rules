@@ -50,5 +50,15 @@ service firebase.storage {
                             && request.resource.size < 10 * 1024 * 1024  // Max 10MB
                             && request.resource.contentType.matches('image/.*');
     }
+    
+    // User backups
+    match /users/{userId}/backups/{fileName} {
+      allow read, delete: if isOwner(userId);
+      allow create, update: if isOwner(userId)
+                            && request.resource != null
+                            && fileName.size() <= 256
+                            && request.resource.size <= 10 * 1024 * 1024  // Max 10MB
+                            && request.resource.contentType == 'application/json';
+    }
   }
 }
