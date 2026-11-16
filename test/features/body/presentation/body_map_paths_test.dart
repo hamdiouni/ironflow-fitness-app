@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:progression_tracker/features/body/domain/entities/muscle_region.dart';
 import 'package:progression_tracker/features/body/presentation/widgets/body_map/body_map_paths.dart';

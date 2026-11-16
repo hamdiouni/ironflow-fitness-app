@@ -121,11 +121,10 @@ class _NoOpFirestoreSyncDataSource implements FirestoreSyncDataSource {
 /// Records the two calls [SyncedWorkoutRepository] makes into the concrete
 /// sync engine, without running pushes, pulls, or the initial-push scan.
 class _RecordingSyncService extends SyncService {
-  _RecordingSyncService({required HiveWorkoutDataSource hiveWorkouts})
+  _RecordingSyncService({required super.hiveWorkouts})
       : super(
           syncQueue: HiveSyncQueueDataSourceImpl(),
           firestoreSync: _NoOpFirestoreSyncDataSource(),
-          hiveWorkouts: hiveWorkouts,
           hivePrograms: HiveActiveProgramDataSource(),
           connectivity: _OfflineConnectivity(),
           enableInitialPush: false,

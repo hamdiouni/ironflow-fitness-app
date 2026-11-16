@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:progression_tracker/core/theme/app_theme_tokens.dart';
-import 'package:progression_tracker/features/body/domain/entities/muscle_recovery_status.dart';
 import 'package:progression_tracker/features/body/domain/entities/muscle_region.dart';
 import 'package:progression_tracker/features/body/presentation/providers/body_map_providers.dart';
 import 'package:progression_tracker/features/body/presentation/widgets/body_map/body_map_view.dart';
@@ -135,7 +134,7 @@ class _FakeManualSorenessNotifier extends ManualSorenessNotifier {
   Set<String> build() => Set<String>.from(initial);
 
   @override
-  Future<void> toggleSoreness(String regionId, bool isSore) async {
+  Future<void> toggle(String regionId, bool isSore) async {
     final next = Set<String>.from(state);
     if (isSore) {
       next.add(regionId);

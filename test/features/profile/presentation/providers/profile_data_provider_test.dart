@@ -26,7 +26,7 @@ void main() {
     budget: BudgetLevel.medium,
   );
 
-  final Alice = User(
+  final alice = User(
     id: 'Alice',
     email: 'Alice@example.com',
     displayName: 'Alice Martin',
@@ -153,7 +153,7 @@ void main() {
 
       final data = buildProfileData(
         profile: profile,
-        accountUser: Alice,
+        accountUser: alice,
         now: now,
         bodyEntries: [
           BodyEntry(
@@ -297,7 +297,7 @@ void main() {
 
       final data = buildProfileData(
         profile: profile,
-        accountUser: Alice,
+        accountUser: alice,
         now: now,
         activeProgram: const ActiveProgram(
           id: 'foreign-active',

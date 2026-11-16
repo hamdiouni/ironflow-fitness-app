@@ -45,7 +45,7 @@ void main() {
     test('rethrows error when maxAttempts exhausted', () async {
       var callCount = 0;
 
-      expect(
+      await expectLater(
         () => RetryHelper.withExponentialBackoff(
           () async {
             callCount++;
@@ -57,6 +57,8 @@ void main() {
         ),
         throwsA(isA<FormatException>()),
       );
+
+      expect(callCount, 3);
     });
 
     test('shouldRetry predicate aborts immediately on non-retryable error', () async {
