@@ -6,10 +6,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'firebase_options.dart';
+import 'core/config/flavor_config.dart';
 import 'core/constants/app_theme.dart';
+import 'core/providers/observability_provider.dart';
 import 'core/services/app_check_service.dart';
 import 'core/services/telemetry_preferences.dart';
 import 'core/providers/language_provider.dart';
@@ -29,8 +30,12 @@ import 'features/ai/presentation/providers/global_ai_provider.dart';
 import 'shared/presentation/services/app_haptics.dart';
 
 void main() async {
+  final observability = createRuntimeObservabilityService();
+  final featureFlags = createRuntimeFeatureFlagsService();
+
   // Run app in error zone to catch all errors
   runZonedGuarded<Future<void>>(() async {
+    final bootSpan = observability.startSpan('cold_boot');
     WidgetsFlutterBinding.ensureInitialized();
 
     // Configure transparent edge-to-edge system bars (Android 14+ / iOS)
@@ -84,25 +89,38 @@ void main() async {
     // telemetry can be emitted. Debug builds never collect.
     await TelemetryPreferences.applyStoredPreferences();
 
-    // Initialize Firebase Crashlytics handlers (mobile only; collection
-    // itself was configured by TelemetryPreferences just above).
-    if (!kIsWeb) {
-      // Pass all uncaught Flutter errors to Crashlytics
-      FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
-      
-      // Pass all uncaught asynchronous errors to Crashlytics
-      PlatformDispatcher.instance.onError = (error, stack) {
-        FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
-        return true;
-      };
-      
-      if (kDebugMode) {
-        AppLogger.debug('✓ Firebase Crashlytics initialized (mobile only)');
-      }
-    } else {
-      if (kDebugMode) {
-        AppLogger.debug('ℹ️ Firebase Crashlytics skipped (not supported on web)');
-      }
+    // Load cached/remote feature flags and kill switches (ADR-005).
+    await featureFlags.initialize(refreshRemote: Firebase.apps.isNotEmpty);
+
+    // Initialize consent-gated & PII-scrubbed error handlers.
+    FlutterError.onError = (details) {
+      FlutterError.presentError(details);
+      unawaited(
+        observability.recordError(
+          details.exception,
+          details.stack ?? StackTrace.current,
+          context: details.context?.toDescription() ?? 'flutter_error',
+          fatal: true,
+        ),
+      );
+    };
+
+    PlatformDispatcher.instance.onError = (error, stack) {
+      unawaited(
+        observability.recordError(
+          error,
+          stack,
+          context: 'platform_dispatcher',
+          fatal: true,
+        ),
+      );
+      return true;
+    };
+
+    if (!kIsWeb && kDebugMode) {
+      AppLogger.debug('✓ Firebase Crashlytics handlers wired via ObservabilityService');
+    } else if (kIsWeb && kDebugMode) {
+      AppLogger.debug('ℹ️ Firebase Crashlytics skipped (not supported on web)');
     }
 
     if (kDebugMode) {
@@ -147,24 +165,27 @@ void main() async {
     // the first frame is rendered.
     final stateManager = WorkoutStateManager();
     await stateManager.init();
+    bootSpan.stop(succeeded: true);
 
     runApp(
       ProviderScope(
         overrides: [
           workoutStateManagerProvider.overrideWithValue(stateManager),
+          observabilityServiceProvider.overrideWithValue(observability),
+          featureFlagsServiceProvider.overrideWithValue(featureFlags),
         ],
         child: const _AppWithStateRestore(),
       ),
     );
   }, (error, stack) {
-    // Catch errors that occur outside of Flutter's error handling
-    if (!kIsWeb) {
-      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
-    } else {
-      FlutterError.dumpErrorToConsole(
-        FlutterErrorDetails(exception: error, stack: stack),
-      );
-    }
+    unawaited(
+      observability.recordError(
+        error,
+        stack,
+        context: 'run_zoned_guarded',
+        fatal: true,
+      ),
+    );
   });
 }
 
@@ -235,16 +256,22 @@ class _AppWithStateRestoreState extends ConsumerState<_AppWithStateRestore>
 /// Root application widget that wires up MaterialApp.router with the
 /// go_router provider and the app theme.
 class MainApp extends ConsumerWidget {
-  const MainApp({super.key});
+  const MainApp({
+    super.key,
+    this.flavorConfig,
+  });
+
+  final FlavorConfig? flavorConfig;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
     final themeMode = ref.watch(themeProvider);
     final locale = ref.watch(languageProvider);
+    final config = flavorConfig ?? FlavorConfig.current;
 
     return MaterialApp.router(
-      title: 'IronFlow',
+      title: config.appName,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: themeMode,
@@ -253,6 +280,20 @@ class MainApp extends ConsumerWidget {
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       routerConfig: router,
       debugShowCheckedModeBanner: false,
+      builder: (context, child) {
+        final content = child ?? const SizedBox.shrink();
+        if (!config.showFlavorBanner) {
+          return content;
+        }
+        return Banner(
+          message: config.flavor.name.toUpperCase(),
+          location: BannerLocation.topEnd,
+          color: config.isDev
+              ? const Color(0xFFD97706)
+              : const Color(0xFF0284C7),
+          child: content,
+        );
+      },
     );
   }
 }

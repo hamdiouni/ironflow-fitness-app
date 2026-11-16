@@ -11,6 +11,7 @@ import '../../../body/data/datasources/hive_body_data_source.dart';
 import '../../../auth/data/services/local_sample_data_seeder.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../../core/providers/observability_provider.dart';
 
 // Connectivity providers live in core (Phase 3, F-10): identical
 // duplicates used to be defined at the bottom of this file, so widgets
@@ -48,6 +49,10 @@ final syncServiceProvider = Provider<SyncService>((ref) {
     // current uid, so only run it under real Firebase auth — never
     // under a throwaway mock uid (Phase 3; see SyncService).
     enableInitialPush: kUseFirebaseAuth,
+    syncEnabled: ref.watch(
+          featureFlagsSnapshotProvider.select((flags) => flags.isCloudSyncActive),
+        ) &&
+        SyncService.kDefaultCloudSyncEnabled,
   );
 
   // Initialize on creation

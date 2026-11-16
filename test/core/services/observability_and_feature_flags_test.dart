@@ -1,7 +1,13 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:progression_tracker/core/config/build_stamp.dart';
+import 'package:progression_tracker/core/providers/observability_provider.dart';
 import 'package:progression_tracker/core/services/feature_flags_service.dart';
 import 'package:progression_tracker/core/services/observability_service.dart';
+import 'package:progression_tracker/core/services/telemetry_preferences.dart';
+import 'package:progression_tracker/features/ai/data/datasources/gemini_ai_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -178,6 +184,76 @@ void main() {
         maintSnap.maintenanceMessage,
         'Scheduled database upgrade in progress.',
       );
+    });
+
+    test('observabilityServiceProvider, featureFlagsProvider, and GeminiAIService kill-switch gate requests without network', () async {
+      var httpCalls = 0;
+      final ai = GeminiAIService(
+        proxyUrl: 'https://example.invalid/aiGenerate',
+        isAiCoachEnabled: () => false,
+        httpClient: MockClient((_) async {
+          httpCalls++;
+          return http.Response('{}', 200);
+        }),
+      );
+
+      await expectLater(
+        () => ai.sendMessage([
+          {'role': 'user', 'content': 'Hi'},
+        ]),
+        throwsA(
+          isA<GeminiAIServiceException>()
+              .having((e) => e.code, 'code', 'FEATURE_DISABLED'),
+        ),
+      );
+      expect(httpCalls, 0);
+
+      final container = ProviderContainer(
+        overrides: [
+          featureFlagsSnapshotProvider.overrideWithValue(
+            const FeatureFlagsSnapshot(killAiCoach: true, killCloudSync: true),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final obs = container.read(observabilityServiceProvider);
+      obs.log(LogLevel.info, 'Runtime observability provider initialized');
+      expect(obs.recentLogs, hasLength(1));
+
+      final flags = container.read(featureFlagsSnapshotProvider);
+      expect(flags.isAiCoachActive, isFalse);
+      expect(flags.isCloudSyncActive, isFalse);
+    });
+
+    test('runtime observability and feature flags safely no-op when Firebase is uninitialized', () async {
+      await TelemetryPreferences.recordConsentDecision(
+        analyticsEnabled: true,
+        crashReportingEnabled: true,
+      );
+
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      final obs = container.read(observabilityServiceProvider);
+      final sentCrash = await obs.recordError(
+        StateError('runtime-check user@example.com'),
+        StackTrace.current,
+        context: 'token=Bearer secret.jwt.payload',
+        fatal: false,
+      );
+      final sentEvent = await obs.recordEvent(
+        'screen_view',
+        parameters: {'screen': 'home', 'email': 'a@b.com'},
+      );
+      expect(sentCrash, isFalse);
+      expect(sentEvent, isFalse);
+      expect(obs.recentLogs, isNotEmpty);
+
+      final flagsService = container.read(featureFlagsServiceProvider);
+      final initialized = await flagsService.initialize(refreshRemote: true);
+      expect(initialized.isAiCoachActive, isTrue);
+      expect(initialized.isCloudSyncActive, isTrue);
     });
   });
 }

@@ -18,6 +18,7 @@ import 'package:progression_tracker/features/nutrition/domain/entities/entities.
 import 'package:progression_tracker/features/body/presentation/providers/body_providers.dart';
 import 'package:progression_tracker/features/body/domain/entities/body_entry.dart';
 import 'package:progression_tracker/core/providers/analytics_provider.dart';
+import 'package:progression_tracker/core/providers/observability_provider.dart';
 import 'package:progression_tracker/core/utils/record_ownership.dart';
 import 'package:progression_tracker/features/auth/presentation/providers/auth_notifier.dart'
     show currentUserIdProvider;
@@ -30,7 +31,9 @@ final localAICoachProvider = Provider<LocalAICoach>((ref) {
 
 /// Provider for Gemini AI service (FREE!)
 final geminiAIServiceProvider = Provider<GeminiAIService>((ref) {
-  return GeminiAIService();
+  return GeminiAIService(
+    isAiCoachEnabled: () => ref.read(featureFlagsSnapshotProvider).isAiCoachActive,
+  );
 });
 
 /// Provider for AI Question Normalizer and Cache (Wave 6.1 — AI-05)

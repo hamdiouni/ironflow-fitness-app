@@ -1,7 +1,9 @@
 // Firebase Emulator Suite security rules tests (Firestore + Storage).
-// Run with:
-//   firebase emulators:exec --only firestore,storage "node --test test/rules/firebase_rules.emulator.spec.mjs"
+// Run from repo root with:
+//   firebase emulators:exec --only firestore,storage "npm --prefix functions run test:rules"
 import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, it, before, after, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import {
@@ -12,6 +14,9 @@ import {
 import { doc, getDoc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { ref, uploadBytes, deleteObject, getBytes } from 'firebase/storage';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const REPO_ROOT = resolve(__dirname, '../..');
 const PROJECT_ID = 'demo-ironflow-rules-test';
 
 describe('IronFlow Firestore & Storage Security Rules (Wave 1)', () => {
@@ -21,10 +26,10 @@ describe('IronFlow Firestore & Storage Security Rules (Wave 1)', () => {
     testEnv = await initializeTestEnvironment({
       projectId: PROJECT_ID,
       firestore: {
-        rules: readFileSync('firestore.rules', 'utf8'),
+        rules: readFileSync(resolve(REPO_ROOT, 'firestore.rules'), 'utf8'),
       },
       storage: {
-        rules: readFileSync('storage.rules', 'utf8'),
+        rules: readFileSync(resolve(REPO_ROOT, 'storage.rules'), 'utf8'),
       },
     });
   });
@@ -174,6 +179,38 @@ describe('IronFlow Firestore & Storage Security Rules (Wave 1)', () => {
 
     // Owner delete succeeds
     await assertSucceeds(deleteObject(aliceBackupRef));
+  });
+
+  it('allows public reads on app_config/feature_flags while blocking non-admin writes (Wave 2.5 ADR-005)', async () => {
+    const anonDb = testEnv.unauthenticatedContext().firestore();
+    const aliceDb = testEnv.authenticatedContext('alice').firestore();
+    const adminDb = testEnv
+      .authenticatedContext('operator', { admin: true })
+      .firestore();
+
+    await assertSucceeds(
+      setDoc(doc(adminDb, 'app_config/feature_flags'), {
+        kill_ai_coach: false,
+        kill_cloud_sync: false,
+        maintenance_mode: false,
+      }),
+    );
+
+    // Public read (unauthenticated + authenticated) succeeds
+    await assertSucceeds(getDoc(doc(anonDb, 'app_config/feature_flags')));
+    await assertSucceeds(getDoc(doc(aliceDb, 'app_config/feature_flags')));
+
+    // Normal client and anonymous writes must be denied
+    await assertFails(
+      setDoc(doc(aliceDb, 'app_config/feature_flags'), {
+        kill_ai_coach: true,
+      }),
+    );
+    await assertFails(
+      updateDoc(doc(anonDb, 'app_config/feature_flags'), {
+        maintenance_mode: true,
+      }),
+    );
   });
 });
 

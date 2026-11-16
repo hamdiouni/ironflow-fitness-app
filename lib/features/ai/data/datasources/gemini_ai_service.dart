@@ -39,6 +39,7 @@ class GeminiAIService implements AiTransport {
   final bool _allowDirectApiKey;
   final Future<String?> Function()? _authTokenProvider;
   final Future<String?> Function()? _appCheckTokenProvider;
+  final bool Function()? _isAiCoachEnabled;
   final http.Client _httpClient;
 
   GeminiAIService({
@@ -47,6 +48,7 @@ class GeminiAIService implements AiTransport {
     bool? allowDirectApiKey,
     Future<String?> Function()? authTokenProvider,
     Future<String?> Function()? appCheckTokenProvider,
+    bool Function()? isAiCoachEnabled,
     http.Client? httpClient,
   })  : _apiKey = apiKey ?? AppConfig.getGeminiApiKey(),
         _proxyUrl = proxyUrl ?? AppConfig.getAiProxyUrl(),
@@ -54,6 +56,7 @@ class GeminiAIService implements AiTransport {
             allowDirectApiKey ?? AppConfig.allowDirectAiApiKeys,
         _authTokenProvider = authTokenProvider,
         _appCheckTokenProvider = appCheckTokenProvider,
+        _isAiCoachEnabled = isAiCoachEnabled,
         _httpClient = httpClient ?? http.Client();
 
   bool get _hasUsableDirectKey => _allowDirectApiKey && _apiKey.isNotEmpty;
@@ -143,6 +146,12 @@ class GeminiAIService implements AiTransport {
     double temperature = 0.7,
     int maxTokens = 8000,
   }) async {
+    if (_isAiCoachEnabled != null && !_isAiCoachEnabled()) {
+      throw GeminiAIServiceException(
+        message: 'AI Coach is temporarily disabled by operator configuration.',
+        code: 'FEATURE_DISABLED',
+      );
+    }
     validateConfiguration();
     _validateInputBounds(messages);
 

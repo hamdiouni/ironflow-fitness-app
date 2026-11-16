@@ -167,5 +167,11 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAdmin();
     }
+
+    // Remote feature flags / emergency kill switches (Wave 2.5 / ADR-005).
+    match /app_config/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
   }
 }

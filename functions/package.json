@@ -9,7 +9,8 @@
   },
   "scripts": {
     "build": "tsc",
-    "test": "node --test test/ai_proxy.test.mjs"
+    "test": "node --test test/ai_proxy.test.mjs",
+    "test:rules": "node --test ../test/rules/firebase_rules.emulator.spec.mjs"
   },
   "dependencies": {
     "firebase-admin": "^12.6.0",
