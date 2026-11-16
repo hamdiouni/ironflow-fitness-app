@@ -1,24 +1,19 @@
 #!/usr/bin/env python3
 """
-Performance & Size Budget Gate for IronFlow CI (Wave 5.1).
+IronFlow Performance, Asset Size, & Android R8 Budget Gate.
 
-Validates:
-1. Web bundle budgets:
-   - main.dart.js gzipped <= 2.5 MB (Current ~1.60 MB)
-   - Total web assets <= 6.0 MB (Current ~2.91 MB excluding canvaskit engine)
-2. Assets directory budgets:
-   - assets/fonts/ <= 1.5 MB (Current ~0.99 MB)
-   - assets/data/ <= 1.0 MB (Current ~0.39 MB)
-3. Android binary budgets (if build/ exists):
-   - Per-ABI release APK <= 35.0 MB (R8-shrunk)
-   - Unsplit debug APK <= 250.0 MB
+Validates static assets, Web JS bundle sizes, Android APK sizes, and
+optionally enforces presence of release APK + R8 mapping artifacts in CI.
 """
 
+from __future__ import annotations
+
+import argparse
 import gzip
-import os
+from pathlib import Path
 import sys
 
-# Budget Thresholds in MegaBytes
+# Approved Wave 5.1 / Wave 2.3 Budgets
 MAX_WEB_GZIPPED_JS_MB = 2.5
 MAX_WEB_ASSETS_MB = 6.0
 MAX_FONTS_DIR_MB = 1.5
@@ -26,98 +21,149 @@ MAX_DATA_DIR_MB = 1.0
 MAX_PER_ABI_RELEASE_APK_MB = 35.0
 MAX_DEBUG_APK_MB = 250.0
 
-def get_dir_size_bytes(directory: str) -> int:
-    total = 0
-    if not os.path.isdir(directory):
+
+def dir_size_bytes(path: Path) -> int:
+    if not path.exists():
         return 0
-    for root, _, files in os.walk(directory):
-        for f in files:
-            fp = os.path.join(root, f)
-            if not os.path.islink(fp):
-                total += os.path.getsize(fp)
-    return total
+    return sum(f.stat().st_size for f in path.rglob('*') if f.is_file())
 
-def check_budgets() -> bool:
-    print("==================================================")
-    print("  IronFlow Performance & Size Budget Gate (W5.1) ")
-    print("==================================================")
-    all_passed = True
 
-    # 1. Assets Directory Budgets
-    fonts_mb = get_dir_size_bytes("assets/fonts") / (1024 * 1024)
-    data_mb = get_dir_size_bytes("assets/data") / (1024 * 1024)
+def to_mb(size_bytes: int) -> float:
+    return size_bytes / (1024 * 1024)
 
-    print(f"\n[Assets Audit]")
-    if fonts_mb <= MAX_FONTS_DIR_MB:
-        print(f"  PASS: assets/fonts is {fonts_mb:.2f} MB (budget <= {MAX_FONTS_DIR_MB} MB)")
-    else:
-        print(f"  FAIL: assets/fonts is {fonts_mb:.2f} MB (exceeds budget {MAX_FONTS_DIR_MB} MB)")
-        all_passed = False
 
-    if data_mb <= MAX_DATA_DIR_MB:
-        print(f"  PASS: assets/data is {data_mb:.2f} MB (budget <= {MAX_DATA_DIR_MB} MB)")
-    else:
-        print(f"  FAIL: assets/data is {data_mb:.2f} MB (exceeds budget {MAX_DATA_DIR_MB} MB)")
-        all_passed = False
+def gzip_size_bytes(path: Path) -> int:
+    data = path.read_bytes()
+    return len(gzip.compress(data, compresslevel=9))
 
-    # 2. Web Bundle Budgets (if build/web exists)
-    web_dir = "build/web"
-    if os.path.isdir(web_dir):
-        print(f"\n[Web Bundle Audit]")
-        main_js = os.path.join(web_dir, "main.dart.js")
-        if os.path.isfile(main_js):
-            raw_mb = os.path.getsize(main_js) / (1024 * 1024)
-            with open(main_js, "rb") as f:
-                gz_mb = len(gzip.compress(f.read())) / (1024 * 1024)
-            if gz_mb <= MAX_WEB_GZIPPED_JS_MB:
-                print(f"  PASS: main.dart.js is {raw_mb:.2f} MB raw, {gz_mb:.2f} MB gzipped (budget <= {MAX_WEB_GZIPPED_JS_MB} MB)")
-            else:
-                print(f"  FAIL: main.dart.js gzipped is {gz_mb:.2f} MB (exceeds budget {MAX_WEB_GZIPPED_JS_MB} MB)")
-                all_passed = False
 
-        web_assets_mb = get_dir_size_bytes(os.path.join(web_dir, "assets")) / (1024 * 1024)
-        if web_assets_mb <= MAX_WEB_ASSETS_MB:
-            print(f"  PASS: build/web/assets is {web_assets_mb:.2f} MB (budget <= {MAX_WEB_ASSETS_MB} MB)")
+def main() -> int:
+    parser = argparse.ArgumentParser(
+        description='Verify IronFlow asset, Web bundle, APK size, and R8 mapping budgets.',
+    )
+    parser.add_argument(
+        '--require-web',
+        action='store_true',
+        help='Fail if build/web/main.dart.js or build/web/assets is missing.',
+    )
+    parser.add_argument(
+        '--require-release-apk',
+        action='store_true',
+        help='Fail if split/release APKs are missing under build/app/outputs/flutter-apk.',
+    )
+    parser.add_argument(
+        '--require-r8-mapping',
+        action='store_true',
+        help='Fail if build/app/outputs/mapping/release/mapping.txt is missing or empty.',
+    )
+    args = parser.parse_args()
+
+    print('=' * 56)
+    print('  IronFlow Performance & Size Budget Gate (W2.3 / W5.1) ')
+    print('=' * 56)
+
+    failures: list[str] = []
+
+    # 1. Static Assets Check
+    print('\n[Assets Audit]')
+    fonts_dir = Path('assets/fonts')
+    if fonts_dir.exists():
+        fonts_mb = to_mb(dir_size_bytes(fonts_dir))
+        print(f'  assets/fonts: {fonts_mb:.2f} MB (budget <= {MAX_FONTS_DIR_MB} MB)')
+        if fonts_mb > MAX_FONTS_DIR_MB:
+            failures.append(f'assets/fonts ({fonts_mb:.2f} MB) > {MAX_FONTS_DIR_MB} MB')
         else:
-            print(f"  FAIL: build/web/assets is {web_assets_mb:.2f} MB (exceeds budget {MAX_WEB_ASSETS_MB} MB)")
-            all_passed = False
+            print('  PASS: assets/fonts within budget.')
+
+    data_dir = Path('assets/data')
+    if data_dir.exists():
+        data_mb = to_mb(dir_size_bytes(data_dir))
+        print(f'  assets/data: {data_mb:.2f} MB (budget <= {MAX_DATA_DIR_MB} MB)')
+        if data_mb > MAX_DATA_DIR_MB:
+            failures.append(f'assets/data ({data_mb:.2f} MB) > {MAX_DATA_DIR_MB} MB')
+        else:
+            print('  PASS: assets/data within budget.')
+
+    # 2. Web Build Check
+    print('\n[Web Bundle Audit]')
+    web_js = Path('build/web/main.dart.js')
+    web_assets = Path('build/web/assets')
+
+    if web_js.exists():
+        raw_mb = to_mb(web_js.stat().st_size)
+        gz_mb = to_mb(gzip_size_bytes(web_js))
+        print(f'  main.dart.js: {raw_mb:.2f} MB raw, {gz_mb:.2f} MB gzipped (budget <= {MAX_WEB_GZIPPED_JS_MB} MB)')
+        if gz_mb > MAX_WEB_GZIPPED_JS_MB:
+            failures.append(f'main.dart.js gzipped ({gz_mb:.2f} MB) > {MAX_WEB_GZIPPED_JS_MB} MB')
+        else:
+            print('  PASS: main.dart.js gzipped within budget.')
+    elif args.require_web:
+        failures.append('Missing build/web/main.dart.js (--require-web set)')
     else:
-        print("\n[Web Bundle Audit] Skipped (build/web not present)")
+        print('  SKIP: build/web/main.dart.js not present.')
 
-    # 3. Android APK Budgets (if build/app/outputs/flutter-apk exists)
-    apk_dir = "build/app/outputs/flutter-apk"
-    if os.path.isdir(apk_dir):
-        print(f"\n[Android Binary Audit]")
-        for f in os.listdir(apk_dir):
-            if f.endswith(".apk"):
-                fp = os.path.join(apk_dir, f)
-                mb = os.path.getsize(fp) / (1024 * 1024)
-                if "debug" in f:
-                    if mb <= MAX_DEBUG_APK_MB:
-                        print(f"  PASS: {f} is {mb:.2f} MB (budget <= {MAX_DEBUG_APK_MB} MB)")
-                    else:
-                        print(f"  FAIL: {f} is {mb:.2f} MB (exceeds budget {MAX_DEBUG_APK_MB} MB)")
-                        all_passed = False
-                elif "release" in f:
-                    if mb <= MAX_PER_ABI_RELEASE_APK_MB:
-                        print(f"  PASS: {f} is {mb:.2f} MB (budget <= {MAX_PER_ABI_RELEASE_APK_MB} MB)")
-                    else:
-                        print(f"  FAIL: {f} is {mb:.2f} MB (exceeds budget {MAX_PER_ABI_RELEASE_APK_MB} MB)")
-                        all_passed = False
+    if web_assets.exists():
+        w_assets_mb = to_mb(dir_size_bytes(web_assets))
+        print(f'  build/web/assets: {w_assets_mb:.2f} MB (budget <= {MAX_WEB_ASSETS_MB} MB)')
+        if w_assets_mb > MAX_WEB_ASSETS_MB:
+            failures.append(f'build/web/assets ({w_assets_mb:.2f} MB) > {MAX_WEB_ASSETS_MB} MB')
+        else:
+            print('  PASS: build/web/assets within budget.')
+    elif args.require_web:
+        failures.append('Missing build/web/assets directory (--require-web set)')
+
+    # 3. Android APK & R8 Mapping Check
+    print('\n[Android Binary & R8 Audit]')
+    apk_dir = Path('build/app/outputs/flutter-apk')
+    release_apks = sorted(apk_dir.glob('*release.apk')) if apk_dir.exists() else []
+    debug_apk = apk_dir / 'app-debug.apk'
+
+    if release_apks:
+        for apk in release_apks:
+            apk_mb = to_mb(apk.stat().st_size)
+            limit = MAX_PER_ABI_RELEASE_APK_MB if ('arm' in apk.name or 'x86' in apk.name) else 80.0
+            print(f'  {apk.name}: {apk_mb:.2f} MB (budget <= {limit} MB)')
+            if apk_mb > limit:
+                failures.append(f'{apk.name} ({apk_mb:.2f} MB) > {limit} MB')
+            else:
+                print(f'  PASS: {apk.name} within budget.')
+    elif args.require_release_apk:
+        failures.append('No *release.apk artifacts found under build/app/outputs/flutter-apk (--require-release-apk set)')
     else:
-        print("\n[Android Binary Audit] Skipped (build/app/outputs/flutter-apk not present)")
+        print('  SKIP: No release APKs present under build/app/outputs/flutter-apk.')
 
-    print("\n--------------------------------------------------")
-    if all_passed:
-        print("  RESULT: All performance & size budgets PASSED.")
-        print("--------------------------------------------------")
-        return True
+    if debug_apk.exists():
+        dbg_mb = to_mb(debug_apk.stat().st_size)
+        print(f'  app-debug.apk: {dbg_mb:.2f} MB (budget <= {MAX_DEBUG_APK_MB} MB)')
+        if dbg_mb > MAX_DEBUG_APK_MB:
+            failures.append(f'app-debug.apk ({dbg_mb:.2f} MB) > {MAX_DEBUG_APK_MB} MB')
+        else:
+            print('  PASS: app-debug.apk within budget.')
+
+    mapping_file = Path('build/app/outputs/mapping/release/mapping.txt')
+    if mapping_file.exists():
+        mapping_bytes = mapping_file.stat().st_size
+        mapping_mb = to_mb(mapping_bytes)
+        print(f'  R8 mapping.txt: {mapping_mb:.2f} MB ({mapping_bytes} bytes)')
+        if mapping_bytes <= 0:
+            failures.append('R8 mapping.txt exists but is empty (0 bytes)')
+        else:
+            print('  PASS: Non-empty R8 mapping.txt emitted.')
+    elif args.require_r8_mapping:
+        failures.append('Missing R8 mapping.txt at build/app/outputs/mapping/release/mapping.txt (--require-r8-mapping set)')
     else:
-        print("  RESULT: Performance or size budgets FAILED.")
-        print("--------------------------------------------------")
-        return False
+        print('  SKIP: R8 mapping.txt not present.')
 
-if __name__ == "__main__":
-    success = check_budgets()
-    sys.exit(0 if success else 1)
+    print('\n' + '-' * 56)
+    if failures:
+        print('  RESULT: BUDGET / R8 GATE FAILED:')
+        for item in failures:
+            print(f'    * {item}')
+        return 1
 
+    print('  RESULT: All performance, size, & R8 checks PASSED.')
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())

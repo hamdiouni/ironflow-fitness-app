@@ -1,136 +1,29 @@
-# Integration Tests for Debug Logging System
+# Integration & E2E Tests
 
-This directory contains integration tests that verify the debug logging system works correctly and doesn't break application functionality.
+This directory holds device-targeted integration tests plus helper guidance for running IronFlow's end-to-end test suites.
 
-## Test Files
+## Automated Headless CI E2E Journey (`test/integration/`)
 
-### 1. workout_flow_logging_test.dart
-Tests the complete workout flow with logging enabled:
-- Start workout session
-- Add exercises to workout
-- Log sets for exercises
-- Finish workout
-- State restoration after app restart
-- Error handling (add exercise without starting workout, log set for non-existent exercise)
+Fast, deterministic widget-router E2E journeys live under `test/integration/` so they run reliably in `flutter test` and GitHub Actions without requiring emulators or external network access:
 
-**Verifies:**
-- All workout operations complete successfully with logging
-- Logging doesn't break workout functionality
-- State persistence works correctly
-- Error paths are logged appropriately
+- `test/integration/wave2_ui_navigation_e2e_test.dart`: verifies unauthenticated `/home -> /login -> /signup -> /onboarding -> /home`, telemetry opt-in modal (`KEEP ALL OFF` / default off persistence), and `MainApp` flavor badge isolation (`dev` / `staging` vs `production`).
+- `test/integration/auth_preservation_property_test.dart`: auth regression/preservation checks.
 
-### 2. nutrition_flow_logging_test.dart
-Tests the complete nutrition flow with logging enabled:
-- Save and retrieve nutrition targets
-- Save multiple meals (breakfast, lunch, dinner)
-- Get meals by date
-- Get specific meal by ID
-- Delete meals
-- Clear all nutrition data
+Run them with:
 
-**Verifies:**
-- All nutrition operations complete successfully with logging
-- Logging doesn't break nutrition functionality
-- Data persistence works correctly
-- Error paths are logged appropriately (empty database, missing targets)
-
-### 3. theme_flow_logging_test.dart
-Tests the complete theme flow with logging enabled:
-- Load initial theme
-- Toggle theme between dark and light
-- Set theme directly
-- Theme persistence across app restarts
-- Multiple theme toggles
-- Get theme data
-
-**Verifies:**
-- All theme operations complete successfully with logging
-- Logging doesn't break theme functionality
-- Theme persistence works correctly
-- Default theme is applied when no saved theme exists
-
-## Running the Tests
-
-### Run all integration tests:
-```bash
-flutter test integration_test/
+```powershell
+flutter test test/integration/
 ```
 
-### Run a specific test file:
-```bash
-flutter test integration_test/workout_flow_logging_test.dart
-flutter test integration_test/nutrition_flow_logging_test.dart
-flutter test integration_test/theme_flow_logging_test.dart
+## Device / Emulator Integration Tests (`integration_test/`)
+
+Device-level integration tests (requiring an Android emulator, iOS simulator, or ChromeDriver session) run with:
+
+```powershell
+flutter test integration_test/ --dart-define-from-file=config/dev.json
 ```
 
-### Run on a specific device:
-```bash
-flutter test integration_test/ -d windows
-flutter test integration_test/ -d chrome
-flutter test integration_test/ -d edge
-```
+### Troubleshooting
 
-### Run with verbose output:
-```bash
-flutter test integration_test/ --verbose
-```
-
-## Test Structure
-
-Each test file follows this structure:
-
-1. **Setup**: Initialize Firebase and Hive
-2. **Test Cases**: Execute operations and verify results
-3. **Assertions**: Verify operations complete successfully
-4. **Logging Verification**: Console output shows all operations are logged
-5. **Teardown**: Clean up test data
-
-## Expected Console Output
-
-When running these tests, you should see structured log output like:
-
-```
-📊 [Workout] Starting new workout session...
-✅ [Workout] Workout created successfully
-🔍 [Workout] Workout ID: abc-123, Start time: 2024-01-15 10:30:00
-✅ [Workout] State updated to inProgress
-📊 [Workout] Saving workout state to Hive...
-✅ [Workout] Workout state saved to Hive
-```
-
-This confirms that:
-- ✅ Operations complete successfully
-- 📊 Operations are tracked
-- 🔍 Detailed data is logged
-- ❌ Errors are caught and logged
-- ⚠️ Warnings are displayed
-
-## Success Criteria
-
-All tests pass if:
-1. ✅ All operations complete without errors
-2. ✅ Logging doesn't break functionality
-3. ✅ Data persists correctly to Hive
-4. ✅ Error paths are handled gracefully
-5. ✅ Console shows structured log output
-
-## Troubleshooting
-
-### Tests fail with "Box not open" error
-- Ensure HiveManager.initialize() is called in setUpAll()
-- Check that Hive boxes are opened before use
-
-### Tests fail with Firebase errors
-- Ensure Firebase is initialized in setUpAll()
-- Check that firebase_options.dart exists
-
-### Tests timeout
-- Increase timeout value in test configuration
-- Check for blocking operations in the code
-
-## Notes
-
-- These tests verify that logging is **non-intrusive** - it should not affect application behavior
-- All logging is wrapped in print statements for console output
-- Tests use real Hive storage (not mocked) to verify persistence
-- Tests clean up data in setUp() to ensure isolation
+- **"Box not open" errors**: Ensure `HiveManager.initialize()` / tier-1 box opens run in `setUpAll()` before pumping screens that read Hive directly.
+- **Firebase errors in device runs**: Verify `firebase_options.dart` and `--dart-define-from-file=config/dev.json` are passed, or run Firebase Emulators (`firebase emulators:start`) when testing live auth/sync paths.

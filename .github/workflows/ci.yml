@@ -5,6 +5,7 @@ on:
     branches: [ main, master, "feat/**" ]
   pull_request:
     branches: [ main, master ]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -29,20 +30,51 @@ jobs:
         run: bash scripts/pre-commit-secrets-check.sh --ci-verify
 
   cloud-functions-proxy:
-    name: AI Proxy Unit & Security Tests
+    name: Cloud Functions Build & AI Proxy Tests
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: functions
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
+          cache: "npm"
+          cache-dependency-path: functions/package-lock.json
+      - name: Install Cloud Functions dependencies
+        run: npm ci
+      - name: Build Cloud Functions TypeScript
+        run: npm run build
       - name: Run Cloud Functions AI Proxy test suite
-        run: node --test functions/test/ai_proxy.test.mjs
+        run: npm test
+
+  firebase-emulator-rules:
+    name: Firestore & Storage Rules Emulator Tests
+    runs-on: ubuntu-latest
+    needs: [secret-scan]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: functions/package-lock.json
+      - name: Install Firebase rules-unit-testing dependencies
+        run: npm --prefix functions ci
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+      - name: Execute Firestore & Storage rules tests against Emulator
+        run: firebase emulators:exec --only firestore,storage "npm --prefix functions run test:rules"
 
   flutter-verify:
-    name: Flutter Analyze, Coverage Gate, Web & Android Build
+    name: Flutter Analyze, Coverage Ratchet, Web & Android Release Gate
     runs-on: ubuntu-latest
-    needs: [secret-scan, cloud-functions-proxy]
+    needs: [secret-scan, cloud-functions-proxy, firebase-emulator-rules]
     steps:
       - uses: actions/checkout@v4
 
@@ -69,10 +101,10 @@ jobs:
         run: flutter analyze --no-fatal-infos
 
       - name: Run unit, widget, golden & E2E journey tests with coverage
-        run: flutter test --no-pub --coverage
+        run: flutter test --no-pub --coverage --timeout=60s
 
-      - name: Enforce per-layer coverage gate
-        run: python3 scripts/check_coverage.py coverage/lcov.info
+      - name: Enforce coverage floors & monotonic ratchet
+        run: python3 scripts/check_coverage.py coverage/lcov.info --baseline docs/quality/coverage_baseline.json --fail-on-drop
 
       - name: Upload coverage report artifact
         uses: actions/upload-artifact@v4
@@ -104,19 +136,39 @@ jobs:
             --dart-define-from-file=config/dev.json \
             --dart-define=GIT_COMMIT=${{ github.sha }}
 
-      - name: Upload Android debug APK artifact
+      - name: Build Android release split APKs (R8 verified)
+        run: |
+          flutter build apk --release --split-per-abi \
+            --dart-define-from-file=config/production.json \
+            --dart-define=GIT_COMMIT=${{ github.sha }}
+
+      - name: Verify R8 mapping.txt emitted
+        run: test -s build/app/outputs/mapping/release/mapping.txt
+
+      - name: Enforce performance, size, & R8 budgets (Wave 2.3 / Wave 5.1)
+        run: python3 scripts/check_perf_budgets.py --require-release-apk --require-web --require-r8-mapping
+
+      - name: Upload Android build & R8 mapping artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ironflow-android-debug-apk
-          path: build/app/outputs/flutter-apk/app-debug.apk
+          name: ironflow-android-builds
+          path: |
+            build/app/outputs/flutter-apk/*.apk
+            build/app/outputs/mapping/release/mapping.txt
           retention-days: 14
 
-      - name: Enforce performance and size budgets (Wave 5.1)
-        run: python3 scripts/check_perf_budgets.py
+      - name: Informational Web Wasm build (non-blocking)
+        continue-on-error: true
+        run: |
+          flutter build web --wasm \
+            --dart-define-from-file=config/production.json \
+            --dart-define=GIT_COMMIT=${{ github.sha }} \
+            -o "${{ github.workspace }}/build/web-wasm"
 
   ios-compile-check:
     name: iOS Compile Check (No Codesign)
     runs-on: macos-latest
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/master') || github.event_name == 'workflow_dispatch'
     needs: [secret-scan]
     steps:
       - uses: actions/checkout@v4

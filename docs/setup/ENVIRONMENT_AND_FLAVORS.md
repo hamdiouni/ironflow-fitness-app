@@ -1,82 +1,41 @@
-# IronFlow — Environment Setup & Flavor Configuration
+# Environment & Flavors Guide
 
-**Version:** 2.0.0  
-**Target Audience:** Flutter Developers, CI/CD Engineers
+IronFlow separates **dev**, **staging**, and **production** environments using versioned `--dart-define-from-file` configs under `config/` paired with `.firebaserc` project aliases.
 
----
+## 1. Flavor Matrix
 
-## 1. Developer Day-1 Setup
+| Flag / Setting | `config/dev.json` | `config/staging.json` | `config/production.json` |
+| :--- | :--- | :--- | :--- |
+| `FLAVOR` | `dev` | `staging` | `production` |
+| `APP_NAME` | `IronFlow Dev` | `IronFlow Staging` | `IronFlow` |
+| `FIREBASE_PROJECT_ID` | `ironflow-dev` | `ironflow-staging` | `ironflow-5b79d` |
+| `AI_PROXY_URL` | `http://127.0.0.1:5001/ironflow-dev/us-central1/aiGenerate` | `https://us-central1-ironflow-staging.cloudfunctions.net/aiGenerate` | `https://us-central1-ironflow-5b79d.cloudfunctions.net/aiGenerate` |
+| `ENFORCE_APP_CHECK` | `false` | `false` | `false` (monitor first; flip per rollout) |
+| `ENABLE_CLOUD_SYNC` | `false` | `true` | `true` |
+| `USE_FIREBASE_AUTH` | `false` | `true` | `true` |
+| `ALLOW_DIRECT_AI_KEYS` | `true` (debug only) | `false` | `false` |
 
-### System Prerequisites
-1. Install Flutter 3.24+ and Dart 3.5+.
-2. Verify toolchain setup:
-   ```bash
-   flutter doctor
-   ```
-3. Fetch dependencies:
-   ```bash
-   flutter pub get
-   ```
-4. Verify tests and static analysis:
-   ```bash
-   flutter analyze lib/
-   flutter test --no-pub
-   ```
+Additional optional defines resolved by `AppConfig` / `BuildStamp`:
+- `RECAPTCHA_V3_SITE_KEY`: Web App Check reCAPTCHA v3 site key (`AppCheckService`).
+- `GIT_COMMIT`: Git commit SHA surfaced in diagnostics & Crashlytics custom keys.
+- `BUILD_DATE`: UTC ISO-8601 timestamp surfaced in diagnostics & Crashlytics custom keys.
 
----
+## 2. Running Locally
 
-## 2. Environment Variables & App Configuration
-
-IronFlow uses compile-time `--dart-define` arguments rather than brittle local `.env` files. This ensures that sensitive values cannot be accidentally leaked into source repositories.
-
-### Core Configuration Flags
-
-| Variable | Default Value | Description |
-| :--- | :--- | :--- |
-| `AI_PROXY_URL` | Empty string | The HTTPS URL of your deployed Firebase Cloud Functions proxy (`functions/aiGenerate`). |
-| `DIRECT_AI_KEYS_OPT_IN` | `false` | Debug-only developer flag allowing direct Gemini API keys for rapid local iteration. **Hard-disabled in release builds**. |
-| `APP_CHECK_STAGE` | `monitor` | Controls App Check enforcement mode (`off`, `monitor`, `enforce`). |
-| `USE_FIREBASE_AUTH` | `true` | When true, routes authentication through Firebase Auth. (In debug tests, test doubles can be injected via Riverpod overrides). |
-
----
-
-## 3. Launching the App Locally
-
-### Local Debug Development (Connecting to Deployed Proxy)
-```bash
-flutter run -d chrome --dart-define=AI_PROXY_URL="https://<region>-<project-id>.cloudfunctions.net/aiGenerate"
+### Mobile / Emulator (Dev Flavor)
+```powershell
+flutter run --dart-define-from-file=config/dev.json
 ```
 
-### Local Debug with Firebase Emulators
-If developing offline with local Firebase emulators:
-```bash
-firebase emulators:start
-flutter run -d chrome --dart-define=USE_FIREBASE_EMULATOR=true
+### Web (Dev or Production Flavor)
+```powershell
+./scripts/run_web.ps1 -Flavor dev
+./scripts/run_web.ps1 -Flavor production
 ```
 
----
+## 3. Release & Security Invariants
 
-## 4. Release Build Commands
-
-### Android Release App Bundle (Google Play)
-```bash
-flutter build appbundle --release \
-  --dart-define=AI_PROXY_URL="https://<region>-<project-id>.cloudfunctions.net/aiGenerate" \
-  --dart-define=APP_CHECK_STAGE="enforce"
-```
-
-### Web Release (Firebase Hosting)
-```bash
-flutter build web --release \
-  --dart-define=AI_PROXY_URL="https://<region>-<project-id>.cloudfunctions.net/aiGenerate" \
-  --dart-define=APP_CHECK_STAGE="enforce"
-```
-
----
-
-## 5. Security Notice for Developers
-
-> [!CAUTION]
-> Never put hardcoded API keys or service account credentials into `.env`, Dart files, or Git commits.
-> Production release builds reject direct API keys by design (`StateError` fail-closed). All AI communication must route through the authenticated Cloud Functions proxy.
-
+1. `FlavorConfig.resolve(...)` enforces that **`kReleaseMode` builds always disable local mock auth (`useFirebaseAuth = true`)** and never emit a debug `DEV`/`STAGING` banner in production.
+2. `AppConfig.allowDirectAiApiKeys` evaluates to `false` in release and staging builds; AI requests route through `AI_PROXY_URL` (`functions/src/index.ts` -> `aiGenerate`).
+3. `/design-preview` and `/design-gallery` routes return to `home` when `kReleaseMode` is `true` (`lib/core/router/app_router.dart`).
+4. Analytics and Crashlytics stay **OFF by default** until the user explicitly grants consent in `TelemetryConsentScreen` or `PrivacySettingsScreen` (`TelemetryPreferences`).
