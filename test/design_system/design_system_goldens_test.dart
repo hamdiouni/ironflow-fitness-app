@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -155,11 +154,48 @@ Widget _buildDesignSystemShowcase({required ThemeData theme}) {
   );
 }
 
+/// Cross-OS pixel tolerance comparator used only on non-Windows hosts (e.g., Linux CI)
+/// where FreeType/Skia glyph anti-aliasing differs slightly from Windows baselines.
+class _CrossOsGoldenFileComparator extends LocalFileComparator {
+  _CrossOsGoldenFileComparator(super.testFile, {required this.maxDiffRate});
+
+  final double maxDiffRate;
+
+  @override
+  Future<bool> compare(Uint8List imageBytes, Uri golden) async {
+    final result = await GoldenFileComparator.compareLists(
+      imageBytes,
+      await getGoldenBytes(golden),
+    );
+    try {
+      if (result.passed || result.diffPercent <= maxDiffRate) {
+        return true;
+      }
+      final error = await generateFailureOutput(result, golden, basedir);
+      throw FlutterError(error);
+    } finally {
+      result.dispose();
+    }
+  }
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  final GoldenFileComparator previousComparator = goldenFileComparator;
+
   setUpAll(() async {
     await _loadBundledFonts();
+    if (!Platform.isWindows && previousComparator is LocalFileComparator) {
+      goldenFileComparator = _CrossOsGoldenFileComparator(
+        previousComparator.basedir.resolve('design_system_goldens_test.dart'),
+        maxDiffRate: 0.03,
+      );
+    }
+  });
+
+  tearDownAll(() {
+    goldenFileComparator = previousComparator;
   });
 
   group('Wave 2.3 — Direction 4 Design System Goldens (Real Bundled Fonts)', () {

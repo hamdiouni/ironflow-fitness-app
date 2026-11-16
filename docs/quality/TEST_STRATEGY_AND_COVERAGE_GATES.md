@@ -1,46 +1,31 @@
-# IronFlow Test Strategy & Coverage Gates (`Wave 2.1`)
+# Test Strategy & Coverage Gates (Wave 2)
 
-## 1. Philosophy: Real Evidence Over Vanity Counts
-- Every business-logic or architectural change requires **characterization tests first** (tests that pass on existing code before refactoring).
-- Generated files (`*.g.dart`, `*.freezed.dart`, `lib/l10n/*`) and isolated design-lab preview files (`lib/preview/*`) are excluded from coverage calculations so percentages reflect real production code.
-- Coverage is measured and gated by architectural layer (`domain` > `data` > `core` > `presentation`) using [`scripts/check_coverage.py`](../../scripts/check_coverage.py).
+This document defines IronFlow's automated test layers, Wave 2 quality floors, monotonic coverage ratchet, and release verification gates.
 
----
+## 1. Test Pyramid & Suites
 
-## 2. Layer & Feature Thresholds
+- **Unit & Domain Tests (`test/**/domain/**`, `test/core/**`)**: verify entities, use cases, validation, retry helpers, PII redaction, and feature-flag precedence (`--min-domain` floor `77.0%`).
+- **Data & Sync Characterization Tests (`test/features/sync/**`, `test/**/data/**`)**: verify Hive encryption recovery, sync queue retry resets, remote delete tombstones, and cache upserts (`--min-data` floor `66.0%`).
+- **Thin-Area Characterization Tests (`Wave 2.2`)**: deterministic offline tests for `auth` (`signup_screen_characterization_test.dart`), `sync` (`sync_provider_and_indicator_test.dart`), `notifications` (`notification_service_characterization_test.dart`), `settings` (`import_program_use_case_test.dart`, `backup_data_use_case_and_dialogs_test.dart`), `onboarding` (`onboarding_steps_characterization_test.dart`), and `main.dart` / `core` (`main_scaffold_and_boot_test.dart`, `error_handler_and_sampler_test.dart`).
+- **Headless E2E & Golden Tests (`Wave 2.4`)**:
+  - `test/integration/wave2_ui_navigation_e2e_test.dart`: verifies router redirects, signup -> onboarding -> home, default-OFF telemetry consent persistence, and flavor banner behavior.
+  - `test/design_system/design_system_goldens_test.dart`: visual design-system token goldens (with platform-matched CI font rendering notes; run Linux tolerance verification cleanly in GitHub Actions).
+- **Cloud Functions & Firebase Rules Tests (`functions/test/`, `test/rules/`)**: Node `node:test` suites verifying ID token & App Check checks, quota transactions/refunds, Firestore ownership rules, and Storage backup limits via Firebase Emulator Suite.
 
-| Scope | Wave 0 Measured Baseline | Wave 2 Measured Result | Wave 2 Enforced Gate (`check_coverage.py`) | Wave 3 Target |
-|---|---:|---:|---:|---:|
-| **Domain Layer (`*/domain/*`)** | 56.98% | **74.43%** (`3,178 / 4,270` lines) | **>= 70.0%** | **>= 80.0%** |
-| **Data Layer (`*/data/*`)** | 56.20% | **62.08%** (`2,814 / 4,533` lines) | **>= 60.0%** | **>= 70.0%** |
-| **Core Layer (`lib/core/*`)** | 54.10% | **62.21%** (`894 / 1,437` lines) |Tracked | **>= 70.0%** |
-| **Shared Layer (`lib/shared/*`)** | 71.00% | **73.97%** (`682 / 922` lines) | Tracked | **>= 75.0%** |
-| **Presentation Layer (`*/presentation/*`)** | 58.10% | **59.06%** (`9,786 / 16,569` lines) | Tracked | **>= 62.0%** |
-| **Overall Non-Generated Code** | 53.15% | **62.58%** (`17,354 / 27,731` lines) | **>= 60.0%** *(No-Drop Gate)* | **>= 65.0%** |
+## 2. Monotonic Coverage Ratchet & Approved Floors (`docs/quality/coverage_baseline.json`)
 
----
+Coverage is gated by `scripts/check_coverage.py coverage/lcov.info --baseline docs/quality/coverage_baseline.json --fail-on-drop`:
+- **Overall Goal vs Wave 2 Gate**: **75.0%** long-term target (non-blocking until reached); Wave 2 measured baseline is **68.45%** (`20,424 / 29,836` lines across `378` LCOV-tracked non-generated files; `unimported_non_gen_files = 104` tracked transparently).
+- **Zero-Drop Ratchet**: `max_drop_pct = 0.0` (CI fails on any coverage regression in overall, any architectural layer, or any tracked feature).
+- **Wave 2 Minimum Floors**:
+  - Overall: **`66.0%`** (measured `68.45%`)
+  - Layers: `domain >= 77.0%` (`78.67%`), `data >= 66.0%` (`66.61%`), `core >= 67.0%` (`70.67%`), `presentation >= 61.0%` (`65.69%`), `shared >= 73.5%` (`75.03%`)
+  - Tracked Thin Areas: `auth >= 52.0%` (`65.92%`), `settings >= 73.0%` (`80.69%`), `sync >= 55.0%` (`63.50%`), `notifications >= 58.0%` (`60.75%`), `onboarding >= 48.0%` (`71.14%`), `main.dart >= 45.0%` (`45.03%`)
 
-## 3. Critical Path Characterization Suites Added in Wave 1 & Wave 2
+## 3. Running Locally
 
-1. **Security Rules & Encryption**:
-   - [`test/core/security/firebase_rules_security_test.dart`](../../test/core/security/firebase_rules_security_test.dart)
-   - [`test/core/security/hive_encryption_migration_and_recovery_test.dart`](../../test/core/security/hive_encryption_migration_and_recovery_test.dart)
-2. **Auth, Release Safety & Onboarding Gate**:
-   - [`test/features/auth/release_safety_characterization_test.dart`](../../test/features/auth/release_safety_characterization_test.dart)
-   - [`test/features/auth/auth_and_onboarding_gate_characterization_test.dart`](../../test/features/auth/auth_and_onboarding_gate_characterization_test.dart)
-3. **Multi-Device Cloud Sync & Outbox Correctness**:
-   - [`test/features/sync/sync_correctness_wave1_test.dart`](../../test/features/sync/sync_correctness_wave1_test.dart)
-   - [`test/features/sync/sync_pipeline_test.dart`](../../test/features/sync/sync_pipeline_test.dart)
-4. **Backup, Restore, Safety Snapshots & Account Deletion**:
-   - [`test/features/settings/backup_restore_characterization_test.dart`](../../test/features/settings/backup_restore_characterization_test.dart)
-   - [`test/features/settings/remote_data_purger_test.dart`](../../test/features/settings/remote_data_purger_test.dart)
-5. **Workout Metrics, Analytics Math & Predictions**:
-   - [`test/features/analytics/analytics_math_and_program_generation_test.dart`](../../test/features/analytics/analytics_math_and_program_generation_test.dart)
-6. **Nutrition Scaling, Calorie Math & Daily Summaries**:
-   - [`test/features/nutrition/nutrition_math_characterization_test.dart`](../../test/features/nutrition/nutrition_math_characterization_test.dart)
-7. **End-to-End Multi-Feature Journeys (`Wave 2.2`)**:
-   - [`integration_test/wave2_e2e_journeys_test.dart`](../../integration_test/wave2_e2e_journeys_test.dart)
-   - [`test/integration/wave2_e2e_journeys_test.dart`](../../test/integration/wave2_e2e_journeys_test.dart)
-8. **Direction 4 Design-System Light/Dark Component Goldens (`Wave 2.3`)**:
-   - [`test/design_system/design_system_goldens_test.dart`](../../test/design_system/design_system_goldens_test.dart)
-
+```powershell
+flutter analyze --no-fatal-infos
+flutter test --coverage --timeout=60s
+python scripts/check_coverage.py coverage/lcov.info --baseline docs/quality/coverage_baseline.json --fail-on-drop
+```
