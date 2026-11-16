@@ -1,8 +1,12 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:progression_tracker/core/utils/record_ownership.dart';
 import 'package:progression_tracker/features/auth/domain/entities/user.dart';
 import 'package:progression_tracker/features/auth/domain/entities/user_profile.dart';
 import 'package:progression_tracker/features/auth/domain/repositories/auth_repository.dart';
@@ -481,5 +485,132 @@ void main() {
       expect(allStats['workouts'], 1);
       expect(allStats['body_measurements'], 1);
     });
+
+    test('BackupDataUseCase uploads with application/json SettableMetadata and rejects local-only users (Wave 1.1 & 1.5)', () async {
+      final exportWorkouts = ExportWorkoutsUseCase(workoutRepo);
+      final exportNutrition = ExportNutritionUseCase(nutritionRepo);
+      final exportAll = ExportAllDataUseCase(
+        workoutRepo,
+        nutritionRepo,
+        bodyRepo,
+        authRepo,
+        exportWorkouts,
+        exportNutrition,
+      );
+
+      final fakeStorage = _FakeBackupFirebaseStorage();
+      final fakeFirestore = _FakeBackupFirebaseFirestore();
+      final backupUseCase = BackupDataUseCase(
+        exportAll,
+        authRepo,
+        fakeFirestore,
+        fakeStorage,
+      );
+
+      final record = await backupUseCase.createManualBackup();
+      expect(record.cloudPath, startsWith('users/user_alpha/backups/'));
+      expect(fakeStorage.lastMetadata?.contentType, equals('application/json'));
+      expect(fakeFirestore.setCalls, contains('users/user_alpha/backups/${record.id}'));
+
+      // Local-only guest & demo users cannot upload or delete cloud backups
+      for (final localUid in [kLocalGuestUserId, kLocalDemoUserId]) {
+        authRepo.currentUser = User(
+          id: localUid,
+          email: '$localUid@local.invalid',
+          displayName: 'Local User',
+          photoUrl: null,
+          createdAt: DateTime.utc(2026, 1, 1),
+          updatedAt: DateTime.utc(2026, 1, 1),
+        );
+        expect(await backupUseCase.getAllBackups(), isEmpty);
+        await expectLater(
+          backupUseCase.createManualBackup,
+          throwsA(isA<UnsupportedError>()),
+        );
+        await expectLater(
+          () => backupUseCase.deleteBackup('bkp_1'),
+          throwsA(isA<UnsupportedError>()),
+        );
+      }
+    });
   });
+}
+
+class _FakeBackupFirebaseStorage extends Fake implements FirebaseStorage {
+  SettableMetadata? lastMetadata;
+  String? lastPath;
+
+  @override
+  Reference ref([String? path]) =>
+      _FakeBackupStorageReference(this, path ?? '');
+}
+
+class _FakeBackupStorageReference extends Fake implements Reference {
+  _FakeBackupStorageReference(this._storage, this._path);
+
+  final _FakeBackupFirebaseStorage _storage;
+  final String _path;
+
+  @override
+  UploadTask putFile(File file, [SettableMetadata? metadata]) {
+    _storage.lastPath = _path;
+    _storage.lastMetadata = metadata;
+    return _FakeBackupUploadTask();
+  }
+}
+
+class _FakeBackupUploadTask extends Fake implements UploadTask {
+  @override
+  Future<S> then<S>(
+    FutureOr<S> Function(TaskSnapshot value) onValue, {
+    Function? onError,
+  }) {
+    return Future<TaskSnapshot>.value(_FakeTaskSnapshot()).then(
+      onValue,
+      onError: onError,
+    );
+  }
+}
+
+class _FakeTaskSnapshot extends Fake implements TaskSnapshot {}
+
+class _FakeBackupFirebaseFirestore extends Fake implements FirebaseFirestore {
+  final List<String> setCalls = <String>[];
+
+  @override
+  CollectionReference<Map<String, dynamic>> collection(String collectionPath) =>
+      _FakeBackupCollectionRef(this, collectionPath);
+}
+
+// ignore: subtype_of_sealed_class
+class _FakeBackupCollectionRef extends Fake
+    implements CollectionReference<Map<String, dynamic>> {
+  _FakeBackupCollectionRef(this._firestore, this.path);
+
+  final _FakeBackupFirebaseFirestore _firestore;
+  @override
+  final String path;
+
+  @override
+  DocumentReference<Map<String, dynamic>> doc([String? docPath]) =>
+      _FakeBackupDocRef(_firestore, '$path/$docPath');
+}
+
+// ignore: subtype_of_sealed_class
+class _FakeBackupDocRef extends Fake
+    implements DocumentReference<Map<String, dynamic>> {
+  _FakeBackupDocRef(this._firestore, this.path);
+
+  final _FakeBackupFirebaseFirestore _firestore;
+  @override
+  final String path;
+
+  @override
+  CollectionReference<Map<String, dynamic>> collection(String collectionPath) =>
+      _FakeBackupCollectionRef(_firestore, '$path/$collectionPath');
+
+  @override
+  Future<void> set(Map<String, dynamic> data, [SetOptions? options]) async {
+    _firestore.setCalls.add(path);
+  }
 }

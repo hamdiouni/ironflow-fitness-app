@@ -20,8 +20,12 @@ class TelemetryPreferences {
   static const String consentPromptShownKey = 'telemetry_consent_prompt_shown';
 
   static Future<bool> analyticsEnabled([SharedPreferences? prefs]) async {
-    final store = prefs ?? await SharedPreferences.getInstance();
-    return store.getBool(analyticsEnabledKey) ?? false;
+    try {
+      final store = prefs ?? await SharedPreferences.getInstance();
+      return store.getBool(analyticsEnabledKey) ?? false;
+    } catch (_) {
+      return false;
+    }
   }
 
   static Future<bool> isAnalyticsEnabled([SharedPreferences? prefs]) =>
@@ -30,13 +34,21 @@ class TelemetryPreferences {
   static Future<bool> crashReportingEnabled([
     SharedPreferences? prefs,
   ]) async {
-    final store = prefs ?? await SharedPreferences.getInstance();
-    return store.getBool(crashReportingEnabledKey) ?? false;
+    try {
+      final store = prefs ?? await SharedPreferences.getInstance();
+      return store.getBool(crashReportingEnabledKey) ?? false;
+    } catch (_) {
+      return false;
+    }
   }
 
   static Future<bool> hasShownConsentPrompt([SharedPreferences? prefs]) async {
-    final store = prefs ?? await SharedPreferences.getInstance();
-    return store.getBool(consentPromptShownKey) ?? false;
+    try {
+      final store = prefs ?? await SharedPreferences.getInstance();
+      return store.getBool(consentPromptShownKey) ?? false;
+    } catch (_) {
+      return false;
+    }
   }
 
   /// Records the user's explicit telemetry consent choice and applies it

@@ -222,7 +222,9 @@ List<RouteBase> buildAppRoutes({
       // Onboarding screen
       GoRoute(
         path: AppRoutes.onboarding,
-        builder: (context, state) => const OnboardingScreen(),
+        builder: (context, state) => OnboardingScreen(
+          isEditMode: state.uri.queryParameters['mode'] == 'edit',
+        ),
       ),
 
       // StatefulShellRoute wraps the 4 primary tabs with MainScaffold

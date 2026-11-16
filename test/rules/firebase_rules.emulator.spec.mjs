@@ -126,5 +126,54 @@ describe('IronFlow Firestore & Storage Security Rules (Wave 1)', () => {
     // BKD-02 regression check: Alice CAN delete her own avatar (request.resource == null)
     await assertSucceeds(deleteObject(avatarRef));
   });
+
+  it('allows owner JSON backup upload/read/delete <= 10MB and rejects anonymous, cross-user, wrong type, and oversize writes', async () => {
+    const aliceStorage = testEnv.authenticatedContext('alice').storage();
+    const bobStorage = testEnv.authenticatedContext('bob').storage();
+    const anonStorage = testEnv.unauthenticatedContext().storage();
+
+    const aliceBackupRef = ref(aliceStorage, 'users/alice/backups/backup_1.json');
+    const jsonBytes = new TextEncoder().encode('{"version":1,"workouts":[]}');
+
+    // Owner create & read succeed
+    await assertSucceeds(
+      uploadBytes(aliceBackupRef, jsonBytes, {
+        contentType: 'application/json',
+      }),
+    );
+    await assertSucceeds(getBytes(aliceBackupRef));
+
+    // Other user & anonymous denied read/write/delete
+    const bobBackupRef = ref(bobStorage, 'users/alice/backups/backup_1.json');
+    const anonBackupRef = ref(anonStorage, 'users/alice/backups/backup_1.json');
+    await assertFails(getBytes(bobBackupRef));
+    await assertFails(
+      uploadBytes(bobBackupRef, jsonBytes, { contentType: 'application/json' }),
+    );
+    await assertFails(deleteObject(bobBackupRef));
+    await assertFails(getBytes(anonBackupRef));
+    await assertFails(
+      uploadBytes(anonBackupRef, jsonBytes, { contentType: 'application/json' }),
+    );
+
+    // Wrong content type denied
+    const wrongTypeRef = ref(aliceStorage, 'users/alice/backups/not_json.txt');
+    await assertFails(
+      uploadBytes(wrongTypeRef, new Uint8Array([65, 66, 67]), {
+        contentType: 'text/plain',
+      }),
+    );
+
+    // Oversized (> 10MB) backup denied
+    const oversizeRef = ref(aliceStorage, 'users/alice/backups/oversize.json');
+    await assertFails(
+      uploadBytes(oversizeRef, new Uint8Array(10 * 1024 * 1024 + 1), {
+        contentType: 'application/json',
+      }),
+    );
+
+    // Owner delete succeeds
+    await assertSucceeds(deleteObject(aliceBackupRef));
+  });
 });
 

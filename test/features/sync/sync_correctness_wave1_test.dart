@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
+import 'package:progression_tracker/core/utils/record_ownership.dart';
 import 'package:progression_tracker/features/body/data/datasources/hive_body_data_source.dart';
 import 'package:progression_tracker/features/body/data/models/body_entry_model.dart';
 import 'package:progression_tracker/features/nutrition/data/datasources/hive_nutrition_datasource.dart';
@@ -17,6 +18,9 @@ import 'package:progression_tracker/features/workout/data/datasources/hive_activ
 import 'package:progression_tracker/features/workout/data/datasources/hive_workout_data_source.dart';
 import 'package:progression_tracker/features/workout/data/models/active_program_model.dart';
 import 'package:progression_tracker/features/workout/data/models/workout_model.dart';
+import 'package:progression_tracker/features/workout/data/repositories/active_program_repository_impl.dart';
+import 'package:progression_tracker/features/workout/domain/entities/active_program.dart';
+import 'package:progression_tracker/features/workout/domain/entities/workout_program.dart';
 
 class ControllableConnectivity implements Connectivity {
   List<ConnectivityResult> current = [ConnectivityResult.wifi];
@@ -51,9 +55,11 @@ class SharedCloudFirestore implements FirestoreSyncDataSource {
   final Set<String> failWorkoutIdsOnPush = {};
   bool failMealsPull = false;
   int workoutPushCallCount = 0;
+  final Map<String, DateTime> lastServerTimestamps = {};
 
   @override
-  DateTime? getLastServerTimestamp(String collection) => null;
+  DateTime? getLastServerTimestamp(String collection) =>
+      lastServerTimestamps[collection];
 
   @override
   Future<void> syncWorkout(String userId, WorkoutModel workout) async {
@@ -894,6 +900,160 @@ void main() {
       expect(await queue.getPendingCount(), 0);
 
       service.dispose();
+      connectivity.dispose();
+    });
+
+    test('retryFailedActions resets retryCount to 0 so failed actions push on manual retry (Wave 1.7a)', () async {
+      final connectivity = ControllableConnectivity()..setOnline(true);
+      final cloud = SharedCloudFirestore()..failWorkoutIdsOnPush.add('w_retry');
+      final queue = InMemorySyncQueue()..initialPushDone.add('u1');
+      final workouts = InMemoryWorkoutStore();
+      final programs = InMemoryProgramStore();
+
+      final service = SyncService(
+        syncQueue: queue,
+        firestoreSync: cloud,
+        hiveWorkouts: workouts,
+        hivePrograms: programs,
+        connectivity: connectivity,
+        currentUserIdProvider: () => 'u1',
+      );
+
+      final w = _makeWorkout(
+        id: 'w_retry',
+        userId: 'u1',
+        volume: 3000,
+        updatedAt: '2026-04-15T10:00:00.000Z',
+      );
+      await queue.addAction(
+        SyncAction(
+          id: 'a_retry',
+          type: SyncActionType.update,
+          dataType: SyncDataType.workout,
+          dataId: 'w_retry',
+          data: w.toJson(),
+          timestamp: DateTime.utc(2026, 4, 15, 10),
+          status: SyncStatus.failed,
+          retryCount: 3,
+        ),
+      );
+
+      // Ordinary syncAll skips exhausted actions (retryCount >= 3)
+      await service.syncAll(userId: 'u1');
+      expect(cloud.workouts.containsKey('w_retry'), isFalse);
+
+      // Cloud recovers and user calls retryFailedActions -> retryCount resets and pushes
+      cloud.failWorkoutIdsOnPush.clear();
+      await service.retryFailedActions('u1');
+      expect(cloud.workouts['w_retry']?.totalVolume, 3000);
+      expect(await queue.getFailedCount(), 0);
+      expect(await queue.getPendingCount(), 0);
+
+      service.dispose();
+      connectivity.dispose();
+    });
+
+    test('pull advances cursor to max server syncedAt watermark instead of device clock (Wave 1.7c)', () async {
+      final connectivity = ControllableConnectivity()..setOnline(true);
+      final cloud = SharedCloudFirestore();
+      final serverWatermark = DateTime.utc(2025, 1, 2, 3, 4, 5);
+      cloud.workouts['w_server'] = _makeWorkout(
+        id: 'w_server',
+        userId: 'u1',
+        volume: 1200,
+        updatedAt: '2025-01-01T00:00:00.000Z',
+      );
+      cloud.lastServerTimestamps['workouts'] = serverWatermark;
+
+      final queue = InMemorySyncQueue()..initialPushDone.add('u1');
+      final workouts = InMemoryWorkoutStore();
+      final programs = InMemoryProgramStore();
+
+      final service = SyncService(
+        syncQueue: queue,
+        firestoreSync: cloud,
+        hiveWorkouts: workouts,
+        hivePrograms: programs,
+        connectivity: connectivity,
+        currentUserIdProvider: () => 'u1',
+      );
+
+      await service.syncAll(userId: 'u1');
+      expect(
+        await queue.getCursor('workouts', userId: 'u1'),
+        equals(serverWatermark),
+      );
+
+      service.dispose();
+      connectivity.dispose();
+    });
+
+    test('clearActiveProgram clears local state and invokes remote deletion hook (Wave 1.7d)', () async {
+      final programs = InMemoryProgramStore();
+      final clearedPrograms = <ActiveProgram>[];
+      final repo = ActiveProgramRepositoryImpl(
+        programs,
+        userId: 'u1',
+        onProgramCleared: (program) async => clearedPrograms.add(program),
+      );
+
+      final program = ActiveProgram(
+        id: 'prog_42',
+        program: const WorkoutProgram(
+          id: 'prog_42',
+          name: 'Upper/Lower',
+          description: '4-day split',
+          days: <ProgramDay>[],
+          durationWeeks: 8,
+          difficulty: 'intermediate',
+          userId: 'u1',
+        ),
+        currentDayIndex: 0,
+        isActive: true,
+        userId: 'u1',
+      );
+      await repo.saveActiveProgram(program);
+      expect(await repo.loadActiveProgram(), isNotNull);
+
+      await repo.clearActiveProgram();
+      expect(await repo.loadActiveProgram(), isNull);
+      expect(clearedPrograms.map((p) => p.id), <String>['prog_42']);
+    });
+
+    test('SyncService no-ops queueAction and syncAll for local-only guest and demo IDs (Wave 1.5)', () async {
+      final connectivity = ControllableConnectivity()..setOnline(true);
+      final cloud = SharedCloudFirestore();
+      final queue = InMemorySyncQueue();
+      final workouts = InMemoryWorkoutStore();
+      final programs = InMemoryProgramStore();
+
+      for (final localUid in [kLocalGuestUserId, kLocalDemoUserId]) {
+        final service = SyncService(
+          syncQueue: queue,
+          firestoreSync: cloud,
+          hiveWorkouts: workouts,
+          hivePrograms: programs,
+          connectivity: connectivity,
+          currentUserIdProvider: () => localUid,
+        );
+
+        await service.queueAction(
+          type: SyncActionType.update,
+          dataType: SyncDataType.workout,
+          dataId: 'w_local',
+          data: _makeWorkout(
+            id: 'w_local',
+            userId: localUid,
+            volume: 500,
+            updatedAt: '2026-04-15T10:00:00.000Z',
+          ).toJson(),
+        );
+        await service.syncAll(userId: localUid);
+
+        expect(queue.actions, isEmpty);
+        expect(cloud.workoutPushCallCount, 0);
+        service.dispose();
+      }
       connectivity.dispose();
     });
   });

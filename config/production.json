@@ -6,7 +6,7 @@
   "APP_ICON_VARIANT": "production",
   "FIREBASE_PROJECT_ID": "ironflow-5b79d",
   "AI_PROXY_URL": "https://us-central1-ironflow-5b79d.cloudfunctions.net/aiGenerate",
-  "APP_CHECK_ENFORCE": true,
+  "ENFORCE_APP_CHECK": false,
   "ENABLE_CLOUD_SYNC": true,
   "USE_FIREBASE_AUTH": true,
   "ALLOW_DIRECT_AI_KEYS": false

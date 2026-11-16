@@ -2,8 +2,11 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
+import 'package:progression_tracker/features/nutrition/data/datasources/firestore_food_datasource.dart';
 import 'package:progression_tracker/features/nutrition/data/datasources/hive_food_datasource.dart';
 import 'package:progression_tracker/features/nutrition/data/models/food_item_full_model.dart';
+import 'package:progression_tracker/features/nutrition/data/repositories/food_repository_impl.dart';
+import 'package:progression_tracker/features/nutrition/domain/entities/food_item_full.dart';
 
 void main() {
   late Directory tempDir;
@@ -123,4 +126,50 @@ void main() {
     expect(await aliceSource.getCustomFoods(), isEmpty);
     expect((await bobSource.getCustomFoods()).single.id, 'bob-food');
   });
+
+  test('upsertCachedFood preserves existing cached foods and updates matching id in place (Wave 1.7e)', () async {
+    final ds = HiveFoodDataSource(userId: 'u1');
+    await ds.cacheFoods(<FoodItemFullModel>[
+      food(id: 'f1', name: 'Oats'),
+    ]);
+
+    await ds.upsertCachedFood(food(id: 'f2', name: 'Greek Yogurt'));
+    final afterInsert = await ds.getCachedFoods();
+    expect(afterInsert.map((f) => f.id).toList(), <String>['f1', 'f2']);
+
+    await ds.upsertCachedFood(food(id: 'f1', name: 'Rolled Oats'));
+    final afterUpdate = await ds.getCachedFoods();
+    expect(afterUpdate.length, 2);
+    expect(afterUpdate.firstWhere((f) => f.id == 'f1').name, 'Rolled Oats');
+  });
+
+  test('FoodRepositoryImpl.getFoodById upserts into cache without clobbering existing entries (Wave 1.7e)', () async {
+    final ds = HiveFoodDataSource(userId: 'u1');
+    await ds.cacheFoods(<FoodItemFullModel>[
+      food(id: 'f1', name: 'Existing Oats'),
+    ]);
+
+    final repo = FoodRepositoryImpl(
+      firestoreDataSource: _FakeFirestoreFoodDatasource({
+        'f2': food(id: 'f2', name: 'Fetched Banana').toEntity(),
+      }),
+      hiveDataSource: ds,
+    );
+
+    final fetched = await repo.getFoodById('f2');
+    expect(fetched?.name, 'Fetched Banana');
+
+    final cached = await ds.getCachedFoods();
+    expect(cached.map((f) => f.id).toList(), <String>['f1', 'f2']);
+  });
+}
+
+class _FakeFirestoreFoodDatasource extends Fake
+    implements FirestoreFoodDatasource {
+  _FakeFirestoreFoodDatasource(this.foodsById);
+
+  final Map<String, FoodItemFull> foodsById;
+
+  @override
+  Future<FoodItemFull?> getFoodById(String id) async => foodsById[id];
 }

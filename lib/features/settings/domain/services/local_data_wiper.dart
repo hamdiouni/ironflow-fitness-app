@@ -5,6 +5,7 @@ import 'package:hive/hive.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../../core/utils/record_ownership.dart';
 import '../../../../core/utils/secure_storage_manager.dart';
 import '../../../notifications/domain/services/notification_service.dart';
 
@@ -197,6 +198,10 @@ class LocalDataWiper {
           ? Hive.box<dynamic>('foods')
           : await Hive.openBox<dynamic>('foods');
       if (userId.isNotEmpty) {
+        final scopedId = RecordOwnershipRules.storageScope(userId);
+        if (scopedId != null && scopedId.isNotEmpty) {
+          await foodsBox.delete('custom_foods_$scopedId');
+        }
         await foodsBox.delete('custom_foods_$userId');
       } else {
         final customKeys = foodsBox.keys

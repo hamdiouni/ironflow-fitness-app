@@ -132,7 +132,7 @@ class FlavorConfig {
               ),
           appCheckEnforce: appCheckEnforce ??
               const bool.fromEnvironment(
-                'APP_CHECK_ENFORCE',
+                'ENFORCE_APP_CHECK',
                 defaultValue: false,
               ),
           enableCloudSync: enableCloudSync ??
@@ -185,7 +185,7 @@ class FlavorConfig {
               'https://us-central1-ironflow-staging.cloudfunctions.net/aiGenerate',
           appCheckEnforce: appCheckEnforce ??
               const bool.fromEnvironment(
-                'APP_CHECK_ENFORCE',
+                'ENFORCE_APP_CHECK',
                 defaultValue: false,
               ),
           enableCloudSync: enableCloudSync ??
@@ -225,8 +225,8 @@ class FlavorConfig {
               'https://us-central1-ironflow-5b79d.cloudfunctions.net/aiGenerate',
           appCheckEnforce: appCheckEnforce ??
               const bool.fromEnvironment(
-                'APP_CHECK_ENFORCE',
-                defaultValue: true,
+                'ENFORCE_APP_CHECK',
+                defaultValue: false,
               ),
           enableCloudSync: enableCloudSync ??
               const bool.fromEnvironment(

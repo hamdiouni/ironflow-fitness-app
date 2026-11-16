@@ -104,3 +104,12 @@ class RecordOwnershipRules {
         RecordOwnership.foreignUser;
   }
 }
+
+/// Canonical local-only offline user IDs (never synced to Firestore).
+const String kLocalGuestUserId = 'local_guest_athlete';
+const String kLocalDemoUserId = 'local_demo_showcase';
+
+/// Returns true when [userId] represents a strictly local offline session.
+bool isLocalOnlyUserId(String? userId) {
+  return userId == kLocalGuestUserId || userId == kLocalDemoUserId;
+}

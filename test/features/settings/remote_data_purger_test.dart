@@ -348,6 +348,7 @@ void main() {
           'users/user_123/backups/doc_1',
           'users/user_123/nutrition/doc_1',
           'users/user_123/consent/doc_1',
+          'users/user_123/ai_usage/doc_1',
           'users/user_123',
         ]),
       );

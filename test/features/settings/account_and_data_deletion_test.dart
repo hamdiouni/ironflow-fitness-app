@@ -374,5 +374,26 @@ void main() {
       expect(secureStorage.clearAllCalled, isFalse);
       expect(await secureStorage.getAuthToken(), 'jwt_secret_token');
     });
+
+    test('9. LocalDataWiper deletes scoped custom_foods_<userId> while preserving foods_cache and other accounts', () async {
+      final foodsBox = await Hive.openBox('foods');
+      await foodsBox.put('foods_cache', [
+        {'id': 'oats_1', 'name': 'Oats'},
+      ]);
+      await foodsBox.put('item_chicken_breast', {'protein': 31});
+      await foodsBox.put('custom_foods_alice', [
+        {'id': 'alice_custom_1', 'name': 'Alice Shake'},
+      ]);
+      await foodsBox.put('custom_foods_bob', [
+        {'id': 'bob_custom_1', 'name': 'Bob Shake'},
+      ]);
+
+      await localDataWiper.wipeAllUserData('Alice', keepAuthSession: true);
+
+      expect(foodsBox.containsKey('custom_foods_alice'), isFalse);
+      expect(foodsBox.get('foods_cache'), isNotNull);
+      expect(foodsBox.get('item_chicken_breast'), isNotNull);
+      expect(foodsBox.get('custom_foods_bob'), isNotNull);
+    });
   });
 }

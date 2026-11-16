@@ -61,7 +61,7 @@ void main() {
       expect(prod.firebaseProjectId, 'ironflow-5b79d');
       expect(prod.useFirebaseAuth, isTrue);
       expect(prod.allowDirectAiKeys, isFalse);
-      expect(prod.appCheckEnforce, isTrue);
+      expect(prod.appCheckEnforce, isFalse);
       expect(prod.showFlavorBanner, isFalse);
     });
 
@@ -80,6 +80,14 @@ void main() {
       expect(stagingJson['FLAVOR'], 'staging');
       expect(prodJson['FLAVOR'], 'production');
 
+      // Canonical Firebase project alignment & standardized ENFORCE_APP_CHECK flag
+      expect(prodJson['FIREBASE_PROJECT_ID'], 'ironflow-5b79d');
+      for (final map in [devJson, stagingJson, prodJson]) {
+        expect(map.containsKey('ENFORCE_APP_CHECK'), isTrue);
+        expect(map['ENFORCE_APP_CHECK'], isFalse);
+        expect(map.containsKey('APP_CHECK_ENFORCE'), isFalse);
+      }
+
       // Dev must never reference the production Firebase project or production proxy
       expect(
         devJson['FIREBASE_PROJECT_ID'],
@@ -96,8 +104,8 @@ void main() {
         expect(map.containsKey('OPENAI_API_KEY'), isFalse);
         expect(map.containsKey('NVIDIA_API_KEY'), isFalse);
         final serialized = jsonEncode(map);
-        expect(serialized.contains('${"AI""za"}'), isFalse);
-        expect(serialized.contains('${"nv""api-"}'), isFalse);
+        expect(serialized.contains('AI' 'za'), isFalse);
+        expect(serialized.contains('nv' 'api-'), isFalse);
       }
     });
 

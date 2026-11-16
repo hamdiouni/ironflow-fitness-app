@@ -14,14 +14,9 @@ import 'package:progression_tracker/features/workout/data/repositories/active_pr
 import 'package:progression_tracker/features/workout/domain/usecases/generate_workout_program_use_case.dart';
 import 'package:progression_tracker/features/workout/domain/usecases/set_active_program_use_case.dart';
 
-/// Canonical local-only offline user IDs (never synced to Firestore).
-const String kLocalGuestUserId = 'local_guest_athlete';
-const String kLocalDemoUserId = 'local_demo_showcase';
-
-/// Returns true when [userId] represents a strictly local offline session.
-bool isLocalOnlyUserId(String? userId) {
-  return userId == kLocalGuestUserId || userId == kLocalDemoUserId;
-}
+import 'package:progression_tracker/core/utils/record_ownership.dart';
+export 'package:progression_tracker/core/utils/record_ownership.dart'
+    show kLocalGuestUserId, kLocalDemoUserId, isLocalOnlyUserId;
 
 /// Seeds realistic offline showcase data into AES-encrypted local Hive boxes
 /// for [kLocalDemoUserId] so users can inspect every screen (Today Readiness,

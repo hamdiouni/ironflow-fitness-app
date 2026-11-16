@@ -30,7 +30,14 @@ import '../widgets/onboarding_steps_schedule.dart';
 /// 6. Nutrition Budget (Low, Medium, High)
 /// 7. Ready-to-Start Plan (Computed Targets, Pre-selected exercises with optional swap)
 class OnboardingScreen extends ConsumerStatefulWidget {
-  const OnboardingScreen({super.key});
+  const OnboardingScreen({
+    super.key,
+    this.isEditMode = false,
+  });
+
+  /// When true, pre-populates existing [UserProfile] stats instead of starting
+  /// a fresh onboarding draft and returns to the prior screen upon saving.
+  final bool isEditMode;
 
   @override
   ConsumerState<OnboardingScreen> createState() => _OnboardingScreenState();
@@ -72,6 +79,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   // Local exercise customizations per day (dayNumber -> list of exercises)
   final Map<int, List<ProgramExercise>> _customizedExercises = {};
 
+  // Preserved optional target weight when updating an existing profile
+  double? _existingTargetWeightKg;
+
   // Synthesis state
   bool _isSynthesizing = false;
   String? _synthesisError;
@@ -109,13 +119,46 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   @override
   void initState() {
     super.initState();
-    _restoreDraft();
+    if (widget.isEditMode) {
+      _loadExistingProfile();
+    } else {
+      _restoreDraft();
+    }
   }
 
   @override
   void dispose() {
     _pageController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadExistingProfile() async {
+    try {
+      final userId = ref.read(authNotifierProvider).user?.id;
+      final storage = ref.read(userProfileStorageProvider);
+      final existing = await storage.loadProfile(userId: userId);
+      if (existing == null) {
+        await _restoreDraft();
+        return;
+      }
+      if (!mounted) return;
+      setState(() {
+        _goal = existing.goal;
+        _sex = existing.sex;
+        _age = existing.age;
+        _weightKg = existing.weightKg;
+        _heightCm = existing.heightCm;
+        _equipment = existing.equipment;
+        _daysPerWeek = existing.workoutDaysPerWeek;
+        _fitnessLevel = existing.fitnessLevel;
+        _budget = existing.budget;
+        _existingTargetWeightKg = existing.targetWeightKg;
+      });
+    } catch (e) {
+      if (kDebugMode) {
+        AppLogger.debug('⚠️ [Onboarding] Error loading existing profile: $e');
+      }
+    }
   }
 
   Future<void> _restoreDraft() async {
@@ -184,6 +227,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   Future<void> _saveDraft() async {
+    if (widget.isEditMode) return;
     try {
       final userId = ref.read(authNotifierProvider).user?.id;
       final storage = ref.read(userProfileStorageProvider);
@@ -318,6 +362,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         workoutDaysPerWeek: _daysPerWeek,
         budget: _budget,
         sex: _sex,
+        targetWeightKg: _existingTargetWeightKg,
       );
 
       final program = _buildProgramForCurrentSettings(profile);
@@ -330,8 +375,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             includeDietPlan: _includeDietPlan,
           );
 
+      ref.invalidate(userProfileProvider);
+      ref.invalidate(isOnboardedProvider);
+
       if (mounted) {
-        context.go(AppRoutes.home);
+        if (widget.isEditMode && Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        } else {
+          context.go(AppRoutes.home);
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -511,6 +563,21 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             children: [
               Row(
                 children: [
+                  if (widget.isEditMode && Navigator.of(context).canPop()) ...[
+                    IconButton(
+                      icon: Icon(
+                        Icons.arrow_back_rounded,
+                        color: tokens.textPrimary,
+                        size: 18,
+                      ),
+                      tooltip: 'Back',
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
                   Container(
                     width: 8,
                     height: 8,
@@ -527,7 +594,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'SET UP YOUR PROFILE',
+                    widget.isEditMode
+                        ? 'UPDATE YOUR PROFILE'
+                        : 'SET UP YOUR PROFILE',
                     style: TextStyle(
                       fontFamily: AppTypography.displayFontFamily,
                       fontSize: 10,

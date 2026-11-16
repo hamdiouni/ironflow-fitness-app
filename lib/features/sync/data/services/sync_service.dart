@@ -5,7 +5,6 @@ import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:progression_tracker/core/utils/record_ownership.dart';
 import 'package:uuid/uuid.dart';
 
-import '../../../auth/data/services/local_sample_data_seeder.dart';
 import '../../../body/data/datasources/hive_body_data_source.dart';
 import '../../../body/data/models/body_entry_model.dart';
 import '../../../nutrition/data/datasources/hive_nutrition_datasource.dart';
@@ -537,57 +536,87 @@ class SyncService implements SyncEngine {
     }
   }
 
+  Future<void> _pullCollection<T>({
+    required String cursorKey,
+    required SyncDataType dataType,
+    required String label,
+    required String userId,
+    required Map<String, DateTime> unpushedClocks,
+    required Future<List<T>> Function(DateTime? since) fetchCloud,
+    required Future<List<T>> Function() loadLocal,
+    required Future<void> Function(T item) saveLocal,
+    required Future<void> Function(String id) deleteLocal,
+    required String Function(T item) idOf,
+    required DateTime Function(T item) clockOf,
+    required String? Function(T item) deletedAtOf,
+    required Map<String, dynamic> Function(T item) toJson,
+  }) async {
+    final since = await _syncQueue.getCursor(cursorKey, userId: userId);
+    final cloudItems = await fetchCloud(since);
+    if (cloudItems.isEmpty) return;
+
+    final locals = {
+      for (final item in await loadLocal()) idOf(item): item,
+    };
+    for (final cloud in cloudItems) {
+      final id = idOf(cloud);
+      final local = locals[id];
+      final unpushedClock = unpushedClocks['${dataType.name}:$id'];
+      final effectiveLocalClock = SyncConflictPolicy.maxClock(
+        local == null ? null : clockOf(local),
+        unpushedClock,
+      );
+
+      final deletedAt = deletedAtOf(cloud);
+      if (deletedAt != null) {
+        final tombstoneClock =
+            SyncConflictPolicy.parseIso(deletedAt) ?? clockOf(cloud);
+        if (effectiveLocalClock == null ||
+            !SyncConflictPolicy.isAfter(effectiveLocalClock, tombstoneClock)) {
+          await deleteLocal(id);
+          AppLogger.debug('📥 Deleted $label $id (tombstone)');
+        }
+        continue;
+      }
+
+      if ((local == null && unpushedClock == null) ||
+          (effectiveLocalClock != null &&
+              SyncConflictPolicy.shouldAcceptCloud(
+                cloudClock: clockOf(cloud),
+                localClock: effectiveLocalClock,
+                cloudJson: toJson(cloud),
+                localJson: local == null ? null : toJson(local),
+                hasUnpushedLocalEdit: unpushedClock != null,
+              ))) {
+        await saveLocal(cloud);
+        AppLogger.debug('📥 Pulled $label $id');
+      }
+    }
+
+    final maxTimestamp = _firestoreSync.getLastServerTimestamp(cursorKey) ??
+        cloudItems.map(clockOf).reduce((a, b) => a.isAfter(b) ? a : b);
+    await _advanceCursorWithTimestamp(cursorKey, userId, maxTimestamp);
+  }
+
   Future<void> _pullWorkouts(
     String userId,
     Map<String, DateTime> unpushedClocks,
-  ) async {
-    final since = await _syncQueue.getCursor(_workoutsKey, userId: userId);
-    final cloudWorkouts = await _firestoreSync.getWorkouts(userId, since: since);
-    if (cloudWorkouts.isNotEmpty) {
-      final locals = {
-        for (final w in await _hiveWorkouts.getAllWorkouts()) w.id: w,
-      };
-      for (final cloud in cloudWorkouts) {
-        final local = locals[cloud.id];
-        final unpushedClock =
-            unpushedClocks['${SyncDataType.workout.name}:${cloud.id}'];
-        final effectiveLocalClock = SyncConflictPolicy.maxClock(
-          local == null ? null : _workoutClock(local),
-          unpushedClock,
-        );
-
-        if (cloud.deletedAt != null) {
-          final tombstoneClock =
-              SyncConflictPolicy.parseIso(cloud.deletedAt) ??
-                  _workoutClock(cloud);
-          if (effectiveLocalClock == null ||
-              !SyncConflictPolicy.isAfter(
-                  effectiveLocalClock, tombstoneClock)) {
-            await _hiveWorkouts.deleteWorkout(cloud.id);
-            AppLogger.debug('📥 Deleted workout ${cloud.id} (tombstone)');
-          }
-          continue;
-        }
-        if (local == null && unpushedClock == null) {
-          await _hiveWorkouts.saveWorkout(cloud);
-          AppLogger.debug('📥 Pulled workout ${cloud.id}');
-        } else if (effectiveLocalClock != null &&
-            SyncConflictPolicy.shouldAcceptCloud(
-              cloudClock: _workoutClock(cloud),
-              localClock: effectiveLocalClock,
-              cloudJson: cloud.toJson(),
-              localJson: local?.toJson(),
-              hasUnpushedLocalEdit: unpushedClock != null,
-            )) {
-          await _hiveWorkouts.saveWorkout(cloud);
-          AppLogger.debug('📥 Pulled workout ${cloud.id}');
-        }
-      }
-      final maxTimestamp = _firestoreSync.getLastServerTimestamp(_workoutsKey) ??
-          cloudWorkouts.map(_workoutClock).reduce((a, b) => a.isAfter(b) ? a : b);
-      await _advanceCursorWithTimestamp(_workoutsKey, userId, maxTimestamp);
-    }
-  }
+  ) =>
+      _pullCollection<WorkoutModel>(
+        cursorKey: _workoutsKey,
+        dataType: SyncDataType.workout,
+        label: 'workout',
+        userId: userId,
+        unpushedClocks: unpushedClocks,
+        fetchCloud: (since) => _firestoreSync.getWorkouts(userId, since: since),
+        loadLocal: _hiveWorkouts.getAllWorkouts,
+        saveLocal: _hiveWorkouts.saveWorkout,
+        deleteLocal: _hiveWorkouts.deleteWorkout,
+        idOf: (w) => w.id,
+        clockOf: _workoutClock,
+        deletedAtOf: (w) => w.deletedAt,
+        toJson: (w) => w.toJson(),
+      );
 
   Future<void> _pullActiveProgram(
     String userId,
@@ -623,101 +652,43 @@ class SyncService implements SyncEngine {
   Future<void> _pullMeals(
     String userId,
     Map<String, DateTime> unpushedClocks,
-  ) async {
-    final hiveNutrition = _hiveNutrition!;
-    final since = await _syncQueue.getCursor(_nutritionKey, userId: userId);
-    final cloudMeals = await _firestoreSync.getMeals(userId, since: since);
-    if (cloudMeals.isNotEmpty) {
-      final locals = {
-        for (final m in await hiveNutrition.getAllMeals()) m.id: m,
-      };
-      for (final cloud in cloudMeals) {
-        final local = locals[cloud.id];
-        final unpushedClock =
-            unpushedClocks['${SyncDataType.nutrition.name}:${cloud.id}'];
-        final effectiveLocalClock = SyncConflictPolicy.maxClock(
-          local == null ? null : _mealClock(local),
-          unpushedClock,
-        );
-
-        if (cloud.deletedAt != null) {
-          final tombstoneClock =
-              SyncConflictPolicy.parseIso(cloud.deletedAt) ?? _mealClock(cloud);
-          if (effectiveLocalClock == null ||
-              !SyncConflictPolicy.isAfter(
-                  effectiveLocalClock, tombstoneClock)) {
-            await hiveNutrition.deleteMealEntry(cloud.id);
-            AppLogger.debug('📥 Deleted meal ${cloud.id} (tombstone)');
-          }
-          continue;
-        }
-        if ((local == null && unpushedClock == null) ||
-            SyncConflictPolicy.shouldAcceptCloud(
-              cloudClock: _mealClock(cloud),
-              localClock: effectiveLocalClock,
-              cloudJson: cloud.toJson(),
-              localJson: local?.toJson(),
-              hasUnpushedLocalEdit: unpushedClock != null,
-            )) {
-          await hiveNutrition.saveMealEntry(cloud);
-          AppLogger.debug('📥 Pulled meal ${cloud.id}');
-        }
-      }
-      final maxTimestamp = _firestoreSync.getLastServerTimestamp(_nutritionKey) ??
-          cloudMeals.map(_mealClock).reduce((a, b) => a.isAfter(b) ? a : b);
-      await _advanceCursorWithTimestamp(_nutritionKey, userId, maxTimestamp);
-    }
-  }
+  ) =>
+      _pullCollection<MealModel>(
+        cursorKey: _nutritionKey,
+        dataType: SyncDataType.nutrition,
+        label: 'meal',
+        userId: userId,
+        unpushedClocks: unpushedClocks,
+        fetchCloud: (since) => _firestoreSync.getMeals(userId, since: since),
+        loadLocal: _hiveNutrition!.getAllMeals,
+        saveLocal: _hiveNutrition.saveMealEntry,
+        deleteLocal: _hiveNutrition.deleteMealEntry,
+        idOf: (m) => m.id,
+        clockOf: _mealClock,
+        deletedAtOf: (m) => m.deletedAt,
+        toJson: (m) => m.toJson(),
+      );
 
   Future<void> _pullBodyEntries(
     String userId,
     Map<String, DateTime> unpushedClocks,
-  ) async {
-    final hiveBody = _hiveBody!;
-    final since = await _syncQueue.getCursor(_bodyProgressKey, userId: userId);
-    final cloudEntries =
-        await _firestoreSync.getBodyEntries(userId, since: since);
-    if (cloudEntries.isNotEmpty) {
-      final locals = {
-        for (final e in await hiveBody.getAllBodyEntries()) e.id: e,
-      };
-      for (final cloud in cloudEntries) {
-        final local = locals[cloud.id];
-        final unpushedClock =
-            unpushedClocks['${SyncDataType.bodyProgress.name}:${cloud.id}'];
-        final effectiveLocalClock = SyncConflictPolicy.maxClock(
-          local == null ? null : _bodyClock(local),
-          unpushedClock,
-        );
-
-        if (cloud.deletedAt != null) {
-          final tombstoneClock =
-              SyncConflictPolicy.parseIso(cloud.deletedAt) ?? _bodyClock(cloud);
-          if (effectiveLocalClock == null ||
-              !SyncConflictPolicy.isAfter(
-                  effectiveLocalClock, tombstoneClock)) {
-            await hiveBody.deleteBodyEntry(cloud.id);
-            AppLogger.debug('📥 Deleted body entry ${cloud.id} (tombstone)');
-          }
-          continue;
-        }
-        if ((local == null && unpushedClock == null) ||
-            SyncConflictPolicy.shouldAcceptCloud(
-              cloudClock: _bodyClock(cloud),
-              localClock: effectiveLocalClock,
-              cloudJson: cloud.toJson(),
-              localJson: local?.toJson(),
-              hasUnpushedLocalEdit: unpushedClock != null,
-            )) {
-          await hiveBody.saveBodyEntry(cloud);
-          AppLogger.debug('📥 Pulled body entry ${cloud.id}');
-        }
-      }
-      final maxTimestamp = _firestoreSync.getLastServerTimestamp(_bodyProgressKey) ??
-          cloudEntries.map(_bodyClock).reduce((a, b) => a.isAfter(b) ? a : b);
-      await _advanceCursorWithTimestamp(_bodyProgressKey, userId, maxTimestamp);
-    }
-  }
+  ) =>
+      _pullCollection<BodyEntryModel>(
+        cursorKey: _bodyProgressKey,
+        dataType: SyncDataType.bodyProgress,
+        label: 'body entry',
+        userId: userId,
+        unpushedClocks: unpushedClocks,
+        fetchCloud: (since) =>
+            _firestoreSync.getBodyEntries(userId, since: since),
+        loadLocal: _hiveBody!.getAllBodyEntries,
+        saveLocal: _hiveBody.saveBodyEntry,
+        deleteLocal: _hiveBody.deleteBodyEntry,
+        idOf: (e) => e.id,
+        clockOf: _bodyClock,
+        deletedAtOf: (e) => e.deletedAt,
+        toJson: (e) => e.toJson(),
+      );
 
   Future<void> _pullNutritionTargets(
     String userId,

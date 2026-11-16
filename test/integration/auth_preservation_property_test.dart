@@ -7,6 +7,8 @@ import 'package:progression_tracker/features/auth/presentation/providers/auth_no
 import 'package:progression_tracker/features/auth/data/datasources/auth_session_storage.dart';
 import 'package:progression_tracker/features/onboarding/data/user_profile_storage.dart';
 import 'package:progression_tracker/core/router/app_router.dart';
+import 'package:progression_tracker/core/services/telemetry_preferences.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// **Validates: Requirements 3.1, 3.2, 3.3, 3.4**
 /// 
@@ -29,6 +31,9 @@ void main() {
   late Directory tempDir;
 
   setUpAll(() async {
+    SharedPreferences.setMockInitialValues({
+      TelemetryPreferences.consentPromptShownKey: true,
+    });
     tempDir = Directory.systemTemp.createTempSync('hive_auth_preservation_');
     Hive.init(tempDir.path);
     await Hive.openBox('auth_session');
@@ -36,6 +41,9 @@ void main() {
   });
 
   setUp(() async {
+    SharedPreferences.setMockInitialValues({
+      TelemetryPreferences.consentPromptShownKey: true,
+    });
     await AuthSessionStorage().clearSession();
     await UserProfileStorage().resetOnboarding();
   });

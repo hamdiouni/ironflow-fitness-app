@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hive/hive.dart';
 import 'package:progression_tracker/core/router/app_router.dart';
 import 'package:progression_tracker/features/auth/data/datasources/mock_auth_datasource.dart';
 import 'package:progression_tracker/features/auth/data/datasources/mock_user_datasource.dart';
@@ -316,6 +319,35 @@ void main() {
         AppRoutes.resolvePostAuthRedirect(AppRoutes.designPreview),
         AppRoutes.home,
       );
+    });
+
+    test('signUpWithEmail persists trimmed displayName on User and UserProfile (Wave 1.7g)', () async {
+      final user = await repo.signUpWithEmail(
+        email: 'alex@ironflow.app',
+        password: 'StrongPassword99!',
+        displayName: '  Alex Mercer  ',
+      );
+
+      expect(user.displayName, 'Alex Mercer');
+      expect(userDs.profiles[user.id]?.name, 'Alex Mercer');
+
+      final tempDir = Directory.systemTemp.createTempSync('wave1_signup_auth_');
+      try {
+        Hive.init(tempDir.path);
+        await Hive.openBox('auth_session');
+        final realMockDs = MockAuthDataSourceImpl();
+        final mockUser = await realMockDs.signUpWithEmail(
+          email: 'maya@ironflow.app',
+          password: 'StrongPassword99!',
+          displayName: 'Maya Lin',
+        );
+        expect(mockUser.displayName, 'Maya Lin');
+      } finally {
+        await Hive.close();
+        try {
+          tempDir.deleteSync(recursive: true);
+        } catch (_) {}
+      }
     });
   });
 }

@@ -258,7 +258,7 @@ class MainApp extends ConsumerWidget {
 }
 
 /// Scaffold that wraps the 4 primary tabs with Direction 4 responsive navigation.
-class MainScaffold extends StatelessWidget {
+class MainScaffold extends StatefulWidget {
   const MainScaffold({
     super.key,
     required this.navigationShell,
@@ -274,10 +274,23 @@ class MainScaffold extends StatelessWidget {
   ];
 
   @override
-  Widget build(BuildContext context) {
+  State<MainScaffold> createState() => _MainScaffoldState();
+}
+
+class _MainScaffoldState extends State<MainScaffold> {
+  @override
+  void initState() {
+    super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      TelemetryConsentScreen.showIfNeeded(context);
+      if (mounted) {
+        TelemetryConsentScreen.showIfNeeded(context);
+      }
     });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final navigationShell = widget.navigationShell;
     final currentIndex = navigationShell.currentIndex;
     final tokens = context.tokens;
 

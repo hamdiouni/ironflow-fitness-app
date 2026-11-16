@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:progression_tracker/features/settings/domain/usecases/export_all_data_use_case.dart';
 import 'package:progression_tracker/features/auth/domain/repositories/auth_repository.dart';
-import 'package:progression_tracker/features/auth/data/services/local_sample_data_seeder.dart';
+import 'package:progression_tracker/core/utils/record_ownership.dart';
 
 /// Entity representing a backup record.
 class BackupRecord {

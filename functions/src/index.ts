@@ -95,6 +95,38 @@ export const aiGenerate = onRequest(
           return { allowed: true, requestCount: nextCount };
         });
       },
+      refundDailyQuota: async ({
+        uid,
+        dateKey,
+        inputChars,
+      }: {
+        uid: string;
+        dateKey: string;
+        inputChars: number;
+      }) => {
+        const usageRef = db
+          .collection('users')
+          .doc(uid)
+          .collection('ai_usage')
+          .doc(dateKey);
+
+        await db.runTransaction(async (tx) => {
+          const snap = await tx.get(usageRef);
+          if (!snap.exists) return;
+          const data = snap.data() ?? {};
+          const currentCount = Number(data.requestCount ?? 0);
+          const currentChars = Number(data.totalInputChars ?? 0);
+          tx.set(
+            usageRef,
+            {
+              requestCount: Math.max(0, currentCount - 1),
+              totalInputChars: Math.max(0, currentChars - inputChars),
+              updatedAt: FieldValue.serverTimestamp(),
+            },
+            { merge: true },
+          );
+        });
+      },
       logger: (entry: Record<string, unknown>) => {
         console.log(JSON.stringify(entry));
       },

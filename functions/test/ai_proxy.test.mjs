@@ -237,5 +237,124 @@ describe('IronFlow Cloud Functions AI Proxy (Wave 1 Step 6 — ADR-001)', () => 
     assert.equal(streamRes.headers['Content-Type'], 'text/event-stream');
     assert.ok(streamRes.rawBody.includes('Chunk 1'));
   });
+
+  it('rejects forged or invalid ID token with 401 before touching quota', async () => {
+    let quotaCalled = false;
+    const res = await handleAiProxyRequest({
+      method: 'POST',
+      headers: { authorization: 'Bearer forged.jwt.signature' },
+      body: makeValidBody(),
+      verifyIdToken: async () => {
+        throw new Error('Firebase ID token has invalid signature.');
+      },
+      enforceAppCheck: false,
+      checkAndIncrementDailyQuota: async () => {
+        quotaCalled = true;
+        return { allowed: true, requestCount: 1 };
+      },
+      geminiApiKey: 'secret',
+      logger: () => {},
+    });
+
+    assert.equal(res.status, 401);
+    assert.equal(res.body.error.code, 'UNAUTHENTICATED');
+    assert.equal(quotaCalled, false);
+  });
+
+  it('checks geminiApiKey before deducting daily quota (503 leaves quota untouched)', async () => {
+    let quotaCalled = false;
+    const res = await handleAiProxyRequest({
+      method: 'POST',
+      headers: { authorization: 'Bearer valid' },
+      body: makeValidBody(),
+      verifyIdToken: async () => ({ uid: 'u_missing_key' }),
+      enforceAppCheck: false,
+      checkAndIncrementDailyQuota: async () => {
+        quotaCalled = true;
+        return { allowed: true, requestCount: 1 };
+      },
+      geminiApiKey: '',
+      logger: () => {},
+    });
+
+    assert.equal(res.status, 503);
+    assert.equal(res.body.error.code, 'PROXY_MISCONFIGURED');
+    assert.equal(quotaCalled, false);
+  });
+
+  it('refunds daily quota atomically on upstream 429, 502, 503, 504, and timeout abort', async () => {
+    for (const [upstreamStatus, expectedStatus] of [
+      [429, 429],
+      [502, 502],
+      [503, 503],
+      [504, 504],
+    ]) {
+      let count = 0;
+      let refunded = false;
+      const res = await handleAiProxyRequest({
+        method: 'POST',
+        headers: { authorization: 'Bearer valid' },
+        body: makeValidBody(),
+        verifyIdToken: async () => ({ uid: 'u_refund' }),
+        enforceAppCheck: false,
+        checkAndIncrementDailyQuota: async () => {
+          count += 1;
+          return { allowed: true, requestCount: count };
+        },
+        refundDailyQuota: async ({ uid, dateKey, inputChars }) => {
+          assert.equal(uid, 'u_refund');
+          assert.ok(dateKey.length === 10);
+          assert.ok(inputChars > 0);
+          count = Math.max(0, count - 1);
+          refunded = true;
+        },
+        geminiApiKey: 'secret',
+        fetchImpl: async () => ({
+          ok: false,
+          status: upstreamStatus,
+          text: async () => 'upstream failure',
+        }),
+        logger: () => {},
+      });
+
+      assert.equal(res.status, expectedStatus);
+      assert.equal(refunded, true);
+      assert.equal(count, 0);
+    }
+
+    // Timeout abort also triggers quota refund
+    let timeoutCount = 0;
+    let timeoutRefunded = false;
+    const timeoutRes = await handleAiProxyRequest({
+      method: 'POST',
+      headers: { authorization: 'Bearer valid' },
+      body: makeValidBody(),
+      verifyIdToken: async () => ({ uid: 'u_timeout' }),
+      enforceAppCheck: false,
+      checkAndIncrementDailyQuota: async () => {
+        timeoutCount += 1;
+        return { allowed: true, requestCount: timeoutCount };
+      },
+      refundDailyQuota: async () => {
+        timeoutCount = Math.max(0, timeoutCount - 1);
+        timeoutRefunded = true;
+      },
+      geminiApiKey: 'secret',
+      timeoutMs: 10,
+      fetchImpl: async (_url, { signal }) =>
+        new Promise((_resolve, reject) => {
+          signal.addEventListener('abort', () => {
+            const err = new Error('The operation was aborted');
+            err.name = 'AbortError';
+            reject(err);
+          });
+        }),
+      logger: () => {},
+    });
+
+    assert.equal(timeoutRes.status, 504);
+    assert.equal(timeoutRefunded, true);
+    assert.equal(timeoutCount, 0);
+  });
 });
 

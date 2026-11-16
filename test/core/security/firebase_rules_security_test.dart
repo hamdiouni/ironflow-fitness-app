@@ -74,15 +74,15 @@ void main() {
       );
     });
 
-    test('locks users/{userId}/ai_usage/{dateId} to read-only for clients so quotas cannot be forged', () {
+    test('locks users/{userId}/ai_usage/{dateId} against client create/update while permitting owner delete on account purge (Wave 1.6)', () {
       final aiUsageBlock = RegExp(
         r'match\s+/ai_usage/\{dateId\}\s*\{([^}]+)\}',
         multiLine: true,
       ).firstMatch(firestoreRules);
       expect(aiUsageBlock, isNotNull);
       final body = aiUsageBlock!.group(1)!;
-      expect(body, contains('allow read: if isOwner(userId);'));
-      expect(body, contains('allow write: if false;'));
+      expect(body, contains('allow read, delete: if isOwner(userId);'));
+      expect(body, contains('allow create, update: if false;'));
     });
 
     test('simulated rule evaluator rejects cross-user update, oversized notes, and unauthenticated access', () {
@@ -177,6 +177,19 @@ void main() {
         storageRules,
         contains('match /users/{userId}/{allPaths=**}'),
       );
+    });
+
+    test('enforces size and JSON contentType bounds on /users/{userId}/backups/{fileName} (Wave 1.1)', () {
+      final backupBlock = RegExp(
+        r'match\s+/users/\{userId\}/backups/\{fileName\}\s*\{([^}]+)\}',
+        multiLine: true,
+      ).firstMatch(storageRules);
+      expect(backupBlock, isNotNull);
+      final body = backupBlock!.group(1)!;
+      expect(body, contains('allow read, delete: if isOwner(userId);'));
+      expect(body, contains('allow create, update: if isOwner(userId)'));
+      expect(body, contains('<= 10 * 1024 * 1024'));
+      expect(body, contains("contentType == 'application/json'"));
     });
   });
 

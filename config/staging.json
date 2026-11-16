@@ -6,7 +6,7 @@
   "APP_ICON_VARIANT": "staging",
   "FIREBASE_PROJECT_ID": "ironflow-staging",
   "AI_PROXY_URL": "https://us-central1-ironflow-staging.cloudfunctions.net/aiGenerate",
-  "APP_CHECK_ENFORCE": false,
+  "ENFORCE_APP_CHECK": false,
   "ENABLE_CLOUD_SYNC": true,
   "USE_FIREBASE_AUTH": true,
   "ALLOW_DIRECT_AI_KEYS": false

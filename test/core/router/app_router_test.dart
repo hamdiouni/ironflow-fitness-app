@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hive/hive.dart';
 import 'package:progression_tracker/core/router/app_router.dart';
+import 'package:progression_tracker/core/services/telemetry_preferences.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:progression_tracker/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:progression_tracker/features/auth/data/datasources/auth_session_storage.dart';
 import 'package:progression_tracker/features/onboarding/data/user_profile_storage.dart';
@@ -13,6 +15,9 @@ void main() {
   late Directory tempDir;
 
   setUpAll(() async {
+    SharedPreferences.setMockInitialValues({
+      TelemetryPreferences.consentPromptShownKey: true,
+    });
     tempDir = Directory.systemTemp.createTempSync('hive_router_test_');
     Hive.init(tempDir.path);
 
@@ -41,6 +46,9 @@ void main() {
   });
 
   setUp(() async {
+    SharedPreferences.setMockInitialValues({
+      TelemetryPreferences.consentPromptShownKey: true,
+    });
     await AuthSessionStorage().clearSession();
     await UserProfileStorage().resetOnboarding();
   });
@@ -391,6 +399,61 @@ void main() {
       expect(
         router.routerDelegate.currentConfiguration.uri.toString(),
         equals('/progress?tab=lifts'),
+      );
+
+      await tester.pump(const Duration(seconds: 3));
+    });
+
+    testWidgets('Signed-in onboarded user stays on /onboarding?mode=edit without redirect loop (Wave 1.7f)',
+        (tester) async {
+      final originalOnError = FlutterError.onError;
+      FlutterError.onError = (details) {
+        if (details.exception.toString().contains('[core/no-app]')) {
+          return;
+        }
+        originalOnError?.call(details);
+      };
+      addTearDown(() => FlutterError.onError = originalOnError);
+
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await tester.runAsync(() async {
+        await container.read(authNotifierProvider.notifier).signInWithEmail(
+              email: 'demo@ironflow.com',
+              password: 'password123',
+            );
+        await UserProfileStorage().markOnboarded();
+      });
+
+      final router = container.read(routerProvider);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp.router(
+            routerConfig: router,
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      router.go('${AppRoutes.onboarding}?mode=edit');
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(
+        router.routerDelegate.currentConfiguration.uri.toString(),
+        equals('${AppRoutes.onboarding}?mode=edit'),
+      );
+
+      // Plain /onboarding without ?mode=edit still redirects onboarded users to /home
+      router.go(AppRoutes.onboarding);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(
+        router.routerDelegate.currentConfiguration.uri.toString(),
+        equals(AppRoutes.home),
       );
 
       await tester.pump(const Duration(seconds: 3));
