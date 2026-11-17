@@ -4,10 +4,12 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_theme.dart';
-import '../../../../shared/presentation/components/app_card.dart';
+import '../../../../core/providers/units_provider.dart';
 import '../../../../core/utils/chart_data_sampler.dart';
-import '../../../../shared/widgets/exercise_video_player.dart';
+import '../../../../shared/presentation/components/app_card.dart';
+import '../../../../shared/widgets/exercise_media_stage.dart';
 import '../../domain/entities/entities.dart';
+import '../../domain/services/exercise_catalog.dart';
 import '../providers/workout_providers.dart';
 
 /// A data point representing a single exercise performance entry.
@@ -25,9 +27,7 @@ class _PerformancePoint {
   final double volume;
 }
 
-/// Screen that shows weight/reps progression over time for a given exercise.
-///
-/// Requirements: 4.2, 4.3
+/// Screen that shows media/steps and weight/reps progression over time for an exercise.
 class ExerciseDetailScreen extends ConsumerWidget {
   const ExerciseDetailScreen({required this.name, super.key});
 
@@ -36,6 +36,7 @@ class ExerciseDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final historyAsync = ref.watch(workoutHistoryProvider);
+    final units = ref.watch(unitsProvider);
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -43,12 +44,18 @@ class ExerciseDetailScreen extends ConsumerWidget {
       body: historyAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, _) => Center(
-          child: Text('Failed to load history',
-              style: TextStyle(color: theme.colorScheme.error)),
+          child: Text(
+            'Failed to load history',
+            style: TextStyle(color: theme.colorScheme.error),
+          ),
         ),
         data: (workouts) {
           final points = _buildPerformancePoints(workouts);
-          return _ExerciseDetailBody(exerciseName: name, points: points);
+          return _ExerciseDetailBody(
+            exerciseName: name,
+            points: points,
+            units: units,
+          );
         },
       ),
     );
@@ -64,14 +71,17 @@ class ExerciseDetailScreen extends ConsumerWidget {
         if (exercise.name.toLowerCase() == name.toLowerCase() &&
             exercise.sets.isNotEmpty) {
           // Pick the best set by volume for this session
-          final best = exercise.sets.reduce((a, b) =>
-              (a.weight * a.reps) >= (b.weight * b.reps) ? a : b);
-          points.add(_PerformancePoint(
-            date: workout.date,
-            weight: best.weight,
-            reps: best.reps,
-            volume: best.weight * best.reps,
-          ));
+          final best = exercise.sets.reduce(
+            (a, b) => (a.weight * a.reps) >= (b.weight * b.reps) ? a : b,
+          );
+          points.add(
+            _PerformancePoint(
+              date: workout.date,
+              weight: best.weight,
+              reps: best.reps,
+              volume: best.weight * best.reps,
+            ),
+          );
           break; // one entry per workout session
         }
       }
@@ -81,34 +91,90 @@ class ExerciseDetailScreen extends ConsumerWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Body widget (stateless, receives pre-computed data)
-// ---------------------------------------------------------------------------
-
 class _ExerciseDetailBody extends StatelessWidget {
   const _ExerciseDetailBody({
     required this.exerciseName,
     required this.points,
+    required this.units,
   });
 
   final String exerciseName;
   final List<_PerformancePoint> points;
+  final UnitsSystem units;
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final definition = ExerciseCatalog.getByName(exerciseName);
+    final instructions = definition == null
+        ? const <String>[]
+        : definition.instructions
+            .split(RegExp(r'\.\s+|\n+'))
+            .map((s) => s.trim())
+            .where((s) => s.isNotEmpty)
+            .map((s) => s.endsWith('.') ? s : '$s.')
+            .toList();
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppTheme.spacingMedium),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Video preview
-          ExerciseVideoPlayer(exerciseName: exerciseName, height: 200),
+          // Unified media stage (3D Form / Coach 1 / Coach 2 / Steps fallback)
+          ExerciseMediaStage(exerciseName: exerciseName, height: 220),
+          if (instructions.isNotEmpty) ...[
+            const SizedBox(height: AppTheme.spacingLarge),
+            const _SectionLabel(label: 'Form Steps'),
+            const SizedBox(height: AppTheme.spacingSmall),
+            AppCard(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: List.generate(instructions.length, (i) {
+                  return Padding(
+                    padding: EdgeInsets.only(
+                      bottom: i == instructions.length - 1 ? 0 : 8,
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${i + 1}. ',
+                          style: TextStyle(
+                            fontFamily: AppTypography.displayFontFamily,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 12,
+                            color: tokens.kineticAccent,
+                          ),
+                        ),
+                        Expanded(
+                          child: Text(
+                            instructions[i],
+                            style: TextStyle(
+                              fontFamily: AppTypography.bodyFontFamily,
+                              fontSize: 13,
+                              height: 1.35,
+                              color: tokens.textPrimary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+              ),
+            ),
+          ],
           const SizedBox(height: AppTheme.spacingLarge),
-          _SectionLabel(label: 'Weight Progression'),
+          const _SectionLabel(label: 'Weight Progression'),
           const SizedBox(height: AppTheme.spacingSmall),
-          _PerformanceGraph(points: points, valueSelector: (p) => p.weight),
+          _PerformanceGraph(
+            points: points,
+            valueSelector: (p) =>
+                UnitsConverter.convertWeightToDisplay(p.weight, units),
+          ),
           const SizedBox(height: AppTheme.spacingLarge),
-          _SectionLabel(label: 'Reps Progression'),
+          const _SectionLabel(label: 'Reps Progression'),
           const SizedBox(height: AppTheme.spacingSmall),
           _PerformanceGraph(
             points: points,
@@ -116,18 +182,14 @@ class _ExerciseDetailBody extends StatelessWidget {
             lineColor: AppTheme.primaryColor,
           ),
           const SizedBox(height: AppTheme.spacingLarge),
-          _SectionLabel(label: 'Recent Performances'),
+          const _SectionLabel(label: 'Recent Performances'),
           const SizedBox(height: AppTheme.spacingSmall),
-          _PerformanceTable(points: points),
+          _PerformanceTable(points: points, units: units),
         ],
       ),
     );
   }
 }
-
-// ---------------------------------------------------------------------------
-// Section label
-// ---------------------------------------------------------------------------
 
 class _SectionLabel extends StatelessWidget {
   const _SectionLabel({required this.label});
@@ -147,10 +209,6 @@ class _SectionLabel extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Performance graph (animated line chart)
-// ---------------------------------------------------------------------------
-
 class _PerformanceGraph extends StatelessWidget {
   const _PerformanceGraph({
     required this.points,
@@ -164,10 +222,13 @@ class _PerformanceGraph extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
+    final reduceMotion = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    final box = SizedBox(
       height: 200,
       child: points.isEmpty ? _buildEmpty(context) : _buildChart(context),
-    )
+    );
+    if (reduceMotion) return box;
+    return box
         .animate()
         .fadeIn(duration: 350.ms, curve: Curves.easeOut)
         .slideY(begin: 0.12, end: 0.0, duration: 400.ms, curve: Curves.easeOut);
@@ -296,14 +357,11 @@ class _PerformanceGraph extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Recent performances table
-// ---------------------------------------------------------------------------
-
 class _PerformanceTable extends StatelessWidget {
-  const _PerformanceTable({required this.points});
+  const _PerformanceTable({required this.points, required this.units});
 
   final List<_PerformancePoint> points;
+  final UnitsSystem units;
 
   @override
   Widget build(BuildContext context) {
@@ -319,8 +377,8 @@ class _PerformanceTable extends StatelessWidget {
       );
     }
 
-    // Show most recent first (up to 20 entries)
     final recent = points.reversed.take(20).toList();
+    final reduceMotion = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
 
     return AppCard(
       padding: const EdgeInsets.all(AppTheme.spacingSmall),
@@ -329,11 +387,14 @@ class _PerformanceTable extends StatelessWidget {
           _TableHeader(),
           const Divider(color: AppTheme.textDisabled, height: 1),
           ...recent.asMap().entries.map((entry) {
-            return _TableRow(
+            final row = _TableRow(
               point: entry.value,
               isEven: entry.key.isEven,
-            )
-                .animate(delay: (entry.key * 40).ms)
+              units: units,
+            );
+            if (reduceMotion) return row;
+            return row
+                .animate(delay: (entry.key.clamp(0, 8) * 30).ms)
                 .fadeIn(duration: 250.ms)
                 .slideX(begin: 0.05, end: 0.0, duration: 250.ms);
           }),
@@ -357,26 +418,31 @@ class _TableHeader extends StatelessWidget {
         children: [
           Expanded(
             flex: 3,
-            child: Text('Date',
-                style: headerStyle.copyWith(color: secondary)),
+            child: Text('Date', style: headerStyle.copyWith(color: secondary)),
           ),
           Expanded(
             flex: 2,
-            child: Text('Weight',
-                textAlign: TextAlign.center,
-                style: headerStyle.copyWith(color: secondary)),
+            child: Text(
+              'Weight',
+              textAlign: TextAlign.center,
+              style: headerStyle.copyWith(color: secondary),
+            ),
           ),
           Expanded(
             flex: 2,
-            child: Text('Reps',
-                textAlign: TextAlign.center,
-                style: headerStyle.copyWith(color: secondary)),
+            child: Text(
+              'Reps',
+              textAlign: TextAlign.center,
+              style: headerStyle.copyWith(color: secondary),
+            ),
           ),
           Expanded(
             flex: 2,
-            child: Text('Volume',
-                textAlign: TextAlign.right,
-                style: headerStyle.copyWith(color: secondary)),
+            child: Text(
+              'Volume',
+              textAlign: TextAlign.right,
+              style: headerStyle.copyWith(color: secondary),
+            ),
           ),
         ],
       ),
@@ -385,10 +451,15 @@ class _TableHeader extends StatelessWidget {
 }
 
 class _TableRow extends StatelessWidget {
-  const _TableRow({required this.point, required this.isEven});
+  const _TableRow({
+    required this.point,
+    required this.isEven,
+    required this.units,
+  });
 
   final _PerformancePoint point;
   final bool isEven;
+  final UnitsSystem units;
 
   @override
   Widget build(BuildContext context) {
@@ -396,10 +467,17 @@ class _TableRow extends StatelessWidget {
     final dateStr =
         '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
     final onSurface = Theme.of(context).colorScheme.onSurface;
-    final surfaceVariant = Theme.of(context).colorScheme.surfaceContainerHighest;
+    final surfaceVariant =
+        Theme.of(context).colorScheme.surfaceContainerHighest;
+    final weightUnit = UnitsConverter.getWeightUnit(units);
+    final displayWeight =
+        UnitsConverter.convertWeightToDisplay(point.weight, units);
+    final displayVolume =
+        UnitsConverter.convertWeightToDisplay(point.volume, units);
 
     return Container(
-      color: isEven ? surfaceVariant.withValues(alpha: 0.3) : Colors.transparent,
+      color:
+          isEven ? surfaceVariant.withValues(alpha: 0.3) : Colors.transparent,
       padding: const EdgeInsets.symmetric(
         horizontal: AppTheme.spacingSmall,
         vertical: AppTheme.spacingSmall,
@@ -416,7 +494,7 @@ class _TableRow extends StatelessWidget {
           Expanded(
             flex: 2,
             child: Text(
-              '${point.weight.toStringAsFixed(1)} kg',
+              '${displayWeight.toStringAsFixed(1)} $weightUnit',
               textAlign: TextAlign.center,
               style: const TextStyle(
                 color: AppTheme.accentColor,
@@ -436,7 +514,7 @@ class _TableRow extends StatelessWidget {
           Expanded(
             flex: 2,
             child: Text(
-              '${point.volume.toStringAsFixed(0)} kg',
+              '${displayVolume.toStringAsFixed(0)} $weightUnit',
               textAlign: TextAlign.right,
               style: const TextStyle(
                 color: AppTheme.primaryColor,

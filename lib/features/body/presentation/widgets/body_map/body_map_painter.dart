@@ -28,6 +28,20 @@ class BodyMapPainter extends CustomPainter {
   final bool isHeatmapMode;
   final double pulseAnimation;
 
+  // Pre-allocated Paint instances reused across frames and region loops (Wave 5.1)
+  final Paint _silhouetteBgPaint = Paint()..style = PaintingStyle.fill;
+  final Paint _silhouetteBorderPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1.4;
+  final Paint _borderPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1.0;
+  final Paint _fillPaint = Paint()..style = PaintingStyle.fill;
+  final Paint _glowPaint = Paint()..style = PaintingStyle.stroke;
+  final Paint _selectedBorderPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 2.4;
+
   @override
   void paint(Canvas canvas, Size size) {
     if (size.width <= 0 || size.height <= 0) return;
@@ -49,25 +63,18 @@ class BodyMapPainter extends CustomPainter {
     final silhouette =
         isFront ? BodyMapPaths.frontSilhouette : BodyMapPaths.backSilhouette;
 
-    final silhouetteBgPaint = Paint()
-      ..color = tokens.card
-      ..style = PaintingStyle.fill;
-    canvas.drawPath(silhouette, silhouetteBgPaint);
+    _silhouetteBgPaint.color = tokens.card;
+    canvas.drawPath(silhouette, _silhouetteBgPaint);
 
-    final silhouetteBorderPaint = Paint()
-      ..color = tokens.borderSubtle
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.4;
-    canvas.drawPath(silhouette, silhouetteBorderPaint);
+    _silhouetteBorderPaint.color = tokens.borderSubtle;
+    canvas.drawPath(silhouette, _silhouetteBorderPaint);
 
     // 2. Draw muscle regions
     final regionMap =
         isFront ? BodyMapPaths.frontRegionPaths : BodyMapPaths.backRegionPaths;
 
-    final borderPaint = Paint()
-      ..color = tokens.canvas.withValues(alpha: 0.7)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0;
+    _borderPaint.color = tokens.canvas.withValues(alpha: 0.7);
+    _selectedBorderPaint.color = tokens.kineticAccent;
 
     for (final entry in regionMap.entries) {
       final region = entry.key;
@@ -76,43 +83,32 @@ class BodyMapPainter extends CustomPainter {
       final isSelected = selectedRegion == region;
       final isHighlighted = highlightedRegions?.contains(region) ?? false;
 
-      final color = _resolveRegionColor(
+      _fillPaint.color = _resolveRegionColor(
         region: region,
         data: data,
         isHighlighted: isHighlighted,
       );
 
-      final fillPaint = Paint()
-        ..color = color
-        ..style = PaintingStyle.fill;
-
       for (final path in paths) {
-        canvas.drawPath(path, fillPaint);
-        canvas.drawPath(path, borderPaint);
+        canvas.drawPath(path, _fillPaint);
+        canvas.drawPath(path, _borderPaint);
       }
 
       // 3. Highlight selected region with animated kinetic glow
       if (isSelected) {
-        final glowColor = tokens.kineticAccent.withValues(
-          alpha: 0.5 + (0.3 * pulseAnimation),
-        );
-        final glowPaint = Paint()
-          ..color = glowColor
-          ..style = PaintingStyle.stroke
+        _glowPaint
+          ..color = tokens.kineticAccent.withValues(
+            alpha: 0.5 + (0.3 * pulseAnimation),
+          )
           ..strokeWidth = 3.5 + (1.5 * pulseAnimation)
           ..maskFilter = MaskFilter.blur(
             BlurStyle.normal,
             3.0 + (3.0 * pulseAnimation),
           );
 
-        final selectedBorderPaint = Paint()
-          ..color = tokens.kineticAccent
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 2.4;
-
         for (final path in paths) {
-          canvas.drawPath(path, glowPaint);
-          canvas.drawPath(path, selectedBorderPaint);
+          canvas.drawPath(path, _glowPaint);
+          canvas.drawPath(path, _selectedBorderPaint);
         }
       }
     }

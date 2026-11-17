@@ -3,7 +3,7 @@ import 'package:progression_tracker/features/body/domain/entities/muscle_region.
 import 'package:progression_tracker/features/body/presentation/widgets/body_map/body_map_paths.dart';
 
 void main() {
-  group('BodyMapPaths Vector Geometry Tests', () {
+  group('BodyMapPaths Vector Geometry & Complete 20-Region Hit-Test Suite (Wave 5.4)', () {
     test('standard viewBox dimensions are 300 x 520', () {
       expect(BodyMapPaths.viewBoxWidth, 300.0);
       expect(BodyMapPaths.viewBoxHeight, 520.0);
@@ -53,57 +53,82 @@ void main() {
       expect(backBounds.height, greaterThan(200));
     });
 
-    test('hitTest accurately detects anatomical muscle regions on front view', () {
-      // Point in Chest
-      final chestHit = BodyMapPaths.hitTest(
-        localPosition: const Offset(130, 140),
-        isFront: true,
-      );
-      expect(chestHit, MuscleRegion.chest);
+    test('hitTest detects every front muscle region including adductors before quads', () {
+      final frontSamples = <MuscleRegion, Offset>{
+        MuscleRegion.upperTraps: const Offset(128.0, 99.5),
+        MuscleRegion.frontDelts: const Offset(102.8, 128.4),
+        MuscleRegion.sideDelts: const Offset(81.0, 146.5),
+        MuscleRegion.chest: const Offset(130.0, 140.0),
+        MuscleRegion.biceps: const Offset(90.4, 186.0),
+        MuscleRegion.forearms: const Offset(80.4, 261.2),
+        MuscleRegion.upperAbs: const Offset(140.0, 177.0),
+        MuscleRegion.lowerAbs: const Offset(140.5, 227.5),
+        MuscleRegion.obliques: const Offset(119.2, 207.6),
+        MuscleRegion.adductors: const Offset(142.0, 302.7),
+        MuscleRegion.quads: const Offset(122.0, 312.0),
+        MuscleRegion.calves: const Offset(119.6, 433.2),
+      };
 
-      // Point in Upper Abs
-      final absHit = BodyMapPaths.hitTest(
-        localPosition: const Offset(140, 175),
-        isFront: true,
+      expect(
+        frontSamples.keys.toSet(),
+        equals(MuscleRegion.frontRegions.toSet()),
       );
-      expect(absHit, MuscleRegion.upperAbs);
 
-      // Point in Quads
-      final quadsHit = BodyMapPaths.hitTest(
-        localPosition: const Offset(125, 310),
-        isFront: true,
-      );
-      expect(quadsHit, MuscleRegion.quads);
+      for (final entry in frontSamples.entries) {
+        final hit = BodyMapPaths.hitTest(
+          localPosition: entry.value,
+          isFront: true,
+        );
+        expect(
+          hit,
+          entry.key,
+          reason: 'Expected front hitTest at ${entry.value} to resolve ${entry.key.id}, got $hit',
+        );
+      }
 
       // Out of bounds coordinate
-      final emptyHit = BodyMapPaths.hitTest(
-        localPosition: const Offset(10, 10),
-        isFront: true,
+      expect(
+        BodyMapPaths.hitTest(localPosition: const Offset(10, 10), isFront: true),
+        isNull,
       );
-      expect(emptyHit, isNull);
     });
 
-    test('hitTest accurately detects anatomical muscle regions on back view', () {
-      // Point in Lats
-      final latsHit = BodyMapPaths.hitTest(
-        localPosition: const Offset(124, 180),
-        isFront: false,
-      );
-      expect(latsHit, MuscleRegion.lats);
+    test('hitTest detects every back muscle region including abductors before glutes', () {
+      final backSamples = <MuscleRegion, Offset>{
+        MuscleRegion.upperTraps: const Offset(150.0, 130.7),
+        MuscleRegion.middleBack: const Offset(137.0, 187.0),
+        MuscleRegion.rearDelts: const Offset(98.5, 133.0),
+        MuscleRegion.triceps: const Offset(86.4, 192.0),
+        MuscleRegion.forearms: const Offset(80.4, 262.0),
+        MuscleRegion.lats: const Offset(120.0, 188.8),
+        MuscleRegion.lowerBack: const Offset(150.0, 249.0),
+        MuscleRegion.abductors: const Offset(104.5, 286.0),
+        MuscleRegion.glutes: const Offset(126.0, 290.0),
+        MuscleRegion.hamstrings: const Offset(123.6, 352.0),
+        MuscleRegion.calves: const Offset(118.8, 434.4),
+      };
 
-      // Point in Glutes
-      final glutesHit = BodyMapPaths.hitTest(
-        localPosition: const Offset(126, 290),
-        isFront: false,
+      expect(
+        backSamples.keys.toSet(),
+        equals(MuscleRegion.backRegions.toSet()),
       );
-      expect(glutesHit, MuscleRegion.glutes);
 
-      // Out of bounds coordinate
-      final emptyHit = BodyMapPaths.hitTest(
-        localPosition: const Offset(5, 5),
-        isFront: false,
+      for (final entry in backSamples.entries) {
+        final hit = BodyMapPaths.hitTest(
+          localPosition: entry.value,
+          isFront: false,
+        );
+        expect(
+          hit,
+          entry.key,
+          reason: 'Expected back hitTest at ${entry.value} to resolve ${entry.key.id}, got $hit',
+        );
+      }
+
+      expect(
+        BodyMapPaths.hitTest(localPosition: const Offset(10, 10), isFront: false),
+        isNull,
       );
-      expect(emptyHit, isNull);
     });
   });
 }

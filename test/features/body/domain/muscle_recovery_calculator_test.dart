@@ -153,5 +153,88 @@ void main() {
       );
       expect(squatRegions, contains(MuscleRegion.quads));
     });
+
+    test('accumulates fractional secondary sets before rounding (0.5 + 0.5 + 0.5 -> 2, not 3)', () {
+      // Three chest exercises that hit triceps & front_delts as secondary regions,
+      // each with 1 working set: 3 * 0.5 = 1.5 -> rounds to 2 sets (not 1+1+1 = 3).
+      final workout = Workout(
+        id: 'w-fractional',
+        date: now.subtract(const Duration(hours: 8)),
+        duration: const Duration(minutes: 60),
+        totalVolume: 300.0,
+        exercises: [
+          Exercise(
+            id: 'e1',
+            name: 'Barbell Bench Press',
+            type: ExerciseType.strength,
+            exerciseDefinitionId: 'chest_001',
+            sets: [SetEntry.create(reps: 10, weight: 100.0)],
+          ),
+          Exercise(
+            id: 'e2',
+            name: 'Incline Dumbbell Press',
+            type: ExerciseType.strength,
+            exerciseDefinitionId: 'chest_002',
+            sets: [SetEntry.create(reps: 10, weight: 80.0)],
+          ),
+          Exercise(
+            id: 'e3',
+            name: 'Push-Up',
+            type: ExerciseType.strength,
+            exerciseDefinitionId: 'chest_005',
+            sets: [SetEntry.create(reps: 15, weight: 20.0)],
+          ),
+        ],
+      );
+
+      final result = calculator.calculate(
+        workouts: [workout],
+        referenceNow: now,
+      );
+
+      final chest = result[MuscleRegion.chest]!;
+      final triceps = result[MuscleRegion.triceps]!;
+      expect(chest.sets7Days, 3);
+      expect(triceps.sets7Days, 2);
+    });
+
+    test('incorporates logged RPE and session duration into recovery estimate', () {
+      Workout buildWorkout({required int rpe, required int minutes}) {
+        return Workout(
+          id: 'w-$rpe-$minutes',
+          date: now.subtract(const Duration(hours: 24)),
+          duration: Duration(minutes: minutes),
+          totalVolume: 2000.0,
+          exercises: [
+            Exercise(
+              id: 'ex-1',
+              name: 'Barbell Bench Press',
+              type: ExerciseType.strength,
+              exerciseDefinitionId: 'chest_001',
+              sets: [
+                SetEntry.create(reps: 10, weight: 100.0, rpe: rpe),
+                SetEntry.create(reps: 10, weight: 100.0, rpe: rpe),
+              ],
+            ),
+          ],
+        );
+      }
+
+      final easyShort = calculator.calculate(
+        workouts: [buildWorkout(rpe: 5, minutes: 35)],
+        referenceNow: now,
+      )[MuscleRegion.chest]!;
+
+      final maxLong = calculator.calculate(
+        workouts: [buildWorkout(rpe: 10, minutes: 105)],
+        referenceNow: now,
+      )[MuscleRegion.chest]!;
+
+      expect(maxLong.score, lessThan(easyShort.score));
+      expect(
+        maxLong.estimatedHoursRemaining,
+        greaterThan(easyShort.estimatedHoursRemaining),
+      );
+    });
   });
 }

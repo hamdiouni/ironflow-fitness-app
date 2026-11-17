@@ -9,7 +9,7 @@ import 'package:progression_tracker/features/workout/data/exercise_video_map.dar
 import 'package:progression_tracker/features/workout/domain/entities/entities.dart';
 import 'package:progression_tracker/shared/animations/set_completion_animation.dart';
 import 'package:progression_tracker/features/workout/presentation/providers/workout_providers.dart';
-import 'package:progression_tracker/features/workout/presentation/widgets/exercise_video_player.dart';
+import 'package:progression_tracker/shared/widgets/exercise_media_stage.dart';
 import 'package:progression_tracker/features/workout/presentation/widgets/plate_calculator_sheet.dart';
 import 'package:progression_tracker/shared/presentation/services/app_haptics.dart';
 import 'package:progression_tracker/features/workout/domain/usecases/workout_metrics.dart';
@@ -534,7 +534,7 @@ class _VideoPreviewBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
-      child: ExerciseVideoPlayer(
+      child: ExerciseMediaStage(
         exerciseName: exerciseName,
         onError: (error) {
           debugPrint('Video player error: $error');

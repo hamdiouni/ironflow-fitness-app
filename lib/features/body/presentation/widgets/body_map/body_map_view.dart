@@ -7,20 +7,21 @@ import 'package:progression_tracker/features/body/domain/entities/muscle_region.
 import 'package:progression_tracker/features/body/presentation/providers/body_map_providers.dart';
 import 'package:progression_tracker/shared/presentation/components/app_card.dart';
 import 'package:progression_tracker/shared/presentation/services/app_haptics.dart';
-import 'body_map_painter.dart';
-import 'body_map_paths.dart';
+import 'anatomy_renderer.dart';
 import 'muscle_detail_sheet.dart';
+export 'anatomy_renderer.dart';
 
-/// Full interactive Body Map view component (Wave 4 / ADR-006).
+/// Full interactive Body Map view component (Wave 4 / Wave 5.2).
 ///
-/// Features front & back 2D anatomical muscle rendering with sub-millisecond
-/// path hit-testing, recovery diagnostics, volume heatmap mode, and an
-/// accessible semantic list alternative.
+/// Features front & back 2D anatomical muscle rendering via [AnatomyRenderer]
+/// with sub-millisecond path hit-testing, recovery estimates, volume heatmap
+/// mode, and an accessible semantic list alternative.
 class BodyMapView extends ConsumerStatefulWidget {
   const BodyMapView({
     super.key,
     this.compact = false,
     this.onMuscleSelected,
+    this.renderer = const Vector2DAnatomyRenderer(),
   });
 
   /// When true, renders a lightweight compact version (e.g. for Home / Summary).
@@ -28,6 +29,9 @@ class BodyMapView extends ConsumerStatefulWidget {
 
   /// Optional callback when a muscle region is tapped.
   final ValueChanged<MuscleRegion>? onMuscleSelected;
+
+  /// Pluggable anatomy renderer (defaults to [Vector2DAnatomyRenderer]).
+  final AnatomyRenderer renderer;
 
   @override
   ConsumerState<BodyMapView> createState() => _BodyMapViewState();
@@ -53,24 +57,16 @@ class _BodyMapViewState extends ConsumerState<BodyMapView>
     super.dispose();
   }
 
-  void _handleTap(TapUpDetails details, Size widgetSize, bool isFront) {
-    final region = BodyMapPaths.hitTest(
-      localPosition: details.localPosition,
-      widgetSize: widgetSize,
-      isFront: isFront,
-    );
+  void _selectRegion(MuscleRegion region) {
+    AppHaptics.shared.selectionChanged();
+    ref.read(selectedMuscleRegionProvider.notifier).select(region);
+    widget.onMuscleSelected?.call(region);
 
-    if (region != null) {
-      AppHaptics.shared.selectionChanged();
-      ref.read(selectedMuscleRegionProvider.notifier).select(region);
-      widget.onMuscleSelected?.call(region);
+    final recoveryMap =
+        ref.read(muscleRecoveryProvider).valueOrNull ?? const {};
+    final data = recoveryMap[region] ?? MuscleRecoveryData.fresh(region);
 
-      final recoveryMap =
-          ref.read(muscleRecoveryProvider).valueOrNull ?? const {};
-      final data = recoveryMap[region] ?? MuscleRecoveryData.fresh(region);
-
-      _showDetailSheet(context, data);
-    }
+    _showDetailSheet(context, data);
   }
 
   void _showDetailSheet(BuildContext context, MuscleRecoveryData data) {
@@ -340,35 +336,17 @@ class _BodyMapViewState extends ConsumerState<BodyMapView>
     Map<MuscleRegion, MuscleRecoveryData> recoveryMap,
     AppThemeTokens tokens,
   ) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final size = Size(constraints.maxWidth, constraints.maxHeight);
-
-        return Semantics(
-          label:
-              'Interactive ${isFront ? "front" : "back"} body map. Tap any muscle region to view recovery diagnostics.',
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTapUp: (details) => _handleTap(details, size, isFront),
-            child: AnimatedBuilder(
-              animation: _pulseController,
-              builder: (context, child) {
-                return CustomPaint(
-                  size: size,
-                  painter: BodyMapPainter(
-                    isFront: isFront,
-                    recoveryMap: recoveryMap,
-                    selectedRegion: selectedRegion,
-                    tokens: tokens,
-                    isHeatmapMode: isHeatmap,
-                    pulseAnimation: _pulseController.value,
-                  ),
-                );
-              },
-            ),
-          ),
-        );
-      },
+    return widget.renderer.build(
+      context,
+      AnatomyRenderConfig(
+        isFront: isFront,
+        isHeatmapMode: isHeatmap,
+        recoveryMap: recoveryMap,
+        selectedRegion: selectedRegion,
+        tokens: tokens,
+        pulseAnimation: _pulseController,
+        onRegionSelected: _selectRegion,
+      ),
     );
   }
 
@@ -381,7 +359,7 @@ class _BodyMapViewState extends ConsumerState<BodyMapView>
     final regions = isFront ? MuscleRegion.frontRegions : MuscleRegion.backRegions;
 
     return Semantics(
-      label: 'Accessible muscle recovery list',
+      label: 'Accessible muscle recovery estimate list',
       child: ListView.separated(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         itemCount: regions.length,
@@ -400,16 +378,11 @@ class _BodyMapViewState extends ConsumerState<BodyMapView>
 
           return Semantics(
             button: true,
-            label: '${region.displayName}, ${data.tier.name.toUpperCase()} recovery, $pct percent, ${data.sets7Days} sets in last 7 days',
+            label: '${region.displayName}, ${data.tier.name.toUpperCase()} recovery estimate, $pct percent, ${data.sets7Days} sets in last 7 days',
             child: AppCard(
               padding: const EdgeInsets.all(12),
               child: InkWell(
-                onTap: () {
-                  AppHaptics.shared.selectionChanged();
-                  ref.read(selectedMuscleRegionProvider.notifier).select(region);
-                  widget.onMuscleSelected?.call(region);
-                  _showDetailSheet(context, data);
-                },
+                onTap: () => _selectRegion(region),
                 child: Row(
                   children: [
                     Container(
@@ -458,7 +431,7 @@ class _BodyMapViewState extends ConsumerState<BodyMapView>
                           ),
                         ),
                         Text(
-                          '${data.sets7Days} sets 7d',
+                          '${data.sets7Days} sets 7d · est.',
                           style: TextStyle(
                             fontFamily: AppTypography.bodyFontFamily,
                             fontSize: 10.5,

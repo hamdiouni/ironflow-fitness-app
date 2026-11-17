@@ -95,3 +95,21 @@
 3. **Curated YouTube IDs & Duplicate File Deletion (`5.3`):**
    - Approve using the existing `49` unique YouTube IDs (`53 / 129` canonical catalog exercises via `54` keys in `ExerciseVideoMap`) verified via oEmbed for `"Coach 1"` (with `"Coach 2"` populated only where you supply/approve IDs, and step instructions shown cleanly for unmapped exercises)?
    - Approve deleting the 2 duplicate wrapper files listed above (`lib/shared/widgets/exercise_video_player.dart` and `lib/features/workout/presentation/widgets/exercise_video_player.dart`) after migrating `ExerciseDetailScreen` and `ActiveExerciseCard` to `ExerciseMediaStage`?
+
+---
+
+## Owner Decisions & Wave 5 Outcome
+- **Confirmed Decisions:**
+  1. **3D Form Loops (`A1`):** Dropped `"Kingfisher 3D Loop"`; shipped the `"3D Form"` manifest/cache spec (`assets/data/exercise_media_manifest.json` + `ExerciseMediaLoopSpec`) alongside `"Coach 1"`, `"Coach 2"`, and automatic `"Steps"` fallback.
+  2. **`AnatomyRenderer` (`A2`):** Shipped the pluggable `AnatomyRenderer` interface and `Vector2DAnatomyRenderer` (`lib/features/body/presentation/widgets/body_map/anatomy_renderer.dart`, zero extra dependencies, Wasm-safe).
+  3. **Curated YouTube IDs & Duplicate Wrapper Deletion (`A3`):** Deleted both duplicate `ExerciseVideoPlayer` files (`lib/shared/widgets/exercise_video_player.dart` and `lib/features/workout/presentation/widgets/exercise_video_player.dart`), consolidated into `ExerciseMediaStage` (`lib/shared/widgets/exercise_media_stage.dart`), and verified all active YouTube IDs via `scripts/verify_youtube_oembed.py --strict` (`40 / 40` HTTP 200; pruned `10` dead `404` IDs from `ExerciseVideoMap` and blocked `20` dead `404` catalog `animationUrl` IDs).
+- **Measured Media Coverage (`129` canonical exercises in `assets/data/exercises_catalog.json`):**
+  - `Coach 1` (verified HTTP 200 YouTube IDs): **`43 / 129`** (`33.3%`, backed by `45` active map entries across `40` unique verified YouTube IDs).
+  - `Coach 2` (secondary verified YouTube ID): **`3 / 129`** (`Deadlift`, `Barbell Deadlift`, `Conventional Deadlift` -> `r4MzxtBKyNE`).
+  - `3D Form` loops: **`0 / 129`** (manifest spec ready at `assets/data/exercise_media_manifest.json`; never faked).
+  - `Steps` fallback (`ExerciseCatalog` instructions): **`129 / 129`** (`100%`; `86 / 129` unmapped exercises fall back directly to numbered execution steps).
+- **Verification Results:**
+  - `flutter analyze --no-pub --no-fatal-infos lib test`: `0` errors, `0` warnings (`31` pre-existing `avoid_print` infos in `test/integration/auth_preservation_property_test.dart`).
+  - `flutter test --no-pub --coverage --timeout=60s`: `1,078` tests passed (`0` failures, `0` skipped).
+  - `python scripts/check_coverage.py --baseline docs/quality/coverage_baseline.json --fail-on-drop`: `70.72%` overall (`21,620 / 30,570` lines across `382` files); `COVERAGE GATE PASSED`.
+  - `python scripts/verify_youtube_oembed.py --strict`: `40 / 40` active unique YouTube IDs returned HTTP `200`.

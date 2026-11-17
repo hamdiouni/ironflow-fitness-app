@@ -112,6 +112,17 @@ class MuscleDetailSheet extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
+                        'RECOVERY ESTIMATE',
+                        style: TextStyle(
+                          fontFamily: AppTypography.displayFontFamily,
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.7,
+                          color: tokens.textMuted,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
                         _recoveryTitle(recoveryData.tier, recoveryData.score),
                         style: TextStyle(
                           fontFamily: AppTypography.displayFontFamily,
@@ -256,7 +267,7 @@ class MuscleDetailSheet extends ConsumerWidget {
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: tokens.kineticAccent,
-                foregroundColor: tokens.canvas,
+                foregroundColor: tokens.onAccent,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(tokens.radiusPill),
@@ -419,7 +430,7 @@ class MuscleDetailSheet extends ConsumerWidget {
       return 'DOMS flagged manually. Light active recovery or rest recommended.';
     }
     if (data.tier == RecoveryTier.fresh) {
-      return 'Supercompensation complete. Primed for progressive overload.';
+      return 'Estimated recovery complete. Primed for progressive overload.';
     }
     final hrs = data.estimatedHoursRemaining;
     return 'Estimated $hrs hours until full baseline recovery.';

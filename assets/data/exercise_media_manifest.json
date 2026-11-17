@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "description": "Manifest for owner-supplied 3D Form exercise loops and cached posters (Wave 5.3).",
+  "namingSpec": {
+    "loopVideo": "assets/media/loops/<exercise_id>_loop.{mp4,webm}",
+    "posterImage": "assets/media/posters/<exercise_id>_poster.webp"
+  },
+  "loops": {}
+}

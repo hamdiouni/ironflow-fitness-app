@@ -23,12 +23,15 @@ class MuscleRecoveryCalculator {
     final sevenDaysAgo = now.subtract(const Duration(days: 7));
     final thirtyDaysAgo = now.subtract(const Duration(days: 30));
 
-    // Intermediate tracking maps
+    // Intermediate tracking maps (sets accumulated as fractional doubles and rounded once)
     final lastTrainedMap = <MuscleRegion, DateTime>{};
     final volume7dMap = <MuscleRegion, double>{};
-    final sets7dMap = <MuscleRegion, int>{};
+    final rawSets7dMap = <MuscleRegion, double>{};
     final volume30dMap = <MuscleRegion, double>{};
-    final sets30dMap = <MuscleRegion, int>{};
+    final rawSets30dMap = <MuscleRegion, double>{};
+    final rpeWeightedSum7d = <MuscleRegion, double>{};
+    final rpeWeightTotal7d = <MuscleRegion, double>{};
+    final lastSessionDurationMinMap = <MuscleRegion, double>{};
     final recentExercisesMap = <MuscleRegion, List<String>>{};
 
     // Sort workouts ascending by date to process chronologically
@@ -37,6 +40,7 @@ class MuscleRecoveryCalculator {
 
     for (final workout in sortedWorkouts) {
       final workoutDate = workout.date;
+      final sessionMinutes = workout.duration.inMinutes.toDouble();
 
       for (final exercise in workout.exercises) {
         // Resolve definition to get canonical primary & secondary regions (memoized)
@@ -83,9 +87,11 @@ class MuscleRecoveryCalculator {
           continue;
         }
 
-        // Calculate working volume and sets for this exercise
+        // Calculate working volume, sets, and logged RPE for this exercise
         double workingVolume = 0;
         int workingSets = 0;
+        double exerciseRpeSum = 0;
+        int exerciseRpeCount = 0;
 
         for (final set in exercise.sets) {
           // Warmups contribute minimal fatigue (20%), working sets contribute 100%
@@ -94,24 +100,42 @@ class MuscleRecoveryCalculator {
           workingVolume += setVolume;
           if (set.type != SetType.warmup) {
             workingSets++;
+            if (set.rpe != null) {
+              exerciseRpeSum += set.rpe!.clamp(1, 10);
+              exerciseRpeCount++;
+            }
           }
         }
 
         if (workingSets == 0 && workingVolume == 0) continue;
 
+        final avgExerciseRpe =
+            exerciseRpeCount > 0 ? (exerciseRpeSum / exerciseRpeCount) : null;
+
         // Apply to primary regions (weight 1.0)
         for (final region in primaryRegions) {
           if (lastTrainedMap[region] == null ||
-              workoutDate.isAfter(lastTrainedMap[region]!)) {
+              !workoutDate.isBefore(lastTrainedMap[region]!)) {
             lastTrainedMap[region] = workoutDate;
+            if (sessionMinutes > 0) {
+              lastSessionDurationMinMap[region] = sessionMinutes;
+            }
           }
           if (workoutDate.isAfter(sevenDaysAgo)) {
             volume7dMap[region] = (volume7dMap[region] ?? 0) + workingVolume;
-            sets7dMap[region] = (sets7dMap[region] ?? 0) + workingSets;
+            rawSets7dMap[region] =
+                (rawSets7dMap[region] ?? 0) + workingSets.toDouble();
+            if (avgExerciseRpe != null && workingSets > 0) {
+              rpeWeightedSum7d[region] = (rpeWeightedSum7d[region] ?? 0) +
+                  (avgExerciseRpe * workingSets);
+              rpeWeightTotal7d[region] =
+                  (rpeWeightTotal7d[region] ?? 0) + workingSets.toDouble();
+            }
           }
           if (workoutDate.isAfter(thirtyDaysAgo)) {
             volume30dMap[region] = (volume30dMap[region] ?? 0) + workingVolume;
-            sets30dMap[region] = (sets30dMap[region] ?? 0) + workingSets;
+            rawSets30dMap[region] =
+                (rawSets30dMap[region] ?? 0) + workingSets.toDouble();
           }
           final list = recentExercisesMap.putIfAbsent(region, () => []);
           if (!list.contains(exercise.name)) {
@@ -120,23 +144,33 @@ class MuscleRecoveryCalculator {
           }
         }
 
-        // Apply to secondary regions (weight 0.5)
+        // Apply to secondary regions (weight 0.5 — accumulated fractionally before rounding)
         for (final region in secondaryRegions) {
           if (lastTrainedMap[region] == null ||
-              workoutDate.isAfter(lastTrainedMap[region]!)) {
+              !workoutDate.isBefore(lastTrainedMap[region]!)) {
             lastTrainedMap[region] = workoutDate;
+            if (sessionMinutes > 0) {
+              lastSessionDurationMinMap[region] = sessionMinutes;
+            }
           }
+          final fractionalSets = workingSets * 0.5;
           if (workoutDate.isAfter(sevenDaysAgo)) {
             volume7dMap[region] =
                 (volume7dMap[region] ?? 0) + (workingVolume * 0.5);
-            sets7dMap[region] =
-                (sets7dMap[region] ?? 0) + ((workingSets * 0.5).round());
+            rawSets7dMap[region] =
+                (rawSets7dMap[region] ?? 0) + fractionalSets;
+            if (avgExerciseRpe != null && fractionalSets > 0) {
+              rpeWeightedSum7d[region] = (rpeWeightedSum7d[region] ?? 0) +
+                  (avgExerciseRpe * fractionalSets);
+              rpeWeightTotal7d[region] =
+                  (rpeWeightTotal7d[region] ?? 0) + fractionalSets;
+            }
           }
           if (workoutDate.isAfter(thirtyDaysAgo)) {
             volume30dMap[region] =
                 (volume30dMap[region] ?? 0) + (workingVolume * 0.5);
-            sets30dMap[region] =
-                (sets30dMap[region] ?? 0) + ((workingSets * 0.5).round());
+            rawSets30dMap[region] =
+                (rawSets30dMap[region] ?? 0) + fractionalSets;
           }
           final list = recentExercisesMap.putIfAbsent(region, () => []);
           if (!list.contains(exercise.name)) {
@@ -147,14 +181,15 @@ class MuscleRecoveryCalculator {
       }
     }
 
-    // Build final telemetry map for all 20 anatomical regions
+    // Build final recovery map for all 20 anatomical regions
     final result = <MuscleRegion, MuscleRecoveryData>{};
 
     for (final region in MuscleRegion.values) {
       final lastTrained = lastTrainedMap[region];
-      final sets7d = sets7dMap[region] ?? 0;
+      final rawSets7d = rawSets7dMap[region] ?? 0.0;
+      final sets7d = rawSets7d.round();
       final volume7d = volume7dMap[region] ?? 0;
-      final sets30d = sets30dMap[region] ?? 0;
+      final sets30d = (rawSets30dMap[region] ?? 0.0).round();
       final volume30d = volume30dMap[region] ?? 0;
       final recentExercises = recentExercisesMap[region] ?? const [];
       final isManuallySore = manualSoreRegionIds.contains(region.id);
@@ -184,11 +219,25 @@ class MuscleRecoveryCalculator {
       final diff = now.difference(lastTrained);
       final elapsedHours = math.max(0.0, diff.inMinutes / 60.0);
 
-      // Volume-adjusted recovery window:
-      // Base hours + 5% per recent working set capped at 12 sets (+60%)
+      // Volume, RPE, and session-duration adjusted recovery window:
+      // 1. Volume: Base hours + 5% per recent effective working set capped at 12 sets (+60%)
+      // 2. RPE: Baseline 7.0 (1.0x), +/- 8% per RPE point when RPE is logged
+      // 3. Duration: Baseline 60 min (1.0x), +/- 12% per 60 min deviation when duration > 0
       final baseHours = region.baseRecoveryHours.toDouble();
-      final volumeMultiplier = 1.0 + (0.05 * math.min(sets7d, 12));
-      final requiredHours = baseHours * volumeMultiplier;
+      final volumeMultiplier = 1.0 + (0.05 * math.min(rawSets7d, 12.0));
+      final rpeWeight = rpeWeightTotal7d[region] ?? 0.0;
+      final rpeMultiplier = rpeWeight > 0
+          ? (1.0 + (((rpeWeightedSum7d[region]! / rpeWeight) - 7.0) * 0.08))
+              .clamp(0.85, 1.30)
+          : 1.0;
+      final lastDurationMin = lastSessionDurationMinMap[region];
+      final durationMultiplier =
+          (lastDurationMin != null && lastDurationMin > 0)
+              ? (1.0 + (((lastDurationMin - 60.0) / 60.0) * 0.12))
+                  .clamp(0.85, 1.25)
+              : 1.0;
+      final requiredHours =
+          baseHours * volumeMultiplier * rpeMultiplier * durationMultiplier;
 
       double score = math.min(1.0, elapsedHours / requiredHours);
       score = (score * 100).round() / 100.0;

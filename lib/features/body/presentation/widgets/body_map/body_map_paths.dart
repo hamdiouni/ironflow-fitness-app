@@ -197,8 +197,8 @@ class BodyMapPaths {
       ],
       MuscleRegion.lowerAbs: [lowerAbsLeft, lowerAbsRight],
       MuscleRegion.obliques: [lOblique, rOblique],
-      MuscleRegion.quads: [lQuad, rQuad],
       MuscleRegion.adductors: [lAdductor, rAdductor],
+      MuscleRegion.quads: [lQuad, rQuad],
       MuscleRegion.calves: [lCalf, rCalf],
     };
   }();
@@ -323,8 +323,8 @@ class BodyMapPaths {
       MuscleRegion.forearms: [lForearmBack, rForearmBack],
       MuscleRegion.lats: [lLat, rLat],
       MuscleRegion.lowerBack: [lowerBack],
-      MuscleRegion.glutes: [lGlute, rGlute],
       MuscleRegion.abductors: [lAbductor, rAbductor],
+      MuscleRegion.glutes: [lGlute, rGlute],
       MuscleRegion.hamstrings: [lHamstring, rHamstring],
       MuscleRegion.calves: [lCalfBack, rCalfBack],
     };
