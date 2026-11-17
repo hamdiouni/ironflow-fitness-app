@@ -1,7 +1,7 @@
 # ADR-002: Local Health & Personal Data Encryption at Rest
 
-- **Status**: Proposed (Awaiting Owner Approval before Wave 1.7)
-- **Date**: 2026-11-05
+- **Status**: Accepted & Implemented (Wave 1.7 + Wave 3.2)
+- **Date**: 2026-11-05 (Updated 2026-11-17)
 - **Wave**: Wave 1.7
 
 ## 1. Problem
@@ -18,6 +18,10 @@ All 24 files opening Hive boxes (`workouts`, `nutrition`, `body_progress`, `user
 - **Option A (`HiveAesCipher` with key in `FlutterSecureStorage`)** for user/health boxes (`workouts`, `nutrition`, `body_progress`, `user_profile`, `ai_chat`, `auth_session`, `sync_queue`).
 - Keep non-sensitive app preferences (`theme`, `language`, `units`) unencrypted so theme/locale loads instantaneously before async keystore reads.
 - Include a tested one-time migration (`HiveEncryptionMigrator`) that detects an unencrypted legacy box, reads its entries, deletes the plaintext box file, and re-writes them into the `HiveAesCipher`-encrypted box.
-- **New Runtime Dependencies**: **0** (uses existing `hive: ^2.2.3` and `flutter_secure_storage` upgraded to `^11.2.0` MIT/BSD).
+- **New Runtime Dependencies**: **0** (uses existing `hive: ^2.2.3`, `hive_flutter: ^1.1.0`, and `flutter_secure_storage: ^9.2.2`).
 - **Size Impact**: **0 KB**.
 - **Rollback**: Migration keeps a temporary `.bak` until verified; feature flag in `HiveManager`.
+- **Wave 3.2 Update (2026-11-17)**:
+  - Encrypted boxes expanded to include `settings`, `notification_settings`, `food_items_full`, and dedicated personal `custom_foods` box (isolated out of shared unencrypted `foods` cache in Schema v4).
+  - `HiveManager` enforces two-tier opening (`auth_session`, `user_profile`, `app_settings`, `active_workout_state` concurrently at Tier-1 boot; feature boxes lazily single-flight at Tier-2).
+  - `HiveEncryptionService` opens boxes with `crashRecovery: false` and copies `.hive`/`.lock` files to `quarantine/` before recovery so corruption or key mismatch never silently truncates health records.

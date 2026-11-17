@@ -1,6 +1,6 @@
-import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:progression_tracker/core/platform/platform_file_ops.dart';
 import 'package:progression_tracker/features/settings/domain/usecases/export_all_data_use_case.dart';
 import 'package:progression_tracker/features/auth/domain/repositories/auth_repository.dart';
 import 'package:progression_tracker/core/utils/record_ownership.dart';
@@ -228,8 +228,11 @@ class BackupDataUseCase {
 
     // Create local backup file
     final localFilePath = await _exportAllDataUseCase.exportToJSON();
-    final file = File(localFilePath);
-    final fileSize = await file.length();
+    final bytes = await PlatformFileOps.readBytes(localFilePath);
+    if (bytes == null) {
+      throw StateError('Exported backup file not found: $localFilePath');
+    }
+    final fileSize = bytes.length;
 
     // Generate backup metadata
     final timestamp = DateTime.now();
@@ -239,8 +242,8 @@ class BackupDataUseCase {
 
     try {
       // Upload to cloud storage
-      final uploadTask = _storage.ref(cloudPath).putFile(
-        file,
+      final uploadTask = _storage.ref(cloudPath).putData(
+        bytes,
         SettableMetadata(contentType: 'application/json'),
       );
       await uploadTask;
@@ -265,7 +268,7 @@ class BackupDataUseCase {
           .set(backupRecord.toJson());
 
       // Clean up local file
-      await file.delete();
+      await PlatformFileOps.deleteFileIfExists(localFilePath);
 
       // Clean up old automatic backups
       if (type == BackupType.automatic) {
@@ -275,9 +278,7 @@ class BackupDataUseCase {
       return backupRecord;
     } catch (e) {
       // Clean up local file on error
-      if (await file.exists()) {
-        await file.delete();
-      }
+      await PlatformFileOps.deleteFileIfExists(localFilePath);
       rethrow;
     }
   }

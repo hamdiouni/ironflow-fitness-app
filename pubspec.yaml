@@ -107,9 +107,6 @@ dependencies:
   # Localization
   intl: 0.20.2
 
-  # Environment variables
-  flutter_dotenv: ^5.1.0
-
   # Markdown rendering
   flutter_markdown_plus: ^1.0.12
 

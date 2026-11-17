@@ -1,7 +1,6 @@
 import 'dart:convert';
-import 'dart:io';
-import 'package:path_provider/path_provider.dart';
 import 'package:archive/archive.dart';
+import 'package:progression_tracker/core/platform/platform_file_ops.dart';
 import 'package:progression_tracker/features/workout/domain/repositories/workout_repository.dart';
 import 'package:progression_tracker/features/workout/domain/entities/workout.dart';
 import 'package:progression_tracker/features/nutrition/domain/repositories/nutrition_repository.dart';
@@ -37,51 +36,48 @@ class ExportAllDataUseCase {
   Future<String> exportToJSON() async {
     final allData = await _gatherAllData();
     final jsonContent = const JsonEncoder.withIndent('  ').convert(allData);
-    
-    final directory = await getApplicationDocumentsDirectory();
     final timestamp = DateTime.now().toIso8601String().split('T')[0];
-    final file = File('${directory.path}/ironflow_complete_backup_$timestamp.json');
-    await file.writeAsString(jsonContent);
-    
-    return file.path;
+    return PlatformFileOps.writeExportUtf8File(
+      'ironflow_complete_backup_$timestamp.json',
+      jsonContent,
+    );
   }
 
   /// Exports all user data to a ZIP archive containing multiple formats.
   ///
   /// Returns the file path of the exported ZIP file.
   Future<String> exportToZIP() async {
-    final directory = await getApplicationDocumentsDirectory();
+    final docsPath = await PlatformFileOps.resolveExportDirectoryPath();
     final timestamp = DateTime.now().toIso8601String().split('T')[0];
-    final zipPath = '${directory.path}/ironflow_backup_$timestamp.zip';
-    
-    // Create temporary directory for individual export files
-    final tempDir = await Directory('${directory.path}/temp_export_$timestamp').create();
-    
+    final zipFileName = 'ironflow_backup_$timestamp.zip';
+    final tempDirPath = PlatformFileOps.joinPath(
+      docsPath,
+      'temp_export_$timestamp',
+    );
+    await PlatformFileOps.ensureDirectory(tempDirPath);
+
     try {
       // Export individual components
-      await _exportWorkoutsToTemp(tempDir.path);
-      await _exportNutritionToTemp(tempDir.path);
-      await _exportBodyDataToTemp(tempDir.path);
-      await _exportUserProfileToTemp(tempDir.path);
-      await _exportCompleteDataToTemp(tempDir.path);
-      
+      await _exportWorkoutsToTemp(tempDirPath);
+      await _exportNutritionToTemp(tempDirPath);
+      await _exportBodyDataToTemp(tempDirPath);
+      await _exportUserProfileToTemp(tempDirPath);
+      await _exportCompleteDataToTemp(tempDirPath);
+
       // Create ZIP archive
       final archive = Archive();
-      await _addDirectoryToArchive(archive, tempDir, '');
-      
+      await _addDirectoryToArchive(archive, tempDirPath);
+
       // Write ZIP file
       final zipData = ZipEncoder().encode(archive);
-      if (zipData != null) {
-        final zipFile = File(zipPath);
-        await zipFile.writeAsBytes(zipData);
-      }
-      
-      return zipPath;
+      final writtenZipPath = zipData != null
+          ? await PlatformFileOps.writeBytesFile(docsPath, zipFileName, zipData)
+          : null;
+
+      return writtenZipPath ?? PlatformFileOps.joinPath(docsPath, zipFileName);
     } finally {
       // Clean up temp directory
-      if (await tempDir.exists()) {
-        await tempDir.delete(recursive: true);
-      }
+      await PlatformFileOps.deleteDirectoryIfExists(tempDirPath);
     }
   }
 
@@ -94,13 +90,9 @@ class ExportAllDataUseCase {
   Future<String> exportDateRangeToJSON(DateTime startDate, DateTime endDate) async {
     final dateRangeData = await _gatherDateRangeData(startDate, endDate);
     final jsonContent = const JsonEncoder.withIndent('  ').convert(dateRangeData);
-    
-    final directory = await getApplicationDocumentsDirectory();
-    final fileName = 'ironflow_export_${_formatDateForFilename(startDate)}_to_${_formatDateForFilename(endDate)}.json';
-    final file = File('${directory.path}/$fileName');
-    await file.writeAsString(jsonContent);
-    
-    return file.path;
+    final fileName =
+        'ironflow_export_${_formatDateForFilename(startDate)}_to_${_formatDateForFilename(endDate)}.json';
+    return PlatformFileOps.writeExportUtf8File(fileName, jsonContent);
   }
 
   /// Gets export statistics without actually exporting.
@@ -216,15 +208,24 @@ class ExportAllDataUseCase {
   Map<String, dynamic> _bodyEntryToMap(BodyEntry b) =>
       BackupRecordCodec.bodyEntryToMap(b);
 
+  Future<void> _moveExportedFile(
+    String sourcePath,
+    String tempPath,
+    String targetName,
+  ) async {
+    await PlatformFileOps.copyFile(
+      sourcePath,
+      PlatformFileOps.joinPath(tempPath, targetName),
+    );
+    await PlatformFileOps.deleteFileIfExists(sourcePath);
+  }
+
   Future<void> _exportWorkoutsToTemp(String tempPath) async {
     final csvPath = await _exportWorkoutsUseCase.exportToCSV();
     final jsonPath = await _exportWorkoutsUseCase.exportToJSON();
-    
-    await File(csvPath).copy('$tempPath/workouts.csv');
-    await File(jsonPath).copy('$tempPath/workouts.json');
-    
-    await File(csvPath).delete();
-    await File(jsonPath).delete();
+
+    await _moveExportedFile(csvPath, tempPath, 'workouts.csv');
+    await _moveExportedFile(jsonPath, tempPath, 'workouts.json');
   }
 
   Future<void> _exportNutritionToTemp(String tempPath) async {
@@ -232,57 +233,69 @@ class ExportAllDataUseCase {
     final jsonPath = await _exportNutritionUseCase.exportToJSON();
     final summaryPath = await _exportNutritionUseCase.exportSummaryToCSV();
     final trendsPath = await _exportNutritionUseCase.exportMacroTrendsToCSV();
-    
-    // Copy files to temp directory
-    await File(csvPath).copy('$tempPath/nutrition.csv');
-    await File(jsonPath).copy('$tempPath/nutrition.json');
-    await File(summaryPath).copy('$tempPath/nutrition_summary.csv');
-    await File(trendsPath).copy('$tempPath/macro_trends.csv');
-    
-    // Clean up original files
-    await File(csvPath).delete();
-    await File(jsonPath).delete();
-    await File(summaryPath).delete();
-    await File(trendsPath).delete();
+
+    await _moveExportedFile(csvPath, tempPath, 'nutrition.csv');
+    await _moveExportedFile(jsonPath, tempPath, 'nutrition.json');
+    await _moveExportedFile(summaryPath, tempPath, 'nutrition_summary.csv');
+    await _moveExportedFile(trendsPath, tempPath, 'macro_trends.csv');
   }
 
   Future<void> _exportBodyDataToTemp(String tempPath) async {
     final bodyMeasurements = await _bodyRepository.getAllBodyEntries();
     final csvContent = _generateBodyCSV(bodyMeasurements);
     final jsonContent = _generateBodyJSON(bodyMeasurements);
-    
-    await File('$tempPath/body_measurements.csv').writeAsString(csvContent);
-    await File('$tempPath/body_measurements.json').writeAsString(jsonContent);
+
+    await PlatformFileOps.writeUtf8File(
+      tempPath,
+      'body_measurements.csv',
+      csvContent,
+    );
+    await PlatformFileOps.writeUtf8File(
+      tempPath,
+      'body_measurements.json',
+      jsonContent,
+    );
   }
 
   Future<void> _exportUserProfileToTemp(String tempPath) async {
     final userProfile = await _authRepository.getCurrentUser();
     if (userProfile != null) {
-      final jsonContent = const JsonEncoder.withIndent('  ').convert(userProfile.toJson());
-      await File('$tempPath/user_profile.json').writeAsString(jsonContent);
+      final jsonContent =
+          const JsonEncoder.withIndent('  ').convert(userProfile.toJson());
+      await PlatformFileOps.writeUtf8File(
+        tempPath,
+        'user_profile.json',
+        jsonContent,
+      );
     }
   }
 
   Future<void> _exportCompleteDataToTemp(String tempPath) async {
     final allData = await _gatherAllData();
     final jsonContent = const JsonEncoder.withIndent('  ').convert(allData);
-    await File('$tempPath/complete_backup.json').writeAsString(jsonContent);
+    await PlatformFileOps.writeUtf8File(
+      tempPath,
+      'complete_backup.json',
+      jsonContent,
+    );
   }
 
-  Future<void> _addDirectoryToArchive(Archive archive, Directory dir, String prefix) async {
-    await for (final entity in dir.list()) {
-      if (entity is File) {
-        final bytes = await entity.readAsBytes();
-        final relativePath = prefix.isEmpty 
-            ? entity.path.split('/').last 
-            : '$prefix/${entity.path.split('/').last}';
-        archive.addFile(ArchiveFile(relativePath, bytes.length, bytes));
-      } else if (entity is Directory) {
-        final relativePath = prefix.isEmpty 
-            ? entity.path.split('/').last 
-            : '$prefix/${entity.path.split('/').last}';
-        await _addDirectoryToArchive(archive, entity, relativePath);
-      }
+  Future<void> _addDirectoryToArchive(
+    Archive archive,
+    String directoryPath,
+  ) async {
+    final normalizedRoot = directoryPath.replaceAll('\\', '/').endsWith('/')
+        ? directoryPath.replaceAll('\\', '/')
+        : '${directoryPath.replaceAll('\\', '/')}/';
+    final files = await PlatformFileOps.listFilesRecursively(directoryPath);
+    for (final filePath in files) {
+      final bytes = await PlatformFileOps.readBytes(filePath);
+      if (bytes == null) continue;
+      final normalizedFile = filePath.replaceAll('\\', '/');
+      final relativePath = normalizedFile.startsWith(normalizedRoot)
+          ? normalizedFile.substring(normalizedRoot.length)
+          : normalizedFile.split('/').last;
+      archive.addFile(ArchiveFile(relativePath, bytes.length, bytes));
     }
   }
 

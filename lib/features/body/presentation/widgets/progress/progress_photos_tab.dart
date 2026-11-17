@@ -1,9 +1,8 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:progression_tracker/core/platform/platform_image.dart';
 
 import '../../../../../core/constants/app_theme.dart';
 import '../../../../../core/utils/error_handler.dart';
@@ -237,8 +236,8 @@ class _PhotoCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Expanded(
-            child: Image.file(
-              File(entry.photoPath!),
+            child: PlatformImage.buildLocalOrNetwork(
+              entry.photoPath!,
               fit: BoxFit.cover,
               errorBuilder: (_, _, _) => Container(
                 color: tokens.card,

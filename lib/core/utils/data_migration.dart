@@ -68,7 +68,7 @@ class DataMigration {
         );
         return;
       }
-      final settings = Hive.box<String>(_appSettingsBox);
+      final settings = await HiveManager.ensureAppSettingsBox();
       final stored =
           int.tryParse(settings.get(_versionKey) ?? '') ?? 1;
       if (stored < currentSchemaVersion) {
@@ -410,10 +410,7 @@ class DataMigration {
   // ---------------------------------------------------------------------------
 
   static Future<Box<Map>?> _ensureMapBox(String name) async {
-    if (Hive.isBoxOpen(name)) {
-      return Hive.box<Map>(name);
-    }
-    if (await Hive.boxExists(name)) {
+    if (Hive.isBoxOpen(name) || await Hive.boxExists(name)) {
       return HiveManager.ensureOpen<Map>(name);
     }
     AppLogger.debug('⚠️ [Migration] Box "$name" does not exist; skipping');
@@ -421,10 +418,7 @@ class DataMigration {
   }
 
   static Future<Box<dynamic>?> _ensureDynamicBox(String name) async {
-    if (Hive.isBoxOpen(name)) {
-      return Hive.box<dynamic>(name);
-    }
-    if (await Hive.boxExists(name)) {
+    if (Hive.isBoxOpen(name) || await Hive.boxExists(name)) {
       return HiveManager.ensureOpen<dynamic>(name);
     }
     AppLogger.debug('⚠️ [Migration] Box "$name" does not exist; skipping');

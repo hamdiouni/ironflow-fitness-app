@@ -1,6 +1,5 @@
 import 'dart:convert';
-import 'dart:io';
-import 'package:path_provider/path_provider.dart';
+import 'package:progression_tracker/core/platform/platform_file_ops.dart';
 import 'package:progression_tracker/features/nutrition/domain/repositories/nutrition_repository.dart';
 import 'package:progression_tracker/features/nutrition/domain/entities/daily_nutrition_summary.dart';
 
@@ -22,13 +21,10 @@ class ExportNutritionUseCase {
   /// Returns the file path of the exported CSV file.
   Future<String> exportToCSV() async {
     final nutritionLogs = await _getAllNutritionLogs();
-    final csvContent = _generateCSV(nutritionLogs);
-    
-    final directory = await getApplicationDocumentsDirectory();
-    final file = File('${directory.path}/nutrition_export.csv');
-    await file.writeAsString(csvContent);
-    
-    return file.path;
+    return PlatformFileOps.writeExportUtf8File(
+      'nutrition_export.csv',
+      _generateCSV(nutritionLogs),
+    );
   }
 
   /// Exports all nutrition logs to JSON format.
@@ -36,13 +32,10 @@ class ExportNutritionUseCase {
   /// Returns the file path of the exported JSON file.
   Future<String> exportToJSON() async {
     final nutritionLogs = await _getAllNutritionLogs();
-    final jsonContent = _generateJSON(nutritionLogs);
-    
-    final directory = await getApplicationDocumentsDirectory();
-    final file = File('${directory.path}/nutrition_export.json');
-    await file.writeAsString(jsonContent);
-    
-    return file.path;
+    return PlatformFileOps.writeExportUtf8File(
+      'nutrition_export.json',
+      _generateJSON(nutritionLogs),
+    );
   }
 
   /// Exports nutrition logs within a date range to CSV.
@@ -56,14 +49,12 @@ class ExportNutritionUseCase {
       startDate,
       endDate,
     );
-    final csvContent = _generateCSV(nutritionLogs);
-    
-    final directory = await getApplicationDocumentsDirectory();
-    final fileName = 'nutrition_${_formatDateForFilename(startDate)}_to_${_formatDateForFilename(endDate)}.csv';
-    final file = File('${directory.path}/$fileName');
-    await file.writeAsString(csvContent);
-    
-    return file.path;
+    final fileName =
+        'nutrition_${_formatDateForFilename(startDate)}_to_${_formatDateForFilename(endDate)}.csv';
+    return PlatformFileOps.writeExportUtf8File(
+      fileName,
+      _generateCSV(nutritionLogs),
+    );
   }
 
   /// Exports nutrition logs within a date range to JSON.
@@ -77,14 +68,12 @@ class ExportNutritionUseCase {
       startDate,
       endDate,
     );
-    final jsonContent = _generateJSON(nutritionLogs);
-    
-    final directory = await getApplicationDocumentsDirectory();
-    final fileName = 'nutrition_${_formatDateForFilename(startDate)}_to_${_formatDateForFilename(endDate)}.json';
-    final file = File('${directory.path}/$fileName');
-    await file.writeAsString(jsonContent);
-    
-    return file.path;
+    final fileName =
+        'nutrition_${_formatDateForFilename(startDate)}_to_${_formatDateForFilename(endDate)}.json';
+    return PlatformFileOps.writeExportUtf8File(
+      fileName,
+      _generateJSON(nutritionLogs),
+    );
   }
 
   /// Exports nutrition summary statistics to CSV.
@@ -92,13 +81,10 @@ class ExportNutritionUseCase {
   /// Returns the file path of the exported summary CSV file.
   Future<String> exportSummaryToCSV() async {
     final nutritionLogs = await _getAllNutritionLogs();
-    final summaryContent = _generateSummaryCSV(nutritionLogs);
-    
-    final directory = await getApplicationDocumentsDirectory();
-    final file = File('${directory.path}/nutrition_summary.csv');
-    await file.writeAsString(summaryContent);
-    
-    return file.path;
+    return PlatformFileOps.writeExportUtf8File(
+      'nutrition_summary.csv',
+      _generateSummaryCSV(nutritionLogs),
+    );
   }
 
   /// Exports macro trends to CSV for analysis.
@@ -106,13 +92,10 @@ class ExportNutritionUseCase {
   /// Returns the file path of the exported trends CSV file.
   Future<String> exportMacroTrendsToCSV() async {
     final nutritionLogs = await _getAllNutritionLogs();
-    final trendsContent = _generateMacroTrendsCSV(nutritionLogs);
-    
-    final directory = await getApplicationDocumentsDirectory();
-    final file = File('${directory.path}/macro_trends.csv');
-    await file.writeAsString(trendsContent);
-    
-    return file.path;
+    return PlatformFileOps.writeExportUtf8File(
+      'macro_trends.csv',
+      _generateMacroTrendsCSV(nutritionLogs),
+    );
   }
 
   String _generateCSV(List<DailyNutritionSummary> nutritionLogs) {

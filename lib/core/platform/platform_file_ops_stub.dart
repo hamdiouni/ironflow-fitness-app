@@ -8,6 +8,16 @@ class PlatformFileOps {
 
   static String get pathSeparator => '/';
 
+  static String? extractPath(Object? directoryOrPath) {
+    if (directoryOrPath == null) return null;
+    if (directoryOrPath is String) return directoryOrPath;
+    try {
+      return (directoryOrPath as dynamic).path as String?;
+    } catch (_) {
+      return null;
+    }
+  }
+
   static String joinPath(String base, String segment) {
     if (base.isEmpty) return segment;
     if (base.endsWith('/') || base.endsWith('\\')) return '$base$segment';
@@ -15,6 +25,15 @@ class PlatformFileOps {
   }
 
   static Future<String?> resolveAppDocumentsPath() async => null;
+
+  static Future<String> resolveExportDirectoryPath() =>
+      throw UnsupportedError('Local filesystem export is unsupported.');
+
+  static Future<String> writeExportUtf8File(
+    String fileName,
+    String contents,
+  ) =>
+      throw UnsupportedError('Local filesystem export is unsupported.');
 
   static Future<String?> resolveTemporaryPath() async => null;
 
@@ -52,9 +71,14 @@ class PlatformFileOps {
 
   static Future<void> deleteDirectoryIfExists(String path) async {}
 
+  static Future<DateTime?> fileLastModified(String path) async => null;
+
   static Future<List<String>> listFilesInDirectory(
     String directoryPath, {
     String? extensionFilter,
   }) async =>
+      const [];
+
+  static Future<List<String>> listFilesRecursively(String directoryPath) async =>
       const [];
 }

@@ -12,6 +12,16 @@ class PlatformFileOps {
 
   static String get pathSeparator => Platform.pathSeparator;
 
+  static String? extractPath(Object? directoryOrPath) {
+    if (directoryOrPath == null) return null;
+    if (directoryOrPath is String) return directoryOrPath;
+    try {
+      return (directoryOrPath as dynamic).path as String?;
+    } catch (_) {
+      return null;
+    }
+  }
+
   static String joinPath(String base, String segment) {
     if (base.isEmpty) return segment;
     if (base.endsWith('/') || base.endsWith('\\')) return '$base$segment';
@@ -23,9 +33,32 @@ class PlatformFileOps {
     return dir.path;
   }
 
-  static Future<String?> resolveTemporaryPath() async {
-    final dir = await getTemporaryDirectory();
+  /// Resolves the export documents path (guaranteed non-null on IO targets).
+  static Future<String> resolveExportDirectoryPath() async {
+    final dir = await getApplicationDocumentsDirectory();
     return dir.path;
+  }
+
+  /// Writes [contents] as UTF-8 to [fileName] inside the export documents directory.
+  static Future<String> writeExportUtf8File(
+    String fileName,
+    String contents,
+  ) async {
+    final dirPath = await resolveExportDirectoryPath();
+    final writtenPath = await writeUtf8File(dirPath, fileName, contents);
+    if (writtenPath == null) {
+      throw StateError('Failed to write export file "$fileName".');
+    }
+    return writtenPath;
+  }
+
+  static Future<String?> resolveTemporaryPath() async {
+    try {
+      final dir = await getTemporaryDirectory();
+      return dir.path;
+    } catch (_) {
+      return Directory.systemTemp.path;
+    }
   }
 
   static Future<void> ensureDirectory(String directoryPath) async {
@@ -117,6 +150,12 @@ class PlatformFileOps {
     }
   }
 
+  static Future<DateTime?> fileLastModified(String path) async {
+    final file = File(path);
+    if (!await file.exists()) return null;
+    return file.lastModified();
+  }
+
   static Future<List<String>> listFilesInDirectory(
     String directoryPath, {
     String? extensionFilter,
@@ -129,6 +168,18 @@ class PlatformFileOps {
         if (extensionFilter == null || entity.path.endsWith(extensionFilter)) {
           results.add(entity.path);
         }
+      }
+    }
+    return results;
+  }
+
+  static Future<List<String>> listFilesRecursively(String directoryPath) async {
+    final dir = Directory(directoryPath);
+    if (!await dir.exists()) return const [];
+    final results = <String>[];
+    await for (final entity in dir.list(recursive: true)) {
+      if (entity is File) {
+        results.add(entity.path);
       }
     }
     return results;

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:progression_tracker/core/constants/app_theme.dart';
-import 'package:progression_tracker/features/design_system/presentation/screens/design_gallery_screen.dart';
+import 'package:progression_tracker/dev/design_gallery_screen.dart';
 
 void main() {
   testWidgets('DesignGalleryScreen renders components and toggles theme without overflow', (tester) async {

@@ -54,3 +54,6 @@ Why Option B wins decisively for IronFlow's verified scale (`129` exercises + `2
   - Exercises (`129` canonical items): **IronFlow Exercise Catalog v2 (First-Party)**; placeholder Rickroll URLs stripped.
 - **Risk**: Low — `ExerciseDatabase`, `FoodDatabase`, `verified_foods_data.dart`, and `foods_list.dart` remain as thin backward-compatible facades (`5–33` lines) so zero external call sites break.
 - **Rollback**: Revert catalog commits; `ExerciseAliasResolver` keeps canonical and legacy IDs mutually resolvable.
+- **Wave 3.3–3.4 Update (2026-11-17)**:
+  - Deleted the 8 compiled food shard Dart files (`verified_foods_part1..4.dart`, `supplementary_foods_part1..4.dart`) and duplicate `assets/data/verified_foods.json`; `FoodCatalog` now loads lazily from `assets/data/foods_catalog.json` via `LazyJsonCatalogLoader` + `foodsCatalogIndexProvider`.
+  - Unified `FoodItem` and `FoodItemFull` onto canonical `FoodItem` (retiring `FoodItemFull`, `FoodItemFullModel`, and `food_item_conversion.dart`), while preserving `FoodItem.fromAnyJson` backward-compatible decoding for legacy Hive and Firestore maps.

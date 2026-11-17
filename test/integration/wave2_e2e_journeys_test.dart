@@ -735,8 +735,8 @@ void defineWave2Journeys() {
         userId: userId,
       ));
 
-      final snapshot = await restore.createSafetySnapshot();
-      expect(await snapshot.exists(), isTrue);
+      final snapshotPath = await restore.createSafetySnapshot();
+      expect(await File(snapshotPath).exists(), isTrue);
 
       // Simulate data loss.
       await workoutRepo.deleteWorkout('w_backup');
@@ -745,7 +745,7 @@ void defineWave2Journeys() {
       expect(await workoutRepo.getAllWorkouts(), isEmpty);
       expect(await nutritionRepo.getMealsByDate(_todayAt(12)), isEmpty);
 
-      final result = await restore.restoreFromLocalFile(snapshot.path, overwriteExisting: true);
+      final result = await restore.restoreFromLocalFile(snapshotPath, overwriteExisting: true);
       expect(result.success, isTrue, reason: result.errors.join('; '));
 
       final workouts = await workoutRepo.getAllWorkouts();

@@ -1,7 +1,6 @@
 import 'dart:convert';
-import 'dart:io';
-import 'package:path_provider/path_provider.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:progression_tracker/core/platform/platform_file_ops.dart';
 import 'package:progression_tracker/features/workout/domain/repositories/workout_repository.dart';
 import 'package:progression_tracker/features/workout/domain/entities/workout.dart';
 import 'package:progression_tracker/features/nutrition/domain/repositories/nutrition_repository.dart';
@@ -92,7 +91,7 @@ class RestoreDataUseCase {
   final BodyRepository _bodyRepository;
   final AuthRepository _authRepository;
   final FirebaseStorage? _storage;
-  final Directory? _privateDocumentsDir;
+  final String? _privateDocumentsPath;
 
   RestoreDataUseCase(
     this._workoutRepository,
@@ -100,9 +99,9 @@ class RestoreDataUseCase {
     this._bodyRepository,
     this._authRepository, [
     FirebaseStorage? storage,
-    Directory? privateDocumentsDir,
+    Object? privateDocumentsDir,
   ])  : _storage = storage,
-        _privateDocumentsDir = privateDocumentsDir;
+        _privateDocumentsPath = PlatformFileOps.extractPath(privateDocumentsDir);
 
   Future<String?> _currentRestoreUserId() async {
     try {
@@ -122,56 +121,60 @@ class RestoreDataUseCase {
 
   String _fileName(String path) => path.split(RegExp(r'[/\\]')).last;
 
-  bool _isLegacySnapshotFile(File file) {
+  bool _isLegacySnapshotPath(String filePath) {
     const prefix = 'safety_snapshot_';
     const suffix = '.json';
-    final name = _fileName(file.path);
+    final name = _fileName(filePath);
     if (!name.startsWith(prefix) || !name.endsWith(suffix)) return false;
     final middle = name.substring(prefix.length, name.length - suffix.length);
     return middle.isNotEmpty && int.tryParse(middle) != null;
   }
 
-  Future<List<File>> _snapshotFilesForCurrentScope() async {
-    final snapshotDir = await getSafetySnapshotDirectory();
-    if (!await snapshotDir.exists()) return <File>[];
-
-    final allSnapshots = snapshotDir
-        .listSync()
-        .whereType<File>()
-        .where(
-          (file) =>
-              _fileName(file.path).startsWith('safety_snapshot_') &&
-              file.path.endsWith('.json'),
-        )
+  Future<List<String>> _snapshotFilesForCurrentScope() async {
+    final snapshotDirPath = await getSafetySnapshotDirectory();
+    final allSnapshots = (await PlatformFileOps.listFilesInDirectory(
+      snapshotDirPath,
+      extensionFilter: '.json',
+    ))
+        .where((path) => _fileName(path).startsWith('safety_snapshot_'))
         .toList();
 
     final currentUserId = await _currentRestoreUserId();
     final scope = RecordOwnershipRules.storageScope(currentUserId);
-    List<File> scopedSnapshots;
+    List<String> scopedSnapshots;
     if (scope == null) {
-      scopedSnapshots = allSnapshots.where(_isLegacySnapshotFile).toList();
+      scopedSnapshots = allSnapshots.where(_isLegacySnapshotPath).toList();
     } else {
       final scopedPrefix = 'safety_snapshot_${scope}_';
       scopedSnapshots = allSnapshots
-          .where((file) => _fileName(file.path).startsWith(scopedPrefix))
+          .where((path) => _fileName(path).startsWith(scopedPrefix))
           .toList();
       if (scopedSnapshots.isEmpty) {
         // One-time legacy adoption only when no account-scoped
         // snapshot exists yet. After scoped snapshots exist, a legacy
         // snapshot cannot be safely attributed to this account.
         final hasAnyScopedSnapshot =
-            allSnapshots.any((file) => !_isLegacySnapshotFile(file));
+            allSnapshots.any((path) => !_isLegacySnapshotPath(path));
         if (!hasAnyScopedSnapshot) {
           scopedSnapshots =
-              allSnapshots.where(_isLegacySnapshotFile).toList();
+              allSnapshots.where(_isLegacySnapshotPath).toList();
         }
       }
     }
 
-    scopedSnapshots.sort(
-      (a, b) => b.lastModifiedSync().compareTo(a.lastModifiedSync()),
+    final withTimestamps = await Future.wait(
+      scopedSnapshots.map((path) async => (
+            path: path,
+            modified: await PlatformFileOps.fileLastModified(path) ??
+                DateTime.fromMillisecondsSinceEpoch(0),
+          )),
     );
-    return scopedSnapshots;
+    withTimestamps.sort((a, b) {
+      final cmp = b.modified.compareTo(a.modified);
+      if (cmp != 0) return cmp;
+      return _fileName(b.path).compareTo(_fileName(a.path));
+    });
+    return withTimestamps.map((entry) => entry.path).toList();
   }
 
   /// Restores data from a cloud backup.
@@ -184,21 +187,15 @@ class RestoreDataUseCase {
       return RestoreResult.failure('Cloud storage is not configured for restore');
     }
     try {
-      final directory = _privateDocumentsDir ?? await getApplicationDocumentsDirectory();
-      final localFile = File('${directory.path}/temp_restore_${DateTime.now().millisecondsSinceEpoch}.json');
-      
-      await storage.ref(backupRecord.cloudPath).writeToFile(localFile);
-      
-      final result = await restoreFromLocalFile(
-        localFile.path,
+      final bytes = await storage.ref(backupRecord.cloudPath).getData();
+      if (bytes == null) {
+        return RestoreResult.failure('Backup file not found in cloud storage');
+      }
+      final jsonContent = utf8.decode(bytes);
+      return await restoreFromJsonString(
+        jsonContent,
         overwriteExisting: overwriteExisting,
       );
-      
-      if (await localFile.exists()) {
-        await localFile.delete();
-      }
-      
-      return result;
     } catch (e) {
       return RestoreResult.failure('Failed to download backup: $e');
     }
@@ -210,12 +207,14 @@ class RestoreDataUseCase {
     bool overwriteExisting = false,
   }) async {
     try {
-      final file = File(filePath);
-      if (!await file.exists()) {
+      if (!await PlatformFileOps.fileExists(filePath)) {
         return RestoreResult.failure('Backup file not found');
       }
 
-      final jsonContent = await file.readAsString();
+      final jsonContent = await PlatformFileOps.readUtf8File(filePath);
+      if (jsonContent == null) {
+        return RestoreResult.failure('Backup file not found');
+      }
       return await restoreFromJsonString(
         jsonContent,
         overwriteExisting: overwriteExisting,
@@ -282,42 +281,45 @@ class RestoreDataUseCase {
     return RestoreResult.success({});
   }
 
-  /// Directory where safety snapshots are securely stored in app-private storage.
-  Future<Directory> getSafetySnapshotDirectory() async {
-    Directory baseDir;
-    if (_privateDocumentsDir != null) {
-      baseDir = _privateDocumentsDir;
+  /// Directory path where safety snapshots are securely stored in app-private storage.
+  Future<String> getSafetySnapshotDirectory() async {
+    String basePath;
+    if (_privateDocumentsPath != null) {
+      basePath = _privateDocumentsPath;
     } else {
       try {
-        baseDir = await getApplicationDocumentsDirectory();
+        basePath = await PlatformFileOps.resolveExportDirectoryPath();
       } catch (_) {
-        baseDir = Directory.systemTemp;
+        basePath =
+            (await PlatformFileOps.resolveTemporaryPath()) ?? '/virtual/tmp';
       }
     }
-    final snapshotDir = Directory('${baseDir.path}/safety_snapshots');
-    if (!await snapshotDir.exists()) {
-      await snapshotDir.create(recursive: true);
-    }
-    return snapshotDir;
+    final snapshotDirPath = PlatformFileOps.joinPath(basePath, 'safety_snapshots');
+    await PlatformFileOps.ensureDirectory(snapshotDirPath);
+    return snapshotDirPath;
   }
 
   /// Captures a complete snapshot of the current state before restore.
-  Future<File> createSafetySnapshot() async {
-    final snapshotDir = await getSafetySnapshotDirectory();
+  Future<String> createSafetySnapshot() async {
+    final snapshotDirPath = await getSafetySnapshotDirectory();
     final timestamp = DateTime.now().millisecondsSinceEpoch;
     final currentUserId = await _currentRestoreUserId();
     final scope = RecordOwnershipRules.storageScope(currentUserId);
     final fileName = scope == null
         ? 'safety_snapshot_$timestamp.json'
         : 'safety_snapshot_${scope}_$timestamp.json';
-    final file = File('${snapshotDir.path}/$fileName');
 
     final snapshotData = await _captureCurrentStateSnapshot();
-    await file.writeAsString(const JsonEncoder.withIndent('  ').convert(snapshotData));
+    final encoded = const JsonEncoder.withIndent('  ').convert(snapshotData);
+    final writtenPath = await PlatformFileOps.writeUtf8File(
+      snapshotDirPath,
+      fileName,
+      encoded,
+    );
 
     // Prune old snapshots (keep max 3)
     await _pruneOldSnapshots();
-    return file;
+    return writtenPath ?? PlatformFileOps.joinPath(snapshotDirPath, fileName);
   }
 
   /// Gathers all existing data into a snapshot payload.
@@ -371,14 +373,14 @@ class RestoreDataUseCase {
 
       if (files.length > 3) {
         for (int i = 3; i < files.length; i++) {
-          await files[i].delete();
+          await PlatformFileOps.deleteFileIfExists(files[i]);
         }
       }
     } catch (_) {}
   }
 
-  /// Returns the most recent safety snapshot file, if one exists.
-  Future<File?> getLatestSnapshot() async {
+  /// Returns the path of the most recent safety snapshot file, if one exists.
+  Future<String?> getLatestSnapshot() async {
     try {
       final files = await _snapshotFilesForCurrentScope();
       if (files.isEmpty) return null;
@@ -396,13 +398,16 @@ class RestoreDataUseCase {
 
   /// Undoes the last restore operation by applying the most recent safety snapshot.
   Future<RestoreResult> undoRestore() async {
-    final snapshotFile = await getLatestSnapshot();
-    if (snapshotFile == null) {
+    final snapshotPath = await getLatestSnapshot();
+    if (snapshotPath == null) {
       return RestoreResult.failure('No safety snapshot available to undo restore');
     }
 
     try {
-      final jsonContent = await snapshotFile.readAsString();
+      final jsonContent = await PlatformFileOps.readUtf8File(snapshotPath);
+      if (jsonContent == null) {
+        return RestoreResult.failure('No safety snapshot available to undo restore');
+      }
       final decoded = jsonDecode(jsonContent);
       if (decoded is! Map<String, dynamic>) {
         return RestoreResult.failure('Safety snapshot file is invalid');
@@ -411,7 +416,7 @@ class RestoreDataUseCase {
       // Restore without creating a new snapshot to prevent recursion
       final result = await _performRestore(decoded, true, isRollback: true);
       if (result.success) {
-        await snapshotFile.delete();
+        await PlatformFileOps.deleteFileIfExists(snapshotPath);
       }
       return result;
     } catch (e) {
@@ -424,8 +429,8 @@ class RestoreDataUseCase {
   Future<void> clearAllSnapshots() async {
     try {
       final files = await _snapshotFilesForCurrentScope();
-      for (final file in files) {
-        await file.delete();
+      for (final filePath in files) {
+        await PlatformFileOps.deleteFileIfExists(filePath);
       }
     } catch (_) {}
   }
@@ -587,10 +592,10 @@ class RestoreDataUseCase {
     }
 
     // --- PHASE 2: SAFETY SNAPSHOT (REL-03) ---
-    File? safetySnapshotFile;
+    String? safetySnapshotPath;
     if (!isRollback) {
       try {
-        safetySnapshotFile = await createSafetySnapshot();
+        safetySnapshotPath = await createSafetySnapshot();
       } catch (e) {
         return RestoreResult.failure('Failed to create safety snapshot before restore: $e');
       }
@@ -647,8 +652,8 @@ class RestoreDataUseCase {
       }
     } catch (e) {
       // ON ANY FAILURE: ROLLBACK FROM SAFETY SNAPSHOT
-      if (!isRollback && safetySnapshotFile != null) {
-        await _rollbackFromSnapshot(safetySnapshotFile);
+      if (!isRollback && safetySnapshotPath != null) {
+        await _rollbackFromSnapshot(safetySnapshotPath);
         return RestoreResult.failure(
           'Restore operation write failed: $e. Previous data was safely rolled back from safety snapshot.',
           [e.toString()],
@@ -659,10 +664,11 @@ class RestoreDataUseCase {
   }
 
   /// Automatically rolls back state using the safety snapshot file.
-  Future<void> _rollbackFromSnapshot(File snapshotFile) async {
+  Future<void> _rollbackFromSnapshot(String snapshotPath) async {
     try {
-      if (!await snapshotFile.exists()) return;
-      final content = await snapshotFile.readAsString();
+      if (!await PlatformFileOps.fileExists(snapshotPath)) return;
+      final content = await PlatformFileOps.readUtf8File(snapshotPath);
+      if (content == null) return;
       final decoded = jsonDecode(content);
       if (decoded is! Map<String, dynamic>) return;
 
@@ -705,12 +711,14 @@ class RestoreDataUseCase {
   /// Gets a structured preview of what would be restored from a backup file.
   Future<BackupPreview> getRestorePreview(String filePath) async {
     try {
-      final file = File(filePath);
-      if (!await file.exists()) {
+      if (!await PlatformFileOps.fileExists(filePath)) {
         return BackupPreview.invalid('Backup file not found');
       }
 
-      final jsonContent = await file.readAsString();
+      final jsonContent = await PlatformFileOps.readUtf8File(filePath);
+      if (jsonContent == null) {
+        return BackupPreview.invalid('Backup file not found');
+      }
       return getRestorePreviewFromJson(jsonContent);
     } catch (e) {
       return BackupPreview.invalid('Failed to preview backup file: $e');

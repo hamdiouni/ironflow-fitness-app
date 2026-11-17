@@ -185,11 +185,12 @@ void main() {
 
       // Safety snapshot file exists in temp directory
       expect(await restoreUseCase.hasUndoSnapshot(), isTrue);
-      final latest = await restoreUseCase.getLatestSnapshot();
-      expect(latest, isNotNull);
-      expect(latest!.existsSync(), isTrue);
+      final latestPath = await restoreUseCase.getLatestSnapshot();
+      expect(latestPath, isNotNull);
+      final latestFile = File(latestPath!);
+      expect(latestFile.existsSync(), isTrue);
 
-      final snapshotContent = await latest.readAsString();
+      final snapshotContent = await latestFile.readAsString();
       expect(snapshotContent, contains('w-pre-1'));
     });
 
@@ -363,8 +364,8 @@ void main() {
         await Future<void>.delayed(const Duration(milliseconds: 10));
       }
 
-      final snapshotDir = await restoreUseCase.getSafetySnapshotDirectory();
-      final snapshots = snapshotDir.listSync().whereType<File>().toList();
+      final snapshotDirPath = await restoreUseCase.getSafetySnapshotDirectory();
+      final snapshots = Directory(snapshotDirPath).listSync().whereType<File>().toList();
       expect(snapshots.length, lessThanOrEqualTo(3));
     });
 
@@ -377,8 +378,8 @@ void main() {
       await restoreUseCase.clearAllSnapshots();
 
       expect(await restoreUseCase.hasUndoSnapshot(), isFalse);
-      final snapshotDir = await restoreUseCase.getSafetySnapshotDirectory();
-      final remaining = snapshotDir.listSync().whereType<File>().toList();
+      final snapshotDirPath = await restoreUseCase.getSafetySnapshotDirectory();
+      final remaining = Directory(snapshotDirPath).listSync().whereType<File>().toList();
       expect(remaining, isEmpty);
     });
 
@@ -395,19 +396,19 @@ void main() {
       }
 
       authRepo.user = user('Alice');
-      final aliceSnapshot = await restoreUseCase.createSafetySnapshot();
-      expect(aliceSnapshot.path, contains('safety_snapshot_alice_'));
+      final aliceSnapshotPath = await restoreUseCase.createSafetySnapshot();
+      expect(aliceSnapshotPath, contains('safety_snapshot_alice_'));
       expect(await restoreUseCase.hasUndoSnapshot(), isTrue);
 
       authRepo.user = user('bob');
       expect(await restoreUseCase.hasUndoSnapshot(), isFalse);
-      final bobSnapshot = await restoreUseCase.createSafetySnapshot();
-      expect(bobSnapshot.path, contains('safety_snapshot_bob_'));
+      final bobSnapshotPath = await restoreUseCase.createSafetySnapshot();
+      expect(bobSnapshotPath, contains('safety_snapshot_bob_'));
       expect(await restoreUseCase.hasUndoSnapshot(), isTrue);
 
       await restoreUseCase.clearAllSnapshots();
-      expect(await bobSnapshot.exists(), isFalse);
-      expect(await aliceSnapshot.exists(), isTrue);
+      expect(await File(bobSnapshotPath).exists(), isFalse);
+      expect(await File(aliceSnapshotPath).exists(), isTrue);
 
       authRepo.user = user('Alice');
       expect(await restoreUseCase.hasUndoSnapshot(), isTrue);

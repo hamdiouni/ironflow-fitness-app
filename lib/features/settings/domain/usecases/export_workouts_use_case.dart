@@ -1,7 +1,6 @@
+import 'package:progression_tracker/core/platform/platform_file_ops.dart';
 import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'dart:convert';
-import 'dart:io';
-import 'package:path_provider/path_provider.dart';
 import 'package:progression_tracker/features/workout/domain/repositories/workout_repository.dart';
 import 'package:progression_tracker/features/workout/domain/entities/workout.dart';
 
@@ -17,22 +16,15 @@ class ExportWorkoutsUseCase {
   Future<String> exportToCSV() async {
     try {
       AppLogger.debug('📊 [Export] Starting CSV export...');
-      
       final workouts = await _workoutRepository.getAllWorkouts();
       AppLogger.debug('🔍 [Export] Found ${workouts.length} workouts to export');
-      
-      AppLogger.debug('📊 [Export] Generating CSV content...');
       final csvContent = _generateCSV(workouts);
-      
-      AppLogger.debug('📊 [Export] Writing CSV file...');
-      final directory = await getApplicationDocumentsDirectory();
-      final file = File('${directory.path}/workouts_export.csv');
-      await file.writeAsString(csvContent);
-      
-      AppLogger.debug('✅ [Export] CSV export completed successfully');
-      AppLogger.debug('🔍 [Export] File path: ${file.path}');
-      
-      return file.path;
+      final filePath = await PlatformFileOps.writeExportUtf8File(
+        'workouts_export.csv',
+        csvContent,
+      );
+      AppLogger.debug('✅ [Export] CSV export completed: $filePath');
+      return filePath;
     } catch (e, stackTrace) {
       AppLogger.debug('❌ [Export] CSV export failed: $e');
       AppLogger.debug('🔍 [Export] Stack trace: $stackTrace');
@@ -46,22 +38,15 @@ class ExportWorkoutsUseCase {
   Future<String> exportToJSON() async {
     try {
       AppLogger.debug('📊 [Export] Starting JSON export...');
-      
       final workouts = await _workoutRepository.getAllWorkouts();
       AppLogger.debug('🔍 [Export] Found ${workouts.length} workouts to export');
-      
-      AppLogger.debug('📊 [Export] Generating JSON content...');
       final jsonContent = _generateJSON(workouts);
-      
-      AppLogger.debug('📊 [Export] Writing JSON file...');
-      final directory = await getApplicationDocumentsDirectory();
-      final file = File('${directory.path}/workouts_export.json');
-      await file.writeAsString(jsonContent);
-      
-      AppLogger.debug('✅ [Export] JSON export completed successfully');
-      AppLogger.debug('🔍 [Export] File path: ${file.path}');
-      
-      return file.path;
+      final filePath = await PlatformFileOps.writeExportUtf8File(
+        'workouts_export.json',
+        jsonContent,
+      );
+      AppLogger.debug('✅ [Export] JSON export completed: $filePath');
+      return filePath;
     } catch (e, stackTrace) {
       AppLogger.debug('❌ [Export] JSON export failed: $e');
       AppLogger.debug('🔍 [Export] Stack trace: $stackTrace');
@@ -78,24 +63,15 @@ class ExportWorkoutsUseCase {
   Future<String> exportDateRangeToCSV(DateTime startDate, DateTime endDate) async {
     try {
       AppLogger.debug('📊 [Export] Starting date range CSV export...');
-      AppLogger.debug('🔍 [Export] Date range: ${startDate.toIso8601String().split('T')[0]} to ${endDate.toIso8601String().split('T')[0]}');
-      
       final workouts = await _workoutRepository.getWorkoutsByDateRange(startDate, endDate);
-      AppLogger.debug('🔍 [Export] Found ${workouts.length} workouts in date range');
-      
-      AppLogger.debug('📊 [Export] Generating CSV content...');
-      final csvContent = _generateCSV(workouts);
-      
-      AppLogger.debug('📊 [Export] Writing CSV file...');
-      final directory = await getApplicationDocumentsDirectory();
-      final fileName = 'workouts_${_formatDateForFilename(startDate)}_to_${_formatDateForFilename(endDate)}.csv';
-      final file = File('${directory.path}/$fileName');
-      await file.writeAsString(csvContent);
-      
-      AppLogger.debug('✅ [Export] Date range CSV export completed successfully');
-      AppLogger.debug('🔍 [Export] File path: ${file.path}');
-      
-      return file.path;
+      final fileName =
+          'workouts_${_formatDateForFilename(startDate)}_to_${_formatDateForFilename(endDate)}.csv';
+      final filePath = await PlatformFileOps.writeExportUtf8File(
+        fileName,
+        _generateCSV(workouts),
+      );
+      AppLogger.debug('✅ [Export] Date range CSV export completed: $filePath');
+      return filePath;
     } catch (e, stackTrace) {
       AppLogger.debug('❌ [Export] Date range CSV export failed: $e');
       AppLogger.debug('🔍 [Export] Stack trace: $stackTrace');
@@ -112,24 +88,15 @@ class ExportWorkoutsUseCase {
   Future<String> exportDateRangeToJSON(DateTime startDate, DateTime endDate) async {
     try {
       AppLogger.debug('📊 [Export] Starting date range JSON export...');
-      AppLogger.debug('🔍 [Export] Date range: ${startDate.toIso8601String().split('T')[0]} to ${endDate.toIso8601String().split('T')[0]}');
-      
       final workouts = await _workoutRepository.getWorkoutsByDateRange(startDate, endDate);
-      AppLogger.debug('🔍 [Export] Found ${workouts.length} workouts in date range');
-      
-      AppLogger.debug('📊 [Export] Generating JSON content...');
-      final jsonContent = _generateJSON(workouts);
-      
-      AppLogger.debug('📊 [Export] Writing JSON file...');
-      final directory = await getApplicationDocumentsDirectory();
-      final fileName = 'workouts_${_formatDateForFilename(startDate)}_to_${_formatDateForFilename(endDate)}.json';
-      final file = File('${directory.path}/$fileName');
-      await file.writeAsString(jsonContent);
-      
-      AppLogger.debug('✅ [Export] Date range JSON export completed successfully');
-      AppLogger.debug('🔍 [Export] File path: ${file.path}');
-      
-      return file.path;
+      final fileName =
+          'workouts_${_formatDateForFilename(startDate)}_to_${_formatDateForFilename(endDate)}.json';
+      final filePath = await PlatformFileOps.writeExportUtf8File(
+        fileName,
+        _generateJSON(workouts),
+      );
+      AppLogger.debug('✅ [Export] Date range JSON export completed: $filePath');
+      return filePath;
     } catch (e, stackTrace) {
       AppLogger.debug('❌ [Export] Date range JSON export failed: $e');
       AppLogger.debug('🔍 [Export] Stack trace: $stackTrace');
@@ -143,22 +110,13 @@ class ExportWorkoutsUseCase {
   Future<String> exportSummaryToCSV() async {
     try {
       AppLogger.debug('📊 [Export] Starting summary CSV export...');
-      
       final workouts = await _workoutRepository.getAllWorkouts();
-      AppLogger.debug('🔍 [Export] Found ${workouts.length} workouts for summary');
-      
-      AppLogger.debug('📊 [Export] Generating summary statistics...');
-      final summaryContent = _generateSummaryCSV(workouts);
-      
-      AppLogger.debug('📊 [Export] Writing summary CSV file...');
-      final directory = await getApplicationDocumentsDirectory();
-      final file = File('${directory.path}/workout_summary.csv');
-      await file.writeAsString(summaryContent);
-      
-      AppLogger.debug('✅ [Export] Summary CSV export completed successfully');
-      AppLogger.debug('🔍 [Export] File path: ${file.path}');
-      
-      return file.path;
+      final filePath = await PlatformFileOps.writeExportUtf8File(
+        'workout_summary.csv',
+        _generateSummaryCSV(workouts),
+      );
+      AppLogger.debug('✅ [Export] Summary CSV export completed: $filePath');
+      return filePath;
     } catch (e, stackTrace) {
       AppLogger.debug('❌ [Export] Summary CSV export failed: $e');
       AppLogger.debug('🔍 [Export] Stack trace: $stackTrace');

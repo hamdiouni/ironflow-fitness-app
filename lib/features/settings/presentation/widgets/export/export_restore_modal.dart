@@ -1,10 +1,8 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:path_provider/path_provider.dart';
 
 import '../../../../../core/constants/app_theme.dart';
+import '../../../../../core/platform/platform_file_ops.dart';
 import '../../../domain/usecases/restore_data_use_case.dart';
 
 void showExportRestoreModal({
@@ -55,22 +53,32 @@ void showExportRestoreModal({
           Future<void> loadLatestLocalBackup() async {
             setModalState(() => isValidating = true);
             try {
-              final dir = await getApplicationDocumentsDirectory();
-              final files = dir.listSync().whereType<File>().toList();
-              files.sort(
-                (a, b) =>
-                    b.lastModifiedSync().compareTo(a.lastModifiedSync()),
+              final dirPath = await PlatformFileOps.resolveExportDirectoryPath();
+              final jsonFiles = await PlatformFileOps.listFilesInDirectory(
+                dirPath,
+                extensionFilter: '.json',
+              );
+              final candidates = jsonFiles
+                  .where((p) => p.contains('backup'))
+                  .toList();
+              final withTimestamps = await Future.wait(
+                candidates.map((path) async => (
+                      path: path,
+                      modified: await PlatformFileOps.fileLastModified(path) ??
+                          DateTime.fromMillisecondsSinceEpoch(0),
+                    )),
+              );
+              withTimestamps.sort(
+                (a, b) => b.modified.compareTo(a.modified),
               );
 
-              final backupFile = files.cast<File?>().firstWhere(
-                    (f) =>
-                        f != null &&
-                        f.path.contains('backup') &&
-                        f.path.endsWith('.json'),
-                    orElse: () => null,
-                  );
+              final backupPath =
+                  withTimestamps.isNotEmpty ? withTimestamps.first.path : null;
+              final content = backupPath != null
+                  ? await PlatformFileOps.readUtf8File(backupPath)
+                  : null;
 
-              if (backupFile == null) {
+              if (content == null) {
                 if (sheetContext.mounted) {
                   ScaffoldMessenger.of(sheetContext).showSnackBar(
                     SnackBar(
@@ -85,7 +93,6 @@ void showExportRestoreModal({
                 return;
               }
 
-              final content = await backupFile.readAsString();
               jsonController.text = content;
               runValidation(content);
             } catch (e) {

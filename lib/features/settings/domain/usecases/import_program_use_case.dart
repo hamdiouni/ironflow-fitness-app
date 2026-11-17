@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'dart:io';
+import 'package:progression_tracker/core/platform/platform_file_ops.dart';
 import 'package:progression_tracker/features/workout/domain/repositories/active_program_repository.dart';
 import 'package:progression_tracker/features/workout/domain/entities/active_program.dart';
 
@@ -49,6 +49,17 @@ class ImportProgramUseCase {
 
   ImportProgramUseCase(this._activeProgramRepository);
 
+  Future<String> _readProgramFile(String filePath) async {
+    if (!await PlatformFileOps.fileExists(filePath)) {
+      throw StateError('File not found: $filePath');
+    }
+    final content = await PlatformFileOps.readUtf8File(filePath);
+    if (content == null) {
+      throw StateError('File not found: $filePath');
+    }
+    return content;
+  }
+
   /// Imports a program from a JSON file.
   ///
   /// [filePath] - Path to the JSON file
@@ -60,13 +71,10 @@ class ImportProgramUseCase {
     bool setAsActive = false,
   }) async {
     try {
-      final file = File(filePath);
-      if (!await file.exists()) {
-        return ImportResult.failure('File not found: $filePath');
-      }
-
-      final jsonContent = await file.readAsString();
+      final jsonContent = await _readProgramFile(filePath);
       return await importFromJsonString(jsonContent, setAsActive: setAsActive);
+    } on StateError catch (e) {
+      return ImportResult.failure(e.message);
     } catch (e) {
       return ImportResult.failure('Failed to read file: $e');
     }
@@ -122,13 +130,10 @@ class ImportProgramUseCase {
     bool setAsActive = false,
   }) async {
     try {
-      final file = File(filePath);
-      if (!await file.exists()) {
-        return ImportResult.failure('File not found: $filePath');
-      }
-
-      final csvContent = await file.readAsString();
+      final csvContent = await _readProgramFile(filePath);
       return await importFromCsvString(csvContent, programName, setAsActive: setAsActive);
+    } on StateError catch (e) {
+      return ImportResult.failure(e.message);
     } catch (e) {
       return ImportResult.failure('Failed to read CSV file: $e');
     }
@@ -166,13 +171,8 @@ class ImportProgramUseCase {
   /// Returns a map with program details that would be imported.
   Future<Map<String, dynamic>> getImportPreview(String filePath) async {
     try {
-      final file = File(filePath);
-      if (!await file.exists()) {
-        throw Exception('File not found: $filePath');
-      }
+      final content = await _readProgramFile(filePath);
 
-      final content = await file.readAsString();
-      
       // Try to parse as JSON first
       try {
         final programData = jsonDecode(content) as Map<String, dynamic>;
@@ -181,6 +181,8 @@ class ImportProgramUseCase {
         // If JSON parsing fails, try CSV
         return _generateCsvPreview(content);
       }
+    } on StateError catch (e) {
+      throw Exception(e.message);
     } catch (e) {
       throw Exception('Failed to preview file: $e');
     }
@@ -193,13 +195,8 @@ class ImportProgramUseCase {
   /// Returns an ImportResult indicating validation success or failure.
   Future<ImportResult> validateProgramFile(String filePath) async {
     try {
-      final file = File(filePath);
-      if (!await file.exists()) {
-        return ImportResult.failure('File not found: $filePath');
-      }
+      final content = await _readProgramFile(filePath);
 
-      final content = await file.readAsString();
-      
       // Try to parse as JSON first
       try {
         final programData = jsonDecode(content) as Map<String, dynamic>;
@@ -209,6 +206,8 @@ class ImportProgramUseCase {
         // If JSON parsing fails, try CSV validation
         return _validateCsvData(content);
       }
+    } on StateError catch (e) {
+      return ImportResult.failure(e.message);
     } catch (e) {
       return ImportResult.failure('Failed to validate file: $e');
     }

@@ -88,6 +88,8 @@ class ThemeNotifier extends Notifier<ThemeMode> {
       await box.put(_themeKey, themeStr);
       
       AppLogger.debug('✅ [Theme] Theme saved to Hive successfully: $themeStr');
+    } on HiveError catch (e) {
+      AppLogger.debug('⚠️ [Theme] Hive unavailable, keeping in-memory theme: $e');
     } catch (e, stackTrace) {
       AppLogger.debug('❌ [Theme] Failed to save theme: $e');
       AppLogger.debug('🔍 [Theme] Stack trace: $stackTrace');

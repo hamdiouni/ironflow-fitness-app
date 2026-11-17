@@ -279,8 +279,8 @@ void main() {
       );
 
       // Create safety snapshot before wiping
-      final snapshotFile = await restoreUseCase.createSafetySnapshot();
-      expect(await snapshotFile.exists(), isTrue);
+      final snapshotPath = await restoreUseCase.createSafetySnapshot();
+      expect(await File(snapshotPath).exists(), isTrue);
 
       // Wipe repositories
       workoutRepo.workouts.clear();
@@ -289,7 +289,7 @@ void main() {
 
       // Restore from local snapshot file
       final restoreRes = await restoreUseCase.restoreFromLocalFile(
-        snapshotFile.path,
+        snapshotPath,
         overwriteExisting: true,
       );
       expect(restoreRes.success, isTrue);
@@ -553,6 +553,13 @@ class _FakeBackupStorageReference extends Fake implements Reference {
 
   @override
   UploadTask putFile(File file, [SettableMetadata? metadata]) {
+    _storage.lastPath = _path;
+    _storage.lastMetadata = metadata;
+    return _FakeBackupUploadTask();
+  }
+
+  @override
+  UploadTask putData(Uint8List data, [SettableMetadata? metadata]) {
     _storage.lastPath = _path;
     _storage.lastMetadata = metadata;
     return _FakeBackupUploadTask();

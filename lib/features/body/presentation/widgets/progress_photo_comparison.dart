@@ -1,6 +1,5 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
+import 'package:progression_tracker/core/platform/platform_image.dart';
 
 import '../../domain/entities/body_entry.dart';
 
@@ -133,8 +132,8 @@ class _PhotoPanel extends StatelessWidget {
       children: [
         // Photo or placeholder
         hasPhoto
-            ? Image.file(
-                File(entry.photoPath!),
+            ? PlatformImage.buildLocalOrNetwork(
+                entry.photoPath!,
                 fit: BoxFit.cover,
                 errorBuilder: (_, _, _) => _PhotoPlaceholder(label: label),
               )

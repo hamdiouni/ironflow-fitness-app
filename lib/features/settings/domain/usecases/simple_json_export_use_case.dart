@@ -1,6 +1,5 @@
 import 'dart:convert';
-import 'dart:io';
-import 'package:path_provider/path_provider.dart';
+import 'package:progression_tracker/core/platform/platform_file_ops.dart';
 import 'package:progression_tracker/features/workout/domain/repositories/workout_repository.dart';
 import 'package:progression_tracker/features/nutrition/domain/repositories/nutrition_repository.dart';
 import 'package:progression_tracker/features/auth/domain/repositories/auth_repository.dart';
@@ -58,12 +57,10 @@ class SimpleJsonExportUseCase {
     };
     
     final jsonContent = const JsonEncoder.withIndent('  ').convert(exportData);
-    
-    final directory = await getApplicationDocumentsDirectory();
-    final file = File('${directory.path}/ironflow_workouts_export.json');
-    await file.writeAsString(jsonContent);
-    
-    return file.path;
+    return PlatformFileOps.writeExportUtf8File(
+      'ironflow_workouts_export.json',
+      jsonContent,
+    );
   }
 
   /// Exports nutrition data to JSON format.
@@ -170,12 +167,10 @@ class SimpleJsonExportUseCase {
     };
     
     final jsonContent = const JsonEncoder.withIndent('  ').convert(exportData);
-    
-    final directory = await getApplicationDocumentsDirectory();
-    final file = File('${directory.path}/ironflow_nutrition_export.json');
-    await file.writeAsString(jsonContent);
-    
-    return file.path;
+    return PlatformFileOps.writeExportUtf8File(
+      'ironflow_nutrition_export.json',
+      jsonContent,
+    );
   }
 
   /// Exports all user data to a comprehensive JSON backup.
@@ -320,13 +315,11 @@ class SimpleJsonExportUseCase {
     };
     
     final jsonContent = const JsonEncoder.withIndent('  ').convert(exportData);
-    
-    final directory = await getApplicationDocumentsDirectory();
     final timestamp = DateTime.now().toIso8601String().split('T')[0];
-    final file = File('${directory.path}/ironflow_complete_backup_$timestamp.json');
-    await file.writeAsString(jsonContent);
-    
-    return file.path;
+    return PlatformFileOps.writeExportUtf8File(
+      'ironflow_complete_backup_$timestamp.json',
+      jsonContent,
+    );
   }
 
   /// Gets export statistics without actually exporting.

@@ -230,5 +230,99 @@ void main() {
             '${violations.join('\n')}',
       );
     });
+
+    test('Hive.openBox and Hive.box calls are strictly confined to HiveManager and HiveEncryptionService', () {
+      const allowedFiles = <String>{
+        'lib/core/utils/hive_manager.dart',
+        'lib/core/services/hive_encryption_service.dart',
+      };
+      final directHivePattern = RegExp(r'\bHive\.(?:openBox|box)\b');
+      final violations = <String>[];
+
+      for (final file in allDartFilesInLib()) {
+        final norm = normalizePath(file.path);
+        if (allowedFiles.contains(norm)) continue;
+
+        final lines = file.readAsLinesSync();
+        for (var i = 0; i < lines.length; i++) {
+          final trimmed = lines[i].trimLeft();
+          if (trimmed.startsWith('//') || trimmed.startsWith('///')) continue;
+          if (directHivePattern.hasMatch(lines[i])) {
+            violations.add('$norm:${i + 1}: ${lines[i].trim()}');
+          }
+        }
+      }
+
+      expect(
+        violations,
+        isEmpty,
+        reason: 'All Hive box access must flow through HiveManager / HiveEncryptionService:\n'
+            '${violations.join('\n')}',
+      );
+    });
+
+    test('dart:io imports stay confined to lib/core/platform/*_io.dart adapters', () {
+      final dartIoImport = RegExp(r"""^\s*(?:import|export)\s+['"]dart:io['"]""", multiLine: true);
+      final violations = <String>[];
+
+      for (final file in allDartFilesInLib()) {
+        final norm = normalizePath(file.path);
+        final isAllowedAdapter =
+            norm.startsWith('lib/core/platform/') && norm.endsWith('_io.dart');
+        if (isAllowedAdapter) continue;
+
+        final content = file.readAsStringSync();
+        if (dartIoImport.hasMatch(content)) {
+          violations.add(norm);
+        }
+      }
+
+      expect(
+        violations,
+        isEmpty,
+        reason: 'Non-adapter files in lib/ must use PlatformFileOps/PlatformImage instead of dart:io:\n'
+            '${violations.join('\n')}',
+      );
+    });
+
+    test('retired Wave 3 files and dotenv imports remain absent from lib/', () {
+      const forbiddenExactBasenames = <String>{
+        'food_item_full.dart',
+        'food_item_full.freezed.dart',
+        'food_item_full_model.dart',
+        'food_item_full_model.freezed.dart',
+        'food_item_full_model.g.dart',
+        'food_item_conversion.dart',
+        'food_upload_script.dart',
+        'food_initialization.dart',
+        'food_cache_provider.dart',
+        'hive_nutrition_data_source.dart',
+        'ai_service.dart',
+        'ai_repository_impl.dart',
+        'ai_providers.dart',
+        'ai_test_screen.dart',
+        'image_generation_service.dart',
+        'image_generation_provider.dart',
+      };
+      final violations = <String>[];
+
+      for (final file in allDartFilesInLib()) {
+        final norm = normalizePath(file.path);
+        final base = norm.split('/').last;
+        if (forbiddenExactBasenames.contains(base) ||
+            base.startsWith('supplementary_foods_part') ||
+            base.startsWith('verified_foods_part')) {
+          violations.add('Retired file present in lib/: $norm');
+        }
+        if (base == 'design_gallery_screen.dart' && !norm.startsWith('lib/dev/')) {
+          violations.add('Dev gallery screen outside lib/dev/: $norm');
+        }
+        if (file.readAsStringSync().contains('package:flutter_dotenv')) {
+          violations.add('Forbidden flutter_dotenv import in $norm');
+        }
+      }
+
+      expect(violations, isEmpty, reason: violations.join('\n'));
+    });
   });
 }

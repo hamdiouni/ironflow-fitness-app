@@ -2,9 +2,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/constants/app_theme.dart';
-import '../../../../core/providers/theme_provider.dart';
-import '../../../../shared/presentation/components/components.dart';
+import '../core/constants/app_theme.dart';
+import '../core/providers/theme_provider.dart';
+import '../shared/presentation/components/components.dart';
 
 /// Debug-only Design System Gallery demonstrating all tokens and components
 /// in both light and dark modes. Gated behind [kDebugMode].
