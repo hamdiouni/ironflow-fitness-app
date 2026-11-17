@@ -1,6 +1,8 @@
-import 'package:progression_tracker/core/utils/app_logger.dart';
-import 'package:progression_tracker/core/utils/record_ownership.dart';
 import 'package:hive/hive.dart';
+import 'package:progression_tracker/core/utils/app_logger.dart';
+import 'package:progression_tracker/core/utils/hive_json_utils.dart';
+import 'package:progression_tracker/core/utils/hive_manager.dart';
+import 'package:progression_tracker/core/utils/record_ownership.dart';
 import '../../domain/entities/insight.dart';
 import '../../domain/entities/insight_cache.dart';
 import '../../domain/services/insight_cache_service.dart';
@@ -26,7 +28,7 @@ import '../models/insight_cache_model.dart';
 /// - 13.1: Log errors without failing operations
 /// - 13.4: Wrap Hive operations in try-catch blocks
 class InsightCacheServiceImpl implements InsightCacheService {
-  static const String boxName = 'insight_cache';
+  static const String boxName = HiveManager.insightCacheBox;
   static const Duration cacheTTL = Duration(hours: 1);
 
   /// Account that owns cached insights read/written by this instance.
@@ -40,27 +42,6 @@ class InsightCacheServiceImpl implements InsightCacheService {
   String? get _scopeUserId =>
       RecordOwnershipRules.storageScope(userId);
 
-  /// Recursively casts a [Map<dynamic, dynamic>] (as returned by Hive) to
-  /// [Map<String, dynamic>] so that json_serializable can deserialize it.
-  Map<String, dynamic> _deepCast(Map<dynamic, dynamic> map) {
-    return map.map((key, value) {
-      if (value is Map) {
-        return MapEntry(key.toString(), _deepCast(value));
-      } else if (value is List) {
-        return MapEntry(key.toString(), _deepCastList(value));
-      }
-      return MapEntry(key.toString(), value);
-    });
-  }
-
-  List<dynamic> _deepCastList(List<dynamic> list) {
-    return list.map((item) {
-      if (item is Map) return _deepCast(item);
-      if (item is List) return _deepCastList(item);
-      return item;
-    }).toList();
-  }
-
   @override
   Future<void> init() async {
     try {
@@ -71,13 +52,7 @@ class InsightCacheServiceImpl implements InsightCacheService {
         return;
       }
 
-      if (Hive.isBoxOpen(boxName)) {
-        _box = Hive.box<Map>(boxName);
-        AppLogger.debug('✅ [InsightCache] Reusing open Hive box: $boxName');
-        return;
-      }
-      
-      _box = await Hive.openBox<Map>(boxName);
+      _box = await HiveManager.ensureInsightCacheBox();
       
       AppLogger.debug('✅ [InsightCache] Insight cache service initialized successfully');
       AppLogger.debug('🔍 [InsightCache] Box opened: $boxName (isOpen: ${_box!.isOpen})');
@@ -129,7 +104,7 @@ class InsightCacheServiceImpl implements InsightCacheService {
       }
       
       AppLogger.debug('🔍 [InsightCache] Deserializing cached data...');
-      final cacheModel = InsightCacheModel.fromJson(_deepCast(cachedData));
+      final cacheModel = InsightCacheModel.fromJson(deepCastMap(cachedData));
       final cache = cacheModel.toDomain();
       
       AppLogger.debug('✅ [InsightCache] Cached insights retrieved successfully');

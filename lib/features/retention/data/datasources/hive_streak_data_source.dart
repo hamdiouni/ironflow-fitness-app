@@ -1,12 +1,12 @@
-import 'package:progression_tracker/core/utils/app_logger.dart';
-import 'package:progression_tracker/core/utils/record_ownership.dart';
 import 'package:hive/hive.dart';
+import 'package:progression_tracker/core/utils/app_logger.dart';
+import 'package:progression_tracker/core/utils/hive_manager.dart';
+import 'package:progression_tracker/core/utils/record_ownership.dart';
 
 import '../../domain/entities/streak.dart';
 
 /// Hive-based data source for streak persistence.
 class HiveStreakDataSource {
-  static const String _boxName = 'streak';
   static const String _streakKey = 'current_streak';
 
   /// Account that owns the streak read/written by this instance.
@@ -49,7 +49,7 @@ class HiveStreakDataSource {
   /// Returns initial streak if none exists.
   Future<Streak> getStreak() async {
     try {
-      final box = Hive.box<Map>(_boxName);
+      final box = await HiveManager.ensureStreakBox();
       final streakData = await _streakData(box);
 
       if (streakData == null) {
@@ -65,7 +65,7 @@ class HiveStreakDataSource {
   /// Saves the streak to Hive storage.
   Future<void> saveStreak(Streak streak) async {
     try {
-      final box = Hive.box<Map>(_boxName);
+      final box = await HiveManager.ensureStreakBox();
       await box.put(_scopedStreakKey, streak.toJson());
     } catch (e) {
       // Log error but don't throw
@@ -76,7 +76,7 @@ class HiveStreakDataSource {
   /// Clears all streak data.
   Future<void> clearStreak() async {
     try {
-      final box = Hive.box<Map>(_boxName);
+      final box = await HiveManager.ensureStreakBox();
       await box.delete(_scopedStreakKey);
     } catch (e) {
       AppLogger.debug('Error clearing streak: $e');

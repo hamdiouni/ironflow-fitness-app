@@ -1,12 +1,12 @@
-import 'package:progression_tracker/core/utils/app_logger.dart';
-import 'package:progression_tracker/core/utils/record_ownership.dart';
 import 'package:hive/hive.dart';
+import 'package:progression_tracker/core/utils/app_logger.dart';
+import 'package:progression_tracker/core/utils/hive_manager.dart';
+import 'package:progression_tracker/core/utils/record_ownership.dart';
 
 import '../../domain/entities/notification_settings.dart';
 
 /// Hive-based data source for notification settings persistence.
 class HiveNotificationSettingsDataSource {
-  static const String _boxName = 'notification_settings';
   // Was 'settings' — the same box+key used by notifications'
   // HiveReminderSettingsDatasource with an incompatible schema
   // (ReminderSettings). The two silently overwrote each other and both
@@ -55,7 +55,7 @@ class HiveNotificationSettingsDataSource {
   /// Returns default settings if none exist.
   Future<NotificationSettings> getSettings() async {
     try {
-      final box = Hive.box<Map>(_boxName);
+      final box = await HiveManager.ensureNotificationSettingsBox();
       final settingsData = await _settingsData(box);
 
       if (settingsData == null) {
@@ -73,7 +73,7 @@ class HiveNotificationSettingsDataSource {
   /// Saves notification settings to Hive storage.
   Future<void> saveSettings(NotificationSettings settings) async {
     try {
-      final box = Hive.box<Map>(_boxName);
+      final box = await HiveManager.ensureNotificationSettingsBox();
       await box.put(_scopedSettingsKey, settings.toJson());
     } catch (e) {
       AppLogger.debug('Error saving notification settings: $e');
@@ -83,7 +83,7 @@ class HiveNotificationSettingsDataSource {
   /// Clears all notification settings.
   Future<void> clearSettings() async {
     try {
-      final box = Hive.box<Map>(_boxName);
+      final box = await HiveManager.ensureNotificationSettingsBox();
       await box.delete(_scopedSettingsKey);
     } catch (e) {
       AppLogger.debug('Error clearing notification settings: $e');

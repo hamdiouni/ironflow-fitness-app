@@ -1,6 +1,7 @@
+import 'package:hive/hive.dart';
 import 'package:progression_tracker/core/utils/app_logger.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import '../../domain/entities/reminder_settings.dart';
+import '../../../../core/utils/hive_json_utils.dart';
 import '../../../../core/utils/hive_manager.dart';
 import '../../../../core/utils/record_ownership.dart';
 
@@ -24,9 +25,9 @@ class HiveReminderSettingsDatasource {
         : '${_settingsKey}_$scopeUserId';
   }
 
-  /// Get the Hive box (using HiveManager)
-  Box<Map<dynamic, dynamic>> _getBox() {
-    return HiveManager.getNotificationSettingsBox();
+  /// Get the Hive box (using HiveManager lazy Tier-2 ensure)
+  Future<Box<Map<dynamic, dynamic>>> _getBox() {
+    return HiveManager.ensureNotificationSettingsBox();
   }
 
   Future<dynamic> _settingsData(Box<Map<dynamic, dynamic>> box) async {
@@ -52,12 +53,12 @@ class HiveReminderSettingsDatasource {
   /// Get reminder settings from Hive
   Future<ReminderSettings?> getSettings() async {
     try {
-      final box = _getBox();
+      final box = await _getBox();
       final data = await _settingsData(box);
-      if (data == null) return null;
+      if (data is! Map) return null;
 
       // Deep convert all nested maps to Map<String, dynamic>
-      final jsonMap = _deepConvertMap(data);
+      final jsonMap = deepCastMap(data);
       return ReminderSettings.fromJson(jsonMap);
     } catch (e, stackTrace) {
       AppLogger.debug('❌ [ReminderSettings] Error loading settings: $e');
@@ -66,26 +67,10 @@ class HiveReminderSettingsDatasource {
     }
   }
 
-  /// Deep convert Map (handles nested LinkedMaps from Hive)
-  Map<String, dynamic> _deepConvertMap(dynamic data) {
-    if (data is Map) {
-      return data.map((key, value) {
-        if (value is Map) {
-          return MapEntry(key.toString(), _deepConvertMap(value));
-        } else if (value is List) {
-          return MapEntry(key.toString(), value.map((e) => e is Map ? _deepConvertMap(e) : e).toList());
-        } else {
-          return MapEntry(key.toString(), value);
-        }
-      });
-    }
-    return {};
-  }
-
   /// Save reminder settings to Hive
   Future<void> saveSettings(ReminderSettings settings) async {
     try {
-      final box = _getBox();
+      final box = await _getBox();
       await box.put(_scopedSettingsKey, settings.toJson());
       AppLogger.debug('✅ [ReminderSettings] Settings saved');
     } catch (e) {
@@ -97,7 +82,7 @@ class HiveReminderSettingsDatasource {
   /// Clear all reminder settings
   Future<void> clearSettings() async {
     try {
-      final box = _getBox();
+      final box = await _getBox();
       await box.delete(_scopedSettingsKey);
       AppLogger.debug('✅ [ReminderSettings] Settings cleared');
     } catch (e) {

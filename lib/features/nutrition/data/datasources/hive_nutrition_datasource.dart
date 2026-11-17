@@ -1,31 +1,12 @@
 import 'dart:async';
 
-import 'package:progression_tracker/core/utils/app_logger.dart';
-import 'package:progression_tracker/core/utils/record_ownership.dart';
 import 'package:hive/hive.dart';
+import 'package:progression_tracker/core/utils/app_logger.dart';
+import 'package:progression_tracker/core/utils/hive_json_utils.dart';
+import 'package:progression_tracker/core/utils/hive_manager.dart';
+import 'package:progression_tracker/core/utils/record_ownership.dart';
 import '../models/meal_model.dart';
 import '../models/nutrition_targets_model.dart';
-
-/// Recursively casts a [Map<dynamic, dynamic>] (as returned by Hive) to
-/// [Map<String, dynamic>] so that json_serializable can deserialize it.
-Map<String, dynamic> _deepCast(Map<dynamic, dynamic> map) {
-  return map.map((key, value) {
-    if (value is Map) {
-      return MapEntry(key.toString(), _deepCast(value));
-    } else if (value is List) {
-      return MapEntry(key.toString(), _deepCastList(value));
-    }
-    return MapEntry(key.toString(), value);
-  });
-}
-
-List<dynamic> _deepCastList(List<dynamic> list) {
-  return list.map((item) {
-    if (item is Map) return _deepCast(item);
-    if (item is List) return _deepCastList(item);
-    return item;
-  }).toList();
-}
 
 /// Hive datasource for local nutrition data storage.
 ///
@@ -36,20 +17,20 @@ List<dynamic> _deepCastList(List<dynamic> list) {
 ///
 /// All data is persisted locally for offline access and synced to cloud when online.
 class HiveNutritionDatasource {
-  static const String mealsBoxName = 'meals';
-  static const String targetsBoxName = 'macro_targets';
+  static const String mealsBoxName = HiveManager.mealsBox;
+  static const String targetsBoxName = HiveManager.macroTargetsBox;
   static const String targetsKey = 'current';
 
-  Box<Map> get _mealsBox => Hive.box<Map>(mealsBoxName);
+  Future<Box<Map>> _ensureMealsBox() => HiveManager.ensureMealsBox();
 
-  Box<Map> get _targetsBox => Hive.box<Map>(targetsBoxName);
+  Future<Box<Map>> _ensureTargetsBox() => HiveManager.ensureMacroTargetsBox();
 
   String _targetsKeyForUser(String userId) =>
       '${targetsKey}_${RecordOwnershipRules.storageScope(userId)}';
 
   NutritionTargetsModel? _decodeTargets(Map? json) {
     if (json == null) return null;
-    return NutritionTargetsModel.fromJson(_deepCast(json));
+    return NutritionTargetsModel.fromJson(deepCastMap(json));
   }
 
   /// Emits an increasing tick whenever meals or nutrition targets
@@ -62,14 +43,30 @@ class HiveNutritionDatasource {
   Stream<int> watchNutritionChanges() {
     return Stream<int>.multi((controller) {
       var tick = 0;
-      controller.add(tick);
-      void bump() => controller.add(++tick);
-      final mealsSub = _mealsBox.watch().listen((_) => bump());
-      final targetsSub = _targetsBox.watch().listen((_) => bump());
+      var cancelled = false;
+      StreamSubscription<BoxEvent>? mealsSub;
+      StreamSubscription<BoxEvent>? targetsSub;
+
       controller.onCancel = () async {
-        await mealsSub.cancel();
-        await targetsSub.cancel();
+        cancelled = true;
+        await mealsSub?.cancel();
+        await targetsSub?.cancel();
       };
+
+      Future.wait([_ensureMealsBox(), _ensureTargetsBox()]).then(
+        (boxes) {
+          if (cancelled) return;
+          controller.add(tick);
+          void bump() => controller.add(++tick);
+          mealsSub = boxes[0].watch().listen((_) => bump());
+          targetsSub = boxes[1].watch().listen((_) => bump());
+        },
+        onError: (Object e, StackTrace st) {
+          if (!cancelled) {
+            controller.addError(e, st);
+          }
+        },
+      );
     });
   }
 
@@ -82,12 +79,13 @@ class HiveNutritionDatasource {
       AppLogger.debug('📊 [NutritionData] Saving meal entry...');
       AppLogger.debug('🔍 [NutritionData] Meal ID: ${meal.id}, Name: ${meal.name}');
       
-      if (!_mealsBox.isOpen) {
+      final mealsBox = await _ensureMealsBox();
+      if (!mealsBox.isOpen) {
         AppLogger.debug('⚠️ [NutritionData] Meals box is not open');
         throw Exception('Meals box not open');
       }
       
-      await _mealsBox.put(meal.id, meal.toJson());
+      await mealsBox.put(meal.id, meal.toJson());
       
       AppLogger.debug('✅ [NutritionData] Meal saved successfully');
       AppLogger.debug('🔍 [NutritionData] Calories: ${meal.macros.calories}, Name: ${meal.name}');
@@ -107,13 +105,14 @@ class HiveNutritionDatasource {
       AppLogger.debug('📊 [NutritionData] Getting meals by date...');
       AppLogger.debug('🔍 [NutritionData] Date: ${date.year}-${date.month}-${date.day}');
       
-      if (!_mealsBox.isOpen) {
+      final mealsBox = await _ensureMealsBox();
+      if (!mealsBox.isOpen) {
         AppLogger.debug('⚠️ [NutritionData] Meals box is not open');
         throw Exception('Meals box not open');
       }
       
-      final meals = _mealsBox.values
-          .map((json) => MealModel.fromJson(_deepCast(json)))
+      final meals = mealsBox.values
+          .map((json) => MealModel.fromJson(deepCastMap(json)))
           .where((meal) {
             final mealDate = DateTime.parse(meal.timestamp);
             return mealDate.year == date.year &&
@@ -145,13 +144,14 @@ class HiveNutritionDatasource {
       AppLogger.debug('📊 [NutritionData] Getting meals by date range...');
       AppLogger.debug('🔍 [NutritionData] Start: ${startDate.toIso8601String()}, End: ${endDate.toIso8601String()}');
       
-      if (!_mealsBox.isOpen) {
+      final mealsBox = await _ensureMealsBox();
+      if (!mealsBox.isOpen) {
         AppLogger.debug('⚠️ [NutritionData] Meals box is not open');
         throw Exception('Meals box not open');
       }
       
-      final meals = _mealsBox.values
-          .map((json) => MealModel.fromJson(_deepCast(json)))
+      final meals = mealsBox.values
+          .map((json) => MealModel.fromJson(deepCastMap(json)))
           .where((meal) {
             final mealDate = DateTime.parse(meal.timestamp);
             return mealDate.isAfter(startDate) && mealDate.isBefore(endDate);
@@ -176,13 +176,14 @@ class HiveNutritionDatasource {
     try {
       AppLogger.debug('📊 [NutritionData] Getting all meals...');
       
-      if (!_mealsBox.isOpen) {
+      final mealsBox = await _ensureMealsBox();
+      if (!mealsBox.isOpen) {
         AppLogger.debug('⚠️ [NutritionData] Meals box is not open');
         throw Exception('Meals box not open');
       }
       
-      final meals = _mealsBox.values
-          .map((json) => MealModel.fromJson(_deepCast(json)))
+      final meals = mealsBox.values
+          .map((json) => MealModel.fromJson(deepCastMap(json)))
           .toList();
       
       AppLogger.debug('✅ [NutritionData] All meals retrieved successfully');
@@ -204,19 +205,20 @@ class HiveNutritionDatasource {
       AppLogger.debug('📊 [NutritionData] Getting meal by ID...');
       AppLogger.debug('🔍 [NutritionData] Meal ID: $mealId');
       
-      if (!_mealsBox.isOpen) {
+      final mealsBox = await _ensureMealsBox();
+      if (!mealsBox.isOpen) {
         AppLogger.debug('⚠️ [NutritionData] Meals box is not open');
         throw Exception('Meals box not open');
       }
       
-      final json = _mealsBox.get(mealId);
+      final json = mealsBox.get(mealId);
       
       if (json == null) {
         AppLogger.debug('⚠️ [NutritionData] Meal not found');
         return null;
       }
       
-      final meal = MealModel.fromJson(_deepCast(json));
+      final meal = MealModel.fromJson(deepCastMap(json));
       AppLogger.debug('✅ [NutritionData] Meal retrieved successfully');
       AppLogger.debug('🔍 [NutritionData] Name: ${meal.name}, Calories: ${meal.macros.calories}');
       
@@ -236,12 +238,13 @@ class HiveNutritionDatasource {
       AppLogger.debug('📊 [NutritionData] Deleting meal entry...');
       AppLogger.debug('🔍 [NutritionData] Meal ID: $mealId');
       
-      if (!_mealsBox.isOpen) {
+      final mealsBox = await _ensureMealsBox();
+      if (!mealsBox.isOpen) {
         AppLogger.debug('⚠️ [NutritionData] Meals box is not open');
         throw Exception('Meals box not open');
       }
       
-      await _mealsBox.delete(mealId);
+      await mealsBox.delete(mealId);
       
       AppLogger.debug('✅ [NutritionData] Meal deleted successfully');
     } catch (e, stackTrace) {
@@ -259,7 +262,8 @@ class HiveNutritionDatasource {
       AppLogger.debug('📊 [NutritionData] Deleting meals by date...');
       AppLogger.debug('🔍 [NutritionData] Date: ${date.year}-${date.month}-${date.day}');
       
-      if (!_mealsBox.isOpen) {
+      final mealsBox = await _ensureMealsBox();
+      if (!mealsBox.isOpen) {
         AppLogger.debug('⚠️ [NutritionData] Meals box is not open');
         throw Exception('Meals box not open');
       }
@@ -268,7 +272,7 @@ class HiveNutritionDatasource {
       AppLogger.debug('🔍 [NutritionData] Found ${meals.length} meals to delete');
       
       for (final meal in meals) {
-        await _mealsBox.delete(meal.id);
+        await mealsBox.delete(meal.id);
       }
       
       AppLogger.debug('✅ [NutritionData] Meals deleted successfully');
@@ -294,14 +298,15 @@ class HiveNutritionDatasource {
       AppLogger.debug('📊 [NutritionData] Saving nutrition targets...');
       AppLogger.debug('🔍 [NutritionData] Macros - Calories: ${targets.macros.calories}, Protein: ${targets.macros.protein}g');
       
-      if (!_targetsBox.isOpen) {
+      final targetsBox = await _ensureTargetsBox();
+      if (!targetsBox.isOpen) {
         AppLogger.debug('⚠️ [NutritionData] Targets box is not open');
         throw Exception('Targets box not open');
       }
       
       final scopeUserId = RecordOwnershipRules.normalizeUserId(userId) ??
           RecordOwnershipRules.normalizeUserId(targets.userId);
-      await _targetsBox.put(
+      await targetsBox.put(
         scopeUserId == null ? targetsKey : _targetsKeyForUser(scopeUserId),
         targets.toJson(),
       );
@@ -326,7 +331,8 @@ class HiveNutritionDatasource {
     try {
       AppLogger.debug('📊 [NutritionData] Getting nutrition targets...');
       
-      if (!_targetsBox.isOpen) {
+      final targetsBox = await _ensureTargetsBox();
+      if (!targetsBox.isOpen) {
         AppLogger.debug('⚠️ [NutritionData] Targets box is not open');
         throw Exception('Targets box not open');
       }
@@ -335,20 +341,20 @@ class HiveNutritionDatasource {
       NutritionTargetsModel? targets;
 
       if (scopeUserId == null) {
-        targets = _decodeTargets(_targetsBox.get(targetsKey));
+        targets = _decodeTargets(targetsBox.get(targetsKey));
       } else {
         final scopedKey = _targetsKeyForUser(scopeUserId);
-        targets = _decodeTargets(_targetsBox.get(scopedKey));
+        targets = _decodeTargets(targetsBox.get(scopedKey));
 
         if (targets == null) {
-          final legacyJson = _targetsBox.get(targetsKey);
+          final legacyJson = targetsBox.get(targetsKey);
           final legacyTargets = _decodeTargets(legacyJson);
           if (legacyJson != null && legacyTargets != null) {
             final ownership = RecordOwnershipRules.classify(
               ownerId: legacyTargets.userId,
               currentUserId: scopeUserId,
             );
-            final hasScopedTargets = _targetsBox.keys.any(
+            final hasScopedTargets = targetsBox.keys.any(
               (key) => key.toString().startsWith('${targetsKey}_'),
             );
             final canAdopt =
@@ -356,8 +362,8 @@ class HiveNutritionDatasource {
                     (ownership == RecordOwnership.legacyUnowned &&
                         !hasScopedTargets);
             if (canAdopt) {
-              await _targetsBox.put(scopedKey, legacyJson);
-              await _targetsBox.delete(targetsKey);
+              await targetsBox.put(scopedKey, legacyJson);
+              await targetsBox.delete(targetsKey);
               targets = legacyTargets;
             }
           }
@@ -383,11 +389,12 @@ class HiveNutritionDatasource {
   /// Delete the nutrition targets for [userId], or the legacy targets
   /// when no account scope is supplied.
   Future<void> deleteNutritionTargets({String? userId}) async {
-    if (!_targetsBox.isOpen) {
+    final targetsBox = await _ensureTargetsBox();
+    if (!targetsBox.isOpen) {
       throw Exception('Targets box not open');
     }
     final scopeUserId = RecordOwnershipRules.normalizeUserId(userId);
-    await _targetsBox.delete(
+    await targetsBox.delete(
       scopeUserId == null ? targetsKey : _targetsKeyForUser(scopeUserId),
     );
   }
@@ -404,11 +411,12 @@ class HiveNutritionDatasource {
       AppLogger.debug('📊 [NutritionData] Clearing nutrition data...');
       final scopeUserId = RecordOwnershipRules.normalizeUserId(userId);
 
-      if (!_mealsBox.isOpen) {
+      final mealsBox = await _ensureMealsBox();
+      if (!mealsBox.isOpen) {
         AppLogger.debug('⚠️ [NutritionData] Meals box is not open');
       } else if (scopeUserId == null) {
-        final mealsCount = _mealsBox.length;
-        await _mealsBox.clear();
+        final mealsCount = mealsBox.length;
+        await mealsBox.clear();
         AppLogger.debug('✅ [NutritionData] Meals box cleared ($mealsCount meals removed)');
       } else {
         var removedCount = 0;
@@ -419,16 +427,17 @@ class HiveNutritionDatasource {
           )) {
             continue;
           }
-          await _mealsBox.delete(meal.id);
+          await mealsBox.delete(meal.id);
           removedCount++;
         }
         AppLogger.debug('✅ [NutritionData] Scoped meals cleared ($removedCount meals removed)');
       }
 
-      if (!_targetsBox.isOpen) {
+      final targetsBox = await _ensureTargetsBox();
+      if (!targetsBox.isOpen) {
         AppLogger.debug('⚠️ [NutritionData] Targets box is not open');
       } else if (scopeUserId == null) {
-        await _targetsBox.clear();
+        await targetsBox.clear();
         AppLogger.debug('✅ [NutritionData] Targets box cleared');
       } else {
         // Resolve/adopt a safely attributable legacy target first,
@@ -453,12 +462,13 @@ class HiveNutritionDatasource {
     try {
       AppLogger.debug('📊 [NutritionData] Getting meal count...');
       
-      if (!_mealsBox.isOpen) {
+      final mealsBox = await _ensureMealsBox();
+      if (!mealsBox.isOpen) {
         AppLogger.debug('⚠️ [NutritionData] Meals box is not open');
         throw Exception('Meals box not open');
       }
       
-      final count = _mealsBox.length;
+      final count = mealsBox.length;
       AppLogger.debug('✅ [NutritionData] Meal count retrieved successfully');
       AppLogger.debug('🔍 [NutritionData] Total meals: $count');
       
@@ -477,12 +487,13 @@ class HiveNutritionDatasource {
     try {
       AppLogger.debug('📊 [NutritionData] Checking if meals exist...');
       
-      if (!_mealsBox.isOpen) {
+      final mealsBox = await _ensureMealsBox();
+      if (!mealsBox.isOpen) {
         AppLogger.debug('⚠️ [NutritionData] Meals box is not open');
         throw Exception('Meals box not open');
       }
       
-      final hasData = _mealsBox.isNotEmpty;
+      final hasData = mealsBox.isNotEmpty;
       AppLogger.debug('✅ [NutritionData] Meal check completed');
       AppLogger.debug('🔍 [NutritionData] Has meals: $hasData');
       
@@ -501,14 +512,15 @@ class HiveNutritionDatasource {
     try {
       AppLogger.debug('📊 [NutritionData] Getting all meal dates...');
       
-      if (!_mealsBox.isOpen) {
+      final mealsBox = await _ensureMealsBox();
+      if (!mealsBox.isOpen) {
         AppLogger.debug('⚠️ [NutritionData] Meals box is not open');
         throw Exception('Meals box not open');
       }
       
       final dates = <DateTime>{};
-      for (final json in _mealsBox.values) {
-        final meal = MealModel.fromJson(_deepCast(json));
+      for (final json in mealsBox.values) {
+        final meal = MealModel.fromJson(deepCastMap(json));
         final mealDate = DateTime.parse(meal.timestamp);
         dates.add(DateTime(mealDate.year, mealDate.month, mealDate.day));
       }

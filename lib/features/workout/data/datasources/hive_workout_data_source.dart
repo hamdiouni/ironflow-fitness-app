@@ -1,44 +1,26 @@
-import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:hive/hive.dart';
+import 'package:progression_tracker/core/utils/app_logger.dart';
+import 'package:progression_tracker/core/utils/hive_json_utils.dart';
+import 'package:progression_tracker/core/utils/hive_manager.dart';
 import '../models/workout_model.dart';
 
-/// Recursively casts a [Map<dynamic, dynamic>] (as returned by Hive) to
-/// [Map<String, dynamic>] so that json_serializable can deserialize it.
-Map<String, dynamic> _deepCast(Map<dynamic, dynamic> map) {
-  return map.map((key, value) {
-    if (value is Map) {
-      return MapEntry(key.toString(), _deepCast(value));
-    } else if (value is List) {
-      return MapEntry(key.toString(), _deepCastList(value));
-    }
-    return MapEntry(key.toString(), value);
-  });
-}
-
-List<dynamic> _deepCastList(List<dynamic> list) {
-  return list.map((item) {
-    if (item is Map) return _deepCast(item);
-    if (item is List) return _deepCastList(item);
-    return item;
-  }).toList();
-}
-
 class HiveWorkoutDataSource {
-  static const String boxName = 'workouts';
+  static const String boxName = HiveManager.workoutsBox;
 
-  Box<Map> get _box => Hive.box<Map>(boxName);
+  Future<Box<Map>> get _box => HiveManager.ensureWorkoutBox();
 
   Future<void> saveWorkout(WorkoutModel workout) async {
     try {
       AppLogger.debug('📊 [WorkoutData] Saving workout...');
       AppLogger.debug('🔍 [WorkoutData] Workout ID: ${workout.id}');
       
-      if (!_box.isOpen) {
+      final box = await _box;
+      if (!box.isOpen) {
         AppLogger.debug('⚠️ [WorkoutData] Workouts box is not open');
         throw Exception('Workouts box not open');
       }
       
-      await _box.put(workout.id, workout.toJson());
+      await box.put(workout.id, workout.toJson());
       
       AppLogger.debug('✅ [WorkoutData] Workout saved successfully');
       AppLogger.debug('🔍 [WorkoutData] Exercises: ${workout.exercises.length}, Duration: ${workout.durationSeconds}s');
@@ -53,14 +35,15 @@ class HiveWorkoutDataSource {
     try {
       AppLogger.debug('📊 [WorkoutData] Retrieving all workouts...');
       
-      if (!_box.isOpen) {
+      final box = await _box;
+      if (!box.isOpen) {
         AppLogger.debug('⚠️ [WorkoutData] Workouts box is not open');
         throw Exception('Workouts box not open');
       }
       
       AppLogger.debug('🔍 [WorkoutData] Deserializing workout data...');
-      final workouts = _box.values
-          .map((json) => WorkoutModel.fromJson(_deepCast(json)))
+      final workouts = box.values
+          .map((json) => WorkoutModel.fromJson(deepCastMap(json)))
           .toList();
 
       // Sort by date descending
@@ -82,8 +65,9 @@ class HiveWorkoutDataSource {
   /// This replaces the manual refresh-counter bumps that UI code used to
   /// make after every write.
   Stream<List<WorkoutModel>> watchAllWorkouts() async* {
+    final box = await _box;
     yield await getAllWorkouts();
-    yield* _box.watch().asyncMap((_) => getAllWorkouts());
+    yield* box.watch().asyncMap((_) => getAllWorkouts());
   }
 
   Future<List<WorkoutModel>> getWorkoutsPaginated({
@@ -94,14 +78,15 @@ class HiveWorkoutDataSource {
       AppLogger.debug('📊 [WorkoutData] Retrieving paginated workouts...');
       AppLogger.debug('🔍 [WorkoutData] Offset: $offset, Limit: $limit');
       
-      if (!_box.isOpen) {
+      final box = await _box;
+      if (!box.isOpen) {
         AppLogger.debug('⚠️ [WorkoutData] Workouts box is not open');
         throw Exception('Workouts box not open');
       }
       
       AppLogger.debug('🔍 [WorkoutData] Deserializing workout data...');
-      final workouts = _box.values
-          .map((json) => WorkoutModel.fromJson(_deepCast(json)))
+      final workouts = box.values
+          .map((json) => WorkoutModel.fromJson(deepCastMap(json)))
           .toList();
 
       // Sort by date descending
@@ -134,12 +119,13 @@ class HiveWorkoutDataSource {
     try {
       AppLogger.debug('📊 [WorkoutData] Getting workout count...');
       
-      if (!_box.isOpen) {
+      final box = await _box;
+      if (!box.isOpen) {
         AppLogger.debug('⚠️ [WorkoutData] Workouts box is not open');
         throw Exception('Workouts box not open');
       }
       
-      final count = _box.length;
+      final count = box.length;
       
       AppLogger.debug('✅ [WorkoutData] Workout count retrieved successfully');
       AppLogger.debug('🔍 [WorkoutData] Total workouts: $count');
@@ -157,12 +143,13 @@ class HiveWorkoutDataSource {
       AppLogger.debug('📊 [WorkoutData] Deleting workout...');
       AppLogger.debug('🔍 [WorkoutData] Workout ID: $id');
       
-      if (!_box.isOpen) {
+      final box = await _box;
+      if (!box.isOpen) {
         AppLogger.debug('⚠️ [WorkoutData] Workouts box is not open');
         throw Exception('Workouts box not open');
       }
       
-      await _box.delete(id);
+      await box.delete(id);
       
       AppLogger.debug('✅ [WorkoutData] Workout deleted successfully');
     } catch (e, stackTrace) {

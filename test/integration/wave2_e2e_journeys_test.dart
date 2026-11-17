@@ -383,6 +383,7 @@ void defineWave2Journeys() {
     await Hive.openBox<Map>(HiveNutritionDatasource.mealsBoxName);
     await Hive.openBox<Map>(HiveNutritionDatasource.targetsBoxName);
     await Hive.openBox('foods');
+    await Hive.openBox('custom_foods');
   });
 
   tearDown(() async {

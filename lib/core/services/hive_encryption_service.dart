@@ -1,8 +1,9 @@
+import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hive/hive.dart';
+import '../platform/platform_file_ops.dart';
 import '../utils/app_logger.dart';
 
 /// Abstraction over secure key storage so unit tests can simulate key
@@ -14,14 +15,6 @@ abstract class EncryptionKeyStore {
 }
 
 /// Production [EncryptionKeyStore] backed by [FlutterSecureStorage].
-///
-/// Platform notes (ADR-002):
-/// - **Android**: Uses `EncryptedSharedPreferences` backed by Android Keystore.
-/// - **iOS**: Uses iOS Keychain with `first_unlock_this_device` accessibility.
-/// - **Web**: `flutter_secure_storage_web` uses WebCrypto + `localStorage`.
-///   Browser storage protects against casual inspection but cannot defend
-///   against same-origin XSS if untrusted scripts execute; therefore Web builds
-///   must enforce strict CSP headers and never log health payloads.
 class SecureStorageKeyStore implements EncryptionKeyStore {
   final FlutterSecureStorage _storage;
 
@@ -45,20 +38,45 @@ class SecureStorageKeyStore implements EncryptionKeyStore {
   Future<void> delete(String key) => _storage.delete(key: key);
 }
 
+/// Metadata recorded whenever a corrupt or key-lost box is quarantined rather
+/// than deleted destructively.
+class QuarantinedBoxRecord {
+  final String boxName;
+  final String originalFilePath;
+  final String quarantineFilePath;
+  final String reason;
+  final DateTime quarantinedAt;
+
+  const QuarantinedBoxRecord({
+    required this.boxName,
+    required this.originalFilePath,
+    required this.quarantineFilePath,
+    required this.reason,
+    required this.quarantinedAt,
+  });
+}
+
 /// Manages AES-256 encryption at rest (`HiveAesCipher`) for sensitive local
-/// Hive boxes, including pre-migration backups, box-by-box plaintext-to-cipher
-/// migration, and key-loss recovery (Wave 1 Step 8 — SEC-03 / DAT-01 / ADR-002).
+/// Hive boxes, including:
+/// - Cached cipher and migrated-box set in memory (Wave 3.2)
+/// - Pre-migration `.hive` + JSON backups and `.hive` header sanity check (Wave 3.1)
+/// - Non-destructive quarantine on corrupt header or key-loss recovery (Wave 3.1)
 class HiveEncryptionService {
   static const String masterKeyStorageKey = 'ironflow_hive_aes_key_v1';
   static const String migratedBoxesStorageKey =
       'ironflow_hive_encrypted_boxes_v1';
+  static const int _minValidNonEmptyHiveBytes = 8;
 
-  /// Sensitive user & health boxes that MUST be encrypted at rest.
+  /// Sensitive user & health boxes encrypted at rest.
   static const Set<String> sensitiveBoxes = {
     'workouts',
     'nutrition',
     'programs',
     'user',
+    'settings',
+    'notification_settings',
+    'food_items_full',
+    'custom_foods',
     'sync_queue',
     'body_entries',
     'streak',
@@ -74,18 +92,53 @@ class HiveEncryptionService {
   };
 
   final EncryptionKeyStore _keyStore;
-  final Directory? _backupDirectory;
+  final String? _backupDirectoryPath;
+  final String? _sourceDirectoryPath;
+  final void Function(QuarantinedBoxRecord record)? onBoxQuarantined;
+
   Uint8List? _cachedKey;
+  HiveAesCipher? _cachedCipher;
+  Set<String>? _cachedMigratedBoxes;
+  Future<Uint8List>? _inFlightKeyLoad;
+  Future<Set<String>>? _inFlightMigratedLoad;
+  final List<QuarantinedBoxRecord> _quarantinedBoxes = <QuarantinedBoxRecord>[];
 
   HiveEncryptionService({
     EncryptionKeyStore? keyStore,
-    Directory? backupDirectory,
+    Object? backupDirectory,
+    String? backupDirectoryPath,
+    String? sourceDirectoryPath,
+    this.onBoxQuarantined,
   })  : _keyStore = keyStore ?? const SecureStorageKeyStore(),
-        _backupDirectory = backupDirectory;
+        _backupDirectoryPath =
+            backupDirectoryPath ?? _extractDirectoryPath(backupDirectory),
+        _sourceDirectoryPath = sourceDirectoryPath;
 
-  /// Loads or generates the 256-bit (32-byte) AES key.
-  /// Never logs or prints the key bytes.
-  Future<Uint8List> getOrCreateMasterKey() async {
+  static String? _extractDirectoryPath(Object? directory) {
+    if (directory == null) return null;
+    if (directory is String) return directory;
+    try {
+      return (directory as dynamic).path as String?;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Quarantined boxes observed during this service lifecycle, enabling a UI
+  /// recovery notice or diagnostic export without silent data deletion.
+  List<QuarantinedBoxRecord> get quarantinedBoxes =>
+      List.unmodifiable(_quarantinedBoxes);
+
+  /// Loads or generates the cached 256-bit (32-byte) AES key.
+  /// Never logs or prints key bytes.
+  Future<Uint8List> getOrCreateMasterKey() {
+    if (_cachedKey != null) return Future<Uint8List>.value(_cachedKey!);
+    return _inFlightKeyLoad ??= _loadOrCreateMasterKey().whenComplete(() {
+      _inFlightKeyLoad = null;
+    });
+  }
+
+  Future<Uint8List> _loadOrCreateMasterKey() async {
     if (_cachedKey != null) return _cachedKey!;
 
     final existingBase64 = await _keyStore.read(masterKeyStorageKey);
@@ -107,50 +160,127 @@ class HiveEncryptionService {
     return freshKey;
   }
 
-  Future<Set<String>> _getMigratedBoxes() async {
+  /// Returns the cached [HiveAesCipher] backed by [getOrCreateMasterKey].
+  Future<HiveAesCipher> getOrCreateCipher() async {
+    if (_cachedCipher != null) return _cachedCipher!;
+    final key = await getOrCreateMasterKey();
+    _cachedCipher = HiveAesCipher(key);
+    return _cachedCipher!;
+  }
+
+  /// Pre-warms cipher and migrated-box cache before concurrent box opens.
+  Future<void> warmCache() async {
+    await getOrCreateCipher();
+    await _getMigratedBoxes();
+  }
+
+  Future<Set<String>> _getMigratedBoxes() {
+    if (_cachedMigratedBoxes != null) {
+      return Future<Set<String>>.value(
+        Set<String>.from(_cachedMigratedBoxes!),
+      );
+    }
+    return _inFlightMigratedLoad ??= _loadMigratedBoxes().whenComplete(() {
+      _inFlightMigratedLoad = null;
+    });
+  }
+
+  Future<Set<String>> _loadMigratedBoxes() async {
+    if (_cachedMigratedBoxes != null) {
+      return Set<String>.from(_cachedMigratedBoxes!);
+    }
     final raw = await _keyStore.read(migratedBoxesStorageKey);
-    if (raw == null || raw.isEmpty) return <String>{};
+    if (raw == null || raw.isEmpty) {
+      _cachedMigratedBoxes = <String>{};
+      return <String>{};
+    }
     try {
       final list = (jsonDecode(raw) as List).cast<String>();
-      return list.toSet();
+      _cachedMigratedBoxes = list.toSet();
+      return Set<String>.from(_cachedMigratedBoxes!);
     } catch (_) {
+      _cachedMigratedBoxes = <String>{};
       return <String>{};
     }
   }
 
   Future<void> _markBoxMigrated(String boxName) async {
     final set = await _getMigratedBoxes();
-    set.add(boxName);
-    await _keyStore.write(migratedBoxesStorageKey, jsonEncode(set.toList()));
+    if (set.add(boxName)) {
+      _cachedMigratedBoxes = Set<String>.from(set);
+      await _keyStore.write(migratedBoxesStorageKey, jsonEncode(set.toList()));
+    }
   }
 
-  File? _backupFileForBox(String boxName) {
-    final dir = _backupDirectory;
-    if (dir == null || kIsWeb) return null;
-    return File('${dir.path}${Platform.pathSeparator}$boxName.pre_enc_backup.json');
+  Future<String?> _resolveBackupRoot() async {
+    if (_backupDirectoryPath != null && _backupDirectoryPath.isNotEmpty) {
+      return _backupDirectoryPath;
+    }
+    if (!PlatformFileOps.supportsLocalFileSystem) return null;
+    return PlatformFileOps.resolveAppDocumentsPath();
   }
 
-  /// Writes a pre-migration backup snapshot of [entries] to disk (when
-  /// [_backupDirectory] is provided) so an interrupted migration can recover
-  /// 100% of records on next launch.
+  Future<String?> _resolveSourceRoot() async {
+    if (_sourceDirectoryPath != null && _sourceDirectoryPath.isNotEmpty) {
+      return _sourceDirectoryPath;
+    }
+    if (_backupDirectoryPath != null && _backupDirectoryPath.isNotEmpty) {
+      return _backupDirectoryPath;
+    }
+    if (!PlatformFileOps.supportsLocalFileSystem) return null;
+    return PlatformFileOps.resolveAppDocumentsPath();
+  }
+
+  Future<String?> _legacyJsonBackupPath(String boxName) async {
+    final root = await _resolveBackupRoot();
+    if (root == null) return null;
+    return PlatformFileOps.joinPath(root, '$boxName.pre_enc_backup.json');
+  }
+
+  Future<String?> _preMigrationDirPath(String boxName) async {
+    final root = await _resolveBackupRoot();
+    if (root == null) return null;
+    return PlatformFileOps.joinPath(
+      PlatformFileOps.joinPath(root, 'pre_migration'),
+      boxName,
+    );
+  }
+
   Future<void> _writePreMigrationBackup(
     String boxName,
     Map<dynamic, dynamic> entries,
   ) async {
-    final file = _backupFileForBox(boxName);
-    if (file == null) return;
+    final root = await _resolveBackupRoot();
+    if (root == null || kIsWeb) return;
+
     final serializable = <String, dynamic>{};
     entries.forEach((k, v) {
       serializable[k.toString()] = v;
     });
-    await file.writeAsString(jsonEncode(serializable), flush: true);
+
+    await PlatformFileOps.writeUtf8File(
+      root,
+      '$boxName.pre_enc_backup.json',
+      jsonEncode(serializable),
+    );
+
+    final srcRoot = await _resolveSourceRoot();
+    final preDir = await _preMigrationDirPath(boxName);
+    if (srcRoot != null && preDir != null) {
+      final srcHive = PlatformFileOps.joinPath(srcRoot, '$boxName.hive');
+      if (await PlatformFileOps.fileExists(srcHive)) {
+        final dstHive = PlatformFileOps.joinPath(preDir, '$boxName.hive');
+        await PlatformFileOps.copyFile(srcHive, dstHive);
+      }
+    }
   }
 
   Future<Map<String, dynamic>?> _readPreMigrationBackup(String boxName) async {
-    final file = _backupFileForBox(boxName);
-    if (file == null || !await file.exists()) return null;
+    final path = await _legacyJsonBackupPath(boxName);
+    if (path == null || !await PlatformFileOps.fileExists(path)) return null;
     try {
-      final content = await file.readAsString();
+      final content = await PlatformFileOps.readUtf8File(path);
+      if (content == null || content.isEmpty) return null;
       return jsonDecode(content) as Map<String, dynamic>;
     } catch (_) {
       return null;
@@ -158,27 +288,147 @@ class HiveEncryptionService {
   }
 
   Future<void> _deletePreMigrationBackup(String boxName) async {
-    final file = _backupFileForBox(boxName);
-    if (file != null && await file.exists()) {
+    final path = await _legacyJsonBackupPath(boxName);
+    if (path != null) {
       try {
-        await file.delete();
+        await PlatformFileOps.deleteFileIfExists(path);
       } catch (_) {}
     }
   }
 
+  /// Verifies `.hive` file integrity before attempting open/migration.
+  /// Non-empty `.hive` files shorter than 8 bytes contain a truncated header
+  /// and cannot hold valid Hive frames.
+  Future<bool> _hasCorruptHiveHeader(String boxName) async {
+    if (!PlatformFileOps.supportsLocalFileSystem) return false;
+    final srcRoot = await _resolveSourceRoot();
+    if (srcRoot == null) return false;
+    final hivePath = PlatformFileOps.joinPath(srcRoot, '$boxName.hive');
+    final length = await PlatformFileOps.fileLength(hivePath);
+    if (length == null || length == 0) return false;
+    if (length < _minValidNonEmptyHiveBytes) {
+      return true;
+    }
+    final prefix =
+        await PlatformFileOps.readBytesPrefix(hivePath, _minValidNonEmptyHiveBytes);
+    return prefix == null || prefix.length < _minValidNonEmptyHiveBytes;
+  }
+
+  /// Copies [boxName].hive (and optional `.lock`) into a timestamped
+  /// `quarantine/` folder before removing the broken source file so unreadable
+  /// data is never permanently lost on failure.
+  Future<QuarantinedBoxRecord?> _quarantineBoxFiles(
+    String boxName, {
+    required String reason,
+  }) async {
+    if (!PlatformFileOps.supportsLocalFileSystem) {
+      return null;
+    }
+
+    final srcRoot = await _resolveSourceRoot();
+    final backupRoot = await _resolveBackupRoot();
+    if (srcRoot == null || backupRoot == null) {
+      throw StateError(
+        'Cannot safely quarantine "$boxName" without a resolved storage directory ($reason)',
+      );
+    }
+
+    final srcHive = PlatformFileOps.joinPath(srcRoot, '$boxName.hive');
+    final exists = await PlatformFileOps.fileExists(srcHive);
+    if (!exists) {
+      return null;
+    }
+
+    final stamp = DateTime.now().toUtc().millisecondsSinceEpoch;
+    final quarantineDir = PlatformFileOps.joinPath(
+      PlatformFileOps.joinPath(backupRoot, 'quarantine'),
+      '${stamp}_$boxName',
+    );
+    final dstHive = PlatformFileOps.joinPath(quarantineDir, '$boxName.hive');
+    final copied = await PlatformFileOps.copyFile(srcHive, dstHive);
+    if (!copied) {
+      throw StateError(
+        'Failed to create verified quarantine copy of "$boxName" at $dstHive',
+      );
+    }
+
+    final srcLock = PlatformFileOps.joinPath(srcRoot, '$boxName.lock');
+    if (await PlatformFileOps.fileExists(srcLock)) {
+      await PlatformFileOps.copyFile(
+        srcLock,
+        PlatformFileOps.joinPath(quarantineDir, '$boxName.lock'),
+      );
+    }
+
+    final record = QuarantinedBoxRecord(
+      boxName: boxName,
+      originalFilePath: srcHive,
+      quarantineFilePath: dstHive,
+      reason: reason,
+      quarantinedAt: DateTime.now().toUtc(),
+    );
+    _quarantinedBoxes.add(record);
+    onBoxQuarantined?.call(record);
+
+    if (kDebugMode) {
+      AppLogger.debug(
+        '⚠️ [HiveEncryption] Quarantined "$boxName" -> $dstHive (reason: $reason)',
+      );
+    }
+
+    // Only remove the broken active file after quarantine verification succeeds.
+    await PlatformFileOps.deleteFileIfExists(srcHive);
+    await PlatformFileOps.deleteFileIfExists(srcLock);
+    return record;
+  }
+
+  /// Opens a Hive box while containing Hive 2.2.3's duplicate unlistened
+  /// `_openingBoxes` completer error inside an error zone so callers can catch
+  /// [HiveError] reliably with `crashRecovery: false`.
+  Future<Box<E>> _openBoxGuarded<E>(
+    String boxName, {
+    HiveCipher? encryptionCipher,
+    bool crashRecovery = false,
+  }) {
+    final completer = Completer<Box<E>>();
+    runZonedGuarded(
+      () {
+        Hive.openBox<E>(
+          boxName,
+          encryptionCipher: encryptionCipher,
+          crashRecovery: crashRecovery,
+        ).then(
+          (box) {
+            if (!completer.isCompleted) completer.complete(box);
+          },
+          onError: (Object error, StackTrace stackTrace) {
+            if (!completer.isCompleted) {
+              completer.completeError(error, stackTrace);
+            }
+          },
+        );
+      },
+      (Object error, StackTrace stackTrace) {
+        if (!completer.isCompleted) {
+          completer.completeError(error, stackTrace);
+        }
+      },
+    );
+    return completer.future;
+  }
+
   /// Opens [boxName] with `HiveAesCipher`, migrating existing plaintext data
-  /// box-by-box after creating a backup snapshot, and recovering safely if a
-  /// previous migration was interrupted or if the OS keystore was reset.
+  /// box-by-box after creating pre-migration backups, verifying file headers,
+  /// and quarantining any unreadable/corrupted box instead of deleting it.
   Future<Box<E>> openEncryptedBox<E>(String boxName) async {
     if (Hive.isBoxOpen(boxName)) {
       return Hive.box<E>(boxName);
     }
 
-    final key = await getOrCreateMasterKey();
-    final cipher = HiveAesCipher(key);
+    final cipher = await getOrCreateCipher();
     final migratedBoxes = await _getMigratedBoxes();
 
-    // Case 0: Check if an interrupted pre-migration backup file exists on disk
+    // Case 0: Recover interrupted pre-migration backup snapshot if present
     final pendingBackup = await _readPreMigrationBackup(boxName);
     if (pendingBackup != null) {
       if (kDebugMode) {
@@ -186,9 +436,10 @@ class HiveEncryptionService {
           '🔄 [HiveEncryption] Recovering box "$boxName" from pre-migration backup snapshot...',
         );
       }
-      try {
-        await Hive.deleteBoxFromDisk(boxName);
-      } catch (_) {}
+      await _quarantineBoxFiles(
+        boxName,
+        reason: 'interrupted_migration_recovery',
+      );
       final recoveredBox = await Hive.openBox<E>(
         boxName,
         encryptionCipher: cipher,
@@ -202,16 +453,22 @@ class HiveEncryptionService {
       return recoveredBox;
     }
 
-    // Case 1: Box is not yet marked as migrated — check for existing plaintext data
+    // Header check before opening any existing `.hive` file on disk
+    if (await _hasCorruptHiveHeader(boxName)) {
+      await _quarantineBoxFiles(boxName, reason: 'corrupt_header_truncated');
+    }
+
+    // Case 1: Box is not yet marked migrated — check for plaintext data on disk
     if (!migratedBoxes.contains(boxName)) {
       final existsOnDisk = await Hive.boxExists(boxName);
       if (existsOnDisk) {
         Box<E>? plaintextBox;
         try {
-          plaintextBox = await Hive.openBox<E>(boxName);
+          plaintextBox = await _openBoxGuarded<E>(
+            boxName,
+            crashRecovery: false,
+          );
         } catch (_) {
-          // Box on disk might already be encrypted from an earlier run whose
-          // migratedBoxes marker wasn't saved yet.
           plaintextBox = null;
         }
 
@@ -224,16 +481,24 @@ class HiveEncryptionService {
             }
           }
 
-          // Step A: Write pre-migration backup before touching the box
-          if (entries.isNotEmpty) {
-            await _writePreMigrationBackup(boxName, entries);
+          await _writePreMigrationBackup(boxName, entries);
+          await plaintextBox.close();
+
+          // Safely replace original plaintext box after verified pre-migration backup
+          if (PlatformFileOps.supportsLocalFileSystem) {
+            final srcRoot = await _resolveSourceRoot();
+            if (srcRoot != null) {
+              await PlatformFileOps.deleteFileIfExists(
+                PlatformFileOps.joinPath(srcRoot, '$boxName.hive'),
+              );
+              await PlatformFileOps.deleteFileIfExists(
+                PlatformFileOps.joinPath(srcRoot, '$boxName.lock'),
+              );
+            }
+          } else {
+            await Hive.deleteBoxFromDisk(boxName);
           }
 
-          // Step B: Close and remove plaintext box from disk
-          await plaintextBox.close();
-          await Hive.deleteBoxFromDisk(boxName);
-
-          // Step C: Re-open with AES-256 cipher and restore all records
           final encryptedBox = await Hive.openBox<E>(
             boxName,
             encryptionCipher: cipher,
@@ -243,7 +508,6 @@ class HiveEncryptionService {
             await encryptedBox.flush();
           }
 
-          // Step D: Verify record count parity before deleting backup
           if (encryptedBox.length != entries.length) {
             throw StateError(
               'Hive encryption migration count mismatch for $boxName: '
@@ -258,27 +522,30 @@ class HiveEncryptionService {
       }
     }
 
-    // Case 2: Open directly with AES-256 cipher
+    // Case 2: Open directly with cached AES-256 cipher. `crashRecovery: false`
+    // prevents Hive from silently truncating corrupted/key-lost frames before
+    // our quarantine handler can preserve the original file.
     try {
-      final box = await Hive.openBox<E>(
+      final box = await _openBoxGuarded<E>(
         boxName,
         encryptionCipher: cipher,
+        crashRecovery: false,
       );
       if (!migratedBoxes.contains(boxName)) {
         await _markBoxMigrated(boxName);
       }
       return box;
     } catch (e) {
-      // Case 3: Key-loss / corrupted ciphertext recovery
-      // If the OS keystore was wiped while encrypted .hive files remained on
-      // disk, first check if the file is actually plaintext; otherwise reset
-      // the unreadable box so the app can boot and re-sync from cloud/backup.
-      if (kDebugMode) {
-        AppLogger.debug(
-          '⚠️ [HiveEncryption] Cipher open failed for "$boxName", attempting recovery...',
-        );
+      // Case 3: Key-loss / corrupted ciphertext — quarantine BEFORE resetting
+      await _quarantineBoxFiles(
+        boxName,
+        reason: 'cipher_open_failed: $e',
+      );
+      if (!PlatformFileOps.supportsLocalFileSystem) {
+        // Browser IndexedDB has no filesystem copy path; only clear on Web
+        // if unreadable so the browser tab can recover.
+        await Hive.deleteBoxFromDisk(boxName);
       }
-      await Hive.deleteBoxFromDisk(boxName);
       final freshBox = await Hive.openBox<E>(
         boxName,
         encryptionCipher: cipher,
@@ -291,10 +558,8 @@ class HiveEncryptionService {
   static E _castValue<E>(dynamic raw) {
     if (raw is E) return raw;
     if (raw is Map) {
-      final copy = Map<dynamic, dynamic>.from(raw);
-      return copy as E;
+      return Map<dynamic, dynamic>.from(raw) as E;
     }
     return raw as E;
   }
 }
-

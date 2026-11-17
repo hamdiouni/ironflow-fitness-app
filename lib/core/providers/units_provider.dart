@@ -2,6 +2,8 @@ import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 
+import '../utils/hive_manager.dart';
+
 /// Units system enum.
 enum UnitsSystem {
   metric,   // kg, cm, g
@@ -17,7 +19,7 @@ final unitsProvider =
 
 /// Notifier for managing units system state (Wave 3.2).
 class UnitsNotifier extends Notifier<UnitsSystem> {
-  static const String _boxName = 'app_settings';
+  static const String _boxName = HiveManager.appSettingsBox;
   static const String _unitsKey = 'units_system';
   bool _disposed = false;
 
@@ -25,6 +27,11 @@ class UnitsNotifier extends Notifier<UnitsSystem> {
   UnitsSystem build() {
     _disposed = false;
     ref.onDispose(() => _disposed = true);
+    if (Hive.isBoxOpen(_boxName)) {
+      final box = HiveManager.getAppSettingsBox();
+      final unitsStr = box.get(_unitsKey, defaultValue: 'metric');
+      return unitsStr == 'imperial' ? UnitsSystem.imperial : UnitsSystem.metric;
+    }
     _loadUnits();
     return UnitsSystem.metric;
   }
@@ -32,10 +39,10 @@ class UnitsNotifier extends Notifier<UnitsSystem> {
   /// Loads units preference from Hive storage.
   Future<void> _loadUnits() async {
     try {
-      final box = await Hive.openBox<String>(_boxName);
+      final box = await HiveManager.ensureAppSettingsBox();
       if (_disposed) return;
       final unitsStr = box.get(_unitsKey, defaultValue: 'metric');
-      
+
       final units = unitsStr == 'imperial' ? UnitsSystem.imperial : UnitsSystem.metric;
       state = units;
     } catch (e) {
@@ -49,9 +56,9 @@ class UnitsNotifier extends Notifier<UnitsSystem> {
   /// Sets the units system.
   Future<void> setUnits(UnitsSystem units) async {
     state = units;
-    
+
     try {
-      final box = await Hive.openBox<String>(_boxName);
+      final box = await HiveManager.ensureAppSettingsBox();
       final unitsStr = units == UnitsSystem.imperial ? 'imperial' : 'metric';
       await box.put(_unitsKey, unitsStr);
     } catch (e) {

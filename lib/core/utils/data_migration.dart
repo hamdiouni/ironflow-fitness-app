@@ -1,5 +1,8 @@
 import 'package:hive/hive.dart';
 import 'package:progression_tracker/core/utils/app_logger.dart';
+import 'package:progression_tracker/core/utils/hive_json_utils.dart';
+import 'package:progression_tracker/core/utils/hive_manager.dart';
+import 'package:progression_tracker/core/utils/record_ownership.dart';
 import 'package:progression_tracker/features/workout/domain/services/exercise_alias_resolver.dart';
 import 'package:progression_tracker/features/workout/domain/services/exercise_catalog.dart';
 
@@ -32,18 +35,26 @@ import 'package:progression_tracker/features/workout/domain/services/exercise_ca
 /// `SyncAction` (missing `dataType`/`dataId`) so the outbox has exactly
 /// one schema. Legacy entries were never actionable by any live code
 /// path, so dropping them loses nothing syncable.
+///
+/// Schema v4 (Wave 3): separates encrypted `custom_foods` out of the
+/// shared `foods` catalog cache box and normalizes case/whitespace on
+/// account-scoped keys (`custom_foods`, `user_profile`, `diet_plan`) using
+/// [RecordOwnershipRules.storageScope].
 class DataMigration {
-  static const int currentSchemaVersion = 3;
+  static const int currentSchemaVersion = 4;
   static const int currentAliasMigrationVersion = 1;
   static const String _versionKey = 'schema_version';
   static const String _aliasMigrationKey = 'exercise_alias_migration_version';
 
-  static const String _appSettingsBox = 'app_settings';
-  static const String _workoutsBox = 'workouts';
-  static const String _mealsBox = 'meals';
-  static const String _bodyEntriesBox = 'body_entries';
-  static const String _activeProgramBox = 'active_program';
-  static const String _syncQueueBox = 'sync_queue';
+  static const String _appSettingsBox = HiveManager.appSettingsBox;
+  static const String _workoutsBox = HiveManager.workoutsBox;
+  static const String _mealsBox = HiveManager.mealsBox;
+  static const String _bodyEntriesBox = HiveManager.bodyEntriesBox;
+  static const String _activeProgramBox = HiveManager.activeProgramBox;
+  static const String _syncQueueBox = HiveManager.syncQueueBox;
+  static const String _foodsBox = HiveManager.foodsBox;
+  static const String _userProfileBox = HiveManager.userProfileBox;
+  static const String _dietPlanBox = HiveManager.dietPlanBox;
 
   /// Runs pending migrations. [currentUserId] is the signed-in user's id
   /// (from the stored auth session); when null, the userId backfill is
@@ -75,6 +86,9 @@ class DataMigration {
         if (stored < 3) {
           await _purgeLegacySyncQueueEntries();
         }
+        if (stored < 4) {
+          await _migrateV4CustomFoodsAndStorageScopes();
+        }
 
         await settings.put(_versionKey, '$currentSchemaVersion');
         AppLogger.debug('✅ [Migration] Local schema is now '
@@ -99,13 +113,13 @@ class DataMigration {
   // ---------------------------------------------------------------------------
 
   static Future<void> _migrateWorkouts(String? userId) async {
-    final box = _openMapBox(_workoutsBox);
+    final box = await _ensureMapBox(_workoutsBox);
     if (box == null) return;
     var changed = 0;
     for (final key in box.keys.toList()) {
       final raw = box.get(key);
       if (raw is! Map) continue;
-      final record = _deepCopy(raw);
+      final record = deepCastMap(raw);
       var dirty = false;
 
       dirty |= _setIfAbsent(record, 'userId', userId);
@@ -130,13 +144,13 @@ class DataMigration {
   }
 
   static Future<void> _migrateMeals(String? userId) async {
-    final box = _openMapBox(_mealsBox);
+    final box = await _ensureMapBox(_mealsBox);
     if (box == null) return;
     var changed = 0;
     for (final key in box.keys.toList()) {
       final raw = box.get(key);
       if (raw is! Map) continue;
-      final record = _deepCopy(raw);
+      final record = deepCastMap(raw);
       var dirty = false;
 
       dirty |= _setIfAbsent(record, 'userId', userId);
@@ -153,13 +167,13 @@ class DataMigration {
   }
 
   static Future<void> _migrateBodyEntries(String? userId) async {
-    final box = _openMapBox(_bodyEntriesBox);
+    final box = await _ensureMapBox(_bodyEntriesBox);
     if (box == null) return;
     var changed = 0;
     for (final key in box.keys.toList()) {
       final raw = box.get(key);
       if (raw is! Map) continue;
-      final record = _deepCopy(raw);
+      final record = deepCastMap(raw);
       if (_setIfAbsent(record, 'userId', userId)) {
         await box.put(key, record);
         changed++;
@@ -171,13 +185,13 @@ class DataMigration {
   }
 
   static Future<void> _migrateActivePrograms(String? userId) async {
-    final box = _openMapBox(_activeProgramBox);
+    final box = await _ensureMapBox(_activeProgramBox);
     if (box == null) return;
     var changed = 0;
     for (final key in box.keys.toList()) {
       final raw = box.get(key);
       if (raw is! Map) continue;
-      final record = _deepCopy(raw);
+      final record = deepCastMap(raw);
       var dirty = false;
 
       dirty |= _setIfAbsent(record, 'userId', userId);
@@ -215,7 +229,7 @@ class DataMigration {
   /// v3: drop retired `SyncOperation` entries from the outbox box,
   /// keeping only `SyncAction`-shaped records.
   static Future<void> _purgeLegacySyncQueueEntries() async {
-    final box = _openMapBox(_syncQueueBox);
+    final box = await _ensureMapBox(_syncQueueBox);
     if (box == null) return;
     var removed = 0;
     for (final key in box.keys.toList()) {
@@ -234,16 +248,187 @@ class DataMigration {
     );
   }
 
+  /// v4: move custom foods out of the unencrypted `foods` catalog cache box
+  /// into dedicated encrypted `custom_foods`, and normalize storage-scope
+  /// key casing across `custom_foods`, `user_profile`, and `diet_plan`.
+  static Future<void> _migrateV4CustomFoodsAndStorageScopes() async {
+    await _migrateCustomFoodsFromFoodsBox();
+    await _normalizeCustomFoodsKeys();
+    await _normalizeUserProfileKeys();
+    await _normalizeDietPlanKeys();
+  }
+
+  static Future<void> _migrateCustomFoodsFromFoodsBox() async {
+    final foodsBox = await _ensureDynamicBox(_foodsBox);
+    if (foodsBox == null) return;
+
+    final customKeys = foodsBox.keys.where((key) {
+      final k = key.toString();
+      return k == 'custom_foods' || k.startsWith('custom_foods_');
+    }).toList();
+    if (customKeys.isEmpty) return;
+
+    final customFoodsBox = await HiveManager.ensureCustomFoodsBox();
+    var movedKeys = 0;
+
+    for (final legacyKey in customKeys) {
+      final rawVal = foodsBox.get(legacyKey);
+      if (rawVal is! List) continue;
+      final legacyItems = deepCastList(rawVal);
+
+      final kStr = legacyKey.toString();
+      final String targetKey;
+      if (kStr == 'custom_foods') {
+        targetKey = 'custom_foods';
+      } else {
+        final rawUid = kStr.substring('custom_foods_'.length);
+        final scoped = RecordOwnershipRules.storageScope(rawUid);
+        targetKey = scoped == null ? 'custom_foods' : 'custom_foods_$scoped';
+      }
+
+      final existingRaw = customFoodsBox.get(targetKey);
+      final merged = existingRaw is List
+          ? deepCastList(existingRaw)
+          : <dynamic>[];
+      final existingIds = <String>{
+        for (final item in merged)
+          if (item is Map && item['id'] != null) item['id'].toString(),
+      };
+      for (final item in legacyItems) {
+        if (item is Map && item['id'] != null) {
+          final id = item['id'].toString();
+          if (!existingIds.add(id)) continue;
+        }
+        merged.add(item);
+      }
+
+      await customFoodsBox.put(targetKey, merged);
+      final persisted = customFoodsBox.get(targetKey);
+      if (persisted is List && persisted.length >= legacyItems.length) {
+        await foodsBox.delete(legacyKey);
+        movedKeys++;
+      }
+    }
+
+    AppLogger.debug(
+      '📊 [Migration] custom_foods: migrated $movedKeys key(s) from foods box',
+    );
+  }
+
+  static Future<void> _normalizeCustomFoodsKeys() async {
+    final customFoodsBox = await _ensureDynamicBox(HiveManager.customFoodsBox);
+    if (customFoodsBox == null) return;
+    for (final key in customFoodsBox.keys.toList()) {
+      final kStr = key.toString();
+      if (!kStr.startsWith('custom_foods_')) continue;
+      final rawUid = kStr.substring('custom_foods_'.length);
+      final scoped = RecordOwnershipRules.storageScope(rawUid);
+      if (scoped == null) continue;
+      final targetKey = 'custom_foods_$scoped';
+      if (targetKey == kStr) continue;
+
+      final rawVal = customFoodsBox.get(key);
+      if (rawVal is! List) continue;
+      final legacyItems = deepCastList(rawVal);
+      final existingRaw = customFoodsBox.get(targetKey);
+      final merged = existingRaw is List
+          ? deepCastList(existingRaw)
+          : <dynamic>[];
+      final existingIds = <String>{
+        for (final item in merged)
+          if (item is Map && item['id'] != null) item['id'].toString(),
+      };
+      for (final item in legacyItems) {
+        if (item is Map && item['id'] != null) {
+          if (!existingIds.add(item['id'].toString())) continue;
+        }
+        merged.add(item);
+      }
+      await customFoodsBox.put(targetKey, merged);
+      if (customFoodsBox.containsKey(targetKey)) {
+        await customFoodsBox.delete(key);
+      }
+    }
+  }
+
+  static Future<void> _normalizeUserProfileKeys() async {
+    final profileBox = await _ensureDynamicBox(_userProfileBox);
+    if (profileBox == null) return;
+    const prefixes = ['profile_', 'onboarded_', 'draft_step_', 'draft_data_'];
+
+    for (final key in profileBox.keys.toList()) {
+      final kStr = key.toString();
+      String? matchedPrefix;
+      for (final prefix in prefixes) {
+        if (kStr.startsWith(prefix)) {
+          matchedPrefix = prefix;
+          break;
+        }
+      }
+      if (matchedPrefix == null) continue;
+      final rawUid = kStr.substring(matchedPrefix.length);
+      final scoped = RecordOwnershipRules.storageScope(rawUid);
+      if (scoped == null) continue;
+      final targetKey = '$matchedPrefix$scoped';
+      if (targetKey == kStr) continue;
+
+      if (!profileBox.containsKey(targetKey)) {
+        await profileBox.put(targetKey, profileBox.get(key));
+      }
+      if (profileBox.containsKey(targetKey)) {
+        await profileBox.delete(key);
+      }
+    }
+  }
+
+  static Future<void> _normalizeDietPlanKeys() async {
+    final dietPlanBox = await _ensureMapBox(_dietPlanBox);
+    if (dietPlanBox == null) return;
+    const prefix = 'current_diet_plan_';
+
+    for (final key in dietPlanBox.keys.toList()) {
+      final kStr = key.toString();
+      if (!kStr.startsWith(prefix)) continue;
+      final rawUid = kStr.substring(prefix.length);
+      final scoped = RecordOwnershipRules.storageScope(rawUid);
+      if (scoped == null) continue;
+      final targetKey = '$prefix$scoped';
+      if (targetKey == kStr) continue;
+
+      final rawVal = dietPlanBox.get(key);
+      if (rawVal is Map && !dietPlanBox.containsKey(targetKey)) {
+        await dietPlanBox.put(targetKey, deepCastMap(rawVal));
+      }
+      if (dietPlanBox.containsKey(targetKey)) {
+        await dietPlanBox.delete(key);
+      }
+    }
+  }
+
   // ---------------------------------------------------------------------------
   // Helpers
   // ---------------------------------------------------------------------------
 
-  static Box<Map>? _openMapBox(String name) {
-    if (!Hive.isBoxOpen(name)) {
-      AppLogger.debug('⚠️ [Migration] Box "$name" not open; skipping');
-      return null;
+  static Future<Box<Map>?> _ensureMapBox(String name) async {
+    if (Hive.isBoxOpen(name)) {
+      return Hive.box<Map>(name);
     }
-    return Hive.box<Map>(name);
+    if (await Hive.boxExists(name)) {
+      return HiveManager.ensureOpen<Map>(name);
+    }
+    AppLogger.debug('⚠️ [Migration] Box "$name" does not exist; skipping');
+    return null;
+  }
+
+  static Future<Box<dynamic>?> _ensureDynamicBox(String name) async {
+    if (Hive.isBoxOpen(name)) {
+      return Hive.box<dynamic>(name);
+    }
+    if (await Hive.boxExists(name)) {
+      return HiveManager.ensureOpen<dynamic>(name);
+    }
+    AppLogger.debug('⚠️ [Migration] Box "$name" does not exist; skipping');
+    return null;
   }
 
   /// Sets [key] to [value] when the record has no value for it yet.
@@ -276,12 +461,12 @@ class DataMigration {
   static Future<int> migrateCanonicalExerciseAliases() async {
     var totalUpdated = 0;
 
-    final workoutsBox = _openMapBox(_workoutsBox);
+    final workoutsBox = await _ensureMapBox(_workoutsBox);
     if (workoutsBox != null) {
       for (final key in workoutsBox.keys.toList()) {
         final raw = workoutsBox.get(key);
         if (raw is! Map) continue;
-        final record = _deepCopy(raw);
+        final record = deepCastMap(raw);
         var dirty = false;
         final exercises = record['exercises'];
         if (exercises is List) {
@@ -298,12 +483,12 @@ class DataMigration {
       }
     }
 
-    final programBox = _openMapBox(_activeProgramBox);
+    final programBox = await _ensureMapBox(_activeProgramBox);
     if (programBox != null) {
       for (final key in programBox.keys.toList()) {
         final raw = programBox.get(key);
         if (raw is! Map) continue;
-        final record = _deepCopy(raw);
+        final record = deepCastMap(raw);
         var dirty = false;
         final program = record['program'];
         if (program is Map) {
@@ -331,20 +516,5 @@ class DataMigration {
     }
 
     return totalUpdated;
-  }
-
-  /// Deep-copies a raw Hive map into mutable, string-keyed structures, so
-  /// edits never touch Hive's in-memory objects before `put`, and written
-  /// values match the `Map<String, dynamic>` shape the data sources use.
-  static Map<String, dynamic> _deepCopy(Map source) {
-    return source.map(
-      (key, value) => MapEntry(key.toString(), _copyValue(value)),
-    );
-  }
-
-  static dynamic _copyValue(dynamic value) {
-    if (value is Map) return _deepCopy(value);
-    if (value is List) return value.map(_copyValue).toList();
-    return value;
   }
 }

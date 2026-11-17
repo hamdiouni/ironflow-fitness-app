@@ -1,112 +1,81 @@
+import 'package:flutter/foundation.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:progression_tracker/core/services/hive_encryption_service.dart';
 import 'package:progression_tracker/core/utils/app_logger.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 
+/// Central Hive lifecycle manager for IronFlow (Wave 3.1 / 3.2).
+///
+/// - **Tier-1 critical boot boxes** (`auth_session`, `user_profile`,
+///   `app_settings`, `active_workout_state`) open concurrently in [initialize]
+///   before `runApp`.
+/// - **Tier-2 feature boxes** open lazily on first access through [ensureOpen]
+///   with single-flight coalescing and encryption policy enforcement.
+/// - Static catalog boxes (`exercises`, `foods`) are never cleared by
+///   [clearAll].
 class HiveManager {
-  static const String _workoutBox = 'workouts';
-  static const String _nutritionBox = 'nutrition';
-  static const String _programBox = 'programs';
-  static const String _userBox = 'user';
-  static const String _settingsBox = 'settings';
-  static const String _syncQueueBox = 'sync_queue';
-  static const String _exercisesBox = 'exercises';
-  static const String _foodsBox = 'foods';
-  static const String _bodyEntriesBox = 'body_entries';
-  static const String _streakBox = 'streak';
-  static const String _notificationSettingsBox = 'notification_settings';
-  static const String _mealsBox = 'meals';
-  static const String _macroTargetsBox = 'macro_targets';
-  static const String _appSettingsBox = 'app_settings';
-  static const String _authSessionBox = 'auth_session';
-  static const String _insightCacheBox = 'insight_cache';
-  static const String _userProfileBox = 'user_profile';
-  static const String _aiChatHistoryBox = 'ai_chat_history';
-  // Boxes previously opened lazily by datasources and therefore missed by
-  // clearAll()/data-wipe inventories (DATABASE_AND_SYNC_AUDIT F-04).
-  static const String _activeProgramBox = 'active_program';
-  static const String _dietPlanBox = 'diet_plan';
-  static const String _foodItemsFullBox = 'food_items_full';
-  static const String _activeWorkoutStateBox = 'active_workout_state';
+  static const String workoutsBox = 'workouts';
+  static const String nutritionBox = 'nutrition';
+  static const String programsBox = 'programs';
+  static const String userBox = 'user';
+  static const String settingsBox = 'settings';
+  static const String syncQueueBox = 'sync_queue';
+  static const String exercisesBox = 'exercises';
+  static const String foodsBox = 'foods';
+  static const String customFoodsBox = 'custom_foods';
+  static const String bodyEntriesBox = 'body_entries';
+  static const String streakBox = 'streak';
+  static const String notificationSettingsBox = 'notification_settings';
+  static const String mealsBox = 'meals';
+  static const String macroTargetsBox = 'macro_targets';
+  static const String appSettingsBox = 'app_settings';
+  static const String authSessionBox = 'auth_session';
+  static const String insightCacheBox = 'insight_cache';
+  static const String userProfileBox = 'user_profile';
+  static const String aiChatHistoryBox = 'ai_chat_history';
+  static const String activeProgramBox = 'active_program';
+  static const String dietPlanBox = 'diet_plan';
+  static const String foodItemsFullBox = 'food_items_full';
+  static const String activeWorkoutStateBox = 'active_workout_state';
 
-  static HiveEncryptionService _encryptionService = HiveEncryptionService();
+  static const Set<String> tier1Boxes = {
+    authSessionBox,
+    userProfileBox,
+    appSettingsBox,
+    activeWorkoutStateBox,
+  };
 
-  /// Allows tests to inject a custom [HiveEncryptionService].
-  static set encryptionService(HiveEncryptionService service) {
-    _encryptionService = service;
+  static const Set<String> protectedCatalogBoxes = {
+    exercisesBox,
+    foodsBox,
+  };
+
+  /// Active encryption service (reassignable in unit tests via [resetForTest]).
+  static HiveEncryptionService encryptionService = HiveEncryptionService();
+  static final Map<String, Future<Box<dynamic>>> _inFlightOpens = {};
+
+  /// Resets in-memory test state between test cases.
+  @visibleForTesting
+  static void resetForTest() {
+    _inFlightOpens.clear();
+    encryptionService = HiveEncryptionService();
   }
 
   static Future<Box<E>> _openBoxWithPolicy<E>(String boxName) async {
     if (HiveEncryptionService.sensitiveBoxes.contains(boxName)) {
-      return _encryptionService.openEncryptedBox<E>(boxName);
+      return encryptionService.openEncryptedBox<E>(boxName);
     }
     return Hive.openBox<E>(boxName);
   }
 
-  /// Initialize Hive
+  /// Initializes Hive with Flutter paths and opens all Tier-1 boxes
+  /// concurrently before `runApp`. Tier-2 boxes stay closed until accessed via
+  /// [ensureOpen].
   static Future<void> initialize() async {
     try {
       AppLogger.debug('📊 [Hive] Initializing Hive...');
       await Hive.initFlutter();
       AppLogger.debug('✅ [Hive] Hive initialized successfully');
-      
-      // Open boxes with Map type to match datasource expectations
-      final mapBoxes = [
-        _workoutBox,
-        _nutritionBox,
-        _programBox,
-        _userBox,
-        _settingsBox,
-        _syncQueueBox,
-        _exercisesBox,
-        _bodyEntriesBox,
-        _streakBox,
-        _notificationSettingsBox,
-        _mealsBox,
-        _macroTargetsBox,
-        _insightCacheBox,
-        _activeProgramBox,
-        _dietPlanBox,
-        _foodItemsFullBox,
-      ];
-      
-      for (final boxName in mapBoxes) {
-        AppLogger.debug('📊 [Hive] Opening box: $boxName...');
-        await _openBoxWithPolicy<Map>(boxName);
-        AppLogger.debug('✅ [Hive] Box opened: $boxName');
-      }
-
-      // Open foods box (stores heterogeneous items: List, String, int)
-      AppLogger.debug('📊 [Hive] Opening box: $_foodsBox...');
-      await _openBoxWithPolicy<dynamic>(_foodsBox);
-      AppLogger.debug('✅ [Hive] Box opened: $_foodsBox');
-      
-      // Open app settings box separately (String type)
-      AppLogger.debug('📊 [Hive] Opening box: $_appSettingsBox...');
-      await _openBoxWithPolicy<String>(_appSettingsBox);
-      AppLogger.debug('✅ [Hive] Box opened: $_appSettingsBox');
-      
-      // Open auth session box (dynamic type for flexibility)
-      AppLogger.debug('📊 [Hive] Opening box: $_authSessionBox...');
-      await _openBoxWithPolicy<dynamic>(_authSessionBox);
-      AppLogger.debug('✅ [Hive] Box opened: $_authSessionBox');
-
-      // Open user profile box (dynamic type for profile JSON and onboarded flag)
-      AppLogger.debug('📊 [Hive] Opening box: $_userProfileBox...');
-      await _openBoxWithPolicy<dynamic>(_userProfileBox);
-      AppLogger.debug('✅ [Hive] Box opened: $_userProfileBox');
-
-      // Open AI chat history box (dynamic type for persisted messages)
-      AppLogger.debug('📊 [Hive] Opening box: $_aiChatHistoryBox...');
-      await _openBoxWithPolicy<dynamic>(_aiChatHistoryBox);
-      AppLogger.debug('✅ [Hive] Box opened: $_aiChatHistoryBox');
-
-      // Open active workout state box (dynamic type, matches
-      // WorkoutStateManager's openBox<dynamic> expectation)
-      AppLogger.debug('📊 [Hive] Opening box: $_activeWorkoutStateBox...');
-      await _openBoxWithPolicy<dynamic>(_activeWorkoutStateBox);
-      AppLogger.debug('✅ [Hive] Box opened: $_activeWorkoutStateBox');
-      
-      AppLogger.debug('✅ [Hive] All boxes opened successfully');
+      await _openTier1BoxesConcurrently();
     } catch (e, stackTrace) {
       AppLogger.debug('❌ [Hive] Failed to initialize: $e');
       AppLogger.debug('🔍 [Hive] Stack trace: $stackTrace');
@@ -114,194 +83,215 @@ class HiveManager {
     }
   }
 
-  /// Get workout box
-  static Box<Map> getWorkoutBox() {
-    AppLogger.debug('📊 [Hive] Getting workout box...');
-    final box = Hive.box<Map>(_workoutBox);
-    AppLogger.debug('✅ [Hive] Workout box retrieved (isOpen: ${box.isOpen})');
-    return box;
+  /// Test-friendly initialization for an explicit filesystem [directoryPath].
+  @visibleForTesting
+  static Future<void> initializeForDirectory(String directoryPath) async {
+    Hive.init(directoryPath);
+    await _openTier1BoxesConcurrently();
   }
 
-  /// Get nutrition box
-  static Box<Map> getNutritionBox() {
-    AppLogger.debug('📊 [Hive] Getting nutrition box...');
-    final box = Hive.box<Map>(_nutritionBox);
-    AppLogger.debug('✅ [Hive] Nutrition box retrieved (isOpen: ${box.isOpen})');
-    return box;
+  static Future<void> _openTier1BoxesConcurrently() async {
+    await encryptionService.warmCache();
+    await Future.wait([
+      ensureOpen<dynamic>(authSessionBox),
+      ensureOpen<dynamic>(userProfileBox),
+      ensureOpen<String>(appSettingsBox),
+      ensureOpen<dynamic>(activeWorkoutStateBox),
+    ]);
+    AppLogger.debug('✅ [Hive] All Tier-1 boxes opened concurrently');
   }
 
-  /// Get program box
-  static Box<Map> getProgramBox() {
-    AppLogger.debug('📊 [Hive] Getting program box...');
-    final box = Hive.box<Map>(_programBox);
-    AppLogger.debug('✅ [Hive] Program box retrieved (isOpen: ${box.isOpen})');
-    return box;
+  /// Ensures [boxName] is open using single-flight coalescing and encryption
+  /// policy. Safe to call concurrently from multiple datasources.
+  static Future<Box<E>> ensureOpen<E>(String boxName) async {
+    if (Hive.isBoxOpen(boxName)) {
+      return Hive.box<E>(boxName);
+    }
+    if (!kIsWeb) {
+      try {
+        if ((Hive as dynamic).homePath == null) {
+          throw HiveError(
+            'Hive is not initialized; cannot open box "$boxName".',
+          );
+        }
+      } on HiveError {
+        rethrow;
+      } catch (_) {}
+    }
+    final existingFuture = _inFlightOpens[boxName];
+    if (existingFuture != null) {
+      await existingFuture;
+      return Hive.box<E>(boxName);
+    }
+
+    final future = _openBoxWithPolicy<E>(boxName);
+    _inFlightOpens[boxName] = future;
+    try {
+      return await future;
+    } finally {
+      _inFlightOpens.remove(boxName);
+    }
   }
 
-  /// Get user box
-  static Box<Map> getUserBox() {
-    AppLogger.debug('📊 [Hive] Getting user box...');
-    final box = Hive.box<Map>(_userBox);
-    AppLogger.debug('✅ [Hive] User box retrieved (isOpen: ${box.isOpen})');
-    return box;
+  static Box<E> _requireOpenBox<E>(String boxName) {
+    if (!Hive.isBoxOpen(boxName)) {
+      throw StateError(
+        'Hive box "$boxName" is not open. Call HiveManager.ensureOpen("$boxName") first.',
+      );
+    }
+    return Hive.box<E>(boxName);
   }
 
-  /// Get settings box
-  static Box<Map> getSettingsBox() {
-    AppLogger.debug('📊 [Hive] Getting settings box...');
-    final box = Hive.box<Map>(_settingsBox);
-    AppLogger.debug('✅ [Hive] Settings box retrieved (isOpen: ${box.isOpen})');
-    return box;
-  }
+  // --- Typed async ensure helpers for Tier-1 & Tier-2 callers ---
 
-  /// Get sync queue box
-  static Box<Map> getSyncQueueBox() {
-    AppLogger.debug('📊 [Hive] Getting sync queue box...');
-    final box = Hive.box<Map>(_syncQueueBox);
-    AppLogger.debug('✅ [Hive] Sync queue box retrieved (isOpen: ${box.isOpen})');
-    return box;
-  }
+  static Future<Box<Map>> ensureWorkoutBox() => ensureOpen<Map>(workoutsBox);
+  static Future<Box<Map>> ensureNutritionBox() => ensureOpen<Map>(nutritionBox);
+  static Future<Box<Map>> ensureProgramBox() => ensureOpen<Map>(programsBox);
+  static Future<Box<Map>> ensureUserBox() => ensureOpen<Map>(userBox);
+  static Future<Box<Map>> ensureSettingsBox() => ensureOpen<Map>(settingsBox);
+  static Future<Box<Map>> ensureSyncQueueBox() => ensureOpen<Map>(syncQueueBox);
+  static Future<Box<Map>> ensureExercisesBox() => ensureOpen<Map>(exercisesBox);
+  static Future<Box<dynamic>> ensureFoodsBox() => ensureOpen<dynamic>(foodsBox);
+  static Future<Box<dynamic>> ensureCustomFoodsBox() =>
+      ensureOpen<dynamic>(customFoodsBox);
+  static Future<Box<Map>> ensureBodyEntriesBox() =>
+      ensureOpen<Map>(bodyEntriesBox);
+  static Future<Box<Map>> ensureStreakBox() => ensureOpen<Map>(streakBox);
+  static Future<Box<Map>> ensureNotificationSettingsBox() =>
+      ensureOpen<Map>(notificationSettingsBox);
+  static Future<Box<Map>> ensureMealsBox() => ensureOpen<Map>(mealsBox);
+  static Future<Box<Map>> ensureMacroTargetsBox() =>
+      ensureOpen<Map>(macroTargetsBox);
+  static Future<Box<String>> ensureAppSettingsBox() =>
+      ensureOpen<String>(appSettingsBox);
+  static Future<Box<dynamic>> ensureAuthSessionBox() =>
+      ensureOpen<dynamic>(authSessionBox);
+  static Future<Box<Map>> ensureInsightCacheBox() =>
+      ensureOpen<Map>(insightCacheBox);
+  static Future<Box<dynamic>> ensureUserProfileBox() =>
+      ensureOpen<dynamic>(userProfileBox);
+  static Future<Box<dynamic>> ensureAIChatHistoryBox() =>
+      ensureOpen<dynamic>(aiChatHistoryBox);
+  static Future<Box<Map>> ensureActiveProgramBox() =>
+      ensureOpen<Map>(activeProgramBox);
+  static Future<Box<Map>> ensureDietPlanBox() => ensureOpen<Map>(dietPlanBox);
+  static Future<Box<Map>> ensureFoodItemsFullBox() =>
+      ensureOpen<Map>(foodItemsFullBox);
+  static Future<Box<dynamic>> ensureActiveWorkoutStateBox() =>
+      ensureOpen<dynamic>(activeWorkoutStateBox);
 
-  /// Get exercises box
-  static Box<Map> getExercisesBox() {
-    AppLogger.debug('📊 [Hive] Getting exercises box...');
-    final box = Hive.box<Map>(_exercisesBox);
-    AppLogger.debug('✅ [Hive] Exercises box retrieved (isOpen: ${box.isOpen})');
-    return box;
-  }
+  // --- Synchronous getters (strictly guarded — never silently auto-open unencrypted) ---
 
-  /// Get foods box
-  static Box getFoodsBox() {
-    AppLogger.debug('📊 [Hive] Getting foods box...');
-    final box = Hive.box(_foodsBox);
-    AppLogger.debug('✅ [Hive] Foods box retrieved (isOpen: ${box.isOpen})');
-    return box;
-  }
+  static Box<Map> getWorkoutBox() => _requireOpenBox<Map>(workoutsBox);
+  static Box<Map> getNutritionBox() => _requireOpenBox<Map>(nutritionBox);
+  static Box<Map> getProgramBox() => _requireOpenBox<Map>(programsBox);
+  static Box<Map> getUserBox() => _requireOpenBox<Map>(userBox);
+  static Box<Map> getSettingsBox() => _requireOpenBox<Map>(settingsBox);
+  static Box<Map> getSyncQueueBox() => _requireOpenBox<Map>(syncQueueBox);
+  static Box<Map> getExercisesBox() => _requireOpenBox<Map>(exercisesBox);
+  static Box<dynamic> getFoodsBox() => _requireOpenBox<dynamic>(foodsBox);
+  static Box<dynamic> getCustomFoodsBox() =>
+      _requireOpenBox<dynamic>(customFoodsBox);
+  static Box<Map> getBodyEntriesBox() => _requireOpenBox<Map>(bodyEntriesBox);
+  static Box<Map> getStreakBox() => _requireOpenBox<Map>(streakBox);
+  static Box<Map> getNotificationSettingsBox() =>
+      _requireOpenBox<Map>(notificationSettingsBox);
+  static Box<Map> getMealsBox() => _requireOpenBox<Map>(mealsBox);
+  static Box<Map> getMacroTargetsBox() => _requireOpenBox<Map>(macroTargetsBox);
+  static Box<String> getAppSettingsBox() =>
+      _requireOpenBox<String>(appSettingsBox);
+  static Box<dynamic> getAuthSessionBox() =>
+      _requireOpenBox<dynamic>(authSessionBox);
+  static Box<Map> getInsightCacheBox() => _requireOpenBox<Map>(insightCacheBox);
 
-  /// Get body entries box
-  static Box<Map> getBodyEntriesBox() {
-    AppLogger.debug('📊 [Hive] Getting body entries box...');
-    final box = Hive.box<Map>(_bodyEntriesBox);
-    AppLogger.debug('✅ [Hive] Body entries box retrieved (isOpen: ${box.isOpen})');
-    return box;
+  /// Returns an already-open box (regardless of element type) or opens it
+  /// through encryption policy if its file exists on disk. Returns null if the
+  /// box is neither open nor stored locally (avoids eagerly materializing
+  /// unopened Tier-2 boxes during a wipe).
+  static Future<BoxBase<dynamic>?> ensureExistingBoxForWipe(
+    String boxName,
+  ) async {
+    if (Hive.isBoxOpen(boxName)) {
+      try {
+        return Hive.box<dynamic>(boxName);
+      } catch (_) {}
+      try {
+        return Hive.box<Map>(boxName);
+      } catch (_) {}
+      try {
+        return Hive.box<String>(boxName);
+      } catch (_) {}
+      return null;
+    }
+    if (await Hive.boxExists(boxName)) {
+      return ensureOpen<dynamic>(boxName);
+    }
+    return null;
   }
+  static Box<dynamic> getUserProfileBox() =>
+      _requireOpenBox<dynamic>(userProfileBox);
+  static Box<dynamic> getAIChatHistoryBox() =>
+      _requireOpenBox<dynamic>(aiChatHistoryBox);
 
-  /// Get streak box
-  static Box<Map> getStreakBox() {
-    AppLogger.debug('📊 [Hive] Getting streak box...');
-    final box = Hive.box<Map>(_streakBox);
-    AppLogger.debug('✅ [Hive] Streak box retrieved (isOpen: ${box.isOpen})');
-    return box;
-  }
-
-  /// Get notification settings box
-  static Box<Map> getNotificationSettingsBox() {
-    AppLogger.debug('📊 [Hive] Getting notification settings box...');
-    final box = Hive.box<Map>(_notificationSettingsBox);
-    AppLogger.debug('✅ [Hive] Notification settings box retrieved (isOpen: ${box.isOpen})');
-    return box;
-  }
-
-  /// Get meals box
-  static Box<Map> getMealsBox() {
-    AppLogger.debug('📊 [Hive] Getting meals box...');
-    final box = Hive.box<Map>(_mealsBox);
-    AppLogger.debug('✅ [Hive] Meals box retrieved (isOpen: ${box.isOpen})');
-    return box;
-  }
-
-  /// Get macro targets box
-  static Box<Map> getMacroTargetsBox() {
-    AppLogger.debug('📊 [Hive] Getting macro targets box...');
-    final box = Hive.box<Map>(_macroTargetsBox);
-    AppLogger.debug('✅ [Hive] Macro targets box retrieved (isOpen: ${box.isOpen})');
-    return box;
-  }
-
-  /// Get app settings box
-  static Box<String> getAppSettingsBox() {
-    AppLogger.debug('📊 [Hive] Getting app settings box...');
-    final box = Hive.box<String>(_appSettingsBox);
-    AppLogger.debug('✅ [Hive] App settings box retrieved (isOpen: ${box.isOpen})');
-    return box;
-  }
-
-  /// Get insight cache box
-  static Box<Map> getInsightCacheBox() {
-    AppLogger.debug('📊 [Hive] Getting insight cache box...');
-    final box = Hive.box<Map>(_insightCacheBox);
-    AppLogger.debug('✅ [Hive] Insight cache box retrieved (isOpen: ${box.isOpen})');
-    return box;
-  }
-
-  /// Get user profile box
-  static Box getUserProfileBox() {
-    AppLogger.debug('📊 [Hive] Getting user profile box...');
-    final box = Hive.box(_userProfileBox);
-    AppLogger.debug('✅ [Hive] User profile box retrieved (isOpen: ${box.isOpen})');
-    return box;
-  }
-
-  /// Get AI chat history box
-  static Box getAIChatHistoryBox() {
-    AppLogger.debug('📊 [Hive] Getting AI chat history box...');
-    final box = Hive.box(_aiChatHistoryBox);
-    AppLogger.debug('✅ [Hive] AI chat history box retrieved (isOpen: ${box.isOpen})');
-    return box;
-  }
-
-  /// Clear all boxes
+  /// Clears all user and state boxes while preserving static catalog boxes
+  /// (`exercises` and `foods`).
   static Future<void> clearAll() async {
     try {
-      AppLogger.debug('📊 [Hive] Clearing all boxes...');
-      
-      final boxNames = [
-        _workoutBox,
-        _nutritionBox,
-        _programBox,
-        _userBox,
-        _settingsBox,
-        _syncQueueBox,
-        _exercisesBox,
-        _foodsBox,
-        _bodyEntriesBox,
-        _streakBox,
-        _notificationSettingsBox,
-        _mealsBox,
-        _macroTargetsBox,
+      AppLogger.debug('📊 [Hive] Clearing user boxes (preserving catalogs)...');
+
+      const mapUserBoxes = [
+        workoutsBox,
+        nutritionBox,
+        programsBox,
+        userBox,
+        settingsBox,
+        syncQueueBox,
+        bodyEntriesBox,
+        streakBox,
+        notificationSettingsBox,
+        mealsBox,
+        macroTargetsBox,
+        insightCacheBox,
+        activeProgramBox,
+        dietPlanBox,
+        foodItemsFullBox,
       ];
-      
-      for (final boxName in boxNames) {
-        AppLogger.debug('📊 [Hive] Clearing box: $boxName...');
+      const dynamicUserBoxes = [
+        customFoodsBox,
+        activeWorkoutStateBox,
+        authSessionBox,
+        userProfileBox,
+        aiChatHistoryBox,
+      ];
+
+      for (final boxName in mapUserBoxes) {
+        if (protectedCatalogBoxes.contains(boxName)) continue;
+        if (Hive.isBoxOpen(boxName)) {
+          await Hive.box<Map>(boxName).clear();
+        } else if (await Hive.boxExists(boxName)) {
+          final box = await ensureOpen<Map>(boxName);
+          await box.clear();
+        }
       }
-      AppLogger.debug('📊 [Hive] Clearing box: $_appSettingsBox...');
-      
-      await Future.wait([
-        Hive.box<Map>(_workoutBox).clear(),
-        Hive.box<Map>(_nutritionBox).clear(),
-        Hive.box<Map>(_programBox).clear(),
-        Hive.box<Map>(_userBox).clear(),
-        Hive.box<Map>(_settingsBox).clear(),
-        Hive.box<Map>(_syncQueueBox).clear(),
-        Hive.box<Map>(_exercisesBox).clear(),
-        Hive.box(_foodsBox).clear(),
-        Hive.box<Map>(_bodyEntriesBox).clear(),
-        Hive.box<Map>(_streakBox).clear(),
-        Hive.box<Map>(_notificationSettingsBox).clear(),
-        Hive.box<Map>(_mealsBox).clear(),
-        Hive.box<Map>(_macroTargetsBox).clear(),
-        Hive.box<String>(_appSettingsBox).clear(),
-        Hive.box<Map>(_insightCacheBox).clear(),
-        Hive.box<Map>(_activeProgramBox).clear(),
-        Hive.box<Map>(_dietPlanBox).clear(),
-        Hive.box<Map>(_foodItemsFullBox).clear(),
-        Hive.box<dynamic>(_activeWorkoutStateBox).clear(),
-        Hive.box(_authSessionBox).clear(),
-        Hive.box(_userProfileBox).clear(),
-        Hive.box(_aiChatHistoryBox).clear(),
-      ]);
-      
-      AppLogger.debug('✅ [Hive] All boxes cleared successfully');
+
+      for (final boxName in dynamicUserBoxes) {
+        if (protectedCatalogBoxes.contains(boxName)) continue;
+        if (Hive.isBoxOpen(boxName)) {
+          await Hive.box<dynamic>(boxName).clear();
+        } else if (await Hive.boxExists(boxName)) {
+          final box = await ensureOpen<dynamic>(boxName);
+          await box.clear();
+        }
+      }
+
+      if (Hive.isBoxOpen(appSettingsBox)) {
+        await Hive.box<String>(appSettingsBox).clear();
+      } else if (await Hive.boxExists(appSettingsBox)) {
+        final box = await ensureAppSettingsBox();
+        await box.clear();
+      }
+
+      AppLogger.debug('✅ [Hive] All user boxes cleared successfully');
     } catch (e, stackTrace) {
       AppLogger.debug('❌ [Hive] Failed to clear boxes: $e');
       AppLogger.debug('🔍 [Hive] Stack trace: $stackTrace');
@@ -309,10 +299,11 @@ class HiveManager {
     }
   }
 
-  /// Close all boxes
+  /// Close all open boxes.
   static Future<void> closeAll() async {
     try {
       AppLogger.debug('📊 [Hive] Closing all boxes...');
+      _inFlightOpens.clear();
       await Hive.close();
       AppLogger.debug('✅ [Hive] All boxes closed successfully');
     } catch (e, stackTrace) {

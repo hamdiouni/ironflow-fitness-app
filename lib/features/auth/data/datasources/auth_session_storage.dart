@@ -1,11 +1,11 @@
-import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:hive/hive.dart';
+import 'package:progression_tracker/core/utils/app_logger.dart';
+import 'package:progression_tracker/core/utils/hive_manager.dart';
 import '../../domain/entities/user.dart';
 
 /// Local session storage using Hive
 /// Stores user session data for persistence across app restarts
 class AuthSessionStorage {
-  static const String _boxName = 'auth_session';
   static const String _userIdKey = 'user_id';
   static const String _emailKey = 'email';
   static const String _displayNameKey = 'display_name';
@@ -14,7 +14,7 @@ class AuthSessionStorage {
   static const String _updatedAtKey = 'updated_at';
   static const String _isLoggedInKey = 'is_logged_in';
 
-  Box<dynamic> get _box => Hive.box(_boxName);
+  Box<dynamic> get _box => HiveManager.getAuthSessionBox();
 
   /// Save user session
   Future<void> saveSession(User user) async {

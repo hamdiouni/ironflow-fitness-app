@@ -1,26 +1,8 @@
 import 'package:hive/hive.dart';
+import '../../../../core/utils/hive_json_utils.dart';
+import '../../../../core/utils/hive_manager.dart';
+import '../../../../core/utils/record_ownership.dart';
 import '../models/diet_plan_state_model.dart';
-
-/// Recursively casts a [Map<dynamic, dynamic>] (as returned by Hive) to
-/// [Map<String, dynamic>] so that json_serializable can deserialize it.
-Map<String, dynamic> _deepCast(Map<dynamic, dynamic> map) {
-  return map.map((key, value) {
-    if (value is Map) {
-      return MapEntry(key.toString(), _deepCast(value));
-    } else if (value is List) {
-      return MapEntry(key.toString(), _deepCastList(value));
-    }
-    return MapEntry(key.toString(), value);
-  });
-}
-
-List<dynamic> _deepCastList(List<dynamic> list) {
-  return list.map((item) {
-    if (item is Map) return _deepCast(item);
-    if (item is List) return _deepCastList(item);
-    return item;
-  }).toList();
-}
 
 /// Hive data source for diet plan storage.
 ///
@@ -30,16 +12,14 @@ List<dynamic> _deepCastList(List<dynamic> list) {
 /// only when no per-account plan exists yet, mirroring
 /// `UserProfileStorage`.
 class HiveDietPlanDataSource {
-  static const String boxName = 'diet_plan';
+  static const String boxName = HiveManager.dietPlanBox;
   static const String key = 'current_diet_plan';
 
-  Future<Box<Map>> get _box async => Hive.isBoxOpen(boxName)
-      ? Hive.box<Map>(boxName)
-      : await Hive.openBox<Map>(boxName);
+  Future<Box<Map>> get _box => HiveManager.ensureDietPlanBox();
 
   String? _sessionUserId() {
-    if (!Hive.isBoxOpen('auth_session')) return null;
-    final sessionBox = Hive.box('auth_session');
+    if (!Hive.isBoxOpen(HiveManager.authSessionBox)) return null;
+    final sessionBox = HiveManager.getAuthSessionBox();
     final isLoggedIn =
         sessionBox.get('is_logged_in', defaultValue: false) as bool;
     if (!isLoggedIn) return null;
@@ -48,10 +28,8 @@ class HiveDietPlanDataSource {
   }
 
   String? _resolveUserId(String? userId) {
-    if (userId != null && userId.isNotEmpty) return userId;
-    // Compatibility fallback for existing direct callers. Provider-wired
-    // code passes the current user id explicitly (A2).
-    return _sessionUserId();
+    final raw = (userId != null && userId.isNotEmpty) ? userId : _sessionUserId();
+    return RecordOwnershipRules.storageScope(raw);
   }
 
   String _scopedKey(String userId) => '${key}_$userId';
@@ -97,7 +75,7 @@ class HiveDietPlanDataSource {
 
     if (json == null) return null;
 
-    return DietPlanStateModel.fromJson(_deepCast(json));
+    return DietPlanStateModel.fromJson(deepCastMap(json));
   }
 
   /// Clear the diet plan from local storage for [userId], when supplied.

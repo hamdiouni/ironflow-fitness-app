@@ -1,13 +1,12 @@
 import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hive/hive.dart';
+import 'package:progression_tracker/core/utils/hive_manager.dart';
 
 /// Timezone manager for handling timezone-aware timestamps.
 ///
 /// All timestamps are stored in UTC and converted to user's timezone for display.
 /// **Validates: Requirements 10.3 (Timezone Support)**
 class TimezoneManager {
-  static const String _boxName = 'app_settings';
   static const String _timezoneKey = 'timezone_offset';
 
   /// Get the current timezone offset in hours.
@@ -22,9 +21,7 @@ class TimezoneManager {
   /// Get the saved timezone offset from storage.
   static Future<int> getSavedTimezoneOffset() async {
     try {
-      final box = Hive.isBoxOpen(_boxName)
-          ? Hive.box<String>(_boxName)
-          : await Hive.openBox<String>(_boxName);
+      final box = await HiveManager.ensureAppSettingsBox();
       final val = box.get(_timezoneKey);
       if (val != null) {
         return int.tryParse(val) ?? getCurrentTimezoneOffset();
@@ -39,9 +36,7 @@ class TimezoneManager {
   /// Save the timezone offset to storage.
   static Future<void> saveTimezoneOffset(int offsetHours) async {
     try {
-      final box = Hive.isBoxOpen(_boxName)
-          ? Hive.box<String>(_boxName)
-          : await Hive.openBox<String>(_boxName);
+      final box = await HiveManager.ensureAppSettingsBox();
       await box.put(_timezoneKey, offsetHours.toString());
     } catch (e) {
       AppLogger.debug('Error saving timezone: $e');

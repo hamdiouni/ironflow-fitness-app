@@ -194,7 +194,7 @@ void main() {
       // Second run is strictly idempotent (0 records rewritten)
       final updatedAgain = await DataMigration.migrateCanonicalExerciseAliases();
       expect(updatedAgain, 0);
-      expect(settingsBox.get('schema_version'), '3');
+      expect(settingsBox.get('schema_version'), '4');
       expect(settingsBox.get('exercise_alias_migration_version'), '1');
     });
   });

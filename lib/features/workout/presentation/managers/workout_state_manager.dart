@@ -1,7 +1,8 @@
 import 'dart:convert';
 
-import 'package:hive_flutter/hive_flutter.dart';
+import 'package:hive/hive.dart';
 
+import '../../../../core/utils/hive_manager.dart';
 import '../../../../core/utils/record_ownership.dart';
 import '../../data/models/workout_model.dart';
 import '../../domain/entities/entities.dart';
@@ -17,7 +18,6 @@ import '../../domain/repositories/rest_timer_state_persistence.dart';
 /// account-scoped keys. Existing direct constructions that do not pass
 /// a user id keep using the legacy keys.
 class WorkoutStateManager implements RestTimerStatePersistence {
-  static const String _boxName = 'active_workout_state';
   static const String _workoutKey = 'current_workout';
   static const String _startTimeKey = 'start_time';
   static const String _restTimerEndTimeKey = 'rest_timer_end_time';
@@ -25,13 +25,9 @@ class WorkoutStateManager implements RestTimerStatePersistence {
 
   Box<dynamic>? _box;
 
-  /// Opens the Hive box (reusing the already-open encrypted box from HiveManager when present).
+  /// Opens the Hive box through [HiveManager] (reusing encrypted Tier-1 state).
   Future<void> init() async {
-    if (Hive.isBoxOpen(_boxName)) {
-      _box = Hive.box<dynamic>(_boxName);
-      return;
-    }
-    _box = await Hive.openBox<dynamic>(_boxName);
+    _box = await HiveManager.ensureActiveWorkoutStateBox();
   }
 
   Box<dynamic> get _openBox {

@@ -1,6 +1,7 @@
+import 'package:hive/hive.dart';
 import 'package:progression_tracker/core/utils/app_logger.dart';
+import 'package:progression_tracker/core/utils/hive_manager.dart';
 import 'package:progression_tracker/core/utils/record_ownership.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import '../../domain/entities/sync_action.dart';
 
 /// Data source for managing sync queue in Hive
@@ -40,14 +41,11 @@ abstract class HiveSyncQueueDataSource {
 }
 
 class HiveSyncQueueDataSourceImpl implements HiveSyncQueueDataSource {
-  static const String _boxName = 'sync_queue';
   Box<Map>? _box;
 
   Future<Box<Map>> get _syncBox async {
     if (_box == null || !_box!.isOpen) {
-      _box = Hive.isBoxOpen(_boxName)
-          ? Hive.box<Map>(_boxName)
-          : await Hive.openBox<Map>(_boxName);
+      _box = await HiveManager.ensureSyncQueueBox();
     }
     return _box!;
   }
@@ -182,7 +180,7 @@ class HiveSyncQueueDataSourceImpl implements HiveSyncQueueDataSource {
   // The old device-global `sync_cursor_<dataType>` key is deliberately
   // not adopted: it cannot be attributed to either account safely, so
   // each account starts with one safe full pull instead.
-  static const String _settingsBox = 'app_settings';
+  static const String _settingsBox = HiveManager.appSettingsBox;
   static String _cursorKey(String dataType, String userId) =>
       'sync_cursor_${dataType}_${RecordOwnershipRules.storageScope(userId)}';
 
@@ -193,8 +191,9 @@ class HiveSyncQueueDataSourceImpl implements HiveSyncQueueDataSource {
   }) async {
     try {
       if (!Hive.isBoxOpen(_settingsBox)) return null;
-      final raw =
-          Hive.box<String>(_settingsBox).get(_cursorKey(dataType, userId));
+      final raw = HiveManager.getAppSettingsBox().get(
+        _cursorKey(dataType, userId),
+      );
       return raw == null ? null : DateTime.tryParse(raw);
     } catch (e) {
       AppLogger.debug('Error reading sync cursor for $dataType: $e');
@@ -210,7 +209,7 @@ class HiveSyncQueueDataSourceImpl implements HiveSyncQueueDataSource {
   }) async {
     try {
       if (!Hive.isBoxOpen(_settingsBox)) return;
-      await Hive.box<String>(_settingsBox)
+      await HiveManager.getAppSettingsBox()
           .put(_cursorKey(dataType, userId), time.toIso8601String());
     } catch (e) {
       AppLogger.debug('Error saving sync cursor for $dataType: $e');
@@ -226,7 +225,7 @@ class HiveSyncQueueDataSourceImpl implements HiveSyncQueueDataSource {
   Future<bool> hasCompletedInitialPush(String userId) async {
     try {
       if (!Hive.isBoxOpen(_settingsBox)) return false;
-      return Hive.box<String>(_settingsBox)
+      return HiveManager.getAppSettingsBox()
           .containsKey(_initialPushKey(userId));
     } catch (e) {
       AppLogger.debug('Error reading initial-push marker: $e');
@@ -238,7 +237,7 @@ class HiveSyncQueueDataSourceImpl implements HiveSyncQueueDataSource {
   Future<void> markInitialPushComplete(String userId) async {
     try {
       if (!Hive.isBoxOpen(_settingsBox)) return;
-      await Hive.box<String>(_settingsBox).put(
+      await HiveManager.getAppSettingsBox().put(
         _initialPushKey(userId),
         DateTime.now().toIso8601String(),
       );

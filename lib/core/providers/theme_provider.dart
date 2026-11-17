@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 
 import '../constants/app_theme.dart';
+import '../utils/hive_manager.dart';
 
 /// Provider for managing app theme (dark/light mode).
 ///
@@ -13,7 +14,7 @@ final themeProvider =
 
 /// Notifier for managing theme state (Wave 3.2).
 class ThemeNotifier extends Notifier<ThemeMode> {
-  static const String _boxName = 'app_settings';
+  static const String _boxName = HiveManager.appSettingsBox;
   static const String _themeKey = 'theme_mode';
   bool _disposed = false;
 
@@ -21,44 +22,32 @@ class ThemeNotifier extends Notifier<ThemeMode> {
   ThemeMode build() {
     _disposed = false;
     ref.onDispose(() => _disposed = true);
+    if (Hive.isBoxOpen(_boxName)) {
+      final box = HiveManager.getAppSettingsBox();
+      final themeStr = box.get(_themeKey, defaultValue: 'dark');
+      return themeStr == 'light' ? ThemeMode.light : ThemeMode.dark;
+    }
     _loadTheme();
     return ThemeMode.dark;
   }
 
-  /// Loads theme preference from Hive storage.
+  /// Loads theme preference from Hive storage when app_settings was not yet
+  /// opened synchronously at build time.
   Future<void> _loadTheme() async {
     try {
       AppLogger.debug('📊 [Theme] Loading theme from Hive...');
-      
-      // Wait for Hive to be fully initialized
-      await Future.delayed(const Duration(milliseconds: 500));
+      final box = await HiveManager.ensureAppSettingsBox();
       if (_disposed) return;
-      
-      AppLogger.debug('🔍 [Theme] Checking if box is open: $_boxName');
-      if (!Hive.isBoxOpen(_boxName)) {
-        AppLogger.debug('⚠️ [Theme] Box $_boxName is not open yet, using default theme');
-        state = ThemeMode.dark;
-        AppLogger.debug('🔍 [Theme] Default theme set: ${state.name}');
-        return;
-      }
-      
-      AppLogger.debug('✅ [Theme] Box is open: $_boxName');
-      final box = Hive.box<String>(_boxName);
+
       final themeStr = box.get(_themeKey, defaultValue: 'dark');
-      
-      AppLogger.debug('✅ [Theme] Theme loaded from Hive: $themeStr');
-      AppLogger.debug('🔍 [Theme] Current state before update: ${state.name}');
-      
       final theme = themeStr == 'light' ? ThemeMode.light : ThemeMode.dark;
       state = theme;
-      
-      AppLogger.debug('✅ [Theme] Theme state updated to: ${state.name}');
+      AppLogger.debug('✅ [Theme] Theme loaded from Hive: $themeStr');
     } catch (e, stackTrace) {
       AppLogger.debug('❌ [Theme] Failed to load theme: $e');
       AppLogger.debug('🔍 [Theme] Stack trace: $stackTrace');
       if (!_disposed) {
         state = ThemeMode.dark;
-        AppLogger.debug('🔍 [Theme] Fallback theme set: ${state.name}');
       }
     }
   }
@@ -92,16 +81,9 @@ class ThemeNotifier extends Notifier<ThemeMode> {
       state = theme;
       AppLogger.debug('✅ [Theme] State updated to: ${state.name}');
       
-      AppLogger.debug('🔍 [Theme] Checking if box is open: $_boxName');
-      if (!Hive.isBoxOpen(_boxName)) {
-        AppLogger.debug('⚠️ [Theme] Box $_boxName is not open, cannot save theme');
-        return;
-      }
-      
-      AppLogger.debug('✅ [Theme] Box is open: $_boxName');
-      final box = Hive.box<String>(_boxName);
+      final box = await HiveManager.ensureAppSettingsBox();
       final themeStr = theme == ThemeMode.light ? 'light' : 'dark';
-      
+
       AppLogger.debug('📊 [Theme] Saving theme to Hive: $themeStr');
       await box.put(_themeKey, themeStr);
       

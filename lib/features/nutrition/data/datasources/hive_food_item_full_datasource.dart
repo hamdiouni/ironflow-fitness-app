@@ -1,32 +1,13 @@
 import 'package:hive/hive.dart';
+import '../../../../core/utils/hive_json_utils.dart';
+import '../../../../core/utils/hive_manager.dart';
 import '../models/food_item_full_model.dart';
-
-/// Recursively casts a [Map<dynamic, dynamic>] (as returned by Hive) to
-/// [Map<String, dynamic>] so that json_serializable can deserialize it.
-Map<String, dynamic> _deepCast(Map<dynamic, dynamic> map) {
-  return map.map((key, value) {
-    if (value is Map) {
-      return MapEntry(key.toString(), _deepCast(value));
-    } else if (value is List) {
-      return MapEntry(key.toString(), _deepCastList(value));
-    }
-    return MapEntry(key.toString(), value);
-  });
-}
-
-List<dynamic> _deepCastList(List<dynamic> list) {
-  return list.map((item) {
-    if (item is Map) return _deepCast(item);
-    if (item is List) return _deepCastList(item);
-    return item;
-  }).toList();
-}
 
 /// Hive data source for storing and retrieving FoodItemFull entities
 class HiveFoodItemFullDataSource {
-  static const String boxName = 'food_items_full';
+  static const String boxName = HiveManager.foodItemsFullBox;
 
-  Future<Box<Map>> get _box async => await Hive.openBox<Map>(boxName);
+  Future<Box<Map>> get _box => HiveManager.ensureFoodItemsFullBox();
 
   /// Save a food item to local storage
   Future<void> saveFoodItem(FoodItemFullModel foodItem) async {
@@ -46,7 +27,7 @@ class HiveFoodItemFullDataSource {
   Future<List<FoodItemFullModel>> getAllFoodItems() async {
     final box = await _box;
     final foodItems = box.values
-        .map((json) => FoodItemFullModel.fromJson(_deepCast(json)))
+        .map((json) => FoodItemFullModel.fromJson(deepCastMap(json)))
         .toList();
 
     // Sort by name
@@ -59,7 +40,7 @@ class HiveFoodItemFullDataSource {
     final box = await _box;
     final json = box.get(id);
     if (json == null) return null;
-    return FoodItemFullModel.fromJson(_deepCast(json));
+    return FoodItemFullModel.fromJson(deepCastMap(json));
   }
 
   /// Search food items by name
@@ -67,7 +48,7 @@ class HiveFoodItemFullDataSource {
     final box = await _box;
     final lowerQuery = query.toLowerCase();
     final foodItems = box.values
-        .map((json) => FoodItemFullModel.fromJson(_deepCast(json)))
+        .map((json) => FoodItemFullModel.fromJson(deepCastMap(json)))
         .where((item) => item.name.toLowerCase().contains(lowerQuery))
         .toList();
 
@@ -79,7 +60,7 @@ class HiveFoodItemFullDataSource {
   Future<List<FoodItemFullModel>> filterByCategory(String category) async {
     final box = await _box;
     final foodItems = box.values
-        .map((json) => FoodItemFullModel.fromJson(_deepCast(json)))
+        .map((json) => FoodItemFullModel.fromJson(deepCastMap(json)))
         .where((item) => item.category == category)
         .toList();
 
@@ -93,7 +74,7 @@ class HiveFoodItemFullDataSource {
   ) async {
     final box = await _box;
     final foodItems = box.values
-        .map((json) => FoodItemFullModel.fromJson(_deepCast(json)))
+        .map((json) => FoodItemFullModel.fromJson(deepCastMap(json)))
         .where((item) => tags.every((tag) => item.dietaryTags.contains(tag)))
         .toList();
 

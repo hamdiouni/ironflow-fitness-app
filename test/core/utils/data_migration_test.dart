@@ -47,7 +47,7 @@ void main() {
     } catch (_) {}
   });
 
-  test('v1 data is backfilled to v3 without overwriting existing owners',
+  test('v1 data is backfilled to v4 without overwriting existing owners',
       () async {
     await reset();
 
@@ -101,7 +101,7 @@ void main() {
 
     await DataMigration.runIfNeeded(currentUserId: 'Alice');
 
-    expect(settingsBox.get('schema_version'), '3');
+    expect(settingsBox.get('schema_version'), '4');
 
     final migratedWorkout = asMap(workoutsBox.get('w-legacy'));
     expect(migratedWorkout['userId'], 'Alice');
@@ -133,13 +133,13 @@ void main() {
 
     expect(syncQueueBox.keys.toList(), <dynamic>['valid-action']);
 
-    // A second run at v3 must not restamp records for another account.
+    // A second run at v4 must not restamp records for another account.
     await DataMigration.runIfNeeded(currentUserId: 'bob');
     expect(asMap(workoutsBox.get('w-legacy'))['userId'], 'Alice');
-    expect(settingsBox.get('schema_version'), '3');
+    expect(settingsBox.get('schema_version'), '4');
   });
 
-  test('v2 to v3 only purges legacy sync queue entries', () async {
+  test('v2 to v4 purges legacy sync queue entries without restamping v1 fields', () async {
     await reset(schemaVersion: '2');
     await workoutsBox.put('w-v2', <String, dynamic>{
       'id': 'w-v2',
@@ -160,11 +160,11 @@ void main() {
     final workout = asMap(workoutsBox.get('w-v2'));
     expect(workout.containsKey('userId'), isFalse);
     expect(syncQueueBox.keys.toList(), <dynamic>['valid-action']);
-    expect(settingsBox.get('schema_version'), '3');
+    expect(settingsBox.get('schema_version'), '4');
   });
 
   test('current schema version is a no-op', () async {
-    await reset(schemaVersion: '3');
+    await reset(schemaVersion: '4');
     await workoutsBox.put('w-current', <String, dynamic>{
       'id': 'w-current',
       'date': '2026-01-02T03:04:05.000',
@@ -177,7 +177,7 @@ void main() {
 
     expect(asMap(workoutsBox.get('w-current')).containsKey('userId'), isFalse);
     expect(syncQueueBox.containsKey('legacy-operation'), isTrue);
-    expect(settingsBox.get('schema_version'), '3');
+    expect(settingsBox.get('schema_version'), '4');
   });
 
   test('incomplete records do not prevent the version from advancing',
@@ -196,7 +196,7 @@ void main() {
 
     await DataMigration.runIfNeeded();
 
-    expect(settingsBox.get('schema_version'), '3');
+    expect(settingsBox.get('schema_version'), '4');
     expect(workoutsBox.containsKey('bad-workout'), isTrue);
     expect(mealsBox.containsKey('bad-meal'), isTrue);
     expect(bodyEntriesBox.containsKey('bad-body'), isTrue);

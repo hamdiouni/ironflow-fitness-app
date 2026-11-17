@@ -1,27 +1,8 @@
 import 'package:hive/hive.dart';
+import 'package:progression_tracker/core/utils/hive_json_utils.dart';
+import 'package:progression_tracker/core/utils/hive_manager.dart';
 import 'package:progression_tracker/core/utils/record_ownership.dart';
 import '../models/active_program_model.dart';
-
-/// Recursively casts a [Map<dynamic, dynamic>] (as returned by Hive) to
-/// [Map<String, dynamic>] so that json_serializable can deserialize it.
-Map<String, dynamic> _deepCast(Map<dynamic, dynamic> map) {
-  return map.map((key, value) {
-    if (value is Map) {
-      return MapEntry(key.toString(), _deepCast(value));
-    } else if (value is List) {
-      return MapEntry(key.toString(), _deepCastList(value));
-    }
-    return MapEntry(key.toString(), value);
-  });
-}
-
-List<dynamic> _deepCastList(List<dynamic> list) {
-  return list.map((item) {
-    if (item is Map) return _deepCast(item);
-    if (item is List) return _deepCastList(item);
-    return item;
-  }).toList();
-}
 
 /// Hive data source for active program storage.
 ///
@@ -32,14 +13,14 @@ List<dynamic> _deepCastList(List<dynamic> list) {
 /// are adopted once only when no scoped value exists yet and the stored
 /// model is legacy/unowned or already belongs to the requesting user.
 class HiveActiveProgramDataSource {
-  static const String boxName = 'active_program';
+  static const String boxName = HiveManager.activeProgramBox;
   static const String key = 'current_active_program';
   static const String archivedKey = 'archived_active_program';
 
   Future<Box<Map>?> get _box async {
     try {
       if (Hive.isBoxOpen(boxName)) {
-        return Hive.box<Map>(boxName);
+        return HiveManager.ensureActiveProgramBox();
       }
       try {
         if ((Hive as dynamic).homePath == null) {
@@ -48,15 +29,15 @@ class HiveActiveProgramDataSource {
       } catch (_) {
         return null;
       }
-      return await Hive.openBox<Map>(boxName);
+      return await HiveManager.ensureActiveProgramBox();
     } catch (_) {
       return null;
     }
   }
 
   String? _sessionUserId() {
-    if (!Hive.isBoxOpen('auth_session')) return null;
-    final sessionBox = Hive.box('auth_session');
+    if (!Hive.isBoxOpen(HiveManager.authSessionBox)) return null;
+    final sessionBox = HiveManager.getAuthSessionBox();
     final isLoggedIn =
         sessionBox.get('is_logged_in', defaultValue: false) as bool;
     if (!isLoggedIn) return null;
@@ -97,7 +78,7 @@ class HiveActiveProgramDataSource {
 
   ActiveProgramModel? _parseOwned(Map? json, String? userId) {
     if (json == null) return null;
-    final model = ActiveProgramModel.fromJson(_deepCast(json));
+    final model = ActiveProgramModel.fromJson(deepCastMap(json));
     return _belongsTo(model, userId) ? model : null;
   }
 

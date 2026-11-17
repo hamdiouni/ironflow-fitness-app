@@ -1,15 +1,15 @@
-import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:progression_tracker/core/utils/app_logger.dart';
+import 'package:progression_tracker/core/utils/hive_manager.dart';
 import 'package:progression_tracker/core/utils/record_ownership.dart';
 import 'package:progression_tracker/features/ai/domain/entities/chat_message.dart';
 import 'package:progression_tracker/features/auth/presentation/providers/auth_notifier.dart';
 
 /// Persists and loads AI chat message history using Hive.
 class AIChatStorage {
-  static const String _boxName = 'ai_chat_history';
   static const String _messagesKey = 'messages';
 
   /// Account that owns chat history read/written by this instance.
@@ -52,10 +52,7 @@ class AIChatStorage {
 
   Future<Box?> get _box async {
     try {
-      if (Hive.isBoxOpen(_boxName)) {
-        return Hive.box(_boxName);
-      }
-      return await Hive.openBox(_boxName);
+      return await HiveManager.ensureAIChatHistoryBox();
     } catch (e) {
       if (kDebugMode) {
         AppLogger.debug('⚠️ [AIChatStorage] Hive not initialized or inaccessible: $e');

@@ -6,7 +6,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'firebase_options.dart';
 import 'core/config/flavor_config.dart';
 import 'core/constants/app_theme.dart';
@@ -59,17 +58,8 @@ void main() async {
       );
     });
 
-    // Load environment variables if available (e.g., local debug build)
-    try {
-      await dotenv.load(fileName: ".env");
-      if (kDebugMode) {
-        AppLogger.debug('✓ Local .env file loaded');
-      }
-    } catch (_) {
-      if (kDebugMode) {
-        AppLogger.debug('ℹ️ No .env asset bundled; using environment configuration (--dart-define)');
-      }
-    }
+    // Environment configuration comes from --dart-define / --dart-define-from-file.
+    // Avoid blocking startup loading an unbundled .env asset (Wave 3.2).
 
     // Initialize Firebase (best-effort so 100% offline cold boot never blocks UI)
     try {

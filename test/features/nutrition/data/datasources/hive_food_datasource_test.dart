@@ -11,6 +11,7 @@ import 'package:progression_tracker/features/nutrition/domain/entities/food_item
 void main() {
   late Directory tempDir;
   late Box foodsBox;
+  late Box customFoodsBox;
 
   FoodItemFullModel food({required String id, required String name}) {
     return FoodItemFullModel(
@@ -50,10 +51,12 @@ void main() {
     tempDir = Directory.systemTemp.createTempSync('hive_food_scope_');
     Hive.init(tempDir.path);
     foodsBox = await Hive.openBox('foods');
+    customFoodsBox = await Hive.openBox('custom_foods');
   });
 
   setUp(() async {
     await foodsBox.clear();
+    await customFoodsBox.clear();
   });
 
   tearDownAll(() async {
@@ -89,9 +92,11 @@ void main() {
       (await aliceSource.getCachedFoods()).map((item) => item.id),
       isNot(contains('bob-food')),
     );
-    expect(foodsBox.containsKey('custom_foods_alice'), isTrue);
-    expect(foodsBox.containsKey('custom_foods_bob'), isTrue);
-    expect(foodsBox.containsKey('custom_foods'), isFalse);
+    expect(customFoodsBox.containsKey('custom_foods_alice'), isTrue);
+    expect(customFoodsBox.containsKey('custom_foods_bob'), isTrue);
+    expect(customFoodsBox.containsKey('custom_foods'), isFalse);
+    expect(foodsBox.containsKey('custom_foods_alice'), isFalse);
+    expect(foodsBox.containsKey('custom_foods_bob'), isFalse);
   });
 
   test('legacy custom foods are adopted only by the first scoped user',
@@ -107,7 +112,8 @@ void main() {
       <String>['legacy-food'],
     );
     expect(await bobSource.getCustomFoods(), isEmpty);
-    expect(foodsBox.containsKey('custom_foods_alice'), isTrue);
+    expect(customFoodsBox.containsKey('custom_foods_alice'), isTrue);
+    expect(customFoodsBox.containsKey('custom_foods'), isFalse);
     expect(foodsBox.containsKey('custom_foods'), isFalse);
   });
 

@@ -1,10 +1,10 @@
-import 'package:progression_tracker/core/utils/app_logger.dart';
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../../core/platform/platform_file_ops.dart';
+import '../../../../core/utils/app_logger.dart';
+import '../../../../core/utils/hive_manager.dart';
 import '../../../../core/utils/record_ownership.dart';
 import '../../../../core/utils/secure_storage_manager.dart';
 import '../../../notifications/domain/services/notification_service.dart';
@@ -16,46 +16,59 @@ import '../../../notifications/domain/services/notification_service.dart';
 class LocalDataWiper {
   final SecureStorageManager _secureStorage;
   final NotificationService _notificationService;
-  final Directory? _privateDocumentsDir;
+  final String? _privateDocumentsPath;
 
   LocalDataWiper({
     SecureStorageManager? secureStorage,
     NotificationService? notificationService,
-    Directory? privateDocumentsDir,
+    Object? privateDocumentsDir,
+    String? privateDocumentsPath,
   })  : _secureStorage = secureStorage ?? SecureStorageManager(),
         _notificationService = notificationService ?? NotificationService(),
-        _privateDocumentsDir = privateDocumentsDir;
+        _privateDocumentsPath =
+            privateDocumentsPath ?? _extractPath(privateDocumentsDir);
+
+  static String? _extractPath(Object? directory) {
+    if (directory == null) return null;
+    if (directory is String) return directory;
+    try {
+      return (directory as dynamic).path as String?;
+    } catch (_) {
+      return null;
+    }
+  }
 
   /// User-scoped Hive boxes that store user training, nutrition, biometrics, and telemetry.
   /// Keep in sync with HiveManager's box inventory (DATABASE_AND_SYNC_AUDIT F-04):
   /// 'active_program', 'diet_plan', 'active_workout_state' were previously missing,
   /// leaking the previous account's program/diet/in-progress workout after a wipe.
   static const List<String> _userScopedBoxNames = [
-    'workouts',
-    'nutrition',
-    'programs',
-    'user',
-    'settings',
-    'sync_queue',
-    'body_entries',
-    'streak',
-    'notification_settings',
-    'meals',
-    'macro_targets',
-    'insight_cache',
-    'user_profile',
-    'ai_chat_history',
-    'active_program',
-    'diet_plan',
-    'food_items_full',
-    'active_workout_state',
+    HiveManager.workoutsBox,
+    HiveManager.nutritionBox,
+    HiveManager.programsBox,
+    HiveManager.userBox,
+    HiveManager.settingsBox,
+    HiveManager.syncQueueBox,
+    HiveManager.bodyEntriesBox,
+    HiveManager.streakBox,
+    HiveManager.notificationSettingsBox,
+    HiveManager.mealsBox,
+    HiveManager.macroTargetsBox,
+    HiveManager.insightCacheBox,
+    HiveManager.userProfileBox,
+    HiveManager.aiChatHistoryBox,
+    HiveManager.activeProgramBox,
+    HiveManager.dietPlanBox,
+    HiveManager.foodItemsFullBox,
+    HiveManager.customFoodsBox,
+    HiveManager.activeWorkoutStateBox,
   ];
 
   /// Core bundled dataset boxes that MUST NEVER BE CLEARED OR DELETED.
   static const Set<String> _protectedDatasetBoxes = {
-    'foods',
+    HiveManager.foodsBox,
     'food_items',
-    'exercises',
+    HiveManager.exercisesBox,
   };
 
   /// Completely wipes all user-scoped data from this device for [userId].
@@ -117,10 +130,15 @@ class LocalDataWiper {
     }
 
     final keyStr = key.toString();
+    final targetScope = RecordOwnershipRules.storageScope(targetUserId);
+
     for (final prefix in const [
-      'active_program_',
-      'macro_targets_',
-      'nutrition_targets_',
+      'custom_foods_',
+      'profile_',
+      'onboarded_',
+      'draft_step_',
+      'draft_data_',
+      'current_diet_plan_',
       'current_workout_',
       'start_time_',
       'rest_timer_end_time_',
@@ -128,7 +146,24 @@ class LocalDataWiper {
     ]) {
       if (keyStr.startsWith(prefix)) {
         final keyOwner = keyStr.substring(prefix.length);
-        if (keyOwner.isNotEmpty && keyOwner != targetUserId) {
+        final keyScope = RecordOwnershipRules.storageScope(keyOwner);
+        if (keyScope != null && keyScope != targetScope) {
+          return true;
+        }
+        return false;
+      }
+    }
+
+    for (final prefix in const [
+      'active_program_',
+      'macro_targets_',
+      'nutrition_targets_',
+    ]) {
+      if (keyStr.startsWith(prefix)) {
+        final keyOwner = keyStr.substring(prefix.length);
+        if (keyOwner.isNotEmpty &&
+            keyOwner != targetUserId &&
+            RecordOwnershipRules.storageScope(keyOwner) != targetScope) {
           return true;
         }
       }
@@ -137,8 +172,8 @@ class LocalDataWiper {
     return false;
   }
 
-  Future<void> _wipeEntriesInTypedBox<T>(
-    Box<T> box,
+  Future<void> _wipeEntriesInTypedBox(
+    BoxBase<dynamic> box,
     String targetUserId,
   ) async {
     if (targetUserId.isEmpty) {
@@ -147,7 +182,7 @@ class LocalDataWiper {
     }
     final keysToDelete = <dynamic>[];
     for (final key in box.keys) {
-      final val = box.get(key);
+      final val = box is Box<dynamic> ? box.get(key) : (box as dynamic).get(key);
       if (!_belongsToAnotherUser(key, val, targetUserId)) {
         keysToDelete.add(key);
       }
@@ -158,23 +193,9 @@ class LocalDataWiper {
   }
 
   Future<void> _clearBoxSafely(String boxName, {String userId = ''}) async {
-    if (Hive.isBoxOpen(boxName)) {
-      try {
-        await _wipeEntriesInTypedBox<dynamic>(Hive.box<dynamic>(boxName), userId);
-        return;
-      } catch (_) {}
-      try {
-        await _wipeEntriesInTypedBox<Map>(Hive.box<Map>(boxName), userId);
-        return;
-      } catch (_) {}
-      try {
-        await _wipeEntriesInTypedBox<String>(Hive.box<String>(boxName), userId);
-        return;
-      } catch (_) {}
-    } else {
-      final box = await Hive.openBox<dynamic>(boxName);
-      await _wipeEntriesInTypedBox<dynamic>(box, userId);
-    }
+    final box = await HiveManager.ensureExistingBoxForWipe(boxName);
+    if (box == null) return;
+    await _wipeEntriesInTypedBox(box, userId);
   }
 
   Future<void> _wipeHiveBoxes(String userId, bool keepAuthSession) async {
@@ -192,26 +213,30 @@ class LocalDataWiper {
       }
     }
 
-    // Wipe custom foods from the 'foods' box while preserving bundled foods and foods_cache
+    // Legacy fallback: wipe pre-v4 custom_foods keys from 'foods' if present
+    // while preserving bundled foods and foods_cache.
     try {
-      final foodsBox = Hive.isBoxOpen('foods')
-          ? Hive.box<dynamic>('foods')
-          : await Hive.openBox<dynamic>('foods');
-      if (userId.isNotEmpty) {
-        final scopedId = RecordOwnershipRules.storageScope(userId);
-        if (scopedId != null && scopedId.isNotEmpty) {
-          await foodsBox.delete('custom_foods_$scopedId');
+      final foodsBox =
+          await HiveManager.ensureExistingBoxForWipe(HiveManager.foodsBox);
+      if (foodsBox != null) {
+        if (userId.isNotEmpty) {
+          final scopedId = RecordOwnershipRules.storageScope(userId);
+          if (scopedId != null && scopedId.isNotEmpty) {
+            await foodsBox.delete('custom_foods_$scopedId');
+          }
+          await foodsBox.delete('custom_foods_$userId');
+        } else {
+          final customKeys = foodsBox.keys
+              .where((k) => k.toString().startsWith('custom_foods'))
+              .toList();
+          await foodsBox.deleteAll(customKeys);
         }
-        await foodsBox.delete('custom_foods_$userId');
-      } else {
-        final customKeys = foodsBox.keys
-            .where((k) => k.toString().startsWith('custom_foods'))
-            .toList();
-        await foodsBox.deleteAll(customKeys);
       }
     } catch (e) {
       if (kDebugMode) {
-        AppLogger.debug('⚠️ [LocalDataWiper] Could not wipe custom foods from foods box: $e');
+        AppLogger.debug(
+          '⚠️ [LocalDataWiper] Could not wipe legacy custom foods from foods box: $e',
+        );
       }
     }
 
@@ -237,59 +262,56 @@ class LocalDataWiper {
     // Auth session box if full account deletion
     if (!keepAuthSession) {
       try {
-        await _clearBoxSafely('auth_session');
+        await _clearBoxSafely(HiveManager.authSessionBox);
       } catch (_) {}
     }
   }
 
   Future<void> _wipeUserFiles() async {
+    if (!PlatformFileOps.supportsLocalFileSystem) return;
     try {
-      Directory? baseDir;
-      if (_privateDocumentsDir != null) {
-        baseDir = _privateDocumentsDir;
-      } else {
+      String? basePath = _privateDocumentsPath;
+      if (basePath == null || basePath.isEmpty) {
         try {
-          baseDir = await getApplicationDocumentsDirectory();
+          basePath = await PlatformFileOps.resolveAppDocumentsPath();
         } catch (_) {
-          baseDir = null;
+          basePath = null;
         }
       }
 
-      if (baseDir == null || !await baseDir.exists()) return;
+      if (basePath == null || basePath.isEmpty) return;
 
       // 1. Wipe safety snapshots directory
-      final snapshotsDir = Directory('${baseDir.path}/safety_snapshots');
-      if (await snapshotsDir.exists()) {
-        final files = snapshotsDir.listSync().whereType<File>();
-        for (final f in files) {
-          try {
-            await f.delete();
-          } catch (_) {}
-        }
+      final snapshotsFiles = await PlatformFileOps.listFilesInDirectory(
+        PlatformFileOps.joinPath(basePath, 'safety_snapshots'),
+      );
+      for (final filePath in snapshotsFiles) {
+        try {
+          await PlatformFileOps.deleteFileIfExists(filePath);
+        } catch (_) {}
       }
 
       // 2. Wipe progress photos directory
-      final photosDir = Directory('${baseDir.path}/progress_photos');
-      if (await photosDir.exists()) {
-        final files = photosDir.listSync().whereType<File>();
-        for (final f in files) {
-          try {
-            await f.delete();
-          } catch (_) {}
-        }
+      final photoFiles = await PlatformFileOps.listFilesInDirectory(
+        PlatformFileOps.joinPath(basePath, 'progress_photos'),
+      );
+      for (final filePath in photoFiles) {
+        try {
+          await PlatformFileOps.deleteFileIfExists(filePath);
+        } catch (_) {}
       }
 
       // 3. Wipe export files (.json and .csv) in documents directory
-      final rootFiles = baseDir.listSync().whereType<File>();
-      for (final f in rootFiles) {
-        final name = f.path.toLowerCase();
+      final rootFiles = await PlatformFileOps.listFilesInDirectory(basePath);
+      for (final filePath in rootFiles) {
+        final name = filePath.toLowerCase();
         if (name.contains('backup') ||
             name.contains('export') ||
             name.contains('snapshot') ||
             name.endsWith('.csv') ||
             name.endsWith('.json')) {
           try {
-            await f.delete();
+            await PlatformFileOps.deleteFileIfExists(filePath);
           } catch (_) {}
         }
       }

@@ -1,44 +1,26 @@
-import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:hive/hive.dart';
+import 'package:progression_tracker/core/utils/app_logger.dart';
+import 'package:progression_tracker/core/utils/hive_json_utils.dart';
+import 'package:progression_tracker/core/utils/hive_manager.dart';
 import '../models/body_entry_model.dart';
 
-/// Recursively casts a [Map<dynamic, dynamic>] (as returned by Hive) to
-/// [Map<String, dynamic>] so that json_serializable can deserialize it.
-Map<String, dynamic> _deepCast(Map<dynamic, dynamic> map) {
-  return map.map((key, value) {
-    if (value is Map) {
-      return MapEntry(key.toString(), _deepCast(value));
-    } else if (value is List) {
-      return MapEntry(key.toString(), _deepCastList(value));
-    }
-    return MapEntry(key.toString(), value);
-  });
-}
-
-List<dynamic> _deepCastList(List<dynamic> list) {
-  return list.map((item) {
-    if (item is Map) return _deepCast(item);
-    if (item is List) return _deepCastList(item);
-    return item;
-  }).toList();
-}
-
 class HiveBodyDataSource {
-  static const String boxName = 'body_entries';
+  static const String boxName = HiveManager.bodyEntriesBox;
 
-  Box<Map> get _box => Hive.box<Map>(boxName);
+  Future<Box<Map>> get _box => HiveManager.ensureBodyEntriesBox();
 
   Future<void> saveBodyEntry(BodyEntryModel entry) async {
     try {
       AppLogger.debug('📊 [BodyData] Saving body measurement...');
       AppLogger.debug('🔍 [BodyData] Entry ID: ${entry.id}, Weight: ${entry.weight}kg');
       
-      if (!_box.isOpen) {
+      final box = await _box;
+      if (!box.isOpen) {
         AppLogger.debug('⚠️ [BodyData] Body entries box is not open');
         throw Exception('Body entries box not open');
       }
       
-      await _box.put(entry.id, entry.toJson());
+      await box.put(entry.id, entry.toJson());
       
       AppLogger.debug('✅ [BodyData] Body measurement saved successfully');
       AppLogger.debug('🔍 [BodyData] Weight: ${entry.weight}kg, Date: ${entry.date}, Measurements: ${entry.measurements.length}');
@@ -53,15 +35,16 @@ class HiveBodyDataSource {
     try {
       AppLogger.debug('📊 [BodyData] Retrieving all body measurements...');
       
-      if (!_box.isOpen) {
+      final box = await _box;
+      if (!box.isOpen) {
         AppLogger.debug('⚠️ [BodyData] Body entries box is not open');
         throw Exception('Body entries box not open');
       }
       
-      AppLogger.debug('🔍 [BodyData] Box contains ${_box.length} entries');
+      AppLogger.debug('🔍 [BodyData] Box contains ${box.length} entries');
       
-      final entries = _box.values
-          .map((json) => BodyEntryModel.fromJson(_deepCast(json)))
+      final entries = box.values
+          .map((json) => BodyEntryModel.fromJson(deepCastMap(json)))
           .toList();
 
       // Sort by date descending
@@ -82,8 +65,9 @@ class HiveBodyDataSource {
   /// current snapshot immediately, then a fresh snapshot on every box
   /// change. Replaces the manual `bodyRefreshCounterProvider` bumps.
   Stream<List<BodyEntryModel>> watchAllBodyEntries() async* {
+    final box = await _box;
     yield await getAllBodyEntries();
-    yield* _box.watch().asyncMap((_) => getAllBodyEntries());
+    yield* box.watch().asyncMap((_) => getAllBodyEntries());
   }
 
   Future<void> deleteBodyEntry(String id) async {
@@ -91,12 +75,13 @@ class HiveBodyDataSource {
       AppLogger.debug('📊 [BodyData] Deleting body measurement...');
       AppLogger.debug('🔍 [BodyData] Entry ID: $id');
       
-      if (!_box.isOpen) {
+      final box = await _box;
+      if (!box.isOpen) {
         AppLogger.debug('⚠️ [BodyData] Body entries box is not open');
         throw Exception('Body entries box not open');
       }
       
-      await _box.delete(id);
+      await box.delete(id);
       
       AppLogger.debug('✅ [BodyData] Body measurement deleted successfully');
     } catch (e, stackTrace) {

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
+import 'package:progression_tracker/core/utils/hive_manager.dart';
 
 /// Central abstraction for tactile and haptic feedback across IronFlow.
 ///
@@ -83,14 +84,14 @@ class AppHaptics {
 
 /// Notifier managing the persisted haptic feedback setting (Wave 3.2).
 class HapticsNotifier extends Notifier<bool> {
-  static const String _boxName = 'app_settings';
+  static const String _boxName = HiveManager.appSettingsBox;
   static const String _hapticsKey = 'haptics_enabled';
 
   @override
   bool build() {
     try {
       if (Hive.isBoxOpen(_boxName)) {
-        final box = Hive.box<String>(_boxName);
+        final box = HiveManager.getAppSettingsBox();
         final val = box.get(_hapticsKey);
         if (val != null) {
           final enabled = val == 'true';
@@ -108,8 +109,8 @@ class HapticsNotifier extends Notifier<bool> {
     state = value;
     AppHaptics.shared.isEnabled = value;
     try {
-      if (Hive.isBoxOpen(_boxName)) {
-        final box = Hive.box<String>(_boxName);
+      if (Hive.isBoxOpen(_boxName) || await Hive.boxExists(_boxName)) {
+        final box = await HiveManager.ensureAppSettingsBox();
         await box.put(_hapticsKey, value ? 'true' : 'false');
       }
     } catch (_) {}

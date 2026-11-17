@@ -1,12 +1,14 @@
-import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:hive_flutter/hive_flutter.dart';
+import 'package:hive/hive.dart';
+import '../../../core/utils/app_logger.dart';
+import '../../../core/utils/hive_manager.dart';
+import '../../../core/utils/record_ownership.dart';
 import '../domain/entities/user_profile.dart';
 
 /// Persists and retrieves [UserProfile] using Hive.
 class UserProfileStorage {
-  static const _boxName = 'user_profile';
+  static const _boxName = HiveManager.userProfileBox;
   static const _profileKeyPrefix = 'profile_';
   static const _onboardedKeyPrefix = 'onboarded_';
   static const _draftStepKeyPrefix = 'draft_step_';
@@ -18,17 +20,19 @@ class UserProfileStorage {
   static const _legacyDraftStepKey = 'draft_step';
   static const _legacyDraftDataKey = 'draft_data';
 
-  Future<Box> get _box async =>
-      Hive.isBoxOpen(_boxName) ? Hive.box(_boxName) : Hive.openBox(_boxName);
+  Future<Box> get _box => HiveManager.ensureUserProfileBox();
 
   String? _resolveCurrentUserId(String? userId) {
-    if (userId != null && userId.isNotEmpty) return userId;
-    if (Hive.isBoxOpen('auth_session')) {
-      final sessionBox = Hive.box('auth_session');
-      final isLoggedIn = sessionBox.get('is_logged_in', defaultValue: false) as bool;
+    if (userId != null && userId.isNotEmpty) {
+      return RecordOwnershipRules.storageScope(userId);
+    }
+    if (Hive.isBoxOpen(HiveManager.authSessionBox)) {
+      final sessionBox = HiveManager.getAuthSessionBox();
+      final isLoggedIn =
+          sessionBox.get('is_logged_in', defaultValue: false) as bool;
       if (isLoggedIn) {
         final currentUid = sessionBox.get('user_id') as String?;
-        if (currentUid != null && currentUid.isNotEmpty) return currentUid;
+        return RecordOwnershipRules.storageScope(currentUid);
       }
     }
     return null;
@@ -71,7 +75,7 @@ class UserProfileStorage {
   /// then user-specific profile. If neither exists for a given user, returns false.
   bool isOnboardedSync({String? userId}) {
     if (Hive.isBoxOpen(_boxName)) {
-      final box = Hive.box(_boxName);
+      final box = HiveManager.getUserProfileBox();
       final resolvedUid = _resolveCurrentUserId(userId);
       if (resolvedUid != null && resolvedUid.isNotEmpty) {
         final userVal = box.get(_getOnboardedKey(resolvedUid));

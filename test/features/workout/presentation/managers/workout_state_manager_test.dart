@@ -13,6 +13,7 @@ void main() {
   setUp(() async {
     tempDir = Directory.systemTemp.createTempSync('workout_state_test_');
     Hive.init(tempDir.path);
+    await Hive.openBox<dynamic>('active_workout_state');
     manager = WorkoutStateManager();
     await manager.init();
   });

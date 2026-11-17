@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 
+import '../utils/hive_manager.dart';
+
 /// Provider for managing app language/locale.
 ///
 /// Persists language preference to Hive storage.
@@ -12,14 +14,25 @@ final languageProvider =
 
 /// Notifier for managing language state (Wave 3.2).
 class LanguageNotifier extends Notifier<Locale> {
-  static const String _boxName = 'app_settings';
+  static const String _boxName = HiveManager.appSettingsBox;
   static const String _languageKey = 'language_code';
   bool _disposed = false;
+
+  Locale _parseLocale(String? languageCode) {
+    return supportedLocales.firstWhere(
+      (l) => l.languageCode == (languageCode ?? 'en'),
+      orElse: () => const Locale('en'),
+    );
+  }
 
   @override
   Locale build() {
     _disposed = false;
     ref.onDispose(() => _disposed = true);
+    if (Hive.isBoxOpen(_boxName)) {
+      final box = HiveManager.getAppSettingsBox();
+      return _parseLocale(box.get(_languageKey, defaultValue: 'en'));
+    }
     _loadLanguage();
     return const Locale('en');
   }
@@ -49,15 +62,10 @@ class LanguageNotifier extends Notifier<Locale> {
   /// Loads language preference from Hive storage.
   Future<void> _loadLanguage() async {
     try {
-      final box = await Hive.openBox<String>(_boxName);
+      final box = await HiveManager.ensureAppSettingsBox();
       final languageCode = box.get(_languageKey, defaultValue: 'en');
-      
-      // Validate that the language code is supported
-      final locale = supportedLocales.firstWhere(
-        (l) => l.languageCode == languageCode,
-        orElse: () => const Locale('en'),
-      );
-      
+      final locale = _parseLocale(languageCode);
+
       if (!_disposed) {
         state = locale;
       }
@@ -78,9 +86,9 @@ class LanguageNotifier extends Notifier<Locale> {
     }
 
     state = locale;
-    
+
     try {
-      final box = await Hive.openBox<String>(_boxName);
+      final box = await HiveManager.ensureAppSettingsBox();
       await box.put(_languageKey, locale.languageCode);
     } catch (e) {
       AppLogger.debug('Error saving language: $e');

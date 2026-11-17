@@ -1,12 +1,13 @@
 import 'package:hive/hive.dart';
+import '../../../../core/utils/hive_manager.dart';
 import '../../domain/entities/exercise_definition.dart';
 
 /// Hive datasource for caching exercise definitions locally.
 /// Provides persistent storage for exercises across app sessions.
 class HiveExerciseDatasource {
-  static const String boxName = 'exercises';
+  static const String boxName = HiveManager.exercisesBox;
 
-  Future<Box<Map>> get _box async => await Hive.openBox<Map>(boxName);
+  Future<Box<Map>> get _box => HiveManager.ensureExercisesBox();
 
   /// Save all exercises to Hive for offline access.
   Future<void> saveExercises(List<ExerciseDefinition> exercises) async {

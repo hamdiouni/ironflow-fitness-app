@@ -1,14 +1,13 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-/// Centralized configuration provider for environment variables and API keys.
+/// Centralized configuration provider for compile-time variables and API keys.
 ///
 /// Direct provider API keys are treated as **debug-only developer
 /// credentials**: a key compiled into, or bundled with, a shipped client is
 /// extractable and must never be the production credential. Profile/release
 /// builds therefore fail closed and must use [getAiProxyUrl] (an
 /// authenticated backend proxy that owns provider keys, quotas, and cost
-/// controls). Local debug builds may still use `--dart-define` or dotenv keys
+/// controls). Local debug builds may still use `--dart-define` keys
 /// for developer convenience unless `ALLOW_DIRECT_AI_KEYS=false` is set.
 class AppConfig {
   const AppConfig._();
@@ -30,38 +29,27 @@ class AppConfig {
   /// provider key path.
   static bool get allowDirectAiApiKeys => kDebugMode && _directAiKeysOptIn;
 
-  static String _directKey(String envValue, String dotenvKey) {
+  static String _directKey(String envValue) {
     if (!allowDirectAiApiKeys) return '';
     if (envValue.isNotEmpty && !envValue.contains('your_')) return envValue;
-    if (dotenv.isInitialized) {
-      return dotenv.env[dotenvKey] ?? '';
-    }
     return '';
   }
 
   /// Retrieves the debug-only OpenAI API key, or empty when direct keys are
   /// disabled (including every profile/release build).
-  static String getOpenAIApiKey() =>
-      _directKey(_envOpenAiKey, 'OPENAI_API_KEY');
+  static String getOpenAIApiKey() => _directKey(_envOpenAiKey);
 
   /// Retrieves the debug-only Gemini API key, or empty when direct keys are
   /// disabled. Production Gemini traffic must use [getAiProxyUrl].
-  static String getGeminiApiKey() =>
-      _directKey(_envGeminiKey, 'GEMINI_API_KEY');
+  static String getGeminiApiKey() => _directKey(_envGeminiKey);
 
   /// Retrieves the debug-only NVIDIA API key, or empty when direct keys are
   /// disabled.
-  static String getNvidiaApiKey() =>
-      _directKey(_envNvidiaKey, 'NVIDIA_API_KEY');
+  static String getNvidiaApiKey() => _directKey(_envNvidiaKey);
 
-  /// Retrieves AI Backend Proxy URL from `--dart-define` or local dotenv.
-  static String getAiProxyUrl() {
-    if (_envAiProxyUrl.isNotEmpty) return _envAiProxyUrl;
-    if (dotenv.isInitialized) {
-      return dotenv.env['AI_PROXY_URL'] ?? '';
-    }
-    return '';
-  }
+  /// Retrieves AI Backend Proxy URL from `--dart-define` or
+  /// `--dart-define-from-file`.
+  static String getAiProxyUrl() => _envAiProxyUrl;
 
   /// Whether OpenAI is configured through an allowed debug direct key.
   static bool get hasOpenAI => getOpenAIApiKey().isNotEmpty;

@@ -1,31 +1,14 @@
 import 'package:hive/hive.dart';
+import '../../../../core/utils/hive_json_utils.dart';
 import '../../../../core/utils/hive_manager.dart';
 import '../../../../core/utils/record_ownership.dart';
 import '../models/food_item_full_model.dart';
 
-/// Recursively casts a [Map<dynamic, dynamic>] (as returned by Hive) to
-/// [Map<String, dynamic>] so that json_serializable can deserialize it.
-Map<String, dynamic> _deepCast(Map<dynamic, dynamic> map) {
-  return map.map((key, value) {
-    if (value is Map) {
-      return MapEntry(key.toString(), _deepCast(value));
-    } else if (value is List) {
-      return MapEntry(key.toString(), _deepCastList(value));
-    }
-    return MapEntry(key.toString(), value);
-  });
-}
-
-List<dynamic> _deepCastList(List<dynamic> list) {
-  return list.map((item) {
-    if (item is Map) return _deepCast(item);
-    if (item is List) return _deepCastList(item);
-    return item;
-  }).toList();
-}
-
-/// Hive-based local data source for caching foods
-/// Provides persistent local storage for food database with cache invalidation
+/// Hive-based local data source for caching foods and storing user custom foods.
+///
+/// - Shared catalog cache remains in `foods`.
+/// - Personal custom foods live in the dedicated encrypted `custom_foods` box,
+///   with one-time adoption from legacy `foods` entries when present.
 class HiveFoodDataSource {
   static const String _foodsKey = 'foods_cache';
   static const String _customFoodsKey = 'custom_foods';
@@ -52,13 +35,29 @@ class HiveFoodDataSource {
         : '${_customFoodsKey}_$scopeUserId';
   }
 
-  /// Get the foods box from Hive
-  Box get _box => HiveManager.getFoodsBox();
+  /// Shared catalog cache box (`foods`).
+  Future<Box<dynamic>> get _catalogBox => HiveManager.ensureFoodsBox();
+
+  /// Dedicated encrypted box for user custom foods (`custom_foods`).
+  Future<Box<dynamic>> get _customFoodsBox => HiveManager.ensureCustomFoodsBox();
 
   Future<List<dynamic>?> _customFoodsJson() async {
+    final customBox = await _customFoodsBox;
     final scopedKey = _scopedCustomFoodsKey;
-    final scopedJson = _box.get(scopedKey) as List<dynamic>?;
+    final scopedJson = customBox.get(scopedKey) as List<dynamic>?;
     if (scopedJson != null || scopedKey == _customFoodsKey) {
+      if (scopedJson == null && scopedKey == _customFoodsKey) {
+        if (Hive.isBoxOpen(HiveManager.foodsBox) ||
+            await Hive.boxExists(HiveManager.foodsBox)) {
+          final catalogBox = await _catalogBox;
+          final legacyGlobal = catalogBox.get(_customFoodsKey) as List<dynamic>?;
+          if (legacyGlobal != null) {
+            await customBox.put(_customFoodsKey, legacyGlobal);
+            await catalogBox.delete(_customFoodsKey);
+            return legacyGlobal;
+          }
+        }
+      }
       return scopedJson;
     }
 
@@ -66,31 +65,59 @@ class HiveFoodDataSource {
     // account-scoped custom-food list exists yet. Custom food records
     // carry no owner field, so once scoped lists exist the legacy list
     // cannot be safely attributed to the requesting account.
-    final hasScopedCustomFoods = _box.keys.any(
+    final hasScopedInCustom = customBox.keys.any(
       (key) => key.toString().startsWith('${_customFoodsKey}_'),
     );
-    if (hasScopedCustomFoods) return null;
+    if (hasScopedInCustom) return null;
 
-    final legacyJson = _box.get(_customFoodsKey) as List<dynamic>?;
-    if (legacyJson == null) return null;
-    await _box.put(scopedKey, legacyJson);
-    await _box.delete(_customFoodsKey);
-    return legacyJson;
+    var legacyJson = customBox.get(_customFoodsKey) as List<dynamic>?;
+    if (legacyJson != null) {
+      await customBox.put(scopedKey, legacyJson);
+      await customBox.delete(_customFoodsKey);
+      return legacyJson;
+    }
+
+    // Fallback adoption from legacy entries stored inside `foods` prior to v4.
+    if (Hive.isBoxOpen(HiveManager.foodsBox) ||
+        await Hive.boxExists(HiveManager.foodsBox)) {
+      final catalogBox = await _catalogBox;
+      final scopedLegacy = catalogBox.get(scopedKey) as List<dynamic>?;
+      if (scopedLegacy != null) {
+        await customBox.put(scopedKey, scopedLegacy);
+        await catalogBox.delete(scopedKey);
+        return scopedLegacy;
+      }
+
+      final hasScopedInFoods = catalogBox.keys.any(
+        (key) => key.toString().startsWith('${_customFoodsKey}_'),
+      );
+      if (hasScopedInFoods) return null;
+
+      legacyJson = catalogBox.get(_customFoodsKey) as List<dynamic>?;
+      if (legacyJson != null) {
+        await customBox.put(scopedKey, legacyJson);
+        await catalogBox.delete(_customFoodsKey);
+        return legacyJson;
+      }
+    }
+
+    return null;
   }
 
   /// Cache all foods locally
   /// Stores foods with timestamp for cache invalidation
   Future<void> cacheFoods(List<FoodItemFullModel> foods) async {
     try {
+      final box = await _catalogBox;
       // Store foods as JSON list
       final foodsJson = foods.map((f) => f.toJson()).toList();
-      await _box.put(_foodsKey, foodsJson);
+      await box.put(_foodsKey, foodsJson);
       
       // Store cache timestamp
-      await _box.put(_cacheTimestampKey, DateTime.now().toIso8601String());
+      await box.put(_cacheTimestampKey, DateTime.now().toIso8601String());
       
       // Store cache version
-      await _box.put(_cacheVersionKey, _currentCacheVersion);
+      await box.put(_cacheVersionKey, _currentCacheVersion);
     } catch (e) {
       throw Exception('Failed to cache foods: $e');
     }
@@ -100,7 +127,8 @@ class HiveFoodDataSource {
   /// other cached foods.
   Future<void> upsertCachedFood(FoodItemFullModel food) async {
     try {
-      final rawList = _box.get(_foodsKey) as List<dynamic>?;
+      final box = await _catalogBox;
+      final rawList = box.get(_foodsKey) as List<dynamic>?;
       final currentList = rawList != null
           ? List<dynamic>.from(rawList)
           : <dynamic>[];
@@ -116,9 +144,9 @@ class HiveFoodDataSource {
         currentList.add(foodJson);
       }
 
-      await _box.put(_foodsKey, currentList);
-      await _box.put(_cacheTimestampKey, DateTime.now().toIso8601String());
-      await _box.put(_cacheVersionKey, _currentCacheVersion);
+      await box.put(_foodsKey, currentList);
+      await box.put(_cacheTimestampKey, DateTime.now().toIso8601String());
+      await box.put(_cacheVersionKey, _currentCacheVersion);
     } catch (e) {
       throw Exception('Failed to upsert cached food: $e');
     }
@@ -133,9 +161,10 @@ class HiveFoodDataSource {
       // Add new food
       customFoods.add(food);
       
-      // Save back to Hive
+      // Save back to dedicated encrypted custom_foods box
+      final customBox = await _customFoodsBox;
       final foodsJson = customFoods.map((f) => f.toJson()).toList();
-      await _box.put(_scopedCustomFoodsKey, foodsJson);
+      await customBox.put(_scopedCustomFoodsKey, foodsJson);
     } catch (e) {
       throw Exception('Failed to save custom food: $e');
     }
@@ -150,7 +179,7 @@ class HiveFoodDataSource {
       }
 
       return foodsJson
-          .map((json) => FoodItemFullModel.fromJson(_deepCast(json)))
+          .map((json) => FoodItemFullModel.fromJson(deepCastMap(json)))
           .toList();
     } catch (e) {
       return [];
@@ -163,8 +192,9 @@ class HiveFoodDataSource {
       final customFoods = await getCustomFoods();
       customFoods.removeWhere((food) => food.id == id);
       
+      final customBox = await _customFoodsBox;
       final foodsJson = customFoods.map((f) => f.toJson()).toList();
-      await _box.put(_scopedCustomFoodsKey, foodsJson);
+      await customBox.put(_scopedCustomFoodsKey, foodsJson);
     } catch (e) {
       throw Exception('Failed to delete custom food: $e');
     }
@@ -174,11 +204,12 @@ class HiveFoodDataSource {
   /// Returns empty list if cache is empty
   Future<List<FoodItemFullModel>> getCachedFoods() async {
     try {
-      final foodsJson = _box.get(_foodsKey) as List<dynamic>?;
+      final box = await _catalogBox;
+      final foodsJson = box.get(_foodsKey) as List<dynamic>?;
       final cachedFoods = foodsJson == null || foodsJson.isEmpty
           ? <FoodItemFullModel>[]
           : foodsJson
-              .map((json) => FoodItemFullModel.fromJson(_deepCast(json)))
+              .map((json) => FoodItemFullModel.fromJson(deepCastMap(json)))
               .toList();
 
       // Add custom foods
@@ -254,8 +285,9 @@ class HiveFoodDataSource {
   /// Returns true if cache has foods
   Future<bool> isCacheValid() async {
     try {
-      final foodsJson = _box.get(_foodsKey) as List<dynamic>?;
-      final version = _box.get(_cacheVersionKey) as int?;
+      final box = await _catalogBox;
+      final foodsJson = box.get(_foodsKey) as List<dynamic>?;
+      final version = box.get(_cacheVersionKey) as int?;
       
       return foodsJson != null && 
              foodsJson.isNotEmpty && 
@@ -269,7 +301,8 @@ class HiveFoodDataSource {
   /// Returns null if cache doesn't exist
   Future<DateTime?> getCacheTimestamp() async {
     try {
-      final timestamp = _box.get(_cacheTimestampKey) as String?;
+      final box = await _catalogBox;
+      final timestamp = box.get(_cacheTimestampKey) as String?;
       if (timestamp == null) return null;
       return DateTime.parse(timestamp);
     } catch (e) {
@@ -281,8 +314,9 @@ class HiveFoodDataSource {
   /// Keeps timestamp for reference
   Future<void> invalidateCache() async {
     try {
-      await _box.delete(_foodsKey);
-      await _box.delete(_cacheVersionKey);
+      final box = await _catalogBox;
+      await box.delete(_foodsKey);
+      await box.delete(_cacheVersionKey);
     } catch (e) {
       throw Exception('Failed to invalidate cache: $e');
     }
@@ -293,10 +327,13 @@ class HiveFoodDataSource {
   /// Other accounts' scoped custom-food lists are left untouched.
   Future<void> clearCache() async {
     try {
-      await _box.delete(_foodsKey);
-      await _box.delete(_cacheTimestampKey);
-      await _box.delete(_cacheVersionKey);
-      await _box.delete(_scopedCustomFoodsKey);
+      final catalogBox = await _catalogBox;
+      await catalogBox.delete(_foodsKey);
+      await catalogBox.delete(_cacheTimestampKey);
+      await catalogBox.delete(_cacheVersionKey);
+
+      final customBox = await _customFoodsBox;
+      await customBox.delete(_scopedCustomFoodsKey);
     } catch (e) {
       throw Exception('Failed to clear cache: $e');
     }
