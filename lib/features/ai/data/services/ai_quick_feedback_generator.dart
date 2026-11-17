@@ -1,3 +1,5 @@
+import 'package:progression_tracker/core/providers/units_provider.dart';
+import 'package:progression_tracker/core/utils/workout_streak_calculator.dart';
 import 'package:progression_tracker/features/ai/data/services/ai_insight_metrics_calculator.dart';
 import 'package:progression_tracker/features/ai/domain/entities/insight.dart';
 import 'package:progression_tracker/features/workout/domain/entities/workout.dart';
@@ -10,8 +12,9 @@ class AIQuickFeedbackGenerator {
 
   Future<Insight> generateQuickFeedback(
     Workout completedWorkout,
-    List<Workout> history,
-  ) async {
+    List<Workout> history, {
+    UnitsSystem units = UnitsSystem.metric,
+  }) async {
     // Combine completed workout with history for analysis
     final allWorkouts = [completedWorkout, ...history];
     
@@ -36,7 +39,11 @@ class AIQuickFeedbackGenerator {
     } else if (hasConsistencyMilestone) {
       return _createConsistencyMilestoneFeedback(consistencyStreak);
     } else {
-      return _createGeneralEncouragementFeedback(currentVolume, consistencyStreak);
+      return _createGeneralEncouragementFeedback(
+        currentVolume,
+        consistencyStreak,
+        units: units,
+      );
     }
   }
 
@@ -85,36 +92,11 @@ class AIQuickFeedbackGenerator {
     return ((currentVolume - averageRecentVolume) / averageRecentVolume) * 100;
   }
   
-  /// Calculate consistency streak (consecutive workout days)
-  ///
-  /// **Requirements:**
-  /// - 10.3: Highlight consistency milestones
+  /// Calculate consistency streak using canonical local calendar dates.
   int _calculateConsistencyStreak(List<Workout> workouts) {
-    if (workouts.isEmpty) return 0;
-    
-    // Sort workouts by date (most recent first)
-    final sortedWorkouts = List<Workout>.from(workouts)
-      ..sort((a, b) => b.date.compareTo(a.date));
-    
-    int streak = 1; // Start with 1 for the current workout
-    
-    // Check for consecutive days working backwards from today
-    for (int i = 1; i < sortedWorkouts.length; i++) {
-      final currentWorkout = sortedWorkouts[i - 1];
-      final previousWorkout = sortedWorkouts[i];
-      
-      // Calculate days between workouts
-      final daysBetween = currentWorkout.date.difference(previousWorkout.date).inDays;
-      
-      // If workouts are 1-2 days apart (allowing for rest days), continue streak
-      if (daysBetween <= 2) {
-        streak++;
-      } else {
-        break; // Streak broken
-      }
-    }
-    
-    return streak;
+    return WorkoutStreakCalculator.calculateFromDates(
+      workouts.map((w) => w.date),
+    ).currentStreak;
   }
   
   /// Check if current streak represents a milestone worth celebrating
@@ -236,12 +218,18 @@ class AIQuickFeedbackGenerator {
   ///
   /// **Requirements:**
   /// - 10.8: Use celebratory language and emojis
-  Insight _createGeneralEncouragementFeedback(double currentVolume, int streak) {
+  Insight _createGeneralEncouragementFeedback(
+    double currentVolume,
+    int streak, {
+    UnitsSystem units = UnitsSystem.metric,
+  }) {
+    final displayVolume = UnitsConverter.convertWeightToDisplay(currentVolume, units);
+    final unitLabel = UnitsConverter.getWeightUnit(units);
     return Insight(
       id: 'general_encouragement_${DateTime.now().millisecondsSinceEpoch}',
       context: InsightContext.workout,
       title: '💪 Great Workout!',
-      message: 'Nice work today! You lifted ${_calc.formatNumber(currentVolume)}kg total volume and you\'re on a $streak-day streak. Every workout counts towards your goals. Keep it up!',
+      message: 'Nice work today! You lifted ${_calc.formatNumber(displayVolume)} $unitLabel total volume and you\'re on a $streak-day streak. Every workout counts towards your goals. Keep it up!',
       icon: '💪',
       priority: InsightPriority.medium,
       generatedAt: DateTime.now(),

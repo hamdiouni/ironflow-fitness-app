@@ -122,7 +122,7 @@ class AppTextField extends StatelessWidget {
             hintText: hintText,
             errorText: errorText,
             filled: true,
-            fillColor: tokens.isDark ? tokens.elevated : AppColors.canvas,
+            fillColor: tokens.isDark ? tokens.elevated : tokens.panel,
             prefixIcon: prefixIcon,
             suffixIcon: suffixIcon,
             contentPadding: const EdgeInsets.symmetric(
@@ -132,14 +132,14 @@ class AppTextField extends StatelessWidget {
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppSpacings.radiusSm),
               borderSide: BorderSide(
-                color: tokens.isDark ? tokens.borderSubtle : AppColors.hairlineInput,
+                color: tokens.borderSubtle,
                 width: 1,
               ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppSpacings.radiusSm),
               borderSide: BorderSide(
-                color: tokens.isDark ? tokens.borderSubtle : AppColors.hairlineInput,
+                color: tokens.borderSubtle,
                 width: 1,
               ),
             ),

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import '../../core/constants/app_theme.dart';
 
-/// IronFlow brand logo widget.
-/// Renders a dumbbell icon with neon green glow on a dark rounded background.
+/// Brand logo mark widget.
+/// Renders a crisp dumbbell glyph using the active Iron Scoreboard tokens.
 /// Fully vector — scales to any size.
 class IronFlowLogo extends StatelessWidget {
   const IronFlowLogo({
@@ -15,6 +16,11 @@ class IronFlowLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = Theme.of(context).extension<AppThemeTokens>();
+    final bgColor = tokens?.card ?? const Color(0xFF14171D);
+    final accentColor = tokens?.kineticAccent ?? const Color(0xFFF59E0B);
+    final borderColor = tokens?.borderSubtle ?? const Color(0xFF2D3340);
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -23,27 +29,25 @@ class IronFlowLogo extends StatelessWidget {
           height: size,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(size * 0.22),
-            color: const Color(0xFF0A0A0A),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF00E676).withValues(alpha: 0.35),
-                blurRadius: size * 0.3,
-                spreadRadius: size * 0.02,
-              ),
-            ],
+            color: bgColor,
+            border: Border.all(color: borderColor, width: 1),
           ),
           child: CustomPaint(
-            painter: _DumbbellPainter(),
+            painter: _DumbbellPainter(
+              accentColor: accentColor,
+              cutoutColor: bgColor,
+            ),
           ),
         ),
         if (showLabel) ...[
           SizedBox(height: size * 0.12),
           Text(
-            'IronFlow',
+            'PROGRESSION',
             style: TextStyle(
-              color: const Color(0xFF00E676),
-              fontSize: size * 0.28,
-              fontWeight: FontWeight.bold,
+              fontFamily: AppTypography.displayFontFamily,
+              color: accentColor,
+              fontSize: size * 0.24,
+              fontWeight: FontWeight.w800,
               letterSpacing: size * 0.02,
             ),
           ),
@@ -54,6 +58,14 @@ class IronFlowLogo extends StatelessWidget {
 }
 
 class _DumbbellPainter extends CustomPainter {
+  const _DumbbellPainter({
+    required this.accentColor,
+    required this.cutoutColor,
+  });
+
+  final Color accentColor;
+  final Color cutoutColor;
+
   @override
   void paint(Canvas canvas, Size size) {
     final w = size.width;
@@ -61,28 +73,11 @@ class _DumbbellPainter extends CustomPainter {
     final cx = w / 2;
     final cy = h / 2;
 
-    // Gradient paint for dumbbell
-    final gradient = LinearGradient(
-      begin: Alignment.topCenter,
-      end: Alignment.bottomCenter,
-      colors: [
-        const Color(0xFF00E676),
-        const Color(0xFF00B050),
-      ],
-    );
-
-    final rect = Rect.fromLTWH(0, 0, w, h);
     final paint = Paint()
-      ..shader = gradient.createShader(rect)
+      ..color = accentColor
       ..style = PaintingStyle.fill;
 
-    // Glow paint
-    final glowPaint = Paint()
-      ..color = const Color(0xFF00E676).withValues(alpha: 0.25)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6)
-      ..style = PaintingStyle.fill;
-
-    // ── Dimensions ────────────────────────────────────────────────────────────
+    // Dimensions
     final barW = w * 0.50;
     final barH = h * 0.10;
     final barX = cx - barW / 2;
@@ -96,34 +91,26 @@ class _DumbbellPainter extends CustomPainter {
     final lCollarX = cx - barW / 2 + w * 0.04;
     final rCollarX = cx + barW / 2 - w * 0.04;
 
-    // ── Draw glow (slightly larger shapes) ───────────────────────────────────
-    canvas.drawCircle(Offset(lPlateX, cy), plateR + 3, glowPaint);
-    canvas.drawCircle(Offset(rPlateX, cy), plateR + 3, glowPaint);
-
-    // ── Draw dumbbell ─────────────────────────────────────────────────────────
-    // Left plate
+    // Draw dumbbell
     canvas.drawCircle(Offset(lPlateX, cy), plateR, paint);
-    // Right plate
     canvas.drawCircle(Offset(rPlateX, cy), plateR, paint);
-    // Left collar
     canvas.drawCircle(Offset(lCollarX, cy), collarR, paint);
-    // Right collar
     canvas.drawCircle(Offset(rCollarX, cy), collarR, paint);
-    // Bar
     final barRRect = RRect.fromRectAndRadius(
       Rect.fromLTWH(barX, barY, barW, barH),
       Radius.circular(barH / 2),
     );
     canvas.drawRRect(barRRect, paint);
 
-    // ── Holes in plates ───────────────────────────────────────────────────────
+    // Holes in plates
     final holePaint = Paint()
-      ..color = const Color(0xFF0A0A0A)
+      ..color = cutoutColor
       ..style = PaintingStyle.fill;
     canvas.drawCircle(Offset(lPlateX, cy), plateR * 0.30, holePaint);
     canvas.drawCircle(Offset(rPlateX, cy), plateR * 0.30, holePaint);
   }
 
   @override
-  bool shouldRepaint(_DumbbellPainter old) => false;
+  bool shouldRepaint(_DumbbellPainter old) =>
+      old.accentColor != accentColor || old.cutoutColor != cutoutColor;
 }

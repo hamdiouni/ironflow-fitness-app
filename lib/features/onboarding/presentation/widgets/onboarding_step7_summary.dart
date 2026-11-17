@@ -35,8 +35,8 @@ class OnboardingStep7Summary extends StatelessWidget {
     final carbGrams = tempProfile.dailyCarbTargetGrams.round();
 
     return OnboardingStepContentLayout(
-      stepTitle: 'PROTOCOL INITIALIZED',
-      whyWeAsk: 'Review your personalized training & nutrition profile before deployment.',
+      stepTitle: 'PLAN READY',
+      whyWeAsk: 'Review your personalized training & nutrition plan before starting.',
       children: [
         // Caloric Target HUD
         Container(

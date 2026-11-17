@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_theme.dart';
+import '../../../../core/providers/units_provider.dart';
 import '../../../onboarding/presentation/providers/onboarding_provider.dart';
 import '../../../workout/presentation/widgets/plate_calculator_sheet.dart';
 import '../widgets/calculator_sheets.dart';
@@ -16,6 +17,7 @@ class ToolsHubScreen extends ConsumerWidget {
     final tokens = AppThemeTokens.of(context);
     final profileAsync = ref.watch(userProfileProvider);
     final profile = profileAsync.value;
+    final units = ref.watch(unitsProvider);
 
     final tools = [
       _ToolDefinition(
@@ -25,7 +27,11 @@ class ToolsHubScreen extends ConsumerWidget {
         description: 'Calculate exact plates per side for any Olympic barbell in kg or lb with sleeve visualizer.',
         icon: Icons.fitness_center_rounded,
         accentColor: tokens.kineticAccent,
-        onTap: () => PlateCalculatorSheet.show(context),
+        onTap: () => PlateCalculatorSheet.show(
+          context,
+          initialUnit:
+              units == UnitsSystem.metric ? PlateUnit.kg : PlateUnit.lb,
+        ),
       ),
       _ToolDefinition(
         id: '1rm',
@@ -34,7 +40,7 @@ class ToolsHubScreen extends ConsumerWidget {
         description: 'Estimate your true 1-Rep Max from submaximal sets with Brzycki and Epley formulas and full intensity breakdown.',
         icon: Icons.speed_rounded,
         accentColor: tokens.isDark ? Colors.amberAccent : Colors.orange,
-        onTap: () => OneRepMaxSheet.show(context),
+        onTap: () => OneRepMaxSheet.show(context, units: units),
       ),
       _ToolDefinition(
         id: 'calorie_macro',
@@ -43,7 +49,11 @@ class ToolsHubScreen extends ConsumerWidget {
         description: 'Calculate precise BMR, maintenance TDEE, and protein/carb/fat targets using Mifflin-St Jeor with metabolic safety floors.',
         icon: Icons.restaurant_menu_rounded,
         accentColor: tokens.isDark ? Colors.lightGreenAccent : Colors.green,
-        onTap: () => CalorieMacroSheet.show(context, profile: profile),
+        onTap: () => CalorieMacroSheet.show(
+          context,
+          profile: profile,
+          units: units,
+        ),
       ),
       _ToolDefinition(
         id: 'body_fat',
@@ -52,7 +62,11 @@ class ToolsHubScreen extends ConsumerWidget {
         description: 'Determine body fat percentage, lean mass, and fat mass using the proven US Navy tape-measure method.',
         icon: Icons.accessibility_new_rounded,
         accentColor: tokens.isDark ? Colors.cyanAccent : Colors.teal,
-        onTap: () => BodyFatSheet.show(context, profile: profile),
+        onTap: () => BodyFatSheet.show(
+          context,
+          profile: profile,
+          units: units,
+        ),
       ),
       _ToolDefinition(
         id: 'weight_planner',
@@ -61,7 +75,11 @@ class ToolsHubScreen extends ConsumerWidget {
         description: 'Plan safe, realistic weight loss or muscle gain timelines with estimated finish dates and caloric adjustments.',
         icon: Icons.calendar_month_rounded,
         accentColor: tokens.isDark ? Colors.purpleAccent : Colors.purple,
-        onTap: () => WeightGoalSheet.show(context, profile: profile),
+        onTap: () => WeightGoalSheet.show(
+          context,
+          profile: profile,
+          units: units,
+        ),
       ),
       _ToolDefinition(
         id: 'water_intake',
@@ -70,7 +88,11 @@ class ToolsHubScreen extends ConsumerWidget {
         description: 'Calculate baseline water requirements plus sweat replacement for workout sessions and hot climates.',
         icon: Icons.water_drop_rounded,
         accentColor: tokens.isDark ? Colors.lightBlueAccent : Colors.blue,
-        onTap: () => WaterIntakeSheet.show(context, profile: profile),
+        onTap: () => WaterIntakeSheet.show(
+          context,
+          profile: profile,
+          units: units,
+        ),
       ),
     ];
 
@@ -94,7 +116,7 @@ class ToolsHubScreen extends ConsumerWidget {
               ),
             ),
             Text(
-              'SCIENTIFIC FITNESS PROTOCOLS',
+              'FITNESS & NUTRITION CALCULATORS',
               style: TextStyle(
                 fontFamily: AppTypography.displayFontFamily,
                 fontSize: 9,

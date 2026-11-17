@@ -40,8 +40,8 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('FUEL DATABASE'), findsOneWidget);
-      expect(find.text('VERIFIED NUTRITION TELEMETRY'), findsOneWidget);
+      expect(find.text('FOOD DATABASE'), findsOneWidget);
+      expect(find.text('USDA & CUSTOM FOODS'), findsOneWidget);
       expect(find.byType(TextField), findsOneWidget);
 
       // Verify category pills exist
@@ -84,7 +84,7 @@ void main() {
       expect(find.text('SCIENTIFIC PROFILE & BIOAVAILABILITY'), findsOneWidget);
       expect(find.text('BY STANDARD SERVING'), findsOneWidget);
       expect(find.text('CUSTOM GRAM WEIGHT'), findsOneWidget);
-      expect(find.text('EXACT MICRONUTRIENT TELEMETRY'), findsOneWidget);
+      expect(find.text('MICRONUTRIENT BREAKDOWN'), findsOneWidget);
 
       // Confirm button is present
       final confirmBtnFinder = find.textContaining('LOG');

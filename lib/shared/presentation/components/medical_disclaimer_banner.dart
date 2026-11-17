@@ -25,7 +25,7 @@ class MedicalDisclaimerBanner extends StatelessWidget {
   final VoidCallback? onDismiss;
 
   static const String defaultMessage =
-      'IronFlow provides workout tracking and educational fitness estimates, not medical advice. Always consult a healthcare professional before starting or modifying an exercise regimen.';
+      'Progression Tracker provides workout tracking and educational fitness estimates, not medical advice. Always consult a healthcare professional before starting or modifying an exercise regimen.';
 
   @override
   Widget build(BuildContext context) {

@@ -238,6 +238,24 @@ class AIInsightMetricsCalculator {
     return selectedInsights;
   }
 
+  /// Format metric keys like `workouts_this_week` into readable labels.
+  static String formatMetricLabel(String key) {
+    final words = key
+        .split('_')
+        .where((w) => w.isNotEmpty)
+        .map((w) => switch (w) {
+              'pct' => '%',
+              'kcal' => 'kcal',
+              'prs' => 'PRs',
+              'pr' => 'PR',
+              _ => w,
+            })
+        .toList();
+    if (words.isEmpty) return key;
+    final joined = words.join(' ');
+    return '${joined[0].toUpperCase()}${joined.substring(1)}';
+  }
+
   /// Format insight with specific numbers and action plan
   ///
   /// Formats insights following the pattern: Analysis → Numbers → Action Plan
@@ -259,7 +277,10 @@ class AIInsightMetricsCalculator {
   }) {
     // Build the formatted message: Analysis → Numbers → Action Plan
     final numbersText = numbers.entries
-        .map((entry) => '${entry.key}: ${formatNumber(entry.value)}')
+        .map(
+          (entry) =>
+              '${formatMetricLabel(entry.key)}: ${formatNumber(entry.value)}',
+        )
         .join(', ');
     
     final message = '$analysis $numbersText. $actionPlan';
@@ -384,7 +405,7 @@ class AIInsightMetricsCalculator {
         return [
           createMediumPriorityInsight(
             context: context,
-            title: 'Welcome to IronFlow!',
+            title: 'Welcome!',
             analysis: 'Start your fitness journey by logging your first workout.',
             numbers: {'days_active': 0},
             actionPlan: 'Tap the workout tab to begin tracking your progress.',

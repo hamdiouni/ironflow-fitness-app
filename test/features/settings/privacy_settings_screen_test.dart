@@ -136,8 +136,8 @@ void main() {
       await tester.pumpWidget(createSubject());
       await tester.pumpAndSettle();
 
-      expect(find.text('PRIVACY & TELEMETRY'), findsWidgets);
-      expect(find.text('Diagnostics & Crash Telemetry'), findsOneWidget);
+      expect(find.text('PRIVACY & DATA'), findsWidgets);
+      expect(find.text('Diagnostics & Crash Reports'), findsOneWidget);
       expect(find.text('Usage Analytics'), findsOneWidget);
       expect(find.text('AI Personalization Consent'), findsOneWidget);
 
@@ -241,13 +241,13 @@ void main() {
       await tester.tap(find.text('Privacy Policy & Charter'));
       await tester.pumpAndSettle();
 
-      expect(find.text('PRIVACY POLICY & TELEMETRY CHARTER'), findsOneWidget);
+      expect(find.text('PRIVACY POLICY & DATA CHARTER'), findsOneWidget);
       expect(find.text('COPY POLICY URL'), findsOneWidget);
       expect(find.text('CLOSE'), findsOneWidget);
 
       await tester.tap(find.text('CLOSE'));
       await tester.pumpAndSettle();
-      expect(find.text('PRIVACY POLICY & TELEMETRY CHARTER'), findsNothing);
+      expect(find.text('PRIVACY POLICY & DATA CHARTER'), findsNothing);
     });
 
     testWidgets('5. Layout resilience: 360dp width and 1.5x text scale does not overflow', (tester) async {

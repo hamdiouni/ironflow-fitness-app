@@ -75,26 +75,54 @@ final foodsCatalogIndexProvider =
 final filteredFoodProvider = Provider<List<FoodItem>>((ref) {
   final s = ref.watch(foodSearchProvider);
   final catalogAsync = ref.watch(foodsCatalogIndexProvider);
+  final customFoodsAsync = ref.watch(customFoodsProvider);
+  final customFoods = customFoodsAsync.valueOrNull ?? const <FoodItem>[];
+
   final index = catalogAsync.valueOrNull;
+  List<FoodItem> catalogResults;
   if (index == null) {
-    if (FoodCatalog.isLoaded) {
-      return SearchFoodUseCase()(
-        query: s.query,
-        category: s.category,
-        budgetTier: s.budgetTier,
-      );
+    catalogResults = FoodCatalog.isLoaded
+        ? SearchFoodUseCase()(
+            query: s.query,
+            category: s.category,
+            budgetTier: s.budgetTier,
+          )
+        : const <FoodItem>[];
+  } else {
+    catalogResults = s.query.trim().isEmpty ? index.all : index.search(s.query);
+    if (s.category != null) {
+      catalogResults =
+          catalogResults.where((f) => f.category == s.category).toList();
     }
-    return const [];
+    if (s.budgetTier != null) {
+      catalogResults =
+          catalogResults.where((f) => f.budgetTier == s.budgetTier).toList();
+    }
   }
-  List<FoodItem> results =
-      s.query.trim().isEmpty ? index.all : index.search(s.query);
-  if (s.category != null) {
-    results = results.where((f) => f.category == s.category).toList();
+
+  final q = s.query.trim().toLowerCase();
+  final matchingCustom = customFoods.where((f) {
+    if (s.category != null && f.category != s.category) return false;
+    if (s.budgetTier != null && f.budgetTier != s.budgetTier) return false;
+    if (q.isEmpty) return true;
+    final haystack =
+        '${f.name} ${f.category.name} ${f.source} ${f.tags.join(' ')}'
+            .toLowerCase();
+    return q
+        .split(RegExp(r'\s+'))
+        .where((token) => token.isNotEmpty)
+        .every(haystack.contains);
+  });
+
+  final merged = <FoodItem>[];
+  final seenIds = <String>{};
+  for (final item in matchingCustom) {
+    if (seenIds.add(item.id)) merged.add(item);
   }
-  if (s.budgetTier != null) {
-    results = results.where((f) => f.budgetTier == s.budgetTier).toList();
+  for (final item in catalogResults) {
+    if (seenIds.add(item.id)) merged.add(item);
   }
-  return results;
+  return merged;
 });
 
 /// Custom Foods Notifier for managing user-created foods

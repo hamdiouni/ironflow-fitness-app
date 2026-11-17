@@ -1,11 +1,12 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:progression_tracker/core/utils/workout_streak_calculator.dart';
 
 part 'streak.freezed.dart';
 part 'streak.g.dart';
 
 /// Represents a user's workout streak.
 ///
-/// Tracks consecutive days with workouts and resets on missed days.
+/// Tracks consecutive local calendar days with workouts and resets on missed days.
 @freezed
 class Streak with _$Streak {
   const factory Streak({
@@ -35,42 +36,46 @@ class Streak with _$Streak {
 
   const Streak._();
 
-  /// Checks if the streak is still active (workout within last 24 hours)
+  /// Checks if the streak is still active using local calendar dates
+  /// (most recent workout was today or yesterday).
   bool get isActive {
-    final now = DateTime.now();
-    final daysSinceLastWorkout =
-        now.difference(lastWorkoutDate).inDays;
-    return daysSinceLastWorkout <= 1;
+    final today = WorkoutStreakCalculator.toLocalCalendarDate(DateTime.now());
+    final lastDay = WorkoutStreakCalculator.toLocalCalendarDate(lastWorkoutDate);
+    return WorkoutStreakCalculator.calendarDayDifference(lastDay, today) <= 1;
   }
 
-  /// Updates streak after a new workout
-  Streak addWorkout() {
-    final now = DateTime.now();
+  /// Updates streak after a new workout using local calendar dates.
+  Streak addWorkout({DateTime? now}) {
+    final timestamp = now ?? DateTime.now();
+    final today = WorkoutStreakCalculator.toLocalCalendarDate(timestamp);
+    final lastDay = WorkoutStreakCalculator.toLocalCalendarDate(lastWorkoutDate);
     final daysSinceLastWorkout =
-        now.difference(lastWorkoutDate).inDays;
+        WorkoutStreakCalculator.calendarDayDifference(lastDay, today);
 
-    // If more than 1 day has passed, reset streak
-    if (daysSinceLastWorkout > 1) {
+    // Same local calendar day: keep current count, update timestamp.
+    if (daysSinceLastWorkout == 0) {
+      return copyWith(lastWorkoutDate: timestamp);
+    }
+
+    // Gap of 2+ calendar days or initial stale state: start a fresh 1-day streak.
+    if (daysSinceLastWorkout > 1 || currentStreak == 0) {
+      final newLongest = longestStreak < 1 ? 1 : longestStreak;
       return copyWith(
         currentStreak: 1,
-        streakStartDate: now,
-        lastWorkoutDate: now,
+        longestStreak: newLongest,
+        streakStartDate: timestamp,
+        lastWorkoutDate: timestamp,
       );
     }
 
-    // If same day, don't increment
-    if (daysSinceLastWorkout == 0) {
-      return copyWith(lastWorkoutDate: now);
-    }
-
-    // Increment streak
+    // Consecutive local calendar day (daysSinceLastWorkout == 1): increment.
     final newStreak = currentStreak + 1;
     final newLongest = newStreak > longestStreak ? newStreak : longestStreak;
 
     return copyWith(
       currentStreak: newStreak,
       longestStreak: newLongest,
-      lastWorkoutDate: now,
+      lastWorkoutDate: timestamp,
     );
   }
 

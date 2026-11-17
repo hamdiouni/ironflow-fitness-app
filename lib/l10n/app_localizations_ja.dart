@@ -9,7 +9,7 @@ class AppLocalizationsJa extends AppLocalizations {
   AppLocalizationsJa([String locale = 'ja']) : super(locale);
 
   @override
-  String get appTitle => 'IronFlow';
+  String get appTitle => 'Progression Tracker';
 
   @override
   String get home => 'ホーム';
@@ -201,7 +201,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get password => 'パスワード';
 
   @override
-  String get welcome => 'IronFlowへようこそ';
+  String get welcome => 'ようこそ';
 
   @override
   String get getStarted => '始める';
@@ -322,4 +322,55 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get no => 'いいえ';
+
+  @override
+  String get navToday => '今日';
+
+  @override
+  String get navTrain => 'トレ';
+
+  @override
+  String get navFuel => '食事';
+
+  @override
+  String get navProgress => '記録';
+
+  @override
+  String get preferences => '環境設定';
+
+  @override
+  String get account => 'アカウント';
+
+  @override
+  String get aboutApp => 'アプリについて';
+
+  @override
+  String get exerciseCatalog => '種目カタログ';
+
+  @override
+  String get dataBackup => 'データとバックアップ';
+
+  @override
+  String get vibrationHaptics => 'バイブレーション';
+
+  @override
+  String get notificationsReminders => '通知とリマインダー';
+
+  @override
+  String get privacyLegal => 'プライバシーと規約';
+
+  @override
+  String get dailyTargets => '1日の目標';
+
+  @override
+  String get addExercise => '種目を追加';
+
+  @override
+  String get finishWorkout => 'トレーニング終了';
+
+  @override
+  String get logSet => 'セットを記録';
+
+  @override
+  String get programLibrary => 'プログラム一覧';
 }

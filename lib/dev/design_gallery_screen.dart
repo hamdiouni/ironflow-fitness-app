@@ -76,7 +76,7 @@ class _DesignGalleryScreenState extends ConsumerState<DesignGalleryScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'STRIPE DESIGN SYSTEM',
+                        'IRON SCOREBOARD SYSTEM',
                         style: TextStyle(
                           fontFamily: AppTypography.displayFontFamily,
                           fontSize: 14,
@@ -85,17 +85,18 @@ class _DesignGalleryScreenState extends ConsumerState<DesignGalleryScreen> {
                           letterSpacing: 1.0,
                         ),
                       ),
-                      // Backward compatibility marker for design gallery tests
-                      const SizedBox(
-                        height: 0,
-                        width: 0,
-                        child: Text(
-                          'MONOLITHIC SCI-FI',
-                          style: TextStyle(fontSize: 0.001, color: Colors.transparent),
+                      const SizedBox(height: 2),
+                      Text(
+                        'IRON SCOREBOARD',
+                        style: TextStyle(
+                          fontFamily: AppTypography.displayFontFamily,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: tokens.textMuted,
                         ),
                       ),
                       Text(
-                        'Mode: ${tokens.isDark ? "Midnight Indigo (Dark)" : "Warm Linen (Light)"}',
+                        'Mode: ${tokens.isDark ? "Iron Scoreboard (Dark)" : "Iron Scoreboard (Light)"}',
                         style: TextStyle(
                           fontFamily: AppTypography.bodyFontFamily,
                           fontSize: 12,
@@ -178,7 +179,7 @@ class _DesignGalleryScreenState extends ConsumerState<DesignGalleryScreen> {
                 onPressed: () {},
               ),
               AppButton(
-                label: 'Secondary Titanium',
+                label: 'Secondary Steel',
                 variant: AppButtonVariant.secondary,
                 onPressed: () {},
               ),
@@ -210,8 +211,8 @@ class _DesignGalleryScreenState extends ConsumerState<DesignGalleryScreen> {
           ),
           const SizedBox(height: AppSpacings.xl),
 
-          // ── Telemetry Stat Tiles ────────────────────────────────────────────
-          const AppSectionHeader(title: 'Telemetry Stat Tiles'),
+          // ── Metric Stat Tiles ──────────────────────────────────────────────
+          const AppSectionHeader(title: 'Metric Stat Tiles'),
           Row(
             children: [
               Expanded(
@@ -243,7 +244,7 @@ class _DesignGalleryScreenState extends ConsumerState<DesignGalleryScreen> {
           const SizedBox(height: AppSpacings.xl),
 
           // ── Progress Indicators ─────────────────────────────────────────────
-          const AppSectionHeader(title: 'Progress Bars & Telemetry Rings'),
+          const AppSectionHeader(title: 'Progress Bars & Activity Rings'),
           AppCard(
             child: Column(
               children: [
@@ -411,7 +412,7 @@ class _DesignGalleryScreenState extends ConsumerState<DesignGalleryScreen> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Text('Monolithic Sci-Fi bottom sheet with drag handle.'),
+                          const Text('Standard modal bottom sheet with drag handle.'),
                           const SizedBox(height: AppSpacings.lg),
                           AppButton(
                             label: 'Done',

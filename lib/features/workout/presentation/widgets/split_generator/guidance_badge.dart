@@ -50,7 +50,7 @@ class SplitGuidanceBadge extends StatelessWidget {
                 Row(
                   children: [
                     Text(
-                      'PROTOCOL ADVISORY',
+                      'PLAN ADVISORY',
                       style: TextStyle(
                         color: tokens.warning,
                         fontSize: 10,

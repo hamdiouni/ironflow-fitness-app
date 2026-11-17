@@ -120,7 +120,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('WORKOUT'), findsOneWidget);
-      expect(find.text('ACTIVE PROTOCOL'), findsOneWidget);
+      expect(find.text('ACTIVE PLAN'), findsOneWidget);
       expect(find.text('Hypertrophy Protocol Alpha'), findsOneWidget);
       expect(find.text('CYCLE SCHEDULE'), findsOneWidget);
       expect(find.text('DAY 1'), findsOneWidget);

@@ -1,3 +1,4 @@
+import 'package:progression_tracker/core/providers/units_provider.dart';
 import 'package:progression_tracker/features/ai/data/services/ai_insight_metrics_calculator.dart';
 import 'package:progression_tracker/features/ai/domain/entities/insight.dart';
 import 'package:progression_tracker/features/ai/domain/entities/insight_generation_context.dart';
@@ -149,15 +150,23 @@ class AIContextualInsightGenerators {
 
     final allInsights = <Insight>[];
 
+    final weightUnit = UnitsConverter.getWeightUnit(context.units);
+
     // --- 7.6: Recent PR achievements ---
     final prDetails = _calc.getPRDetails(workouts);
     if (prDetails.isNotEmpty) {
       final prEntry = prDetails.entries.first;
+      final displayPrWeight =
+          UnitsConverter.convertWeightToDisplay(prEntry.value, context.units);
       allInsights.add(_calc.createHighPriorityInsight(
         context: InsightContext.workout,
         title: '🏆 Personal Record!',
-        analysis: 'You set a new PR on ${prEntry.key} with ${_calc.formatNumber(prEntry.value)}kg.',
-        numbers: {'pr_weight_kg': prEntry.value, 'total_prs': prDetails.length},
+        analysis:
+            'You set a new PR on ${prEntry.key} with ${_calc.formatNumber(displayPrWeight)} $weightUnit.',
+        numbers: {
+          'pr_weight ($weightUnit)': displayPrWeight,
+          'total_prs': prDetails.length,
+        },
         actionPlan: 'Keep progressive overloading — aim to beat this record in your next session.',
         icon: '🏆',
         metadata: {'type': 'pr_achievement', 'exercise': prEntry.key, 'weight': prEntry.value},
@@ -254,11 +263,17 @@ class AIContextualInsightGenerators {
     if (allInsights.isEmpty) {
       final totalVolume = workouts.map((w) => _calc.calculateVolume(w)).fold(0.0, (a, b) => a + b);
       final avgVolume = totalVolume / workouts.length;
+      final displayAvgVolume =
+          UnitsConverter.convertWeightToDisplay(avgVolume, context.units);
       allInsights.add(_calc.createMediumPriorityInsight(
         context: InsightContext.workout,
         title: '💪 Training Summary',
-        analysis: 'You\'ve completed ${workouts.length} workouts with an average volume of ${_calc.formatNumber(avgVolume)}kg.',
-        numbers: {'total_workouts': workouts.length, 'avg_volume_kg': avgVolume},
+        analysis:
+            'You\'ve completed ${workouts.length} workouts with an average volume of ${_calc.formatNumber(displayAvgVolume)} $weightUnit.',
+        numbers: {
+          'total_workouts': workouts.length,
+          'avg_volume ($weightUnit)': displayAvgVolume,
+        },
         actionPlan: 'Focus on progressive overload — try to beat your average volume each session.',
         icon: '💪',
         metadata: {'type': 'volume_summary'},
@@ -448,21 +463,38 @@ class AIContextualInsightGenerators {
         String icon;
         InsightPriority priority;
 
+        final weightUnit = UnitsConverter.getWeightUnit(context.units);
+        final displayChange = UnitsConverter.convertWeightToDisplay(
+          weightChange.abs(),
+          context.units,
+        );
+        final displayRate = UnitsConverter.convertWeightToDisplay(
+          weightChangeRate.abs(),
+          context.units,
+        );
+        final displayCurrent = UnitsConverter.convertWeightToDisplay(
+          currentWeight,
+          context.units,
+        );
+
         if (weightTrend == WeightTrend.increasing) {
           title = '⬆️ Weight Trending Up';
-          analysis = 'Your weight has increased by ${_calc.formatNumber(weightChange.abs())}kg over the last 30 days (${_calc.formatNumber(weightChangeRate.abs())}kg/week).';
+          analysis =
+              'Your weight has increased by ${_calc.formatNumber(displayChange)} $weightUnit over the last 30 days (${_calc.formatNumber(displayRate)} $weightUnit/week).';
           actionPlan = 'If this aligns with your goal (muscle gain), great! If not, review your calorie intake.';
           icon = '⬆️';
           priority = InsightPriority.medium;
         } else if (weightTrend == WeightTrend.decreasing) {
           title = '⬇️ Weight Trending Down';
-          analysis = 'Your weight has decreased by ${_calc.formatNumber(weightChange.abs())}kg over the last 30 days (${_calc.formatNumber(weightChangeRate.abs())}kg/week).';
+          analysis =
+              'Your weight has decreased by ${_calc.formatNumber(displayChange)} $weightUnit over the last 30 days (${_calc.formatNumber(displayRate)} $weightUnit/week).';
           actionPlan = 'If this aligns with your goal (fat loss), great! Ensure you\'re eating enough protein to preserve muscle.';
           icon = '⬇️';
           priority = InsightPriority.medium;
         } else {
           title = '⚖️ Weight Stable';
-          analysis = 'Your weight has remained stable at ~${_calc.formatNumber(currentWeight)}kg over the last 30 days.';
+          analysis =
+              'Your weight has remained stable at ~${_calc.formatNumber(displayCurrent)} $weightUnit over the last 30 days.';
           actionPlan = 'Stable weight with consistent training means you\'re likely building muscle and losing fat simultaneously.';
           icon = '⚖️';
           priority = InsightPriority.low;

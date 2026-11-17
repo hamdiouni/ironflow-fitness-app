@@ -118,7 +118,7 @@ class _ActiveProgramHeader extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'ACTIVE PROTOCOL',
+                      'ACTIVE PLAN',
                       style: TextStyle(
                         color: tokens.textMuted,
                         fontSize: 10,

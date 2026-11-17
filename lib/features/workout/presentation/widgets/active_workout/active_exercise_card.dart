@@ -24,6 +24,7 @@ class ActiveExerciseCard extends ConsumerStatefulWidget {
     required this.onUpdateSetType,
     this.programExercise,
     this.weightUnit = WeightUnit.kg,
+    this.isFocused = false,
   });
   final Exercise exercise;
   final bool isAnimating;
@@ -32,11 +33,12 @@ class ActiveExerciseCard extends ConsumerStatefulWidget {
   final Future<void> Function(int setIndex, SetType newType) onUpdateSetType;
   final ProgramExercise? programExercise;
   final WeightUnit weightUnit;
+  final bool isFocused;
   @override
-  ConsumerState<ActiveExerciseCard> createState() => _ActiveExerciseCardState();
+  ConsumerState<ActiveExerciseCard> createState() => ActiveExerciseCardState();
 }
 
-class _ActiveExerciseCardState extends ConsumerState<ActiveExerciseCard> {
+class ActiveExerciseCardState extends ConsumerState<ActiveExerciseCard> {
   final _repsController = TextEditingController(text: '8');
   final _weightController = TextEditingController(text: '0');
   final _rpeController = TextEditingController();
@@ -44,6 +46,20 @@ class _ActiveExerciseCardState extends ConsumerState<ActiveExerciseCard> {
   bool _isLogging = false;
   bool _showVideo = false;
   SetType _selectedSetType = SetType.normal;
+
+  /// Triggers logging the currently entered set (used by keyboard shortcuts).
+  Future<void> logCurrentSet() => _handleLogSet();
+
+  /// Adjusts the entered weight in the active display unit by [delta].
+  void stepWeight(double delta) {
+    final current = double.tryParse(_weightController.text.trim()) ?? 0.0;
+    final next = (current + delta).clamp(0.0, 2000.0);
+    setState(() {
+      _weightController.text = next == next.roundToDouble()
+          ? next.toInt().toString()
+          : next.toStringAsFixed(1);
+    });
+  }
 
   @override
   void initState() {
@@ -360,6 +376,9 @@ class _ActiveExerciseCardState extends ConsumerState<ActiveExerciseCard> {
                     PlateCalculatorSheet.show(
                       context,
                       initialWeight: currentWeight,
+                      initialUnit: widget.weightUnit == WeightUnit.lb
+                          ? PlateUnit.lb
+                          : PlateUnit.kg,
                       onApplyWeight: (calcWeight) {
                         setState(() {
                           _weightController.text = calcWeight == calcWeight.roundToDouble()

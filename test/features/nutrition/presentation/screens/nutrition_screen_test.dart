@@ -148,7 +148,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('NUTRITION'), findsOneWidget);
-      expect(find.text('DAILY TARGET PROTOCOL'), findsOneWidget);
+      expect(find.text('DAILY TARGETS'), findsOneWidget);
       expect(find.text('CALORIES'), findsWidgets);
       expect(find.text('REMAINING FUEL'), findsOneWidget);
       expect(find.text('TODAY\'S FUEL'), findsOneWidget);

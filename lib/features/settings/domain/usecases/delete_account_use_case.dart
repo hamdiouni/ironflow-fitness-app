@@ -19,7 +19,7 @@ class DeleteAccountResult {
 
   factory DeleteAccountResult.success() => const DeleteAccountResult(
         success: true,
-        message: 'Account and all associated telemetry have been permanently deleted.',
+        message: 'Account and all associated data have been permanently deleted.',
       );
 
   factory DeleteAccountResult.failure(String message, {bool requiresRecentLogin = false}) =>

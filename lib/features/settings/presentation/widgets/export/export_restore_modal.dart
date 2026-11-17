@@ -144,7 +144,7 @@ void showExportRestoreModal({
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'SYSTEM RESTORATION PROTOCOL',
+                    'RESTORE BACKUP DATA',
                     style: TextStyle(
                       fontFamily: AppTypography.displayFontFamily,
                       fontSize: 16,
@@ -287,7 +287,7 @@ void showExportRestoreModal({
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
-                                  'VALIDATED TELEMETRY ARCHIVE',
+                                  'VALIDATED BACKUP ARCHIVE',
                                   style: TextStyle(
                                     fontFamily: AppTypography.displayFontFamily,
                                     fontSize: 11,

@@ -104,3 +104,19 @@
    - **Option C:** `03-soft-layered` (Warm Studio Coach — cleaned Indigo/Mint/Warm-Linen evolution)
 2. **App / Brand Name in Copy (`4.2`):** The plan calls for removing `"brand names and robotic words"`. For user-facing UI text where `"IronFlow"` currently appears (welcome card, coach greetings, report title, settings), should we replace `"IronFlow"` with generic phrasing (e.g., `"Your Workout Tracker"`, `"Coach"`) or keep/use a specific app name you prefer?
 3. **Default Mode & Scope (`4.2`):** Should Dark mode remain the default on first launch (with clean Light mode toggle in Settings), or Light mode default?
+
+---
+
+## Owner Decision & Wave 4.2 / 4.3 Outcome
+- **Selected Direction:** **Option B (`02-kinetic-block` — Iron Scoreboard)** (`#0A0B0E` dark / `#14171D` card / `#F59E0B` Signal Amber / `#60A5FA` Cobalt / `#F3F4F6` light / `#C2410C` light accent / `8 px` cards / `6 px` buttons / `SpaceGrotesk` + `Inter`).
+- **Copy & Theme:** Neutral plain-English copy (`"Progression Tracker"`, `"Coach"`, removed `"IronFlow"` user copy and sci-fi jargon) with **Dark Mode default** and **Light Mode toggle** in Settings.
+- **Delivered Changes:**
+  - Updated theme tokens (`lib/core/theme/*`), `AppTheme`, shared buttons/cards/inputs/logo (`lib/shared/presentation/components/*`, `lib/shared/widgets/ironflow_logo.dart`), and light-mode contrast tokens across onboarding & program selection.
+  - Unified streak calculation (`lib/core/utils/workout_streak_calculator.dart`) and local-midnight windows (`lib/core/utils/local_date_window.dart`); removed legacy `analytics_screen.dart` in favor of `/progress?tab=lifts`.
+  - Wired Settings Units (`KG`/`LBS`) pills and Language picker (`lib/l10n/app_{en,es,fr,de,pt,ja,zh}.arb`, regenerated via `flutter gen-l10n`) plus canonical profile/nutrition defaults (`UserProfileDefaults`, `NutritionDefaults`) and imperial/metric unit propagation across calculator sheets, Progress tabs, Home, Nutrition, and AI helpers.
+  - Decluttered Active Workout AppBar, extracted `active_workout_chrome.dart`, `active_workout_modals.dart`, and `settings_preferences_widgets.dart` to satisfy the `<= 800` line architecture guard, added `Alt+L`/`Alt+R`/`Alt+=`/`Alt+-` keyboard shortcuts, added `>= 900px` 2-pane responsive layouts (Active Workout, Fuel, Progress), fixed mobile horizontal overflows (`ActiveRestTimerSection`, `BodyWeightTab`, `SettingItem`), fixed disabled tap semantics (`AnimatedScaleButton`), and guarded `FirestoreFoodDatasource` when Firebase is uninitialized.
+  - Regenerated design-system goldens (`test/design_system/design_system_goldens_test.dart` -> `2/2` passed) and captured 10 post-Wave-4 screenshots under `docs/screenshots/wave4-after/`.
+- **Verification Results:**
+  - `flutter analyze --no-pub --no-fatal-infos lib test`: `0` errors, `0` warnings (`31` pre-existing `avoid_print` infos in `test/integration/auth_preservation_property_test.dart`).
+  - `flutter test --no-pub --coverage --timeout=60s`: `1,071` tests passed (`0` failures, `0` skipped).
+  - `python scripts/check_coverage.py --baseline docs/quality/coverage_baseline.json --fail-on-drop`: `70.60%` overall (`21,312 / 30,186` lines across `382` files); `COVERAGE GATE PASSED`.

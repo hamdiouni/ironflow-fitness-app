@@ -1,3 +1,4 @@
+import 'package:progression_tracker/core/providers/units_provider.dart';
 import 'package:progression_tracker/features/ai/domain/entities/insight.dart';
 import 'package:progression_tracker/features/auth/domain/entities/user_profile.dart';
 import 'package:progression_tracker/features/body/domain/entities/body_entry.dart';
@@ -14,6 +15,7 @@ class InsightGenerationContext {
   final NutritionTargets? nutritionTargets;
   final List<BodyEntry> bodyEntries;
   final DateTime generatedAt;
+  final UnitsSystem units;
 
   const InsightGenerationContext({
     required this.context,
@@ -23,5 +25,6 @@ class InsightGenerationContext {
     this.nutritionTargets,
     required this.bodyEntries,
     required this.generatedAt,
+    this.units = UnitsSystem.metric,
   });
 }

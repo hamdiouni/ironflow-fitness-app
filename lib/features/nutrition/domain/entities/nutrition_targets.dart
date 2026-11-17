@@ -1,4 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import '../../../onboarding/domain/entities/user_profile.dart';
 
 part 'nutrition_targets.freezed.dart';
 
@@ -206,4 +207,17 @@ enum NutritionStatus {
   good,     // Within target range (80-120%)
   moderate, // Moderate deviation (50-80% or 120-150%)
   poor,     // Outside target range (<50% or >150%)
+}
+
+/// Canonical fallback macro targets derived from [UserProfileDefaults.referenceProfile].
+abstract final class NutritionDefaults {
+  static MacroTargets fromProfile(UserProfile profile) => MacroTargets(
+        calories: profile.dailyCalorieTarget,
+        protein: profile.dailyProteinTargetGrams,
+        carbs: profile.dailyCarbTargetGrams,
+        fats: profile.dailyFatTargetGrams,
+      );
+
+  static MacroTargets get fallbackMacros =>
+      fromProfile(UserProfileDefaults.referenceProfile);
 }

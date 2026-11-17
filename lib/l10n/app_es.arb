@@ -1,137 +1,125 @@
 {
   "@@locale": "es",
-  "appTitle": "IronFlow",
-  
+  "appTitle": "Progression Tracker",
   "home": "Inicio",
   "workouts": "Entrenamientos",
   "nutrition": "Nutrición",
   "progress": "Progreso",
   "profile": "Perfil",
   "settings": "Configuración",
-  
   "startWorkout": "Iniciar Entrenamiento",
   "logMeal": "Registrar Comida",
   "viewProgress": "Ver Progreso",
-  
   "workout": "Entrenamiento",
   "exercise": "Ejercicio",
   "sets": "Series",
   "reps": "Repeticiones",
   "weight": "Peso",
   "rest": "Descanso",
-  
   "calories": "Calorías",
   "protein": "Proteína",
   "carbs": "Carbohidratos",
   "fats": "Grasas",
   "fiber": "Fibra",
   "sugar": "Azúcar",
-  
   "save": "Guardar",
   "cancel": "Cancelar",
   "delete": "Eliminar",
   "edit": "Editar",
   "done": "Hecho",
   "next": "Siguiente",
-  "back": "Atrás",
-  
+  "back": "Espalda",
   "loading": "Cargando...",
   "error": "Error",
   "success": "Éxito",
   "retry": "Reintentar",
-  
   "darkMode": "Modo Oscuro",
   "lightMode": "Modo Claro",
   "language": "Idioma",
   "units": "Unidades",
-  
   "metric": "Métrico (kg, cm)",
   "imperial": "Imperial (lbs, in)",
-  
   "exportData": "Exportar Datos",
   "importData": "Importar Datos",
   "backup": "Respaldo",
   "restore": "Restaurar",
-  
   "privacySettings": "Configuración de Privacidad",
   "deleteAccount": "Eliminar Cuenta",
   "deleteAllData": "Eliminar Todos los Datos",
-  
   "workoutHistory": "Historial de Entrenamientos",
   "nutritionHistory": "Historial de Nutrición",
   "bodyMeasurements": "Medidas Corporales",
-  
   "strengthProgression": "Progresión de Fuerza",
   "weightTracking": "Seguimiento de Peso",
   "consistency": "Consistencia",
-  
   "aiCoach": "Entrenador IA",
   "askAI": "Preguntar a IA",
   "generateWorkout": "Generar Entrenamiento",
   "analyzeDiet": "Analizar Dieta",
-  
   "achievements": "Logros",
   "weeklyReport": "Informe Semanal",
   "reminders": "Recordatorios",
-  
   "signIn": "Iniciar Sesión",
   "signUp": "Registrarse",
   "signOut": "Cerrar Sesión",
   "email": "Correo Electrónico",
   "password": "Contraseña",
-  
-  "welcome": "Bienvenido a IronFlow",
+  "welcome": "Bienvenido",
   "getStarted": "Comenzar",
-  
   "noDataYet": "Aún no hay datos",
   "startLogging": "¡Comienza a registrar tus entrenamientos y comidas!",
-  
   "syncStatus": "Estado de Sincronización",
   "syncing": "Sincronizando...",
   "synced": "Sincronizado",
   "offline": "Sin Conexión",
-  
   "searchExercises": "Buscar Ejercicios",
   "searchFoods": "Buscar Alimentos",
   "filterBy": "Filtrar Por",
-  
   "muscleGroup": "Grupo Muscular",
   "equipment": "Equipo",
   "difficulty": "Dificultad",
-  
   "beginner": "Principiante",
   "intermediate": "Intermedio",
   "advanced": "Avanzado",
-  
   "chest": "Pecho",
-  "back": "Espalda",
   "legs": "Piernas",
   "shoulders": "Hombros",
   "arms": "Brazos",
   "abs": "Abdominales",
-  
   "breakfast": "Desayuno",
   "lunch": "Almuerzo",
   "dinner": "Cena",
   "snack": "Merienda",
-  
   "today": "Hoy",
   "yesterday": "Ayer",
   "thisWeek": "Esta Semana",
   "thisMonth": "Este Mes",
-  
   "goal": "Objetivo",
   "target": "Meta",
   "actual": "Real",
   "remaining": "Restante",
-  
   "personalRecords": "Récords Personales",
   "newPR": "¡Nuevo RP!",
   "congratulations": "¡Felicitaciones!",
-  
   "confirmDelete": "¿Estás seguro de que quieres eliminar esto?",
   "confirmDeleteAccount": "¿Estás seguro de que quieres eliminar tu cuenta? Esta acción no se puede deshacer.",
-  
   "yes": "Sí",
-  "no": "No"
+  "no": "No",
+  "navToday": "HOY",
+  "navTrain": "ENTRENO",
+  "navFuel": "NUTRICIÓN",
+  "navProgress": "PROGRESO",
+  "preferences": "Preferencias",
+  "account": "Cuenta",
+  "aboutApp": "Acerca de la aplicación",
+  "exerciseCatalog": "Catálogo de ejercicios",
+  "dataBackup": "Gestión de datos y copias",
+  "vibrationHaptics": "Vibración y háptica",
+  "notificationsReminders": "Notificaciones y recordatorios",
+  "privacyLegal": "Privacidad y legal",
+  "dailyTargets": "Objetivos diarios",
+  "addExercise": "Añadir ejercicio",
+  "finishWorkout": "Finalizar entreno",
+  "logSet": "Registrar serie",
+  "programLibrary": "Biblioteca de programas"
 }

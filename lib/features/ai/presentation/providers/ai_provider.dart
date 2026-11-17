@@ -1,4 +1,5 @@
 import 'package:progression_tracker/core/utils/app_logger.dart';
+import 'package:progression_tracker/core/utils/local_date_window.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:progression_tracker/features/ai/domain/entities/chat_message.dart';
 import 'package:progression_tracker/features/ai/domain/repositories/ai_preferences_repository.dart';
@@ -286,24 +287,25 @@ class AIChatNotifier extends Notifier<AIChatState> {
           profile = user != null ? await authRepo.getUserProfile(user.id) : null;
           AppLogger.debug('✅ [AI CHAT] User profile: ${profile?.name ?? "Guest"}');
 
-          final thirtyDaysAgo = DateTime.now().subtract(const Duration(days: 30));
+          final now = DateTime.now();
+          final thirtyDaysAgo = LocalDateWindow.rollingDaysWindow(30, now: now).start;
           recentWorkouts = await workoutRepo.getWorkoutsByDateRange(
             thirtyDaysAgo,
-            DateTime.now(),
+            now,
           );
           AppLogger.debug('✅ [AI CHAT] Found ${recentWorkouts.length} workouts');
 
-          final sevenDaysAgo = DateTime.now().subtract(const Duration(days: 7));
+          final sevenDaysAgo = LocalDateWindow.rollingDaysWindow(7, now: now).start;
           nutritionHistory = await nutritionRepo.getNutritionHistory(
             sevenDaysAgo,
-            DateTime.now(),
+            now,
           );
           nutritionTargets = await nutritionRepo.getNutritionTargets();
           AppLogger.debug('✅ [AI CHAT] Found ${nutritionHistory.length} nutrition days');
 
           bodyEntries = await bodyRepo.getBodyEntriesByDateRange(
             thirtyDaysAgo,
-            DateTime.now(),
+            now,
           );
           AppLogger.debug('✅ [AI CHAT] Found ${bodyEntries.length} body entries');
         } catch (e) {
@@ -460,7 +462,7 @@ class AIChatNotifier extends Notifier<AIChatState> {
   }) {
     final buffer = StringBuffer();
     
-    buffer.writeln('You are an expert fitness coach and nutritionist for IronFlow, a fitness tracking app.');
+    buffer.writeln('You are a knowledgeable, supportive fitness and nutrition coach.');
     buffer.writeln('Your role is to provide short, accurate, evidence-based fitness and nutrition answers in plain English.');
     buffer.writeln();
     buffer.writeln('STRICT RESPONSE RULES (CRITICAL):');

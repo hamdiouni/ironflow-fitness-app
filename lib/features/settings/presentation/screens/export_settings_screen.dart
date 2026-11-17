@@ -58,7 +58,7 @@ class _ExportSettingsScreenState extends ConsumerState<ExportSettingsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'TELEMETRY DATA',
+              'EXPORT & BACKUP',
               style: TextStyle(
                 fontFamily: AppTypography.displayFontFamily,
                 fontSize: 18,
@@ -201,7 +201,7 @@ class _ExportSettingsScreenState extends ConsumerState<ExportSettingsScreen> {
           const SizedBox(height: 20),
 
           // Workouts Section
-          ExportSectionHeader(title: 'WORKOUT TELEMETRY', tokens: tokens),
+          ExportSectionHeader(title: 'WORKOUT DATA', tokens: tokens),
           Container(
             decoration: BoxDecoration(
               color: tokens.panel,
@@ -313,7 +313,7 @@ class _ExportSettingsScreenState extends ConsumerState<ExportSettingsScreen> {
                   const SizedBox(width: 14),
                   Expanded(
                     child: Text(
-                      _statusMessage ?? 'Processing telemetry...',
+                      _statusMessage ?? 'Processing export...',
                       style: TextStyle(
                         fontFamily: AppTypography.bodyFontFamily,
                         fontSize: 13,
@@ -331,11 +331,11 @@ class _ExportSettingsScreenState extends ConsumerState<ExportSettingsScreen> {
   }
 
   Future<void> _exportWorkoutsCsv() async {
-    _startOp('Compiling workout CSV telemetry...');
+    _startOp('Compiling workout CSV data...');
     try {
       final useCase = ref.read(exportWorkoutsUseCaseProvider);
       final path = await useCase.exportToCSV();
-      await _shareFile(path, 'Workout CSV telemetry exported successfully');
+      await _shareFile(path, 'Workout CSV exported successfully');
     } catch (e) {
       _showError('Failed to export workout CSV: $e');
     } finally {
@@ -348,7 +348,7 @@ class _ExportSettingsScreenState extends ConsumerState<ExportSettingsScreen> {
     try {
       final useCase = ref.read(simpleJsonExportUseCaseProvider);
       final path = await useCase.exportWorkoutsToJSON();
-      await _shareFile(path, 'Workout JSON telemetry exported successfully');
+      await _shareFile(path, 'Workout JSON exported successfully');
     } catch (e) {
       _showError('Failed to export workout JSON: $e');
     } finally {
@@ -387,7 +387,7 @@ class _ExportSettingsScreenState extends ConsumerState<ExportSettingsScreen> {
     try {
       final useCase = ref.read(simpleJsonExportUseCaseProvider);
       final path = await useCase.exportNutritionToJSON();
-      await _shareFile(path, 'Nutrition JSON telemetry exported successfully');
+      await _shareFile(path, 'Nutrition JSON exported successfully');
     } catch (e) {
       _showError('Failed to export nutrition JSON: $e');
     } finally {
@@ -430,7 +430,7 @@ class _ExportSettingsScreenState extends ConsumerState<ExportSettingsScreen> {
       restoreUseCase: restoreUseCase,
       onExecuteRestore: (jsonText, overwriteExisting) async {
         _startOp(
-          'Restoring system telemetry (overwrite: $overwriteExisting)...',
+          'Restoring backup data (overwrite: $overwriteExisting)...',
         );
         try {
           final result = await restoreUseCase.restoreFromJsonString(
@@ -584,7 +584,7 @@ class _ExportSettingsScreenState extends ConsumerState<ExportSettingsScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: AppThemeTokens.of(context).panel,
         title: Text(
-          'TELEMETRY FAULT',
+          'EXPORT ERROR',
           style: TextStyle(
             fontFamily: AppTypography.displayFontFamily,
             color: AppThemeTokens.of(context).error,

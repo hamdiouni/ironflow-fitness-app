@@ -69,11 +69,15 @@ class FoodAlternativesWidget extends ConsumerWidget {
                 itemCount: alternatives.length,
                 itemBuilder: (context, index) {
                   final alternative = alternatives[index];
-                  return _AlternativeFoodCard(
+                  final reduceMotion =
+                      MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+                  final card = _AlternativeFoodCard(
                     alternative: alternative,
                     onSwap: onSwap,
-                  ).animate().fadeIn(
-                        delay: Duration(milliseconds: index * 50),
+                  );
+                  if (reduceMotion) return card;
+                  return card.animate().fadeIn(
+                        delay: Duration(milliseconds: index.clamp(0, 8) * 50),
                         duration: const Duration(milliseconds: 200),
                       );
                 },

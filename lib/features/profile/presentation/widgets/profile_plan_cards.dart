@@ -35,7 +35,7 @@ class ProfileGoalCard extends StatelessWidget {
           ? null
           : program.days[
               active.currentDayIndex.clamp(0, program.days.length - 1).toInt()];
-      badge = 'ACTIVE PROTOCOL';
+      badge = 'ACTIVE PLAN';
       title = program.name;
       description = currentDay == null
           ? program.description
@@ -268,7 +268,7 @@ class ProfileDietPlanCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    'NUTRITION PROTOCOL',
+                    'NUTRITION PLAN',
                     style: TextStyle(
                       fontFamily: AppTypography.displayFontFamily,
                       fontSize: 13,

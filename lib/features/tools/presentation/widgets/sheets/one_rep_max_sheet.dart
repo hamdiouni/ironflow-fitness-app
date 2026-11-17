@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../../core/constants/app_theme.dart';
+import '../../../../../core/providers/units_provider.dart';
 import '../../../../../shared/presentation/components/app_bottom_sheet.dart';
 import '../../../../../shared/presentation/components/app_button.dart';
 import '../../../domain/calculators/one_rep_max_calculator.dart';
@@ -7,24 +8,32 @@ import '../../../domain/calculators/one_rep_max_calculator.dart';
 class OneRepMaxSheet extends StatefulWidget {
   final double initialWeight;
   final int initialReps;
+  final UnitsSystem units;
 
   const OneRepMaxSheet({
     super.key,
     this.initialWeight = 100.0,
     this.initialReps = 5,
+    this.units = UnitsSystem.metric,
   });
 
   static Future<void> show(
     BuildContext context, {
     double initialWeight = 100.0,
     int initialReps = 5,
+    UnitsSystem units = UnitsSystem.metric,
   }) {
+    final resolvedInitial =
+        units == UnitsSystem.imperial && initialWeight == 100.0
+            ? 225.0
+            : initialWeight;
     return AppBottomSheet.show(
       context: context,
       title: '1RM CALCULATOR',
       child: OneRepMaxSheet(
-        initialWeight: initialWeight,
+        initialWeight: resolvedInitial,
         initialReps: initialReps,
+        units: units,
       ),
     );
   }
@@ -55,6 +64,7 @@ class _OneRepMaxSheetState extends State<OneRepMaxSheet> {
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
+    final weightUnit = UnitsConverter.getWeightUnit(widget.units);
     final result = OneRepMaxCalculator.calculate(weight: _weight, reps: _reps);
 
     return SingleChildScrollView(
@@ -75,7 +85,7 @@ class _OneRepMaxSheetState extends State<OneRepMaxSheet> {
                   ),
                   decoration: InputDecoration(
                     labelText: 'WEIGHT LIFTED',
-                    suffixText: 'kg',
+                    suffixText: weightUnit,
                     filled: true,
                     fillColor: tokens.card,
                     border: OutlineInputBorder(
@@ -153,7 +163,7 @@ class _OneRepMaxSheetState extends State<OneRepMaxSheet> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  '${result.recommended1RM.toStringAsFixed(1)} kg',
+                  '${result.recommended1RM.toStringAsFixed(1)} $weightUnit',
                   style: TextStyle(
                     fontFamily: AppTypography.displayFontFamily,
                     fontSize: 32,
@@ -163,7 +173,7 @@ class _OneRepMaxSheetState extends State<OneRepMaxSheet> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Brzycki: ${result.brzycki.toStringAsFixed(1)} kg • Epley: ${result.epley.toStringAsFixed(1)} kg',
+                  'Brzycki: ${result.brzycki.toStringAsFixed(1)} $weightUnit • Epley: ${result.epley.toStringAsFixed(1)} $weightUnit',
                   style: TextStyle(
                     fontFamily: AppTypography.bodyFontFamily,
                     fontSize: 11,
@@ -219,7 +229,7 @@ class _OneRepMaxSheetState extends State<OneRepMaxSheet> {
                         ),
                       ),
                       Text(
-                        '${item.weight.toStringAsFixed(1)} kg',
+                        '${item.weight.toStringAsFixed(1)} $weightUnit',
                         style: TextStyle(
                           fontFamily: AppTypography.displayFontFamily,
                           fontSize: 13,

@@ -705,7 +705,7 @@ class SplitCatalog {
       HybridSplit(
         id: 'hybrid_ppl_arnold',
         name: 'PPL x Arnold',
-        description: 'The ultimate 6-day hypertrophy protocol. First pass runs Push/Pull/Legs; second pass runs Arnold Split.',
+        description: 'A high-frequency 6-day hypertrophy split. First pass runs Push/Pull/Legs; second pass runs Arnold Split.',
         splitA: pushPullLegs,
         splitB: arnoldSplit,
         mode: mode,

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:progression_tracker/features/ai/presentation/widgets/ai_entry_button.dart';
-import 'package:progression_tracker/features/analytics/presentation/screens/analytics_screen.dart';
+import 'package:progression_tracker/features/body/presentation/screens/progress_screen.dart';
 import 'package:progression_tracker/features/workout/presentation/screens/home_screen.dart';
 import 'package:progression_tracker/features/workout/presentation/screens/program_editor_screen.dart';
 import 'package:progression_tracker/features/workout/presentation/providers/workout_providers.dart';
@@ -125,7 +125,7 @@ void main() {
       expect(find.byType(AiEntryButton), findsOneWidget);
     });
 
-    testWidgets('AiEntryButton is present on AnalyticsScreen header',
+    testWidgets('AiEntryButton is present on ProgressScreen header (merged analytics)',
         (tester) async {
       await tester.pumpWidget(
         ProviderScope(
@@ -134,7 +134,7 @@ void main() {
             userProfileProvider.overrideWith((ref) async => null),
           ],
           child: const MaterialApp(
-            home: AnalyticsScreen(),
+            home: ProgressScreen(),
           ),
         ),
       );

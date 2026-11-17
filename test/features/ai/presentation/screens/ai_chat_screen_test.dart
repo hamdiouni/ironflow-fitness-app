@@ -74,7 +74,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('IronFlow AI Coach'), findsOneWidget);
+      expect(find.text('AI Coach'), findsOneWidget);
       expect(find.text('Powered by Gemini'), findsOneWidget);
       expect(find.text('Online • Ready to help'), findsOneWidget);
       expect(find.byType(TextField), findsOneWidget);
@@ -249,7 +249,7 @@ void main() {
       // Go to AI Chat
       await tester.tap(find.text('Go to AI'));
       await tester.pumpAndSettle();
-      expect(find.text('IronFlow AI Coach'), findsOneWidget);
+      expect(find.text('AI Coach'), findsOneWidget);
 
       // Tap back button
       final backButton = find.byTooltip('Back');
@@ -259,7 +259,7 @@ void main() {
 
       // Should be back at Home
       expect(find.text('Go to AI'), findsOneWidget);
-      expect(find.text('IronFlow AI Coach'), findsNothing);
+      expect(find.text('AI Coach'), findsNothing);
     });
   });
 }

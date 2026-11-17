@@ -73,7 +73,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('SETTINGS'), findsOneWidget);
-    expect(find.text('SYSTEM CONFIGURATION'), findsOneWidget);
+    expect(find.text('PREFERENCES'), findsOneWidget);
     expect(find.text('ACCOUNT'), findsOneWidget);
     expect(find.text('ALEX ATHLETE'), findsOneWidget);
   });

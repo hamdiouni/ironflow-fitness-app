@@ -26,13 +26,19 @@ class WeightGoalPlanResult {
     this.safetyWarning,
   });
 
-  String get plainEnglishSummary {
+  String get plainEnglishSummary => formatSummary();
+
+  String formatSummary({
+    String weightUnit = 'kg',
+    double weightScale = 1.0,
+  }) {
     if (isMaintaining) {
-      return 'You are at your target weight (${currentWeightKg.toStringAsFixed(1)} kg). Focus on maintenance nutrition.';
+      final currentStr = (currentWeightKg * weightScale).toStringAsFixed(1);
+      return 'You are at your target weight ($currentStr $weightUnit). Focus on maintenance nutrition.';
     }
 
-    final diff = weightDifferenceKg.toStringAsFixed(1);
-    final rate = weeklyRateKg.toStringAsFixed(2);
+    final diff = (weightDifferenceKg * weightScale).toStringAsFixed(1);
+    final rate = (weeklyRateKg * weightScale).toStringAsFixed(2);
     final weeks = estimatedWeeks.toStringAsFixed(1);
     final action = isWeightLoss ? 'lose' : 'gain';
     final calAction = isWeightLoss ? 'deficit' : 'surplus';
@@ -40,7 +46,7 @@ class WeightGoalPlanResult {
     final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     final dateStr = '${months[targetDate.month - 1]} ${targetDate.day}, ${targetDate.year}';
 
-    return 'To $action $diff kg at $rate kg/week, you will reach your goal in ~$weeks weeks (around $dateStr). '
+    return 'To $action $diff $weightUnit at $rate $weightUnit/week, you will reach your goal in ~$weeks weeks (around $dateStr). '
         'Estimated daily $calAction: ~$cal kcal.';
   }
 }

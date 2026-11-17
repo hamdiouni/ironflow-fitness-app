@@ -145,13 +145,19 @@ class SettingItem extends StatelessWidget {
             color: tokens.textMuted,
           ),
         ),
-        Text(
-          value,
-          style: TextStyle(
-            fontFamily: AppTypography.displayFontFamily,
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-            color: tokens.textPrimary,
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            value,
+            textAlign: TextAlign.end,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontFamily: AppTypography.displayFontFamily,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: tokens.textPrimary,
+            ),
           ),
         ),
       ],

@@ -80,7 +80,7 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
   // Convenient alias
   Color get textTertiary => textMuted;
 
-  /// Stripe Design System: Dark Tokens (Brand Dark 900 Shell).
+  /// Iron Scoreboard: Dark Tokens.
   static final AppThemeTokens dark = AppThemeTokens(
     isDark: true,
     canvas: AppColors.canvasDark,
@@ -106,29 +106,16 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
     cardDecoration: BoxDecoration(
       color: AppColors.cardDark,
       borderRadius: BorderRadius.circular(AppSpacings.radiusLg),
-      boxShadow: const [
-        BoxShadow(
-          color: Color(0x2E000000),
-          blurRadius: 12,
-          offset: Offset(0, 3),
-        ),
-      ],
+      border: Border.all(color: AppColors.borderSubtleDark, width: 1),
     ),
     glowDecoration: BoxDecoration(
       color: AppColors.cardDark,
       borderRadius: BorderRadius.circular(AppSpacings.radiusLg),
       border: Border.all(color: AppColors.kineticAccentDark, width: 1.5),
-      boxShadow: const [
-        BoxShadow(
-          color: Color(0x33A5B4FC),
-          blurRadius: 16,
-          spreadRadius: 1,
-        ),
-      ],
     ),
   );
 
-  /// Stripe Design System: Light Tokens (Crisp White Canvas & Soft Off-White).
+  /// Iron Scoreboard: Light Tokens.
   static final AppThemeTokens light = AppThemeTokens(
     isDark: false,
     canvas: AppColors.canvasLight,
@@ -148,31 +135,18 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
     warning: AppColors.warningLight,
     error: AppColors.errorLight,
     info: AppColors.infoLight,
-    protein: AppColors.protein,
-    carbs: AppColors.carbs,
-    fats: AppColors.fats,
+    protein: AppColors.proteinLight,
+    carbs: AppColors.carbsLight,
+    fats: AppColors.fatsLight,
     cardDecoration: BoxDecoration(
       color: AppColors.cardLight,
       borderRadius: BorderRadius.circular(AppSpacings.radiusLg),
-      boxShadow: const [
-        BoxShadow(
-          color: Color(0x0C000000),
-          blurRadius: 12,
-          offset: Offset(0, 3),
-        ),
-      ],
+      border: Border.all(color: AppColors.borderSubtleLight, width: 1),
     ),
     glowDecoration: BoxDecoration(
       color: AppColors.cardLight,
       borderRadius: BorderRadius.circular(AppSpacings.radiusLg),
       border: Border.all(color: AppColors.kineticAccentLight, width: 1.5),
-      boxShadow: const [
-        BoxShadow(
-          color: Color(0x26533AFD),
-          blurRadius: 12,
-          spreadRadius: 1,
-        ),
-      ],
     ),
   );
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:progression_tracker/core/constants/app_theme.dart';
+import 'package:progression_tracker/core/providers/units_provider.dart';
 import 'package:progression_tracker/features/onboarding/domain/entities/user_profile.dart';
 import 'package:progression_tracker/features/profile/presentation/providers/profile_data_provider.dart';
 
@@ -152,13 +153,25 @@ class ProfileHeader extends StatelessWidget {
 // ── Stats Row ─────────────────────────────────────────────────────────────────
 
 class ProfileStatsRow extends StatelessWidget {
-  const ProfileStatsRow({super.key, required this.data, required this.tokens});
+  const ProfileStatsRow({
+    super.key,
+    required this.data,
+    required this.tokens,
+    this.units = UnitsSystem.metric,
+  });
   final ProfileData data;
   final AppThemeTokens tokens;
+  final UnitsSystem units;
 
   @override
   Widget build(BuildContext context) {
     final profile = data.profile;
+    final weightUnit = UnitsConverter.getWeightUnit(units).toUpperCase();
+    final lengthUnit = UnitsConverter.getLengthUnit(units).toUpperCase();
+    final displayWeight =
+        UnitsConverter.convertWeightToDisplay(data.currentWeightKg, units);
+    final displayHeight =
+        UnitsConverter.convertLengthToDisplay(profile.heightCm, units);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Row(
@@ -178,8 +191,10 @@ class ProfileStatsRow extends StatelessWidget {
               label: 'WEIGHT',
               // Latest logged body entry, not the frozen onboarding
               // weight (which is only the pre-logging fallback).
-              value: data.currentWeightKg.toStringAsFixed(1),
-              unit: data.latestBodyEntry == null ? 'KG' : 'KG · LATEST',
+              value: displayWeight.toStringAsFixed(1),
+              unit: data.latestBodyEntry == null
+                  ? weightUnit
+                  : '$weightUnit · LATEST',
               color: tokens.kineticAccent,
               tokens: tokens,
             ),
@@ -188,8 +203,10 @@ class ProfileStatsRow extends StatelessWidget {
           Expanded(
             child: _StatCard(
               label: 'HEIGHT',
-              value: profile.heightCm.toStringAsFixed(0),
-              unit: 'CM',
+              value: units == UnitsSystem.metric
+                  ? displayHeight.toStringAsFixed(0)
+                  : displayHeight.toStringAsFixed(1),
+              unit: lengthUnit,
               color: tokens.violetAccent,
               tokens: tokens,
             ),
@@ -221,17 +238,25 @@ class ProfileStatsRow extends StatelessWidget {
 /// history (see [buildProfileData]) — replaces any stored/global
 /// counters on this screen.
 class ProfileActivityRow extends StatelessWidget {
-  const ProfileActivityRow({super.key, required this.data, required this.tokens});
+  const ProfileActivityRow({
+    super.key,
+    required this.data,
+    required this.tokens,
+    this.units = UnitsSystem.metric,
+  });
   final ProfileData data;
   final AppThemeTokens tokens;
+  final UnitsSystem units;
 
   String _volumeLabel(double kg) {
-    if (kg >= 1000) return '${(kg / 1000).toStringAsFixed(1)}k';
-    return kg.toStringAsFixed(0);
+    final val = UnitsConverter.convertWeightToDisplay(kg, units);
+    if (val >= 1000) return '${(val / 1000).toStringAsFixed(1)}k';
+    return val.toStringAsFixed(0);
   }
 
   @override
   Widget build(BuildContext context) {
+    final weightUnit = UnitsConverter.getWeightUnit(units).toUpperCase();
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Row(
@@ -270,7 +295,7 @@ class ProfileActivityRow extends StatelessWidget {
             child: _StatCard(
               label: 'VOLUME',
               value: _volumeLabel(data.totalVolumeKg),
-              unit: 'KG LIFTED',
+              unit: '$weightUnit LIFTED',
               color: tokens.warning,
               tokens: tokens,
             ),

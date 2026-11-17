@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 import 'package:progression_tracker/core/constants/app_theme.dart';
+import 'package:progression_tracker/core/providers/units_provider.dart';
+import 'package:progression_tracker/core/utils/local_date_window.dart';
 import 'package:progression_tracker/shared/presentation/components/components.dart';
 import 'package:progression_tracker/features/onboarding/domain/entities/user_profile.dart';
 import 'package:progression_tracker/features/workout/domain/entities/workout.dart';
@@ -15,9 +17,10 @@ class WeeklyActivitySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final now = DateTime.now();
-    final weekStart = now.subtract(const Duration(days: 6));
-    final weekWorkouts = workouts.where((w) => w.date.isAfter(weekStart)).toList();
+    final window = LocalDateWindow.rollingDaysWindow(7);
+    final weekWorkouts = workouts
+        .where((w) => LocalDateWindow.contains(w.date, window.start, window.endExclusive))
+        .toList();
     final count = weekWorkouts.length;
     final tokens = context.tokens;
     final progress = target > 0 ? (count / target).clamp(0.0, 1.0) : 0.0;
@@ -189,9 +192,11 @@ class TodaySummaryRow extends StatelessWidget {
     super.key,
     required this.workouts,
     required this.profile,
+    this.units = UnitsSystem.metric,
   });
   final List<Workout> workouts;
   final UserProfile? profile;
+  final UnitsSystem units;
 
   @override
   Widget build(BuildContext context) {
@@ -199,8 +204,12 @@ class TodaySummaryRow extends StatelessWidget {
     final lastDate = lastWorkout != null
         ? DateFormat('MMM d').format(lastWorkout.date)
         : 'None';
-    final calories = profile?.dailyCalorieTarget.toInt() ?? 2000;
-    final weight = profile?.weightKg.toStringAsFixed(1) ?? '--';
+    final calories = (profile ?? UserProfileDefaults.referenceProfile)
+        .dailyCalorieTarget
+        .round();
+    final weight = profile != null
+        ? UnitsConverter.formatWeight(profile!.weightKg, units)
+        : '--';
     final tokens = context.tokens;
 
     return Padding(
@@ -232,7 +241,7 @@ class TodaySummaryRow extends StatelessWidget {
             child: _SummaryCard(
               icon: Icons.monitor_weight_outlined,
               label: 'Weight',
-              value: '${weight}kg',
+              value: weight,
               color: tokens.kineticAccent,
             ).animate().fadeIn(delay: 250.ms).slideX(begin: 0.05),
           ),

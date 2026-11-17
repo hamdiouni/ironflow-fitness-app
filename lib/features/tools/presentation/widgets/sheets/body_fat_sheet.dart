@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../../core/constants/app_theme.dart';
+import '../../../../../core/providers/units_provider.dart';
 import '../../../../../shared/presentation/components/app_bottom_sheet.dart';
 import '../../../../../shared/presentation/components/app_button.dart';
 import '../../../../onboarding/domain/entities/user_profile.dart';
@@ -7,14 +8,23 @@ import '../../../domain/calculators/body_fat_calculator.dart';
 
 class BodyFatSheet extends StatefulWidget {
   final UserProfile? profile;
+  final UnitsSystem units;
 
-  const BodyFatSheet({super.key, this.profile});
+  const BodyFatSheet({
+    super.key,
+    this.profile,
+    this.units = UnitsSystem.metric,
+  });
 
-  static Future<void> show(BuildContext context, {UserProfile? profile}) {
+  static Future<void> show(
+    BuildContext context, {
+    UserProfile? profile,
+    UnitsSystem units = UnitsSystem.metric,
+  }) {
     return AppBottomSheet.show(
       context: context,
       title: 'BODY FAT CALCULATOR (US NAVY)',
-      child: BodyFatSheet(profile: profile),
+      child: BodyFatSheet(profile: profile, units: units),
     );
   }
 
@@ -34,17 +44,19 @@ class _BodyFatSheetState extends State<BodyFatSheet> {
   void initState() {
     super.initState();
     final p = widget.profile;
-    _weight = p?.weightKg ?? 78.0;
-    _height = p?.heightCm ?? 178.0;
-    _neck = 38.0;
-    _waist = 84.0;
-    _hip = 96.0;
+    _weight = p?.weightKg ?? UserProfileDefaults.weightKg;
+    _height = p?.heightCm ?? UserProfileDefaults.heightCm;
+    _neck = UserProfileDefaults.neckCm;
+    _waist = UserProfileDefaults.waistCm;
+    _hip = UserProfileDefaults.hipCm;
     _sex = p?.sex ?? BiologicalSex.male;
   }
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
+    final weightUnit = UnitsConverter.getWeightUnit(widget.units);
+    final lengthUnit = UnitsConverter.getLengthUnit(widget.units);
     final result = BodyFatCalculator.calculate(
       weightKg: _weight,
       heightCm: _height,
@@ -61,25 +73,58 @@ class _BodyFatSheetState extends State<BodyFatSheet> {
           Row(
             children: [
               Expanded(
-                child: _buildInput('NECK', '$_neck', 'cm', tokens, (v) {
-                  final d = double.tryParse(v);
-                  if (d != null) setState(() => _neck = d);
-                }),
+                child: _buildInput(
+                  'NECK',
+                  UnitsConverter.convertLengthToDisplay(_neck, widget.units)
+                      .toStringAsFixed(1),
+                  lengthUnit,
+                  tokens,
+                  (v) {
+                    final d = double.tryParse(v);
+                    if (d != null) {
+                      setState(() => _neck =
+                          UnitsConverter.convertLengthToStorage(d, widget.units));
+                    }
+                  },
+                ),
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: _buildInput('WAIST', '$_waist', 'cm', tokens, (v) {
-                  final d = double.tryParse(v);
-                  if (d != null) setState(() => _waist = d);
-                }),
+                child: _buildInput(
+                  'WAIST',
+                  UnitsConverter.convertLengthToDisplay(_waist, widget.units)
+                      .toStringAsFixed(1),
+                  lengthUnit,
+                  tokens,
+                  (v) {
+                    final d = double.tryParse(v);
+                    if (d != null) {
+                      setState(() => _waist =
+                          UnitsConverter.convertLengthToStorage(d, widget.units));
+                    }
+                  },
+                ),
               ),
               if (_sex == BiologicalSex.female) ...[
                 const SizedBox(width: 8),
                 Expanded(
-                  child: _buildInput('HIP', '${_hip ?? 96}', 'cm', tokens, (v) {
-                    final d = double.tryParse(v);
-                    if (d != null) setState(() => _hip = d);
-                  }),
+                  child: _buildInput(
+                    'HIP',
+                    UnitsConverter.convertLengthToDisplay(
+                      _hip ?? UserProfileDefaults.hipCm,
+                      widget.units,
+                    ).toStringAsFixed(1),
+                    lengthUnit,
+                    tokens,
+                    (v) {
+                      final d = double.tryParse(v);
+                      if (d != null) {
+                        setState(() => _hip =
+                            UnitsConverter.convertLengthToStorage(
+                                d, widget.units));
+                      }
+                    },
+                  ),
                 ),
               ],
             ],
@@ -142,7 +187,7 @@ class _BodyFatSheetState extends State<BodyFatSheet> {
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     Text(
-                      'Fat Mass: ${result.fatMassKg.toStringAsFixed(1)} kg',
+                      'Fat Mass: ${UnitsConverter.convertWeightToDisplay(result.fatMassKg, widget.units).toStringAsFixed(1)} $weightUnit',
                       style: TextStyle(
                         fontFamily: AppTypography.bodyFontFamily,
                         fontSize: 12,
@@ -150,7 +195,7 @@ class _BodyFatSheetState extends State<BodyFatSheet> {
                       ),
                     ),
                     Text(
-                      'Lean Mass: ${result.leanMassKg.toStringAsFixed(1)} kg',
+                      'Lean Mass: ${UnitsConverter.convertWeightToDisplay(result.leanMassKg, widget.units).toStringAsFixed(1)} $weightUnit',
                       style: TextStyle(
                         fontFamily: AppTypography.bodyFontFamily,
                         fontSize: 12,

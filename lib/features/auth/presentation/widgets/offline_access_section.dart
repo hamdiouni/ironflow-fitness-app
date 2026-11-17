@@ -125,7 +125,7 @@ class _OfflineAccessSectionState extends ConsumerState<OfflineAccessSection> {
           ),
           const SizedBox(height: 6),
           Text(
-            'Use IronFlow completely on-device without a cloud account, or launch the populated showcase.',
+            'Use the app completely on-device without a cloud account, or launch the populated showcase.',
             style: TextStyle(
               fontFamily: AppTypography.bodyFontFamily,
               fontSize: 11.5,

@@ -2,14 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:progression_tracker/features/analytics/presentation/screens/analytics_screen.dart';
+import 'package:progression_tracker/core/constants/app_theme.dart';
+import 'package:progression_tracker/core/providers/units_provider.dart';
+import 'package:progression_tracker/core/utils/local_date_window.dart';
+import 'package:progression_tracker/features/body/presentation/screens/progress_screen.dart';
 import 'package:progression_tracker/features/onboarding/domain/entities/user_profile.dart';
 import 'package:progression_tracker/features/onboarding/presentation/providers/onboarding_provider.dart';
 import 'package:progression_tracker/features/workout/domain/entities/workout.dart';
 import 'package:progression_tracker/features/workout/presentation/providers/workout_providers.dart';
 
-/// Validates that AnalyticsScreen calculates and displays weekly consistency
-/// dynamically based on userProfile.workoutDaysPerWeek.
+class _MetricUnitsNotifier extends UnitsNotifier {
+  @override
+  UnitsSystem build() => UnitsSystem.metric;
+}
+
+/// Validates that merged lift analytics in [ProgressScreen] calculate and display
+/// weekly consistency dynamically based on [userProfile.workoutDaysPerWeek].
 void main() {
   Widget buildScreen({
     required List<Workout> workouts,
@@ -17,11 +25,13 @@ void main() {
   }) {
     return ProviderScope(
       overrides: [
+        unitsProvider.overrideWith(_MetricUnitsNotifier.new),
         workoutHistoryProvider.overrideWith((ref) => Future.value(workouts)),
         userProfileProvider.overrideWith((ref) => Future.value(profile)),
       ],
-      child: const MaterialApp(
-        home: AnalyticsScreen(),
+      child: MaterialApp(
+        theme: AppTheme.darkTheme,
+        home: const ProgressScreen(),
       ),
     );
   }
@@ -33,8 +43,7 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      final now = DateTime.now();
-      final weekStart = now.subtract(Duration(days: now.weekday - 1));
+      final weekStart = LocalDateWindow.currentWeekWindow().start;
 
       final workouts = [
         _createWorkout(weekStart.add(const Duration(days: 0, hours: 10))),
@@ -57,8 +66,7 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      final now = DateTime.now();
-      final weekStart = now.subtract(Duration(days: now.weekday - 1));
+      final weekStart = LocalDateWindow.currentWeekWindow().start;
 
       final workouts = [
         _createWorkout(weekStart.add(const Duration(days: 0, hours: 10))),
@@ -83,8 +91,7 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      final now = DateTime.now();
-      final weekStart = now.subtract(Duration(days: now.weekday - 1));
+      final weekStart = LocalDateWindow.currentWeekWindow().start;
 
       final workouts = [
         _createWorkout(weekStart.add(const Duration(days: 0, hours: 10))),
@@ -107,8 +114,7 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      final now = DateTime.now();
-      final weekStart = now.subtract(Duration(days: now.weekday - 1));
+      final weekStart = LocalDateWindow.currentWeekWindow().start;
 
       final workouts = [
         _createWorkout(weekStart.add(const Duration(days: 0, hours: 10))),
@@ -133,8 +139,7 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      final now = DateTime.now();
-      final weekStart = now.subtract(Duration(days: now.weekday - 1));
+      final weekStart = LocalDateWindow.currentWeekWindow().start;
 
       final workouts = [
         Workout(

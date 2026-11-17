@@ -364,29 +364,37 @@ class _MainScaffoldState extends State<MainScaffold> {
                       fontWeight: FontWeight.w500,
                       color: tokens.textSecondary,
                     ),
-                    labelType: NavigationRailLabelType.all,
-                    destinations: const [
-                      NavigationRailDestination(
-                        icon: Icon(Icons.home_outlined),
-                        selectedIcon: Icon(Icons.home),
-                        label: Text('TODAY'),
+                  labelType: NavigationRailLabelType.all,
+                  destinations: [
+                    NavigationRailDestination(
+                      icon: const Icon(Icons.home_outlined),
+                      selectedIcon: const Icon(Icons.home),
+                      label: Text(
+                        AppLocalizations.of(context)?.navToday ?? 'TODAY',
                       ),
-                      NavigationRailDestination(
-                        icon: Icon(Icons.fitness_center_outlined),
-                        selectedIcon: Icon(Icons.fitness_center),
-                        label: Text('TRAIN'),
+                    ),
+                    NavigationRailDestination(
+                      icon: const Icon(Icons.fitness_center_outlined),
+                      selectedIcon: const Icon(Icons.fitness_center),
+                      label: Text(
+                        AppLocalizations.of(context)?.navTrain ?? 'TRAIN',
                       ),
-                      NavigationRailDestination(
-                        icon: Icon(Icons.restaurant_outlined),
-                        selectedIcon: Icon(Icons.restaurant),
-                        label: Text('FUEL'),
+                    ),
+                    NavigationRailDestination(
+                      icon: const Icon(Icons.restaurant_outlined),
+                      selectedIcon: const Icon(Icons.restaurant),
+                      label: Text(
+                        AppLocalizations.of(context)?.navFuel ?? 'FUEL',
                       ),
-                      NavigationRailDestination(
-                        icon: Icon(Icons.show_chart_outlined),
-                        selectedIcon: Icon(Icons.show_chart),
-                        label: Text('PROGRESS'),
+                    ),
+                    NavigationRailDestination(
+                      icon: const Icon(Icons.show_chart_outlined),
+                      selectedIcon: const Icon(Icons.show_chart),
+                      label: Text(
+                        AppLocalizations.of(context)?.navProgress ?? 'PROGRESS',
                       ),
-                    ],
+                    ),
+                  ],
 
                   ),
                   const VerticalDivider(width: 1, thickness: 1),
@@ -457,26 +465,29 @@ class _MainScaffoldState extends State<MainScaffold> {
                     fontWeight: FontWeight.w600,
                     letterSpacing: 0.5,
                   ),
-                  items: const [
+                  items: [
                     BottomNavigationBarItem(
-                      icon: Icon(Icons.home_outlined),
-                      activeIcon: Icon(Icons.home),
-                      label: 'TODAY',
+                      icon: const Icon(Icons.home_outlined),
+                      activeIcon: const Icon(Icons.home),
+                      label:
+                          AppLocalizations.of(context)?.navToday ?? 'TODAY',
                     ),
                     BottomNavigationBarItem(
-                      icon: Icon(Icons.fitness_center_outlined),
-                      activeIcon: Icon(Icons.fitness_center),
-                      label: 'TRAIN',
+                      icon: const Icon(Icons.fitness_center_outlined),
+                      activeIcon: const Icon(Icons.fitness_center),
+                      label:
+                          AppLocalizations.of(context)?.navTrain ?? 'TRAIN',
                     ),
                     BottomNavigationBarItem(
-                      icon: Icon(Icons.restaurant_outlined),
-                      activeIcon: Icon(Icons.restaurant),
-                      label: 'FUEL',
+                      icon: const Icon(Icons.restaurant_outlined),
+                      activeIcon: const Icon(Icons.restaurant),
+                      label: AppLocalizations.of(context)?.navFuel ?? 'FUEL',
                     ),
                     BottomNavigationBarItem(
-                      icon: Icon(Icons.show_chart_outlined),
-                      activeIcon: Icon(Icons.show_chart),
-                      label: 'PROGRESS',
+                      icon: const Icon(Icons.show_chart_outlined),
+                      activeIcon: const Icon(Icons.show_chart),
+                      label: AppLocalizations.of(context)?.navProgress ??
+                          'PROGRESS',
                     ),
                   ],
                 ),

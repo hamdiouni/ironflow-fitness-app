@@ -124,7 +124,8 @@ class _SuggestionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    final reduceMotion = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    final card = Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacingSmall),
       child: AppTheme.glassmorphicCard(
         borderRadius: AppTheme.borderRadiusLarge,
@@ -185,8 +186,10 @@ class _SuggestionCard extends StatelessWidget {
           ),
         ),
       ),
-    )
-        .animate(delay: Duration(milliseconds: index * 80))
+    );
+    if (reduceMotion) return card;
+    return card
+        .animate(delay: Duration(milliseconds: index.clamp(0, 8) * 80))
         .fadeIn(duration: 300.ms)
         .slideX(begin: 0.15, end: 0, duration: 300.ms);
   }

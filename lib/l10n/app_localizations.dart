@@ -111,7 +111,7 @@ abstract class AppLocalizations {
   /// The application title
   ///
   /// In en, this message translates to:
-  /// **'IronFlow'**
+  /// **'Progression Tracker'**
   String get appTitle;
 
   /// No description provided for @home.
@@ -495,7 +495,7 @@ abstract class AppLocalizations {
   /// No description provided for @welcome.
   ///
   /// In en, this message translates to:
-  /// **'Welcome to IronFlow'**
+  /// **'Welcome'**
   String get welcome;
 
   /// No description provided for @getStarted.
@@ -737,6 +737,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No'**
   String get no;
+
+  /// No description provided for @navToday.
+  ///
+  /// In en, this message translates to:
+  /// **'TODAY'**
+  String get navToday;
+
+  /// No description provided for @navTrain.
+  ///
+  /// In en, this message translates to:
+  /// **'TRAIN'**
+  String get navTrain;
+
+  /// No description provided for @navFuel.
+  ///
+  /// In en, this message translates to:
+  /// **'FUEL'**
+  String get navFuel;
+
+  /// No description provided for @navProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'PROGRESS'**
+  String get navProgress;
+
+  /// No description provided for @preferences.
+  ///
+  /// In en, this message translates to:
+  /// **'Preferences'**
+  String get preferences;
+
+  /// No description provided for @account.
+  ///
+  /// In en, this message translates to:
+  /// **'Account'**
+  String get account;
+
+  /// No description provided for @aboutApp.
+  ///
+  /// In en, this message translates to:
+  /// **'About Application'**
+  String get aboutApp;
+
+  /// No description provided for @exerciseCatalog.
+  ///
+  /// In en, this message translates to:
+  /// **'Exercise Catalog'**
+  String get exerciseCatalog;
+
+  /// No description provided for @dataBackup.
+  ///
+  /// In en, this message translates to:
+  /// **'Data Management & Backup'**
+  String get dataBackup;
+
+  /// No description provided for @vibrationHaptics.
+  ///
+  /// In en, this message translates to:
+  /// **'Vibration & Haptics'**
+  String get vibrationHaptics;
+
+  /// No description provided for @notificationsReminders.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications & Reminders'**
+  String get notificationsReminders;
+
+  /// No description provided for @privacyLegal.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy & Legal'**
+  String get privacyLegal;
+
+  /// No description provided for @dailyTargets.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily Targets'**
+  String get dailyTargets;
+
+  /// No description provided for @addExercise.
+  ///
+  /// In en, this message translates to:
+  /// **'Add exercise'**
+  String get addExercise;
+
+  /// No description provided for @finishWorkout.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish Workout'**
+  String get finishWorkout;
+
+  /// No description provided for @logSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Log Set'**
+  String get logSet;
+
+  /// No description provided for @programLibrary.
+  ///
+  /// In en, this message translates to:
+  /// **'Program Library'**
+  String get programLibrary;
 }
 
 class _AppLocalizationsDelegate

@@ -60,7 +60,7 @@ class ReminderSettingsScreen extends ConsumerWidget {
                   color: tokens.kineticAccent,
                   size: 20,
                 ),
-                tooltip: 'Test Notification Telemetry',
+                tooltip: 'Send Test Notification',
                 constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
                 padding: EdgeInsets.zero,
                 onPressed: () async {
@@ -86,9 +86,9 @@ class ReminderSettingsScreen extends ConsumerWidget {
 
                     await notificationService.showNotification(
                       id: 999,
-                      title: '⚡ TELEMETRY PING',
+                      title: '🔔 TEST NOTIFICATION',
                       body:
-                          'Time: ${DateTime.now().toString().substring(11, 16)} — IronFlow notification pipeline active.',
+                          'Time: ${DateTime.now().toString().substring(11, 16)} — Reminders are active.',
                       payload: 'test',
                     );
 
@@ -135,7 +135,7 @@ class ReminderSettingsScreen extends ConsumerWidget {
                     size: 48, color: tokens.error),
                 const SizedBox(height: 16),
                 Text(
-                  'TELEMETRY ERROR: $error',
+                  'NOTIFICATION ERROR: $error',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontFamily: AppTypography.displayFontFamily,
@@ -318,7 +318,7 @@ class ReminderSettingsScreen extends ConsumerWidget {
         const SizedBox(height: 20),
 
         // Notification Settings Section
-        _buildSectionHeader('HAPTIC & AUDIO PROTOCOL', tokens),
+        _buildSectionHeader('HAPTIC & AUDIO SETTINGS', tokens),
         Container(
           decoration: BoxDecoration(
             color: tokens.panel,

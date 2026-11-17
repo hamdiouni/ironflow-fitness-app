@@ -160,11 +160,25 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
 
-      // Today tab is displayed
-      expect(find.text('TODAY'), findsOneWidget);
-      expect(find.text('TRAIN'), findsOneWidget);
-      expect(find.text('FUEL'), findsOneWidget);
-      expect(find.text('PROGRESS'), findsOneWidget);
+      // Today tab is displayed in the 4-tab bottom navigation bar
+      final bottomNav = find.byType(BottomNavigationBar);
+      expect(bottomNav, findsOneWidget);
+      expect(
+        find.descendant(of: bottomNav, matching: find.text('TODAY')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: bottomNav, matching: find.text('TRAIN')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: bottomNav, matching: find.text('FUEL')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: bottomNav, matching: find.text('PROGRESS')),
+        findsOneWidget,
+      );
 
       // Navigate to /workout (Train)
       router.go(AppRoutes.workout);

@@ -87,6 +87,7 @@ class _ListItemAnimationState extends State<ListItemAnimation>
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
+  bool _hasStarted = false;
 
   @override
   void initState() {
@@ -103,9 +104,23 @@ class _ListItemAnimationState extends State<ListItemAnimation>
     ).animate(
       CurvedAnimation(parent: _controller, curve: widget.curve),
     );
+  }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_hasStarted) return;
+    _hasStarted = true;
+
+    final disableMotion = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    if (disableMotion) {
+      _controller.value = 1.0;
+      return;
+    }
+
+    final cappedIndex = widget.index.clamp(0, 8);
     Future.delayed(
-      widget.staggerDuration * widget.index,
+      widget.staggerDuration * cappedIndex,
       () {
         if (mounted) {
           _controller.forward();

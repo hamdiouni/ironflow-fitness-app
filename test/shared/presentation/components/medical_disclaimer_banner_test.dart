@@ -22,7 +22,7 @@ void main() {
 
       expect(find.text('Medical & Fitness Notice'), findsOneWidget);
       expect(
-        find.textContaining('IronFlow provides workout tracking and educational fitness estimates'),
+        find.textContaining('Progression Tracker provides workout tracking and educational fitness estimates'),
         findsOneWidget,
       );
       expect(find.byIcon(Icons.health_and_safety_outlined), findsOneWidget);

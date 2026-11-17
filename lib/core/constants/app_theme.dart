@@ -11,14 +11,14 @@ export '../theme/app_spacings.dart';
 export '../theme/app_theme_tokens.dart';
 export '../theme/app_typography.dart';
 
-/// IronFlow application theme — Direction 4: Soft & Layered design system.
+/// Application theme implementing Option B: Iron Scoreboard.
 class AppTheme {
-  // ── Brand colors (Direction 4: Soft Periwinkle & Mint) ─────────────────────
-  static const Color primaryColor = AppColors.kineticAccentDark; // #A5B4FC
-  static const Color accentColor  = AppColors.cyanAccentDark;    // #6EE7B7
-  static const Color warningColor = AppColors.warningDark;       // #FCD34D
-  static const Color errorColor   = AppColors.errorDark;         // #FDA4AF
-  static const Color successColor = AppColors.successDark;       // #6EE7B7
+  // ── Brand colors (Iron Scoreboard) ─────────────────────────────────────────
+  static const Color primaryColor = AppColors.kineticAccentDark; // #F59E0B
+  static const Color accentColor  = AppColors.cyanAccentDark;    // #60A5FA
+  static const Color warningColor = AppColors.warningDark;       // #FBBF24
+  static const Color errorColor   = AppColors.errorDark;         // #F87171
+  static const Color successColor = AppColors.successDark;       // #4ADE80
 
   // Macro colors
   static const Color proteinColor = AppColors.protein;
@@ -55,10 +55,10 @@ class AppTheme {
   static const double spacingLarge   = 24.0;
   static const double spacingXLarge  = 32.0;
 
-  // ── Border radius (Direction 4: Soft & Layered) ────────────────────────────
-  static const double borderRadiusSmall  = 12.0;
-  static const double borderRadiusMedium = 16.0;
-  static const double borderRadiusLarge  = 26.0;
+  // ── Border radius (Option B: Iron Scoreboard) ──────────────────────────────
+  static const double borderRadiusSmall  = 6.0;
+  static const double borderRadiusMedium = 8.0;
+  static const double borderRadiusLarge  = 8.0;
 
   // ── Glassmorphism ───────────────────────────────────────────────────────────
   static const double glassBlurSigma = 10.0;
@@ -140,7 +140,7 @@ class AppTheme {
           foregroundColor: tokens.onAccent,
           elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppSpacings.radiusPill),
+            borderRadius: BorderRadius.circular(AppSpacings.radiusSm),
           ),
           padding: const EdgeInsets.symmetric(
             horizontal: spacingLarge,
@@ -158,7 +158,7 @@ class AppTheme {
           foregroundColor: tokens.kineticAccent,
           side: BorderSide(color: tokens.kineticAccent, width: 1.5),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppSpacings.radiusPill),
+            borderRadius: BorderRadius.circular(AppSpacings.radiusSm),
           ),
           padding: const EdgeInsets.symmetric(
             horizontal: spacingLarge,
@@ -177,7 +177,7 @@ class AppTheme {
           foregroundColor: tokens.onAccent,
           elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppSpacings.radiusPill),
+            borderRadius: BorderRadius.circular(AppSpacings.radiusSm),
           ),
           padding: const EdgeInsets.symmetric(
             horizontal: spacingLarge,
@@ -193,16 +193,16 @@ class AppTheme {
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: tokens.kineticAccent,
         foregroundColor: tokens.onAccent,
-        elevation: 4,
+        elevation: 2,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppSpacings.radiusPill),
+          borderRadius: BorderRadius.circular(AppSpacings.radiusMd),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: tokens.kineticAccent,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppSpacings.radiusPill),
+            borderRadius: BorderRadius.circular(AppSpacings.radiusSm),
           ),
           textStyle: const TextStyle(
             fontFamily: AppTypography.displayFontFamily,
@@ -213,18 +213,18 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: isDark ? tokens.elevated : AppColors.canvas,
+        fillColor: isDark ? tokens.elevated : tokens.panel,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSpacings.radiusSm),
           borderSide: BorderSide(
-            color: isDark ? tokens.borderSubtle : AppColors.hairlineInput,
+            color: tokens.borderSubtle,
             width: 1,
           ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSpacings.radiusSm),
           borderSide: BorderSide(
-            color: isDark ? tokens.borderSubtle : AppColors.hairlineInput,
+            color: tokens.borderSubtle,
             width: 1,
           ),
         ),

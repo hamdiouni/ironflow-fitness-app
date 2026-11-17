@@ -7,6 +7,7 @@ import 'package:progression_tracker/shared/presentation/services/app_haptics.dar
 import 'package:progression_tracker/features/onboarding/domain/entities/user_profile.dart' show BudgetLevel;
 import 'package:progression_tracker/features/onboarding/presentation/providers/onboarding_provider.dart';
 import 'package:progression_tracker/features/nutrition/domain/entities/food_item.dart';
+import 'package:progression_tracker/features/nutrition/domain/services/food_catalog.dart';
 import 'package:progression_tracker/features/nutrition/presentation/providers/food_providers.dart';
 import '../widgets/food_search/create_custom_food_dialog.dart';
 import '../widgets/food_search/food_detail_quantity_sheet.dart';
@@ -56,11 +57,15 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
       context: context,
       builder: (_) => CreateCustomFoodDialog(
         onFoodCreated: (food) {
+          final tokens = AppThemeTokens.of(context);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Custom fuel entry "${food.name}" logged!'),
-              backgroundColor: const Color(0xFF00E676),
-              duration: const Duration(seconds: 2),
+              content: Text(
+                'Saved "${food.name}" to your personal food library. Search above to log a portion.',
+                style: TextStyle(color: tokens.onAccent),
+              ),
+              backgroundColor: tokens.success,
+              duration: const Duration(seconds: 3),
               behavior: SnackBarBehavior.floating,
             ),
           );
@@ -74,8 +79,12 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
     final tokens = AppThemeTokens.of(context);
     final foods = ref.watch(filteredFoodProvider);
     final search = ref.watch(foodSearchProvider);
+    final customCount = ref.watch(customFoodsProvider).valueOrNull?.length ?? 0;
+    final totalCatalogCount =
+        (FoodCatalog.isLoaded ? FoodCatalog.foods.length : 0) + customCount;
     final profileAsync = ref.watch(userProfileProvider);
     final userBudget = profileAsync.valueOrNull?.budget;
+    final reduceMotion = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
 
     return Scaffold(
       backgroundColor: tokens.canvas,
@@ -92,7 +101,7 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'FUEL DATABASE',
+              'FOOD DATABASE',
               style: TextStyle(
                 fontFamily: AppTypography.displayFontFamily,
                 fontSize: 18,
@@ -102,7 +111,7 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
               ),
             ),
             Text(
-              'VERIFIED NUTRITION TELEMETRY',
+              'USDA & CUSTOM FOODS',
               style: TextStyle(
                 fontFamily: AppTypography.displayFontFamily,
                 fontSize: 9,
@@ -152,7 +161,9 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
                 style: TextStyle(color: tokens.textPrimary, fontSize: 14),
                 onChanged: (v) => ref.read(foodSearchProvider.notifier).setQuery(v),
                 decoration: InputDecoration(
-                  hintText: 'Search 80+ USDA verified fitness staples...',
+                  hintText: totalCatalogCount > 0
+                      ? 'Search $totalCatalogCount verified & custom foods...'
+                      : 'Search verified & custom foods...',
                   hintStyle: TextStyle(
                     color: tokens.textMuted,
                     fontSize: 13,
@@ -287,7 +298,7 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      '${foods.length} VERIFIED STAPLES AVAILABLE',
+                      '${foods.length} FOODS AVAILABLE',
                       style: TextStyle(
                         fontFamily: AppTypography.displayFontFamily,
                         fontSize: 10,
@@ -340,11 +351,13 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
                     itemCount: foods.length,
                     itemBuilder: (context, index) {
                       final food = foods[index];
-                      return FoodListTile(
+                      final tile = FoodListTile(
                         food: food,
                         onTap: () => _showFoodDetailSheet(food),
-                      ).animate().fadeIn(
-                            delay: Duration(milliseconds: (index % 15) * 15),
+                      );
+                      if (reduceMotion) return tile;
+                      return tile.animate().fadeIn(
+                            delay: Duration(milliseconds: index.clamp(0, 8) * 15),
                             duration: const Duration(milliseconds: 150),
                           );
                     },

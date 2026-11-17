@@ -9,7 +9,7 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
-  String get appTitle => 'IronFlow';
+  String get appTitle => 'Progression Tracker';
 
   @override
   String get home => '主页';
@@ -201,7 +201,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get password => '密码';
 
   @override
-  String get welcome => '欢迎使用IronFlow';
+  String get welcome => '欢迎使用';
 
   @override
   String get getStarted => '开始';
@@ -322,4 +322,55 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get no => '否';
+
+  @override
+  String get navToday => '今日';
+
+  @override
+  String get navTrain => '训练';
+
+  @override
+  String get navFuel => '饮食';
+
+  @override
+  String get navProgress => '进度';
+
+  @override
+  String get preferences => '偏好设置';
+
+  @override
+  String get account => '账户';
+
+  @override
+  String get aboutApp => '关于应用';
+
+  @override
+  String get exerciseCatalog => '动作库';
+
+  @override
+  String get dataBackup => '数据与备份';
+
+  @override
+  String get vibrationHaptics => '振动与触感';
+
+  @override
+  String get notificationsReminders => '通知与提醒';
+
+  @override
+  String get privacyLegal => '隐私与法律';
+
+  @override
+  String get dailyTargets => '每日目标';
+
+  @override
+  String get addExercise => '添加动作';
+
+  @override
+  String get finishWorkout => '结束训练';
+
+  @override
+  String get logSet => '记录组数';
+
+  @override
+  String get programLibrary => '训练计划库';
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:progression_tracker/core/constants/app_theme.dart';
+import 'package:progression_tracker/core/providers/units_provider.dart';
 import 'package:progression_tracker/features/body/domain/entities/muscle_recovery_status.dart';
 import 'package:progression_tracker/features/body/domain/entities/muscle_region.dart';
 import 'package:progression_tracker/features/body/presentation/providers/body_map_providers.dart';
@@ -96,7 +97,8 @@ class _BodyMapViewState extends ConsumerState<BodyMapView>
     final isFront = ref.watch(bodyMapViewModeProvider);
     final isHeatmap = ref.watch(bodyMapHeatmapModeProvider);
     final selectedRegion = ref.watch(selectedMuscleRegionProvider);
-    final disableAnimations = MediaQuery.of(context).disableAnimations;
+    final disableAnimations =
+        MediaQuery.maybeDisableAnimationsOf(context) ?? false;
     if (!disableAnimations && selectedRegion != null && !_pulseController.isAnimating) {
       _pulseController.repeat(reverse: true);
     } else if ((disableAnimations || selectedRegion == null) && _pulseController.isAnimating) {
@@ -114,7 +116,11 @@ class _BodyMapViewState extends ConsumerState<BodyMapView>
         if (!widget.compact) ...[
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-            child: Row(
+            child: Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 8,
+              runSpacing: 6,
               children: [
                 // Front / Back Segmented Control
                 Container(
@@ -125,6 +131,7 @@ class _BodyMapViewState extends ConsumerState<BodyMapView>
                   ),
                   padding: const EdgeInsets.all(3),
                   child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       _buildSegmentButton(
                         label: 'FRONT',
@@ -149,88 +156,118 @@ class _BodyMapViewState extends ConsumerState<BodyMapView>
                     ],
                   ),
                 ),
-                const Spacer(),
 
-                // Metric Mode Toggle (Recovery vs Heatmap)
-                Container(
-                  decoration: BoxDecoration(
-                    color: tokens.card,
-                    borderRadius: BorderRadius.circular(tokens.radiusPill),
-                    border: Border.all(color: tokens.borderSubtle),
-                  ),
-                  padding: const EdgeInsets.all(3),
-                  child: Row(
-                    children: [
-                      _buildSegmentButton(
-                        label: 'RECOVERY',
-                        isSelected: !isHeatmap,
-                        onTap: () {
-                          AppHaptics.shared.selectionChanged();
-                          ref
-                              .read(bodyMapHeatmapModeProvider.notifier)
-                              .setMode(false);
-                        },
-                        tokens: tokens,
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Metric Mode Toggle (Recovery vs Heatmap)
+                    Container(
+                      decoration: BoxDecoration(
+                        color: tokens.card,
+                        borderRadius: BorderRadius.circular(tokens.radiusPill),
+                        border: Border.all(color: tokens.borderSubtle),
                       ),
-                      _buildSegmentButton(
-                        label: 'HEATMAP',
-                        isSelected: isHeatmap,
-                        onTap: () {
-                          AppHaptics.shared.selectionChanged();
-                          ref
-                              .read(bodyMapHeatmapModeProvider.notifier)
-                              .setMode(true);
-                        },
-                        tokens: tokens,
+                      padding: const EdgeInsets.all(3),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _buildSegmentButton(
+                            label: 'RECOVERY',
+                            isSelected: !isHeatmap,
+                            onTap: () {
+                              AppHaptics.shared.selectionChanged();
+                              ref
+                                  .read(bodyMapHeatmapModeProvider.notifier)
+                                  .setMode(false);
+                            },
+                            tokens: tokens,
+                          ),
+                          _buildSegmentButton(
+                            label: 'HEATMAP',
+                            isSelected: isHeatmap,
+                            onTap: () {
+                              AppHaptics.shared.selectionChanged();
+                              ref
+                                  .read(bodyMapHeatmapModeProvider.notifier)
+                                  .setMode(true);
+                            },
+                            tokens: tokens,
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 4),
+                    ),
+                    const SizedBox(width: 4),
 
-                // Accessible List View Toggle
-                IconButton(
-                  key: const Key('body_map_list_mode_button'),
-                  tooltip: _isListViewMode
-                      ? 'Switch to interactive vector map'
-                      : 'Switch to accessible list view',
-                  icon: Icon(
-                    _isListViewMode
-                        ? Icons.accessibility_new_rounded
-                        : Icons.format_list_bulleted_rounded,
-                    color: _isListViewMode
-                        ? tokens.kineticAccent
-                        : tokens.textSecondary,
-                    size: 20,
-                  ),
-                  onPressed: () {
-                    AppHaptics.shared.selectionChanged();
-                    setState(() => _isListViewMode = !_isListViewMode);
-                  },
+                    // Accessible List View Toggle
+                    IconButton(
+                      key: const Key('body_map_list_mode_button'),
+                      tooltip: _isListViewMode
+                          ? 'Switch to interactive vector map'
+                          : 'Switch to accessible list view',
+                      icon: Icon(
+                        _isListViewMode
+                            ? Icons.accessibility_new_rounded
+                            : Icons.format_list_bulleted_rounded,
+                        color: _isListViewMode
+                            ? tokens.kineticAccent
+                            : tokens.textSecondary,
+                        size: 20,
+                      ),
+                      onPressed: () {
+                        AppHaptics.shared.selectionChanged();
+                        setState(() => _isListViewMode = !_isListViewMode);
+                      },
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
         ],
 
-        // Main Display: Map Canvas or Accessible List
+        // Main Display: Map Canvas or Accessible List (side-by-side at >= 900px)
         constraints.hasBoundedHeight
             ? Expanded(
-                child: _isListViewMode
-                    ? _buildAccessibleListView(
-                        context,
-                        isFront,
-                        recoveryMap,
-                        tokens,
+                child: !widget.compact && constraints.maxWidth >= 900
+                    ? Row(
+                        children: [
+                          Expanded(
+                            flex: 6,
+                            child: _buildMapCanvas(
+                              context,
+                              isFront,
+                              isHeatmap,
+                              selectedRegion,
+                              recoveryMap,
+                              tokens,
+                            ),
+                          ),
+                          Expanded(
+                            flex: 5,
+                            child: _buildAccessibleListView(
+                              context,
+                              isFront,
+                              recoveryMap,
+                              tokens,
+                            ),
+                          ),
+                        ],
                       )
-                    : _buildMapCanvas(
-                        context,
-                        isFront,
-                        isHeatmap,
-                        selectedRegion,
-                        recoveryMap,
-                        tokens,
-                      ),
+                    : _isListViewMode
+                        ? _buildAccessibleListView(
+                            context,
+                            isFront,
+                            recoveryMap,
+                            tokens,
+                          )
+                        : _buildMapCanvas(
+                            context,
+                            isFront,
+                            isHeatmap,
+                            selectedRegion,
+                            recoveryMap,
+                            tokens,
+                          ),
               )
             : SizedBox(
                 height: 520,
@@ -287,7 +324,7 @@ class _BodyMapViewState extends ConsumerState<BodyMapView>
               fontSize: 10,
               fontWeight: FontWeight.w800,
               letterSpacing: 0.5,
-              color: isSelected ? tokens.canvas : tokens.textSecondary,
+              color: isSelected ? tokens.onAccent : tokens.textSecondary,
             ),
           ),
         ),
@@ -446,6 +483,13 @@ class _BodyMapViewState extends ConsumerState<BodyMapView>
     AppThemeTokens tokens,
   ) {
     if (isHeatmap) {
+      final units = ref.read(unitsProvider);
+      final weightUnit = UnitsConverter.getWeightUnit(units);
+      String band(double kg) {
+        final v = UnitsConverter.convertWeightToDisplay(kg, units);
+        return '${(v / 1000).toStringAsFixed(1)}k';
+      }
+
       return Padding(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
         child: Wrap(
@@ -453,10 +497,22 @@ class _BodyMapViewState extends ConsumerState<BodyMapView>
           spacing: 12,
           runSpacing: 4,
           children: [
-            _buildLegendItem('LOW (0-2k kg)', const Color(0xFF0EA5E9)),
-            _buildLegendItem('MODERATE (2-6k)', tokens.cyanAccent),
-            _buildLegendItem('HIGH (6-12k)', tokens.kineticAccent),
-            _buildLegendItem('PEAK (12k+)', const Color(0xFFF59E0B)),
+            _buildLegendItem(
+              'LOW (0-${band(2000)} $weightUnit)',
+              const Color(0xFF0EA5E9),
+            ),
+            _buildLegendItem(
+              'MODERATE (${band(2000)}-${band(6000)})',
+              tokens.cyanAccent,
+            ),
+            _buildLegendItem(
+              'HIGH (${band(6000)}-${band(12000)})',
+              tokens.kineticAccent,
+            ),
+            _buildLegendItem(
+              'PEAK (${band(12000)}+)',
+              const Color(0xFFF59E0B),
+            ),
           ],
         ),
       );

@@ -19,6 +19,7 @@ import '../../features/workout/presentation/screens/workout_screen.dart';
 import '../../features/workout/presentation/screens/workout_history_screen.dart'
     as workout_history;
 import '../../features/workout/presentation/screens/workout_summary_screen.dart';
+import '../../features/workout/domain/entities/exercise_definition.dart';
 import '../../features/workout/presentation/screens/exercise_catalog_screen.dart';
 import '../../features/workout/presentation/screens/program_editor_screen.dart';
 import '../../features/workout/presentation/screens/exercise_picker_screen.dart';
@@ -36,7 +37,6 @@ import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/settings/presentation/screens/export_settings_screen.dart';
 import '../../features/settings/presentation/screens/privacy_settings_screen.dart';
 import '../../features/workout/domain/entities/exercise.dart';
-import '../../features/workout/domain/entities/exercise_definition.dart';
 import '../../features/tools/presentation/screens/tools_hub_screen.dart';
 import '../../dev/dev_routes.dart';
 
@@ -306,13 +306,29 @@ List<RouteBase> buildAppRoutes({
                   GoRoute(
                     path: 'exercise/:name',
                     builder: (context, state) {
-                      final name = state.pathParameters['name'] ?? '';
+                      final raw = state.pathParameters['name'] ?? '';
+                      final name = Uri.decodeComponent(raw);
                       return exercise_detail.ExerciseDetailScreen(name: name);
                     },
                   ),
                   GoRoute(
                     path: 'catalog',
-                    builder: (context, state) => const ExerciseCatalogScreen(),
+                    builder: (context, state) {
+                      final muscleParam =
+                          state.uri.queryParameters['muscle']?.toLowerCase();
+                      MuscleGroup? initialGroup;
+                      if (muscleParam != null && muscleParam.isNotEmpty) {
+                        for (final g in MuscleGroup.values) {
+                          if (g.name.toLowerCase() == muscleParam) {
+                            initialGroup = g;
+                            break;
+                          }
+                        }
+                      }
+                      return ExerciseCatalogScreen(
+                        initialMuscleGroup: initialGroup,
+                      );
+                    },
                   ),
                   GoRoute(
                     path: 'editor',

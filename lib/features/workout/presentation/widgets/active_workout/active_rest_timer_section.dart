@@ -32,8 +32,10 @@ class ActiveRestTimerSection extends ConsumerWidget {
           children: [
             const RestTimerCircular(size: 90),
             const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 8,
+              runSpacing: 8,
               children: [
                 SizedBox(
                   height: 36,
@@ -46,7 +48,6 @@ class ActiveRestTimerSection extends ConsumerWidget {
                     },
                   ),
                 ),
-                const SizedBox(width: 8),
                 SizedBox(
                   height: 36,
                   child: AppButton(
@@ -58,7 +59,6 @@ class ActiveRestTimerSection extends ConsumerWidget {
                     },
                   ),
                 ),
-                const SizedBox(width: 8),
                 SizedBox(
                   height: 36,
                   child: AppButton(

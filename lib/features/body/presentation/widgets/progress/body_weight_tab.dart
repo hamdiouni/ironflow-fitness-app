@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../../core/constants/app_theme.dart';
+import '../../../../../core/providers/units_provider.dart';
 import '../../../../../core/utils/error_handler.dart';
 import '../../../../../shared/presentation/components/app_button.dart';
 import '../../../../../shared/presentation/components/app_card.dart';
@@ -14,6 +15,7 @@ import '../../../../ai/presentation/widgets/contextual_insight_banner.dart';
 import '../../../../onboarding/presentation/providers/onboarding_provider.dart';
 import '../../../domain/entities/body_entry.dart';
 import '../../../domain/entities/measurement_type.dart';
+import '../../../domain/entities/weight_data_point.dart';
 import '../../../domain/usecases/save_body_entry_use_case.dart';
 import '../../providers/body_providers.dart';
 
@@ -26,27 +28,187 @@ class BodyWeightTab extends ConsumerWidget {
     final trendAsync = ref.watch(weightTrendProvider);
     final historyAsync = ref.watch(bodyHistoryProvider);
     final profileAsync = ref.watch(userProfileProvider);
+    final units = ref.watch(unitsProvider);
+    final weightUnit = UnitsConverter.getWeightUnit(units);
+    final lengthUnit = UnitsConverter.getLengthUnit(units);
+    final targetWeightDisplay = profileAsync.value?.targetWeightKg != null
+        ? UnitsConverter.convertWeightToDisplay(
+            profileAsync.value!.targetWeightKg!,
+            units,
+          )
+        : null;
 
-    return SingleChildScrollView(
+    final weightGraphCard = AppCard(
       padding: const EdgeInsets.all(AppTheme.spacingMedium),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Contextual AI Banner
-          const ContextualInsightBanner(context: InsightContext.workout),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'WEIGHT TREND',
+                style: TextStyle(
+                  fontFamily: AppTypography.displayFontFamily,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.5,
+                  color: tokens.textPrimary,
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 3,
+                ),
+                decoration: BoxDecoration(
+                  color: tokens.elevated,
+                  borderRadius: BorderRadius.circular(tokens.radiusPill),
+                ),
+                child: Text(
+                  'LAST 30 DAYS',
+                  style: TextStyle(
+                    fontFamily: AppTypography.displayFontFamily,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.8,
+                    color: tokens.textMuted,
+                  ),
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 14),
+          trendAsync.when(
+            data: (points) => WeightTrendGraph(
+              dataPoints: points
+                  .map(
+                    (p) => WeightDataPoint(
+                      date: p.date,
+                      weight:
+                          UnitsConverter.convertWeightToDisplay(p.weight, units),
+                    ),
+                  )
+                  .toList(),
+              targetWeight: targetWeightDisplay,
+              unit: weightUnit,
+            ).animate().fadeIn(duration: 400.ms),
+            loading: () => SizedBox(
+              height: 220,
+              child: Center(
+                child: CircularProgressIndicator(
+                  color: tokens.kineticAccent,
+                  strokeWidth: 2,
+                ),
+              ),
+            ),
+            error: (e, _) => SizedBox(
+              height: 220,
+              child: Center(
+                child: Text(
+                  'Failed to load weight data: $e',
+                  style: TextStyle(color: tokens.error, fontSize: 13),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
 
-          // Graph card
-          AppCard(
-            padding: const EdgeInsets.all(AppTheme.spacingMedium),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'WEIGHT TREND',
+    final recentLogsWidget = trendAsync.when(
+      data: (points) {
+        if (points.isEmpty) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 24),
+            child: Center(
+              child: Text(
+                'No weight entries logged yet.\nTap "LOG WEIGHT" to record your first weigh-in.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: tokens.textMuted,
+                  fontSize: 13,
+                  fontFamily: AppTypography.bodyFontFamily,
+                ),
+              ),
+            ),
+          );
+        }
+        final recent = points.reversed.take(5).toList();
+        return AppCard(
+          padding: const EdgeInsets.all(AppTheme.spacingMedium),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'RECENT LOGS',
+                style: TextStyle(
+                  fontFamily: AppTypography.displayFontFamily,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.8,
+                  color: tokens.textMuted,
+                ),
+              ),
+              const SizedBox(height: 10),
+              ...recent.map(
+                (p) => _WeightEntryRow(
+                  point: p,
+                  tokens: tokens,
+                  units: units,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
+    );
+
+    final logWeightButton = AppButton(
+      label: 'LOG WEIGHT',
+      icon: const Icon(Icons.add_rounded, size: 18),
+      isFullWidth: true,
+      onPressed: () => _showLogWeightDialog(context, ref, units),
+    );
+
+    final measurementsWidget = historyAsync.when(
+      data: (entries) {
+        final withMeasurements =
+            entries.where((e) => e.measurements.isNotEmpty).toList();
+
+        if (withMeasurements.isEmpty) {
+          return AppCard(
+            padding: const EdgeInsets.all(AppTheme.spacingLarge),
+            child: Center(
+              child: Text(
+                'No body measurements logged yet.\nTap "LOG MEASUREMENTS" below to record your measurements.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: tokens.textMuted,
+                  fontSize: 13,
+                  fontFamily: AppTypography.bodyFontFamily,
+                ),
+              ),
+            ),
+          );
+        }
+
+        final latest = withMeasurements.first;
+        return AppCard(
+          padding: const EdgeInsets.all(AppTheme.spacingMedium),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      'LATEST MEASUREMENTS',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontFamily: AppTypography.displayFontFamily,
                         fontSize: 13,
@@ -55,239 +217,147 @@ class BodyWeightTab extends ConsumerWidget {
                         color: tokens.textPrimary,
                       ),
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: tokens.elevated,
-                        borderRadius: BorderRadius.circular(tokens.radiusPill),
-                      ),
-                      child: Text(
-                        'LAST 30 DAYS',
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    DateFormat('MMM d, yyyy').format(latest.date),
+                    style: TextStyle(
+                      fontFamily: AppTypography.displayFontFamily,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: tokens.textMuted,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              ...MeasurementType.values.map((type) {
+                final value = latest.measurements[type];
+                final displayMeasurement = value != null
+                    ? '${UnitsConverter.convertLengthToDisplay(value, units).toStringAsFixed(1)} ${lengthUnit.toUpperCase()}'
+                    : '—';
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: tokens.card,
+                    borderRadius: BorderRadius.circular(tokens.radiusPill),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        _label(type).toUpperCase(),
                         style: TextStyle(
                           fontFamily: AppTypography.displayFontFamily,
-                          fontSize: 9,
+                          fontSize: 11,
                           fontWeight: FontWeight.w700,
                           letterSpacing: 0.8,
                           color: tokens.textMuted,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                trendAsync.when(
-                  data: (points) => WeightTrendGraph(
-                    dataPoints: points,
-                    targetWeight: profileAsync.value?.targetWeightKg,
-                  ).animate().fadeIn(duration: 400.ms),
-                  loading: () => SizedBox(
-                    height: 220,
-                    child: Center(
-                      child: CircularProgressIndicator(
-                        color: tokens.kineticAccent,
-                        strokeWidth: 2,
-                      ),
-                    ),
-                  ),
-                  error: (e, _) => SizedBox(
-                    height: 220,
-                    child: Center(
-                      child: Text(
-                        'Failed to load weight data: $e',
-                        style: TextStyle(color: tokens.error, fontSize: 13),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Recent entries list
-          trendAsync.when(
-            data: (points) {
-              if (points.isEmpty) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 24),
-                  child: Center(
-                    child: Text(
-                      'No weight entries logged yet.\nTap "LOG WEIGHT" to start calibration.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: tokens.textMuted,
-                        fontSize: 13,
-                        fontFamily: AppTypography.bodyFontFamily,
-                      ),
-                    ),
-                  ),
-                );
-              }
-              final recent = points.reversed.take(5).toList();
-              return AppCard(
-                padding: const EdgeInsets.all(AppTheme.spacingMedium),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'RECENT LOGS',
-                      style: TextStyle(
-                        fontFamily: AppTypography.displayFontFamily,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.8,
-                        color: tokens.textMuted,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    ...recent
-                        .map((p) => _WeightEntryRow(point: p, tokens: tokens)),
-                  ],
-                ),
-              );
-            },
-            loading: () => const SizedBox.shrink(),
-            error: (_, _) => const SizedBox.shrink(),
-          ),
-
-          const SizedBox(height: 16),
-          AppButton(
-            label: 'LOG WEIGHT',
-            icon: const Icon(Icons.add_rounded, size: 18),
-            isFullWidth: true,
-            onPressed: () => _showLogWeightDialog(context, ref),
-          ),
-          const SizedBox(height: 24),
-
-          // Measurements telemetry
-          historyAsync.when(
-            data: (entries) {
-              final withMeasurements =
-                  entries.where((e) => e.measurements.isNotEmpty).toList();
-
-              if (withMeasurements.isEmpty) {
-                return AppCard(
-                  padding: const EdgeInsets.all(AppTheme.spacingLarge),
-                  child: Center(
-                    child: Text(
-                      'No body measurements logged yet.\nCalibrate your dimensions below.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: tokens.textMuted,
-                        fontSize: 13,
-                        fontFamily: AppTypography.bodyFontFamily,
-                      ),
-                    ),
-                  ),
-                );
-              }
-
-              final latest = withMeasurements.first;
-              return AppCard(
-                padding: const EdgeInsets.all(AppTheme.spacingMedium),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'LATEST TELEMETRY',
-                          style: TextStyle(
-                            fontFamily: AppTypography.displayFontFamily,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.5,
-                            color: tokens.textPrimary,
-                          ),
-                        ),
-                        Text(
-                          DateFormat('MMM d, yyyy').format(latest.date),
-                          style: TextStyle(
-                            fontFamily: AppTypography.displayFontFamily,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                            color: tokens.textMuted,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-                    ...MeasurementType.values.map((type) {
-                      final value = latest.measurements[type];
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 6),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: tokens.card,
-                          borderRadius:
-                              BorderRadius.circular(tokens.radiusPill),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              _label(type).toUpperCase(),
-                              style: TextStyle(
-                                fontFamily: AppTypography.displayFontFamily,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 0.8,
-                                color: tokens.textMuted,
-                              ),
-                            ),
-                            Text(
-                              value != null
-                                  ? '${value.toStringAsFixed(1)} CM'
-                                  : '—',
-                              style: TextStyle(
-                                fontFamily: AppTypography.displayFontFamily,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w700,
-                                color: value != null
-                                    ? tokens.kineticAccent
-                                    : tokens.textMuted,
-                                fontFeatures: const [
-                                  FontFeature.tabularFigures(),
-                                ],
-                              ),
-                            ),
+                      Text(
+                        displayMeasurement,
+                        style: TextStyle(
+                          fontFamily: AppTypography.displayFontFamily,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: value != null
+                              ? tokens.kineticAccent
+                              : tokens.textMuted,
+                          fontFeatures: const [
+                            FontFeature.tabularFigures(),
                           ],
                         ),
-                      );
-                    }),
-                  ],
-                ),
-              );
-            },
-            loading: () => Center(
-              child: CircularProgressIndicator(
-                color: tokens.kineticAccent,
-                strokeWidth: 2,
-              ),
-            ),
-            error: (e, _) => Text(
-              'Failed to load measurements',
-              style: TextStyle(color: tokens.error),
-            ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+            ],
           ),
-          const SizedBox(height: 16),
-          AppButton(
-            label: 'LOG MEASUREMENTS',
-            variant: AppButtonVariant.secondary,
-            icon: const Icon(Icons.straighten_rounded, size: 18),
-            isFullWidth: true,
-            onPressed: () => _showLogMeasurementsForm(context, ref),
-          ),
-          const SizedBox(height: 24),
-        ],
+        );
+      },
+      loading: () => Center(
+        child: CircularProgressIndicator(
+          color: tokens.kineticAccent,
+          strokeWidth: 2,
+        ),
       ),
+      error: (e, _) => Text(
+        'Failed to load measurements',
+        style: TextStyle(color: tokens.error),
+      ),
+    );
+
+    final logMeasurementsButton = AppButton(
+      label: 'LOG MEASUREMENTS',
+      variant: AppButtonVariant.secondary,
+      icon: const Icon(Icons.straighten_rounded, size: 18),
+      isFullWidth: true,
+      onPressed: () => _showLogMeasurementsForm(context, ref, units),
+    );
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isWide = constraints.maxWidth >= 900;
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(AppTheme.spacingMedium),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const ContextualInsightBanner(context: InsightContext.workout),
+              const SizedBox(height: 14),
+              if (isWide)
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      flex: 6,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          weightGraphCard,
+                          const SizedBox(height: 16),
+                          logWeightButton,
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 20),
+                    Expanded(
+                      flex: 5,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          recentLogsWidget,
+                          const SizedBox(height: 16),
+                          measurementsWidget,
+                          const SizedBox(height: 16),
+                          logMeasurementsButton,
+                        ],
+                      ),
+                    ),
+                  ],
+                )
+              else ...[
+                weightGraphCard,
+                const SizedBox(height: 16),
+                recentLogsWidget,
+                const SizedBox(height: 16),
+                logWeightButton,
+                const SizedBox(height: 24),
+                measurementsWidget,
+                const SizedBox(height: 16),
+                logMeasurementsButton,
+              ],
+              const SizedBox(height: 24),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -299,8 +369,13 @@ class BodyWeightTab extends ConsumerWidget {
         MeasurementType.legs => 'Legs',
       };
 
-  Future<void> _showLogWeightDialog(BuildContext context, WidgetRef ref) async {
+  Future<void> _showLogWeightDialog(
+    BuildContext context,
+    WidgetRef ref,
+    UnitsSystem units,
+  ) async {
     final tokens = AppThemeTokens.of(context);
+    final weightUnit = UnitsConverter.getWeightUnit(units);
     final controller = TextEditingController();
     final formKey = GlobalKey<FormState>();
 
@@ -340,13 +415,13 @@ class BodyWeightTab extends ConsumerWidget {
                   fontFeatures: const [FontFeature.tabularFigures()],
                 ),
                 decoration: InputDecoration(
-                  labelText: 'Weight (kg)',
+                  labelText: 'Weight ($weightUnit)',
                   labelStyle: TextStyle(
                     fontFamily: AppTypography.bodyFontFamily,
                     fontSize: 12,
                     color: tokens.textMuted,
                   ),
-                  hintText: 'e.g. 75.5',
+                  hintText: units == UnitsSystem.metric ? 'e.g. 70.5' : 'e.g. 155.4',
                   hintStyle: TextStyle(
                     fontFamily: AppTypography.bodyFontFamily,
                     fontSize: 14,
@@ -409,8 +484,10 @@ class BodyWeightTab extends ConsumerWidget {
 
     if (confirmed == true && context.mounted) {
       try {
-        final weight = double.parse(controller.text.trim());
-        final entry = BodyEntry.create(weight: weight);
+        final inputWeight = double.parse(controller.text.trim());
+        final weightKg =
+            UnitsConverter.convertWeightToStorage(inputWeight, units);
+        final entry = BodyEntry.create(weight: weightKg);
         final repository = ref.read(bodyRepositoryProvider);
         final useCase = SaveBodyEntryUseCase(repository);
         await useCase(entry);
@@ -418,8 +495,8 @@ class BodyWeightTab extends ConsumerWidget {
         try {
           final storage = ref.read(userProfileStorageProvider);
           final profile = await storage.loadProfile();
-          if (profile != null && profile.weightKg != weight) {
-            await storage.saveProfile(profile.copyWith(weightKg: weight));
+          if (profile != null && profile.weightKg != weightKg) {
+            await storage.saveProfile(profile.copyWith(weightKg: weightKg));
             ref.invalidate(userProfileProvider);
           }
         } catch (_) {}
@@ -431,7 +508,9 @@ class BodyWeightTab extends ConsumerWidget {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Weight ${weight.toStringAsFixed(1)}kg logged!'),
+              content: Text(
+                'Weight ${inputWeight.toStringAsFixed(1)} $weightUnit logged!',
+              ),
               backgroundColor: tokens.panel,
               behavior: SnackBarBehavior.floating,
               duration: const Duration(seconds: 2),
@@ -453,8 +532,10 @@ class BodyWeightTab extends ConsumerWidget {
   Future<void> _showLogMeasurementsForm(
     BuildContext context,
     WidgetRef ref,
+    UnitsSystem units,
   ) async {
     final tokens = AppThemeTokens.of(context);
+    final lengthUnit = UnitsConverter.getLengthUnit(units);
     final controllers = {
       for (final type in MeasurementType.values)
         type: TextEditingController(),
@@ -498,7 +579,7 @@ class BodyWeightTab extends ConsumerWidget {
                       fontFeatures: const [FontFeature.tabularFigures()],
                     ),
                     decoration: InputDecoration(
-                      labelText: '${_label(type)} (cm)',
+                      labelText: '${_label(type)} ($lengthUnit)',
                       labelStyle: TextStyle(
                         fontFamily: AppTypography.bodyFontFamily,
                         fontSize: 12,
@@ -571,7 +652,10 @@ class BodyWeightTab extends ConsumerWidget {
           final text = controllers[type]!.text.trim();
           if (text.isNotEmpty) {
             final value = double.tryParse(text);
-            if (value != null && value > 0) measurements[type] = value;
+            if (value != null && value > 0) {
+              measurements[type] =
+                  UnitsConverter.convertLengthToStorage(value, units);
+            }
           }
         }
 
@@ -602,12 +686,19 @@ class BodyWeightTab extends ConsumerWidget {
 }
 
 class _WeightEntryRow extends StatelessWidget {
-  const _WeightEntryRow({required this.point, required this.tokens});
+  const _WeightEntryRow({
+    required this.point,
+    required this.tokens,
+    required this.units,
+  });
   final dynamic point;
   final AppThemeTokens tokens;
+  final UnitsSystem units;
 
   @override
   Widget build(BuildContext context) {
+    final weightDisplay =
+        UnitsConverter.formatWeight(point.weight as double, units);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
@@ -637,7 +728,7 @@ class _WeightEntryRow extends StatelessWidget {
           ),
           const Spacer(),
           Text(
-            '${(point.weight as double).toStringAsFixed(1)} kg',
+            weightDisplay,
             style: TextStyle(
               fontFamily: AppTypography.displayFontFamily,
               color: tokens.textPrimary,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_theme_tokens.dart';
 import '../../../../shared/widgets/youtube_exercise_player.dart';
 import '../../data/exercise_video_map.dart';
 
@@ -88,26 +89,28 @@ class ExerciseVideoPlayer extends StatelessWidget {
   }
 
   Widget _buildErrorPlaceholder(BuildContext context) {
+    final tokens = AppThemeTokens.of(context);
     return Container(
       height: height,
       decoration: BoxDecoration(
-        color: Colors.grey[900],
-        borderRadius: BorderRadius.circular(12),
+        color: tokens.elevated,
+        borderRadius: BorderRadius.circular(tokens.radiusLg),
+        border: Border.all(color: tokens.borderSubtle),
       ),
-      child: const Center(
+      child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               Icons.videocam_off,
               size: 48,
-              color: Colors.white38,
+              color: tokens.textMuted,
             ),
-            SizedBox(height: 12),
+            const SizedBox(height: 12),
             Text(
               'Video not available',
               style: TextStyle(
-                color: Colors.white70,
+                color: tokens.textSecondary,
                 fontSize: 14,
               ),
             ),

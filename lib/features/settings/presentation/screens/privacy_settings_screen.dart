@@ -79,7 +79,7 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen> {
     final confirmed = await showPrivacyTypeToConfirmDialog(
       context,
       title: 'PURGE LOCAL DEVICE DATA',
-      subtitle: 'ERADICATE LOCAL TELEMETRY WHILE KEEPING ACCOUNT ACTIVE',
+      subtitle: 'ERASE LOCAL DATA WHILE KEEPING ACCOUNT ACTIVE',
       accentColor: tokens.warning,
       consequences: const [
         'Permanently delete all workouts, sets, and exercise history stored on this device',
@@ -138,7 +138,7 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen> {
     final confirmed = await showPrivacyTypeToConfirmDialog(
       context,
       title: 'DELETE ACCOUNT & ALL DATA',
-      subtitle: 'PERMANENT, IRREVERSIBLE TERMINATION OF ACCOUNT AND TELEMETRY',
+      subtitle: 'PERMANENT, IRREVERSIBLE DELETION OF ACCOUNT AND DATA',
       accentColor: tokens.error,
       consequences: const [
         'Permanently delete your user account from authentication servers',
@@ -233,7 +233,7 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen> {
         backgroundColor: tokens.canvas,
         appBar: AppBar(
           backgroundColor: tokens.canvas,
-          title: const Text('PRIVACY & TELEMETRY'),
+          title: const Text('PRIVACY & DATA'),
         ),
         body: const Center(child: CircularProgressIndicator()),
       );
@@ -254,7 +254,7 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'PRIVACY & TELEMETRY',
+              'PRIVACY & DATA',
               style: TextStyle(
                 fontFamily: AppTypography.displayFontFamily,
                 fontSize: 18,
@@ -316,8 +316,8 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen> {
             ),
           ],
 
-          // Telemetry & Permissions Section
-          ExportSectionHeader(title: 'TELEMETRY & PERMISSIONS', tokens: tokens),
+          // Privacy & Permissions Section
+          ExportSectionHeader(title: 'DATA & PERMISSIONS', tokens: tokens),
           if (!_hasRecordedTelemetryConsent)
             Container(
               padding: const EdgeInsets.all(12),
@@ -379,7 +379,7 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen> {
               children: [
                 SwitchListTile(
                   title: Text(
-                    'Diagnostics & Crash Telemetry',
+                    'Diagnostics & Crash Reports',
                     style: TextStyle(
                       fontFamily: AppTypography.bodyFontFamily,
                       fontSize: 13,
@@ -454,7 +454,7 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen> {
                     ),
                   ),
                   subtitle: Text(
-                    'Allow AI Coach to inspect local training telemetry for tailored recommendations',
+                    'Allow AI Coach to read local training data for tailored recommendations',
                     style: TextStyle(fontSize: 11, color: tokens.textSecondary),
                   ),
                   value: _aiPersonalizationConsent,
@@ -483,7 +483,7 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen> {
             child: Column(
               children: [
                 ExportActionTile(
-                  title: 'Telemetry Archive & Restore',
+                  title: 'Data Archive & Restore',
                   subtitle:
                       'Export workouts and nutrition in CSV/JSON, or restore backups',
                   icon: Icons.swap_vert_rounded,
@@ -511,7 +511,7 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen> {
                   tokens: tokens,
                   onTap: () => showLicensePage(
                     context: context,
-                    applicationName: 'IronFlow',
+                    applicationName: 'Progression Tracker',
                     applicationVersion: '1.0.0',
                   ),
                 ),
@@ -550,7 +550,7 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen> {
                 ExportActionTile(
                   title: 'Delete Account & All Data',
                   subtitle:
-                      'Permanently destroy account, cloud records, and all device telemetry',
+                      'Permanently delete account, cloud records, and all device data',
                   icon: Icons.delete_forever_rounded,
                   accentColor: tokens.error,
                   tokens: tokens,

@@ -2,18 +2,26 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_theme_tokens.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../shared/presentation/components/components.dart';
 import '../../domain/entities/exercise_definition.dart';
+import '../../domain/services/exercise_catalog.dart';
 import '../providers/exercise_providers.dart';
 import 'exercise_detail_screen.dart';
 
-/// Exercise catalog with muscle-group tabs, search, and soft layered cards.
+/// Exercise catalog with muscle-group tabs, search, and Iron Scoreboard cards.
 class ExerciseCatalogScreen extends ConsumerStatefulWidget {
-  const ExerciseCatalogScreen({super.key, this.onSelect});
+  const ExerciseCatalogScreen({
+    super.key,
+    this.onSelect,
+    this.initialMuscleGroup,
+  });
+
   final void Function(ExerciseDefinition)? onSelect;
+  final MuscleGroup? initialMuscleGroup;
 
   @override
   ConsumerState<ExerciseCatalogScreen> createState() =>
@@ -37,11 +45,47 @@ class _ExerciseCatalogScreenState extends ConsumerState<ExerciseCatalogScreen>
     (label: 'CARDIO',    group: MuscleGroup.cardio),
   ];
 
+  int _indexForGroup(MuscleGroup? group) {
+    final idx = _tabs.indexWhere((t) => t.group == group);
+    return idx >= 0 ? idx : 0;
+  }
+
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: _tabs.length, vsync: this);
+    final initialIdx = _indexForGroup(widget.initialMuscleGroup);
+    _lastTabIndex = initialIdx;
+    _tabController = TabController(
+      length: _tabs.length,
+      vsync: this,
+      initialIndex: initialIdx,
+    );
     _tabController.animation?.addListener(_onTabAnimation);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _searchController.clear();
+      final notifier = ref.read(exerciseFilterProvider.notifier);
+      notifier.reset();
+      if (widget.initialMuscleGroup != null) {
+        notifier.setMuscleGroup(widget.initialMuscleGroup);
+      }
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant ExerciseCatalogScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialMuscleGroup != oldWidget.initialMuscleGroup) {
+      final idx = _indexForGroup(widget.initialMuscleGroup);
+      _lastTabIndex = idx;
+      _tabController.animateTo(idx);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ref
+            .read(exerciseFilterProvider.notifier)
+            .setMuscleGroup(widget.initialMuscleGroup);
+      });
+    }
   }
 
   int _lastTabIndex = 0;
@@ -211,7 +255,7 @@ class _ExerciseCatalogScreenState extends ConsumerState<ExerciseCatalogScreen>
             child: Align(
               alignment: Alignment.centerLeft,
               child: Text(
-                '${exercises.length} EXERCISES CATALOGED',
+                '${exercises.length} OF ${ExerciseCatalog.all.length} EXERCISES',
                 style: TextStyle(
                   color: tokens.textMuted,
                   fontSize: 10,
@@ -234,6 +278,8 @@ class _ExerciseCatalogScreenState extends ConsumerState<ExerciseCatalogScreen>
                         actionLabel: 'RESET FILTERS',
                         onAction: () {
                           _searchController.clear();
+                          _tabController.animateTo(0);
+                          _lastTabIndex = 0;
                           ref.read(exerciseFilterProvider.notifier).reset();
                         },
                       ),
@@ -251,21 +297,34 @@ class _ExerciseCatalogScreenState extends ConsumerState<ExerciseCatalogScreen>
                     itemCount: exercises.length,
                     itemBuilder: (context, index) {
                       final ex = exercises[index];
-                      return _ExerciseCard(
+                      final reduceMotion =
+                          MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+                      final card = _ExerciseCard(
                         exercise: ex,
                         tokens: tokens,
                         onTap: () {
                           if (widget.onSelect != null) {
                             widget.onSelect!(ex);
                           } else {
-                            Navigator.of(context).push(MaterialPageRoute(
-                              builder: (_) =>
-                                  ExerciseDetailScreen(name: ex.name),
-                            ));
+                            final router = GoRouter.maybeOf(context);
+                            if (router != null) {
+                              router.push(
+                                '/workout/exercise/${Uri.encodeComponent(ex.name)}',
+                              );
+                            } else {
+                              Navigator.of(context).push(MaterialPageRoute(
+                                builder: (_) =>
+                                    ExerciseDetailScreen(name: ex.name),
+                              ));
+                            }
                           }
                         },
-                      ).animate().fadeIn(
-                            delay: Duration(milliseconds: index * 20),
+                      );
+                      if (reduceMotion) return card;
+                      return card.animate().fadeIn(
+                            delay: Duration(
+                              milliseconds: index.clamp(0, 8) * 20,
+                            ),
                             duration: const Duration(milliseconds: 180),
                           );
                     },

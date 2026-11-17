@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:progression_tracker/core/constants/app_theme.dart';
+import 'package:progression_tracker/core/providers/units_provider.dart';
 import 'package:progression_tracker/core/router/app_router.dart';
 import 'package:progression_tracker/shared/presentation/components/app_button.dart';
 import 'package:progression_tracker/features/ai/domain/entities/insight.dart';
@@ -84,7 +85,7 @@ class ProfileScreen extends ConsumerWidget {
           ),
           error: (error, _) => Center(
             child: Text(
-              'Error loading profile telemetry: $error',
+              'Error loading profile: $error',
               style: TextStyle(color: tokens.error),
             ),
           ),
@@ -165,12 +166,17 @@ class _ProfileBody extends ConsumerWidget {
     // Nothing is regenerated or hardcoded per build anymore.
     final data = ref.watch(profileDataProvider) ??
         buildProfileData(profile: profile);
+    final units = ref.watch(unitsProvider);
 
     return CustomScrollView(
       slivers: [
         SliverToBoxAdapter(child: ProfileHeader(data: data, tokens: tokens)),
-        SliverToBoxAdapter(child: ProfileStatsRow(data: data, tokens: tokens)),
-        SliverToBoxAdapter(child: ProfileActivityRow(data: data, tokens: tokens)),
+        SliverToBoxAdapter(
+          child: ProfileStatsRow(data: data, tokens: tokens, units: units),
+        ),
+        SliverToBoxAdapter(
+          child: ProfileActivityRow(data: data, tokens: tokens, units: units),
+        ),
         const SliverToBoxAdapter(
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),

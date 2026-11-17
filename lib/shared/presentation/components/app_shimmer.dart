@@ -52,7 +52,7 @@ class _AppShimmerState extends State<AppShimmer> with SingleTickerProviderStateM
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
-    final reduceMotion = MediaQuery.of(context).disableAnimations;
+    final reduceMotion = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
     final baseColor = tokens.elevated;
     final highlightColor = tokens.isDark
         ? const Color(0xFF2C3240)

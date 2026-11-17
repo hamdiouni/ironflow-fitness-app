@@ -368,11 +368,11 @@ class OnboardingBottomNavigation extends StatelessWidget {
           Expanded(
             flex: 2,
             child: AppButton(
-              label: isLastStep ? 'START PROTOCOL' : 'CONTINUE',
+              label: isLastStep ? 'START PLAN' : 'CONTINUE',
               icon: Icon(
                 isLastStep ? Icons.rocket_launch_rounded : Icons.arrow_forward_rounded,
                 size: 18,
-                color: Colors.black,
+                color: tokens.onAccent,
               ),
               variant: AppButtonVariant.primary,
               onPressed: canProceed ? onNext : null,
@@ -415,7 +415,7 @@ class OnboardingSynthesisOverlay extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                'INITIALIZING PROTOCOL',
+                'BUILDING YOUR PLAN',
                 style: TextStyle(
                   fontFamily: AppTypography.displayFontFamily,
                   fontSize: 12,

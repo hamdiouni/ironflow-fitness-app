@@ -348,7 +348,7 @@ class _AiCoachHeroCardState extends ConsumerState<AiCoachHeroCard> {
                 label: const Text('Chat with Coach'),
                 style: FilledButton.styleFrom(
                   backgroundColor: tokens.kineticAccent,
-                  foregroundColor: Colors.black,
+                  foregroundColor: tokens.onAccent,
                   padding: const EdgeInsets.symmetric(
                     horizontal: AppSpacings.md,
                     vertical: AppSpacings.sm,

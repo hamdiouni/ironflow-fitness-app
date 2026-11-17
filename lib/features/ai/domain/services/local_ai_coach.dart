@@ -56,7 +56,7 @@ class LocalAICoach {
         'I cannot provide medical diagnoses, prescribe medications, or evaluate acute symptoms.\n\n'
         '• If you are experiencing acute pain, severe dizziness, chest discomfort, or shortness of breath, please **stop exercising immediately and consult a doctor or emergency medical professional**.\n'
         '• For persistent musculoskeletal swelling or suspected injuries, obtain a formal clinical evaluation from a licensed healthcare provider before resuming training.\n'
-        '• IronFlow does not provide medical advice or endorse unregulated anabolic compounds.';
+        '• This app does not provide medical advice or endorse unregulated anabolic compounds.';
   }
   
   bool _isAboutWorkout(String message) {
@@ -179,6 +179,6 @@ class LocalAICoach {
     List<BodyEntry>? bodyEntries,
     UserProfile? profile,
   ) {
-    return "I am your IronFlow fitness assistant. I can help with:\n\n• Workout planning and exercise form\n• Nutrition and protein targets\n• Breaking strength plateaus\n\n**Next Step:** Select a question chip above or ask me anything.";
+    return "I am your fitness coach assistant. I can help with:\n\n• Workout planning and exercise form\n• Nutrition and protein targets\n• Breaking strength plateaus\n\n**Next Step:** Select a question chip above or ask me anything.";
   }
 }

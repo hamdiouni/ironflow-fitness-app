@@ -19,7 +19,7 @@ class DeleteUserDataUseCase {
       await _localDataWiper.wipeAllUserData(userId, keepAuthSession: true);
       return const DeleteUserDataResult(
         success: true,
-        message: 'All local workout, nutrition, biometric telemetry and snapshots were eradicated from this device.',
+        message: 'All local workout, nutrition, biometric data and snapshots were removed from this device.',
       );
     } catch (e) {
       return DeleteUserDataResult(

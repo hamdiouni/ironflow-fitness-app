@@ -1,3 +1,6 @@
+import 'package:progression_tracker/core/providers/units_provider.dart';
+import 'package:progression_tracker/core/utils/local_date_window.dart';
+import 'package:progression_tracker/core/utils/workout_streak_calculator.dart';
 import 'package:progression_tracker/features/workout/domain/repositories/workout_repository.dart';
 import 'package:progression_tracker/features/nutrition/domain/repositories/nutrition_repository.dart';
 
@@ -30,13 +33,16 @@ class WeeklyReport {
   });
 
   /// Converts report to shareable text format.
-  String toShareableText() {
+  String toShareableText({UnitsSystem units = UnitsSystem.metric}) {
+    final displayVolume =
+        UnitsConverter.convertWeightToDisplay(totalVolume, units);
+    final unitLabel = UnitsConverter.getWeightUnit(units);
     final buffer = StringBuffer();
-    buffer.writeln('📊 IronFlow Weekly Report');
+    buffer.writeln('Weekly Training Report');
     buffer.writeln('Week: ${weekStart.month}/${weekStart.day} - ${weekEnd.month}/${weekEnd.day}');
     buffer.writeln('');
-    buffer.writeln('💪 Workouts: $totalWorkouts');
-    buffer.writeln('🏋️ Total Volume: ${totalVolume.toStringAsFixed(0)} kg');
+    buffer.writeln('Workouts: $totalWorkouts');
+    buffer.writeln('Total Volume: ${displayVolume.toStringAsFixed(0)} $unitLabel');
     buffer.writeln('🏆 Personal Records: $personalRecords');
     buffer.writeln('🔥 Streak: $currentStreak days');
     buffer.writeln('📈 Consistency: ${(consistencyRate * 100).toStringAsFixed(0)}%');
@@ -74,7 +80,10 @@ class GenerateWeeklyReportUseCase {
   /// [weekStart] - Start date of the week (defaults to last Sunday)
   ///
   /// Returns [WeeklyReport] with comprehensive weekly statistics.
-  Future<WeeklyReport> call({DateTime? weekStart}) async {
+  Future<WeeklyReport> call({
+    DateTime? weekStart,
+    UnitsSystem units = UnitsSystem.metric,
+  }) async {
     // Default to last Sunday if not specified
     final start = weekStart ?? _getLastSunday();
     final end = start.add(const Duration(days: 7));
@@ -120,6 +129,7 @@ class GenerateWeeklyReportUseCase {
       personalRecords: personalRecords,
       currentStreak: currentStreak,
       consistencyRate: consistencyRate,
+      units: units,
     );
 
     // Generate recommendations
@@ -158,9 +168,9 @@ class GenerateWeeklyReportUseCase {
   }
 
   DateTime _getLastSunday() {
-    final now = DateTime.now();
-    final daysFromSunday = now.weekday % 7;
-    return now.subtract(Duration(days: daysFromSunday));
+    final today = LocalDateWindow.localMidnight(DateTime.now());
+    final daysFromSunday = today.weekday % 7;
+    return DateTime(today.year, today.month, today.day - daysFromSunday);
   }
 
   int _calculatePRs(List<dynamic> currentWeek, List<dynamic> previousWeek) {
@@ -226,37 +236,19 @@ class GenerateWeeklyReportUseCase {
   }
 
   int _calculateStreak(List<dynamic> workouts) {
-    if (workouts.isEmpty) return 0;
-
-    final sorted = List.from(workouts);
-    sorted.sort((a, b) => b.date.compareTo(a.date));
-
-    int streak = 0;
-    DateTime? lastDate;
-
-    for (final workout in sorted) {
-      if (lastDate == null) {
-        streak = 1;
-      } else {
-        final daysDiff = lastDate.difference(workout.date).inDays;
-        if (daysDiff == 1) {
-          streak++;
-        } else {
-          break;
-        }
-      }
-      lastDate = workout.date;
-    }
-
-    return streak;
+    return WorkoutStreakCalculator.calculateFromDates(
+      workouts.map<DateTime>((w) => w.date as DateTime),
+    ).currentStreak;
   }
 
-  List<String> _generateHighlights(
-      {required int totalWorkouts,
-      required double totalVolume,
-      required int personalRecords,
-      required int currentStreak,
-      required double consistencyRate}) {
+  List<String> _generateHighlights({
+    required int totalWorkouts,
+    required double totalVolume,
+    required int personalRecords,
+    required int currentStreak,
+    required double consistencyRate,
+    UnitsSystem units = UnitsSystem.metric,
+  }) {
     final highlights = <String>[];
 
     if (totalWorkouts >= 5) {
@@ -273,8 +265,10 @@ class GenerateWeeklyReportUseCase {
       highlights.add('$currentStreak day streak - you\'re on fire! 🔥');
     }
 
+    final displayVolume = UnitsConverter.convertWeightToDisplay(totalVolume, units);
+    final unitLabel = UnitsConverter.getWeightUnit(units);
     if (totalVolume > 10000) {
-      highlights.add('Lifted ${(totalVolume / 1000).toStringAsFixed(1)}k kg total volume!');
+      highlights.add('Lifted ${(displayVolume / 1000).toStringAsFixed(1)}k $unitLabel total volume!');
     }
 
     if (consistencyRate >= 0.8) {

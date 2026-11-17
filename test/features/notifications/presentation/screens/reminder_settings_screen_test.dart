@@ -74,7 +74,7 @@ void main() {
       expect(find.text('WORKOUT REMINDERS'), findsOneWidget);
       expect(find.text('MEAL REMINDERS'), findsOneWidget);
       expect(find.text('STREAK CONTINUITY'), findsOneWidget);
-      expect(find.text('HAPTIC & AUDIO PROTOCOL'), findsOneWidget);
+      expect(find.text('HAPTIC & AUDIO SETTINGS'), findsOneWidget);
       expect(find.text('Daily Workout Time'), findsOneWidget);
       expect(find.text('5:30 PM'), findsOneWidget);
     });

@@ -171,7 +171,7 @@ void main() {
 
       expect(find.text('WEEKLY FREQUENCY'), findsOneWidget);
       expect(find.text('NUTRITION BUDGET'), findsOneWidget);
-      expect(find.text('PROTOCOL INITIALIZED'), findsOneWidget);
+      expect(find.text('PLAN READY'), findsOneWidget);
       expect(find.text('SUGGESTED MEAL PLAN'), findsOneWidget);
 
       await tester.tap(find.byKey(const Key('frequency_day_5')));

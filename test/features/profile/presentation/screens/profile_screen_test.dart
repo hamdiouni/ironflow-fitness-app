@@ -267,7 +267,7 @@ void main() {
 
       // Saved active program, not a regenerated one.
       expect(find.text('WORKOUT PROGRAM'), findsOneWidget);
-      expect(find.text('ACTIVE PROTOCOL'), findsOneWidget);
+      expect(find.text('ACTIVE PLAN'), findsOneWidget);
       expect(find.text('Alice Strength Block'), findsOneWidget);
 
       await tester.drag(
@@ -277,7 +277,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Saved diet plan + today's logged intake vs saved targets.
-      expect(find.text('NUTRITION PROTOCOL'), findsOneWidget);
+      expect(find.text('NUTRITION PLAN'), findsOneWidget);
       expect(find.text('Alice Saved Plan'), findsOneWidget);
       expect(
         find.text('TODAY: 700 / 2200 KCAL · 1 MEAL LOGGED'),

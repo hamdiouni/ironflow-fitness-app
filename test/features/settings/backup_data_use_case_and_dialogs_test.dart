@@ -304,7 +304,7 @@ void main() {
 
       await tester.tap(find.text('OPEN RESTORE'));
       await tester.pumpAndSettle();
-      expect(find.text('SYSTEM RESTORATION PROTOCOL'), findsOneWidget);
+      expect(find.text('RESTORE BACKUP DATA'), findsOneWidget);
 
       // Invalid JSON renders validation error.
       await tester.enterText(find.byType(TextField), '{bad json');
@@ -323,7 +323,7 @@ void main() {
       });
       await tester.enterText(find.byType(TextField), validArchive);
       await tester.pumpAndSettle();
-      expect(find.text('VALIDATED TELEMETRY ARCHIVE'), findsOneWidget);
+      expect(find.text('VALIDATED BACKUP ARCHIVE'), findsOneWidget);
 
       await tester.ensureVisible(find.text('MERGE DATA'));
       await tester.tap(find.text('MERGE DATA'));
@@ -414,7 +414,7 @@ void main() {
       // State inspector opens cleanly.
       await tester.tap(find.text('OPEN INSPECTOR'));
       await tester.pumpAndSettle();
-      expect(find.text('APP STATE TELEMETRY'), findsOneWidget);
+      expect(find.text('APP STATE INSPECTOR'), findsOneWidget);
       expect(find.text('AUTHENTICATED'), findsOneWidget);
       await tester.tap(find.text('DISMISS'));
       await tester.pumpAndSettle();

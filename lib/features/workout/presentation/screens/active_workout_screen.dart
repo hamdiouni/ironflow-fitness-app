@@ -1,18 +1,20 @@
 import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:uuid/uuid.dart';
 import 'package:collection/collection.dart';
 import 'package:progression_tracker/core/constants/app_theme.dart';
+import 'package:progression_tracker/core/providers/units_provider.dart';
 import 'package:progression_tracker/core/router/app_router.dart';
 import 'package:progression_tracker/core/utils/error_handler.dart';
+import 'package:progression_tracker/l10n/app_localizations.dart';
 import 'package:progression_tracker/shared/presentation/components/components.dart';
 import 'package:progression_tracker/features/workout/domain/entities/entities.dart';
 import 'package:progression_tracker/features/workout/presentation/providers/rest_timer_provider.dart';
 import 'package:progression_tracker/features/workout/presentation/providers/workout_providers.dart';
 import 'package:progression_tracker/features/workout/presentation/providers/active_program_providers.dart';
-import 'package:progression_tracker/features/workout/presentation/widgets/program_complete_dialog.dart';
+import 'package:progression_tracker/features/workout/presentation/widgets/plate_calculator_sheet.dart';
 import 'package:progression_tracker/features/ai/presentation/widgets/quick_feedback_bottom_sheet.dart';
 import 'package:progression_tracker/features/ai/presentation/providers/global_ai_provider.dart';
 import 'package:progression_tracker/shared/presentation/services/app_haptics.dart';
@@ -20,7 +22,8 @@ import 'package:progression_tracker/features/workout/domain/usecases/calculate_w
 import 'package:progression_tracker/features/workout/domain/usecases/workout_metrics.dart';
 import '../widgets/active_workout/active_exercise_card.dart';
 import '../widgets/active_workout/active_rest_timer_section.dart';
-import '../widgets/active_workout/exercise_selection_sheet.dart';
+import '../widgets/active_workout/active_workout_chrome.dart';
+import '../widgets/active_workout/active_workout_modals.dart';
 export '../widgets/active_workout/exercise_selection_sheet.dart';
 
 class ActiveWorkoutScreen extends ConsumerStatefulWidget {
@@ -42,7 +45,56 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
   // the live session celebration count. Saved workout data, history, and progression
   // remain correct and canonical.
   int _prCount = 0;
-  WeightUnit _weightUnit = WeightUnit.kg;
+  late WeightUnit _weightUnit;
+  String? _selectedExerciseId;
+  final Map<String, GlobalKey<ActiveExerciseCardState>> _cardKeys = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _weightUnit = ref.read(unitsProvider) == UnitsSystem.imperial
+        ? WeightUnit.lb
+        : WeightUnit.kg;
+  }
+
+  GlobalKey<ActiveExerciseCardState> _cardKeyFor(String exerciseId) {
+    return _cardKeys.putIfAbsent(
+      exerciseId,
+      () => GlobalKey<ActiveExerciseCardState>(),
+    );
+  }
+
+  String? _activeExerciseId(Workout workout) {
+    if (workout.exercises.isEmpty) return null;
+    if (_selectedExerciseId != null &&
+        workout.exercises.any((e) => e.id == _selectedExerciseId)) {
+      return _selectedExerciseId;
+    }
+    return workout.exercises.first.id;
+  }
+
+  void _toggleRestTimerShortcut() {
+    final timer = ref.read(restTimerProvider);
+    final notifier = ref.read(restTimerProvider.notifier);
+    if (timer.isRunning && !timer.isComplete) {
+      notifier.skip();
+    } else {
+      notifier.start(90);
+    }
+  }
+
+  void _logActiveSetShortcut(Workout workout) {
+    final id = _activeExerciseId(workout);
+    if (id == null) return;
+    _cardKeys[id]?.currentState?.logCurrentSet();
+  }
+
+  void _stepWeightShortcut(Workout workout, double sign) {
+    final id = _activeExerciseId(workout);
+    if (id == null) return;
+    final step = _weightUnit == WeightUnit.lb ? 5.0 : 2.5;
+    _cardKeys[id]?.currentState?.stepWeight(sign * step);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -101,7 +153,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Start a new session and log sets with telemetry.',
+                'Start a new session and log your sets.',
                 style: TextStyle(color: tokens.textMuted, fontSize: 13),
               ),
               const SizedBox(height: 32),
@@ -136,118 +188,281 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
     final tokens = context.tokens;
     final hasExercises = workout.exercises.isNotEmpty;
     final hasSets = WorkoutMetrics.hasWorkingSets(workout);
-    
+    final activeExerciseId = _activeExerciseId(workout);
+
     AppLogger.debug('🔍 [WorkoutUI] Has exercises: $hasExercises, Has sets: $hasSets');
-    
+
     // Get program exercises from active program
     final programExercises = ref.watch(currentDayExercisesProvider);
-    
-    return Scaffold(
-      backgroundColor: tokens.canvas,
-      appBar: AppBar(
-        backgroundColor: tokens.canvas,
-        elevation: 0,
-        surfaceTintColor: Colors.transparent,
-        title: Text(
-          'ACTIVE WORKOUT',
-          style: TextStyle(
-            color: tokens.textPrimary,
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            fontFamily: AppTypography.fontFamilyHeadings,
-            letterSpacing: 1.2,
-          ),
-        ),
-        actions: [
-          Center(
-            child: InkWell(
-              key: const Key('weight_unit_toggle'),
-              borderRadius: BorderRadius.circular(tokens.radiusPill),
-              onTap: () {
-                AppHaptics.shared.selectionChanged();
-                setState(() {
-                  _weightUnit = _weightUnit == WeightUnit.kg
-                      ? WeightUnit.lb
-                      : WeightUnit.kg;
-                });
+
+    Widget buildExerciseList() {
+      if (!hasExercises) {
+        return WorkoutEmptyExerciseHint(
+          onAddExercise: () => _showExerciseSelection(workout),
+        );
+      }
+      return ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: workout.exercises.length,
+        itemBuilder: (context, index) {
+          final exercise = workout.exercises[index];
+          final programExercise = programExercises.firstWhereOrNull(
+            (pe) =>
+                pe.exerciseName.toLowerCase() == exercise.name.toLowerCase(),
+          );
+          final isSelected = exercise.id == activeExerciseId;
+
+          return Listener(
+            onPointerDown: (_) {
+              if (_selectedExerciseId != exercise.id) {
+                setState(() => _selectedExerciseId = exercise.id);
+              }
+            },
+            child: ActiveExerciseCard(
+              key: _cardKeyFor(exercise.id),
+              exercise: exercise,
+              programExercise: programExercise,
+              weightUnit: _weightUnit,
+              isFocused: isSelected,
+              isAnimating: _animatingExerciseId == exercise.id,
+              onAnimationComplete: () {
+                if (mounted) setState(() => _animatingExerciseId = null);
               },
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: tokens.panel,
-                  borderRadius: BorderRadius.circular(tokens.radiusPill),
-                  border: Border.all(color: tokens.borderSubtle, width: 1),
+              onLogSet: (reps, weight, [type = SetType.normal, rpe]) =>
+                  _logSet(exercise, reps, weight, type, rpe),
+              onUpdateSetType: (setIndex, newType) => ref
+                  .read(workoutNotifierProvider.notifier)
+                  .updateSetType(exercise.id, setIndex, newType),
+            ),
+          );
+        },
+      );
+    }
+
+    final workingSetCount = WorkoutMetrics.workingSetCount(workout);
+    final volumeKg = CalculateWorkoutVolumeUseCase()(workout);
+    final displayVolume = _weightUnit == WeightUnit.lb
+        ? UnitsConverter.convertWeightToDisplay(volumeKg, UnitsSystem.imperial)
+        : volumeKg;
+
+    return CallbackShortcuts(
+      bindings: {
+        const SingleActivator(LogicalKeyboardKey.keyL, alt: true): () =>
+            _logActiveSetShortcut(workout),
+        const SingleActivator(LogicalKeyboardKey.keyR, alt: true):
+            _toggleRestTimerShortcut,
+        const SingleActivator(LogicalKeyboardKey.equal, alt: true): () =>
+            _stepWeightShortcut(workout, 1),
+        const SingleActivator(LogicalKeyboardKey.add, alt: true): () =>
+            _stepWeightShortcut(workout, 1),
+        const SingleActivator(LogicalKeyboardKey.minus, alt: true): () =>
+            _stepWeightShortcut(workout, -1),
+        const SingleActivator(LogicalKeyboardKey.numpadSubtract, alt: true): () =>
+            _stepWeightShortcut(workout, -1),
+      },
+      child: Focus(
+        autofocus: true,
+        child: Scaffold(
+          backgroundColor: tokens.canvas,
+          appBar: AppBar(
+            backgroundColor: tokens.canvas,
+            elevation: 0,
+            surfaceTintColor: Colors.transparent,
+            titleSpacing: 16,
+            title: Row(
+              children: [
+                Flexible(
+                  child: Text(
+                    'WORKOUT',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: tokens.textPrimary,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      fontFamily: AppTypography.fontFamilyHeadings,
+                      letterSpacing: 0.6,
+                    ),
+                  ),
                 ),
-                child: Text(
-                  _weightUnit.label,
-                  style: TextStyle(
-                    color: tokens.kineticAccent,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                    fontFamily: AppTypography.displayFontFamily,
+                const SizedBox(width: 8),
+                WorkoutElapsedBadge(startTime: startTime, tokens: tokens),
+              ],
+            ),
+            actions: [
+              Center(
+                child: InkWell(
+                  key: const Key('weight_unit_toggle'),
+                  borderRadius: BorderRadius.circular(tokens.radiusPill),
+                  onTap: () {
+                    AppHaptics.shared.selectionChanged();
+                    setState(() {
+                      _weightUnit = _weightUnit == WeightUnit.kg
+                          ? WeightUnit.lb
+                          : WeightUnit.kg;
+                    });
+                  },
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: tokens.panel,
+                      borderRadius: BorderRadius.circular(tokens.radiusPill),
+                      border: Border.all(color: tokens.borderSubtle, width: 1),
+                    ),
+                    child: Text(
+                      _weightUnit.label,
+                      style: TextStyle(
+                        color: tokens.kineticAccent,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        fontFamily: AppTypography.displayFontFamily,
+                      ),
+                    ),
                   ),
                 ),
               ),
-            ),
+              const SizedBox(width: 4),
+              IconButton(
+                key: const Key('add_exercise_button'),
+                icon: Icon(Icons.add, color: tokens.kineticAccent, size: 22),
+                tooltip: AppLocalizations.of(context)?.addExercise ??
+                    'Add exercise',
+                constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                onPressed: () {
+                  AppLogger.debug('📊 [WorkoutUI] Add exercise button pressed');
+                  _showExerciseSelection(workout);
+                },
+              ),
+              PopupMenuButton<String>(
+                key: const Key('active_workout_menu_button'),
+                tooltip: 'Workout actions',
+                icon: Icon(
+                  Icons.more_vert_rounded,
+                  color: tokens.textPrimary,
+                  size: 20,
+                ),
+                color: tokens.panel,
+                onSelected: (value) {
+                  if (value == 'plate_calc') {
+                    PlateCalculatorSheet.show(
+                      context,
+                      initialUnit: _weightUnit == WeightUnit.lb
+                          ? PlateUnit.lb
+                          : PlateUnit.kg,
+                    );
+                  } else if (value == 'discard') {
+                    _confirmDiscardWorkout(context);
+                  }
+                },
+                itemBuilder: (ctx) => [
+                  PopupMenuItem<String>(
+                    value: 'plate_calc',
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.calculate_outlined,
+                          color: tokens.kineticAccent,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          'Plate Calculator',
+                          style: TextStyle(
+                            color: tokens.textPrimary,
+                            fontFamily: AppTypography.bodyFontFamily,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem<String>(
+                    key: const Key('discard_workout_button'),
+                    value: 'discard',
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.delete_outline,
+                          color: tokens.error,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          'Discard Workout',
+                          style: TextStyle(
+                            color: tokens.error,
+                            fontFamily: AppTypography.bodyFontFamily,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(width: 4),
+            ],
           ),
-          const SizedBox(width: 4),
-          SizedBox(
-            width: 44,
-            height: 44,
-            child: IconButton(
-              key: const Key('discard_workout_button'),
-              icon: Icon(Icons.delete_outline, color: tokens.error, size: 22),
-              tooltip: 'Discard Workout',
-              onPressed: () => _confirmDiscardWorkout(context),
-            ),
-          ),
-          SizedBox(
-            width: 48,
-            height: 48,
-            child: IconButton(
-              icon: Icon(Icons.add, color: tokens.kineticAccent, size: 22),
-              tooltip: 'Add exercise',
-              onPressed: () {
-                AppLogger.debug('📊 [WorkoutUI] Add exercise button pressed');
-                _showExerciseSelection(workout);
-              },
-            ),
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
-      body: Column(
+          body: LayoutBuilder(
+            builder: (context, constraints) {
+              if (constraints.maxWidth >= 900) {
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(
+                      flex: 6,
+                      child: buildExerciseList(),
+                    ),
+                    Container(
+                      width: 1,
+                      color: tokens.borderSubtle,
+                    ),
+                    Expanded(
+                      flex: 4,
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            SessionScoreboardPanel(
+                              exerciseCount: workout.exercises.length,
+                              workingSets: workingSetCount,
+                              volumeLabel:
+                                  '${displayVolume.toStringAsFixed(0)} ${_weightUnit.label}',
+                              tokens: tokens,
+                            ),
+                            const SizedBox(height: 12),
+                            const ActiveRestTimerSection(),
+                            const SizedBox(height: 12),
+                            KeyboardShortcutsHint(tokens: tokens),
+                            const SizedBox(height: 12),
+                            FinishWorkoutButton(
+                              enabled: hasSets,
+                              onFinish: () => _finishWorkout(context),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              }
 
-        children: [
-          const ActiveRestTimerSection(),
-          Expanded(
-            child: hasExercises
-                ? ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: workout.exercises.length,
-                    itemBuilder: (context, index) {
-                      final exercise = workout.exercises[index];
-                      // Find corresponding program exercise if it exists
-                      final programExercise = programExercises.firstWhereOrNull(
-                        (pe) => pe.exerciseName.toLowerCase() == exercise.name.toLowerCase(),
-                      );
-                      
-                      return ActiveExerciseCard(
-                        key: ValueKey(exercise.id),
-                        exercise: exercise,
-                        programExercise: programExercise,
-                        weightUnit: _weightUnit,
-                        isAnimating: _animatingExerciseId == exercise.id,
-                        onAnimationComplete: () { if (mounted) setState(() => _animatingExerciseId = null); },
-                        onLogSet: (reps, weight, [type = SetType.normal, rpe]) => _logSet(exercise, reps, weight, type, rpe),
-                        onUpdateSetType: (setIndex, newType) => ref.read(workoutNotifierProvider.notifier).updateSetType(exercise.id, setIndex, newType),
-                      );
-                    },
-                  )
-                : _EmptyExerciseHint(onAddExercise: () => _showExerciseSelection(workout)),
+              return Column(
+                children: [
+                  const ActiveRestTimerSection(),
+                  Expanded(child: buildExerciseList()),
+                  FinishWorkoutButton(
+                    enabled: hasSets,
+                    onFinish: () => _finishWorkout(context),
+                  ),
+                ],
+              );
+            },
           ),
-          _FinishWorkoutButton(enabled: hasSets, onFinish: () => _finishWorkout(context)),
-        ],
+        ),
       ),
     );
   }
@@ -345,42 +560,11 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
   }
 
   void _showExerciseSelection(Workout workout) {
-    try {
-      AppLogger.debug('📊 [WorkoutUI] Opening exercise selection sheet...');
-      showModalBottomSheet<void>(
-        context: context,
-        isScrollControlled: true,
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-        builder: (_) => DraggableScrollableSheet(
-          expand: false,
-          initialChildSize: 0.7,
-          maxChildSize: 0.95,
-          builder: (sheetContext, scrollController) => ExerciseSelectionSheet(
-            scrollController: scrollController,
-            onExerciseSelected: (name) async {
-              AppLogger.debug('📊 [WorkoutUI] Exercise selected: $name');
-              Navigator.of(sheetContext).pop();
-              try {
-                final exercise = Exercise(id: const Uuid().v4(), name: name, type: ExerciseType.strength, sets: const []);
-                AppLogger.debug('🔍 [WorkoutUI] Exercise ID: ${exercise.id}, Type: ${exercise.type}');
-                
-                await ref.read(workoutNotifierProvider.notifier).addExercise(exercise);
-                AppLogger.debug('✅ [WorkoutUI] Exercise added successfully');
-              } catch (e, s) {
-                AppLogger.debug('❌ [WorkoutUI] Failed to add exercise: $e');
-                AppLogger.debug('🔍 [WorkoutUI] Stack trace: $s');
-                if (mounted) ErrorHandler.handleError(context, e, s);
-              }
-            },
-          ),
-        ),
-      );
-      AppLogger.debug('✅ [WorkoutUI] Exercise selection sheet opened');
-    } catch (e, s) {
-      AppLogger.debug('❌ [WorkoutUI] Failed to open exercise selection: $e');
-      AppLogger.debug('🔍 [WorkoutUI] Stack trace: $s');
-      if (mounted) ErrorHandler.handleError(context, e, s);
-    }
+    showActiveWorkoutExerciseSelectionSheet(
+      context: context,
+      ref: ref,
+      isMounted: () => mounted,
+    );
   }
 
   Future<void> _logSet(Exercise exercise, int reps, double weight, [SetType type = SetType.normal, int? rpe]) async {
@@ -406,8 +590,11 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
         AppLogger.debug('🔍 [WorkoutUI] Total PRs this workout: $_prCount');
         
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('New PR on ${exercise.name}!'),
-          backgroundColor: AppTheme.primaryColor,
+          content: Text(
+            'New PR on ${exercise.name}!',
+            style: TextStyle(color: context.tokens.onAccent),
+          ),
+          backgroundColor: context.tokens.kineticAccent,
           duration: const Duration(seconds: 2),
         ));
         AppLogger.debug('✅ [WorkoutUI] PR notification shown');
@@ -442,7 +629,7 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
       
       // Show calorie input dialog first
       AppLogger.debug('📊 [WorkoutUI] Showing calorie input dialog...');
-      final caloriesBurned = await _showCalorieInputDialog(context);
+      final caloriesBurned = await showCalorieBurnedInputDialog(context);
       
       // If user cancelled, don't finish workout
       if (caloriesBurned == null) {
@@ -486,7 +673,11 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
         // dialog's own finish() calls are now harmless no-ops)
         if (context.mounted) {
           AppLogger.debug('📊 [WorkoutUI] Showing program complete dialog...');
-          _showProgramCompleteDialog(context, activeProgram);
+          showProgramCompleteCelebrationDialog(
+            context: context,
+            ref: ref,
+            activeProgram: activeProgram,
+          );
         }
       }
     } catch (e, s) {
@@ -494,216 +685,5 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
       AppLogger.debug('🔍 [WorkoutUI] Stack trace: $s');
       if (context.mounted) ErrorHandler.handleError(context, e, s);
     }
-  }
-  
-  Future<double?> _showCalorieInputDialog(BuildContext context) async {
-    try {
-      AppLogger.debug('📊 [WorkoutUI] Opening calorie input dialog...');
-      final controller = TextEditingController(text: '0');
-      
-      final result = await showDialog<double>(
-        context: context,
-        builder: (context) {
-          final tokens = context.tokens;
-          return AlertDialog(
-            backgroundColor: tokens.card,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(tokens.radiusLg),
-              side: BorderSide(color: tokens.borderSubtle, width: 1),
-            ),
-            title: Text(
-              'CALORIES BURNED',
-              style: TextStyle(
-                color: tokens.textPrimary,
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                fontFamily: AppTypography.fontFamilyHeadings,
-                letterSpacing: 0.5,
-              ),
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Record estimated energy expenditure during this session.',
-                  style: TextStyle(color: tokens.textMuted, fontSize: 13),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: controller,
-                  keyboardType: TextInputType.number,
-                  autofocus: true,
-                  style: TextStyle(
-                    color: tokens.textPrimary,
-                    fontFamily: AppTypography.fontFamilyHeadings,
-                    fontWeight: FontWeight.w700,
-                  ),
-                  decoration: InputDecoration(
-                    labelText: 'Calories',
-                    labelStyle: TextStyle(color: tokens.textMuted, fontSize: 12),
-                    suffixText: 'kcal',
-                    suffixStyle: TextStyle(color: tokens.kineticAccent, fontWeight: FontWeight.bold),
-                    filled: true,
-                    fillColor: tokens.panel,
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(tokens.radiusSm),
-                      borderSide: BorderSide(color: tokens.borderSubtle, width: 1),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(tokens.radiusSm),
-                      borderSide: BorderSide(color: tokens.kineticAccent, width: 1.5),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  'Tip: A typical strength training session burns 200–400 kcal.',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: tokens.textMuted,
-                  ),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  AppLogger.debug('⚠️ [WorkoutUI] User cancelled calorie input dialog');
-                  Navigator.of(context).pop(null);
-                },
-                child: Text('Cancel', style: TextStyle(color: tokens.textMuted)),
-              ),
-              AppButton(
-                label: 'SAVE',
-                variant: AppButtonVariant.primary,
-                height: 40,
-                onPressed: () {
-                  final value = double.tryParse(controller.text) ?? 0;
-                  AppLogger.debug('🔍 [WorkoutUI] User entered calories: $value');
-                  Navigator.of(context).pop(value);
-                },
-              ),
-            ],
-          );
-        },
-      ).then((value) {
-        controller.dispose();
-        return value;
-      });
-      
-      if (result != null) {
-        AppLogger.debug('✅ [WorkoutUI] Calorie input dialog completed with value: $result');
-      } else {
-        AppLogger.debug('⚠️ [WorkoutUI] Calorie input dialog cancelled');
-      }
-      
-      return result;
-    } catch (e, s) {
-      AppLogger.debug('❌ [WorkoutUI] Failed to show calorie input dialog: $e');
-      AppLogger.debug('🔍 [WorkoutUI] Stack trace: $s');
-      return null;
-    }
-  }
-  
-  void _showProgramCompleteDialog(BuildContext context, ActiveProgram activeProgram) {
-    try {
-      AppLogger.debug('📊 [WorkoutUI] Opening program complete dialog...');
-      AppLogger.debug('🔍 [WorkoutUI] Program name: ${activeProgram.program.name}');
-      
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => ProgramCompleteDialog(
-          programName: activeProgram.program.name,
-          onRestart: () async {
-            try {
-              AppLogger.debug('📊 [WorkoutUI] User chose to restart program');
-              await ref.read(activeProgramProvider.notifier).restartProgram();
-              AppLogger.debug('✅ [WorkoutUI] Program restarted successfully');
-              
-              if (context.mounted) {
-                AppLogger.debug('📊 [WorkoutUI] Finishing workout after program restart...');
-                await ref.read(workoutNotifierProvider.notifier).finish();
-                AppLogger.debug('✅ [WorkoutUI] Workout finished after program restart');
-              }
-            } catch (e, s) {
-              AppLogger.debug('❌ [WorkoutUI] Failed to restart program: $e');
-              AppLogger.debug('🔍 [WorkoutUI] Stack trace: $s');
-              if (context.mounted) ErrorHandler.handleError(context, e, s);
-            }
-          },
-          onGenerateNew: () async {
-            try {
-              AppLogger.debug('📊 [WorkoutUI] User chose to generate new program');
-              
-              // Clear the current program
-              AppLogger.debug('📊 [WorkoutUI] Clearing current program...');
-              await ref.read(activeProgramProvider.notifier).clearProgram();
-              AppLogger.debug('✅ [WorkoutUI] Program cleared successfully');
-              
-              // Navigate to program selection
-              if (context.mounted) {
-                AppLogger.debug('📊 [WorkoutUI] Navigating to program selection...');
-                context.go(AppRoutes.workoutProgramSelection);
-                AppLogger.debug('✅ [WorkoutUI] Navigation to program selection completed');
-              }
-            } catch (e, s) {
-              AppLogger.debug('❌ [WorkoutUI] Failed to generate new program: $e');
-              AppLogger.debug('🔍 [WorkoutUI] Stack trace: $s');
-              if (context.mounted) ErrorHandler.handleError(context, e, s);
-            }
-          },
-        ),
-      );
-      AppLogger.debug('✅ [WorkoutUI] Program complete dialog opened');
-    } catch (e, s) {
-      AppLogger.debug('❌ [WorkoutUI] Failed to show program complete dialog: $e');
-      AppLogger.debug('🔍 [WorkoutUI] Stack trace: $s');
-      if (context.mounted) ErrorHandler.handleError(context, e, s);
-    }
-  }
-}
-
-class _EmptyExerciseHint extends StatelessWidget {
-  const _EmptyExerciseHint({required this.onAddExercise});
-  final VoidCallback onAddExercise;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: AppStateView.empty(
-          title: 'NO EXERCISES YET',
-          message: 'Add exercises to this workout to begin logging sets.',
-          actionLabel: '+ ADD EXERCISE',
-          onAction: onAddExercise,
-        ),
-      ),
-    );
-  }
-}
-
-class _FinishWorkoutButton extends StatelessWidget {
-  const _FinishWorkoutButton({required this.enabled, required this.onFinish});
-  final bool enabled;
-  final VoidCallback onFinish;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: SizedBox(
-        width: double.infinity,
-        height: 52,
-        child: AppButton(
-          label: 'FINISH WORKOUT',
-          variant: AppButtonVariant.primary,
-          isFullWidth: true,
-          onPressed: enabled ? onFinish : null,
-        ),
-      ),
-    );
   }
 }

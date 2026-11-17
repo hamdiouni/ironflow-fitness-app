@@ -290,149 +290,213 @@ class _NutritionBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = AppThemeTokens.of(context);
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(vertical: AppTheme.spacingMedium),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+    final targetsWidget = dietPlanAsync.when(
+      data: (dietPlan) {
+        if (dietPlan != null) {
+          return DietPlanTargetsDisplay(dietPlan: dietPlan);
+        } else {
+          return const DefaultTargetsDisplay();
+        }
+      },
+      loading: () => const DefaultTargetsDisplay(),
+      error: (error, _) => const DefaultTargetsDisplay(),
+    );
+
+    final macroWheelSection = Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppTheme.spacingMedium,
+      ),
+      child: MacroWheelChart(
+        protein: summary.totalProtein,
+        carbs: summary.totalCarbs,
+        fats: summary.totalFats,
+      ),
+    );
+
+    final remainingMacrosSection = RemainingMacrosCard(summary: summary);
+
+    final suggestedDietSection = SuggestedDietPlanCard(
+      onLogMeal: onLogMeal,
+      onSwapMeal: (meal) => _showSwapMealDialog(context, meal),
+    );
+
+    final recentFoodsSection = RecentFoodsQuickAdd(
+      today: today,
+    );
+
+    final loggedMealsHeader = Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppTheme.spacingMedium,
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // 1. Contextual AI Banner
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: AppTheme.spacingMedium),
-            child: ContextualInsightBanner(context: InsightContext.nutrition),
+          Row(
+            children: [
+              Text(
+                'TODAY\'S FUEL',
+                style: TextStyle(
+                  fontFamily: AppTypography.displayFontFamily,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.5,
+                  color: tokens.textPrimary,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: summary.meals.isNotEmpty
+                      ? tokens.kineticAccent.withValues(alpha: 0.12)
+                      : tokens.card,
+                  borderRadius: BorderRadius.circular(tokens.radiusPill),
+                  border: Border.all(
+                    color: summary.meals.isNotEmpty
+                        ? tokens.kineticAccent.withValues(alpha: 0.35)
+                        : tokens.borderSubtle,
+                    width: 1,
+                  ),
+                ),
+                child: Text(
+                  '${summary.meals.length} LOGGED',
+                  style: TextStyle(
+                    fontFamily: AppTypography.displayFontFamily,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.5,
+                    color: summary.meals.isNotEmpty
+                        ? tokens.kineticAccent
+                        : tokens.textMuted,
+                  ),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 12),
+        ],
+      ),
+    );
 
-          // 2. Targets section (diet plan or default)
-          dietPlanAsync.when(
-            data: (dietPlan) {
-              if (dietPlan != null) {
-                return DietPlanTargetsDisplay(dietPlan: dietPlan);
-              } else {
-                return const DefaultTargetsDisplay();
-              }
-            },
-            loading: () => const DefaultTargetsDisplay(),
-            error: (error, _) => const DefaultTargetsDisplay(),
+    final mealsCardsSection = SwipeableMealCards(
+      meals: summary.meals,
+      onDelete: onDeleteMeal,
+      onSwap: (meal) => _showSwapMealDialog(context, meal),
+    );
+
+    final actionButtonsSection = Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppTheme.spacingMedium,
+      ),
+      child: Column(
+        children: [
+          AppButton(
+            label: 'SEARCH & LOG FOOD',
+            icon: const Icon(Icons.search_rounded, size: 18),
+            isFullWidth: true,
+            onPressed: () => _openFoodSearch(context),
           ),
-          const SizedBox(height: 12),
-
-          // 3. Macro wheel chart with current day totals
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppTheme.spacingMedium,
-            ),
-            child: MacroWheelChart(
-              protein: summary.totalProtein,
-              carbs: summary.totalCarbs,
-              fats: summary.totalFats,
-            ),
+          const SizedBox(height: 10),
+          AppButton(
+            label: 'LOG CUSTOM MEAL',
+            variant: AppButtonVariant.secondary,
+            icon: const Icon(Icons.add_rounded, size: 18),
+            isFullWidth: true,
+            onPressed: () => _showLogMealDialog(context),
           ),
-          const SizedBox(height: 12),
+        ],
+      ),
+    );
 
-          // 4. Remaining macros display with progress bars
-          RemainingMacrosCard(summary: summary),
-          const SizedBox(height: 12),
-
-          // 5. Budget-Aware Suggested Diet Plan (Outcome 3)
-          SuggestedDietPlanCard(
-            onLogMeal: onLogMeal,
-            onSwapMeal: (meal) => _showSwapMealDialog(context, meal),
-          ),
-          const SizedBox(height: 16),
-
-          // 6. Recent foods quick-add chips (Batch 5)
-          RecentFoodsQuickAdd(
-            today: today,
-          ),
-
-          // 6. Logged meals section
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppTheme.spacingMedium,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isWide = constraints.maxWidth >= 900;
+        if (isWide) {
+          return SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(vertical: AppTheme.spacingMedium),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                const Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: AppTheme.spacingMedium,
+                  ),
+                  child: ContextualInsightBanner(
+                    context: InsightContext.nutrition,
+                  ),
+                ),
+                const SizedBox(height: 12),
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'TODAY\'S FUEL',
-                      style: TextStyle(
-                        fontFamily: AppTypography.displayFontFamily,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.5,
-                        color: tokens.textPrimary,
+                    Expanded(
+                      flex: 5,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          targetsWidget,
+                          const SizedBox(height: 12),
+                          macroWheelSection,
+                          const SizedBox(height: 12),
+                          remainingMacrosSection,
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: summary.meals.isNotEmpty
-                            ? tokens.kineticAccent.withValues(alpha: 0.12)
-                            : tokens.card,
-                        borderRadius: BorderRadius.circular(tokens.radiusPill),
-                        border: Border.all(
-                          color: summary.meals.isNotEmpty
-                              ? tokens.kineticAccent.withValues(alpha: 0.35)
-                              : tokens.borderSubtle,
-                          width: 1,
-                        ),
-                      ),
-                      child: Text(
-                        '${summary.meals.length} LOGGED',
-                        style: TextStyle(
-                          fontFamily: AppTypography.displayFontFamily,
-                          fontSize: 9,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.5,
-                          color: summary.meals.isNotEmpty
-                              ? tokens.kineticAccent
-                              : tokens.textMuted,
-                        ),
+                    Expanded(
+                      flex: 6,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          suggestedDietSection,
+                          const SizedBox(height: 16),
+                          recentFoodsSection,
+                          loggedMealsHeader,
+                          const SizedBox(height: 8),
+                          mealsCardsSection,
+                          const SizedBox(height: 20),
+                          actionButtonsSection,
+                        ],
                       ),
                     ),
                   ],
                 ),
+                const SizedBox(height: 32),
               ],
             ),
-          ),
-          const SizedBox(height: 8),
-          SwipeableMealCards(
-            meals: summary.meals,
-            onDelete: onDeleteMeal,
-            onSwap: (meal) => _showSwapMealDialog(context, meal),
-          ),
-          const SizedBox(height: 20),
+          );
+        }
 
-          // 6. Action buttons
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppTheme.spacingMedium,
-            ),
-            child: Column(
-              children: [
-                AppButton(
-                  label: 'SEARCH & LOG FOOD',
-                  icon: const Icon(Icons.search_rounded, size: 18),
-                  isFullWidth: true,
-                  onPressed: () => _openFoodSearch(context),
+        return SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(vertical: AppTheme.spacingMedium),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: AppTheme.spacingMedium,
                 ),
-                const SizedBox(height: 10),
-                AppButton(
-                  label: 'LOG CUSTOM MEAL',
-                  variant: AppButtonVariant.secondary,
-                  icon: const Icon(Icons.add_rounded, size: 18),
-                  isFullWidth: true,
-                  onPressed: () => _showLogMealDialog(context),
-                ),
-              ],
-            ),
+                child:
+                    ContextualInsightBanner(context: InsightContext.nutrition),
+              ),
+              const SizedBox(height: 12),
+              targetsWidget,
+              const SizedBox(height: 12),
+              macroWheelSection,
+              const SizedBox(height: 12),
+              remainingMacrosSection,
+              const SizedBox(height: 12),
+              suggestedDietSection,
+              const SizedBox(height: 16),
+              recentFoodsSection,
+              loggedMealsHeader,
+              const SizedBox(height: 8),
+              mealsCardsSection,
+              const SizedBox(height: 20),
+              actionButtonsSection,
+              const SizedBox(height: 32),
+            ],
           ),
-          const SizedBox(height: 32),
-        ],
-      ),
+        );
+      },
     );
   }
 

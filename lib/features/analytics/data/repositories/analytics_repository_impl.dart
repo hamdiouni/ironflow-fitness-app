@@ -1,3 +1,5 @@
+import 'package:progression_tracker/core/utils/local_date_window.dart';
+import 'package:progression_tracker/core/utils/workout_streak_calculator.dart';
 import 'package:progression_tracker/features/analytics/domain/entities/consistency_metrics.dart';
 import 'package:progression_tracker/features/analytics/domain/entities/performance_prediction.dart';
 import 'package:progression_tracker/features/analytics/domain/entities/strength_progression.dart';
@@ -232,32 +234,12 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
         ? totalWorkouts / totalWeeks
         : 0.0;
 
-    // Calculate streaks
-    int currentStreak = 0;
-    int longestStreak = 0;
-    int tempStreak = 0;
-    DateTime? lastDate;
-
-    final sortedWorkouts = List.from(workouts);
-    sortedWorkouts.sort((a, b) => a.date.compareTo(b.date));
-
-    for (final workout in sortedWorkouts) {
-      if (lastDate == null) {
-        tempStreak = 1;
-      } else {
-        final daysDiff = workout.date.difference(lastDate).inDays;
-        if (daysDiff == 1) {
-          tempStreak++;
-        } else {
-          if (tempStreak > longestStreak) longestStreak = tempStreak;
-          tempStreak = 1;
-        }
-      }
-      lastDate = workout.date;
-    }
-
-    if (tempStreak > longestStreak) longestStreak = tempStreak;
-    currentStreak = tempStreak;
+    // Calculate streaks using canonical local calendar-date logic.
+    final streakStats = WorkoutStreakCalculator.calculateFromDates(
+      workouts.map((w) => w.date),
+    );
+    final currentStreak = streakStats.currentStreak;
+    final longestStreak = streakStats.longestStreak;
 
     // Calculate adherence using user's workoutDaysPerWeek
     final targetWorkouts = totalWeeks * (userProfile?.workoutDaysPerWeek ?? 1);
@@ -352,9 +334,9 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
     required String userId,
     required int predictionDays,
   }) async {
-    // Get historical data (last 90 days)
+    // Get historical data (last 90 local calendar days)
     final endDate = DateTime.now();
-    final startDate = endDate.subtract(const Duration(days: 90));
+    final startDate = LocalDateWindow.rollingDaysWindow(90, now: endDate).start;
 
     // Get all strength progressions
     final progressions = await getAllStrengthProgressions(

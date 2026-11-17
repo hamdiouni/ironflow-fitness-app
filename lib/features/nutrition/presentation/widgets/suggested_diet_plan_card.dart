@@ -253,7 +253,7 @@ class _SuggestedDietPlanCardState extends ConsumerState<SuggestedDietPlanCard> {
                           fontFamily: AppTypography.displayFontFamily,
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
-                          color: isSelected ? Colors.black : tokens.textSecondary,
+                          color: isSelected ? tokens.onAccent : tokens.textSecondary,
                         ),
                       ),
                     ),
@@ -467,7 +467,10 @@ class _SuggestedDietPlanCardState extends ConsumerState<SuggestedDietPlanCard> {
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('Logged ${meal.name} (${meal.calories.toInt()} kcal) to fuel!'),
+                        content: Text(
+                          'Logged ${meal.name} (${meal.calories.toInt()} kcal) to fuel!',
+                          style: TextStyle(color: tokens.textPrimary),
+                        ),
                         duration: const Duration(seconds: 2),
                         behavior: SnackBarBehavior.floating,
                         backgroundColor: tokens.panel,
@@ -475,18 +478,19 @@ class _SuggestedDietPlanCardState extends ConsumerState<SuggestedDietPlanCard> {
                     );
                   }
                 },
-                icon: const Icon(Icons.add_task_rounded, size: 14, color: Colors.black),
-                label: const Text(
+                icon: Icon(Icons.add_task_rounded, size: 14, color: tokens.onAccent),
+                label: Text(
                   'LOG TO TODAY',
                   style: TextStyle(
                     fontFamily: 'SpaceGrotesk',
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
-                    color: Colors.black,
+                    color: tokens.onAccent,
                   ),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: tokens.kineticAccent,
+                  foregroundColor: tokens.onAccent,
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   minimumSize: Size.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,

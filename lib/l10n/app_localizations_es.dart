@@ -9,7 +9,7 @@ class AppLocalizationsEs extends AppLocalizations {
   AppLocalizationsEs([String locale = 'es']) : super(locale);
 
   @override
-  String get appTitle => 'IronFlow';
+  String get appTitle => 'Progression Tracker';
 
   @override
   String get home => 'Inicio';
@@ -201,7 +201,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get password => 'Contraseña';
 
   @override
-  String get welcome => 'Bienvenido a IronFlow';
+  String get welcome => 'Bienvenido';
 
   @override
   String get getStarted => 'Comenzar';
@@ -324,4 +324,55 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get no => 'No';
+
+  @override
+  String get navToday => 'HOY';
+
+  @override
+  String get navTrain => 'ENTRENO';
+
+  @override
+  String get navFuel => 'NUTRICIÓN';
+
+  @override
+  String get navProgress => 'PROGRESO';
+
+  @override
+  String get preferences => 'Preferencias';
+
+  @override
+  String get account => 'Cuenta';
+
+  @override
+  String get aboutApp => 'Acerca de la aplicación';
+
+  @override
+  String get exerciseCatalog => 'Catálogo de ejercicios';
+
+  @override
+  String get dataBackup => 'Gestión de datos y copias';
+
+  @override
+  String get vibrationHaptics => 'Vibración y háptica';
+
+  @override
+  String get notificationsReminders => 'Notificaciones y recordatorios';
+
+  @override
+  String get privacyLegal => 'Privacidad y legal';
+
+  @override
+  String get dailyTargets => 'Objetivos diarios';
+
+  @override
+  String get addExercise => 'Añadir ejercicio';
+
+  @override
+  String get finishWorkout => 'Finalizar entreno';
+
+  @override
+  String get logSet => 'Registrar serie';
+
+  @override
+  String get programLibrary => 'Biblioteca de programas';
 }

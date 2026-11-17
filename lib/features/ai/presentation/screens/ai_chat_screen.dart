@@ -176,7 +176,7 @@ class _AIChatScreenState extends ConsumerState<AIChatScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'IronFlow AI Coach',
+                  'AI Coach',
                   style: TextStyle(
                     fontFamily: AppTypography.displayFontFamily,
                     fontSize: 16,

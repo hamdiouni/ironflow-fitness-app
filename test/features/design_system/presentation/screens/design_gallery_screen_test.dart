@@ -19,7 +19,7 @@ void main() {
 
     // Verify header title and top gallery section
     expect(find.text('Design System Gallery'), findsOneWidget);
-    expect(find.text('MONOLITHIC SCI-FI'), findsOneWidget);
+    expect(find.text('IRON SCOREBOARD'), findsOneWidget);
     expect(find.text('Color Tokens'), findsOneWidget);
 
     // Scroll to see buttons section

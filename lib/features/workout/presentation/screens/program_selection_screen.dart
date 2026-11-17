@@ -178,7 +178,7 @@ class _ProgramSelectionScreenState extends ConsumerState<ProgramSelectionScreen>
             side: BorderSide(color: tokens.borderSubtle, width: 1),
           ),
           title: Text(
-            'CHANGE ACTIVE PROTOCOL?',
+            'CHANGE ACTIVE PLAN?',
             style: TextStyle(
               fontFamily: AppTypography.fontFamilyHeadings,
               color: tokens.textPrimary,
@@ -233,7 +233,7 @@ class _ProgramSelectionScreenState extends ConsumerState<ProgramSelectionScreen>
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Protocol initialized: ${program.name}'),
+        content: Text('Program activated: ${program.name}'),
         duration: const Duration(seconds: 6),
         action: SnackBarAction(
           label: 'UNDO',
@@ -243,7 +243,7 @@ class _ProgramSelectionScreenState extends ConsumerState<ProgramSelectionScreen>
             if (context.mounted && restored) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('Previous protocol restored.'),
+                  content: Text('Previous program restored.'),
                   duration: Duration(seconds: 3),
                 ),
               );
@@ -309,7 +309,7 @@ class _ProgramSelectionScreenState extends ConsumerState<ProgramSelectionScreen>
           onPressed: () => _navigateBack(context),
         ),
         title: Text(
-          'PROTOCOL GENERATOR',
+          'PROGRAM GENERATOR',
           style: TextStyle(
             color: tokens.textPrimary,
             fontSize: 16,
@@ -393,25 +393,24 @@ class _ProgramSelectionScreenState extends ConsumerState<ProgramSelectionScreen>
                       ? null
                       : () => _applyProgram(context, _cachedProgram!, profile),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: tokens.cyanAccent,
-                    foregroundColor: Colors.black,
+                    backgroundColor: tokens.kineticAccent,
+                    foregroundColor: tokens.onAccent,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(tokens.radiusPill),
                     ),
-                    elevation: 4,
-                    shadowColor: tokens.cyanAccent.withValues(alpha: 0.5),
+                    elevation: 0,
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.bolt_rounded, color: Colors.black, size: 22),
+                      Icon(Icons.bolt_rounded, color: tokens.onAccent, size: 22),
                       const SizedBox(width: 8),
                       Flexible(
                         child: Text(
-                          'APPLY PROTOCOL',
+                          'APPLY PROGRAM',
                           style: TextStyle(
-                            color: Colors.black,
+                            color: tokens.onAccent,
                             fontSize: 14,
                             fontWeight: FontWeight.w900,
                             fontFamily: AppTypography.fontFamilyHeadings,

@@ -32,7 +32,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('TELEMETRY DATA'), findsOneWidget);
+    expect(find.text('EXPORT & BACKUP'), findsOneWidget);
     expect(find.text('LOCAL DATA SOVEREIGNTY'), findsOneWidget);
     expect(find.text('RESTORE ARCHIVE'), findsOneWidget);
   });

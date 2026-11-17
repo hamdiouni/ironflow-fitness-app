@@ -10,12 +10,14 @@ class AITtsSettingsSheet extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final tokens = AppThemeTokens.of(context);
     final ttsState = ref.watch(ttsProvider);
 
     return Container(
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        color: tokens.panel,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(tokens.radiusXl)),
+        border: Border(top: BorderSide(color: tokens.borderSubtle)),
       ),
       padding: const EdgeInsets.all(24),
       child: SafeArea(
@@ -29,17 +31,12 @@ class AITtsSettingsSheet extends ConsumerWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        theme.colorScheme.primary,
-                        theme.colorScheme.secondary,
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(8),
+                    color: tokens.kineticAccent,
+                    borderRadius: BorderRadius.circular(tokens.radiusLg),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.settings_voice,
-                    color: Colors.white,
+                    color: tokens.onAccent,
                     size: 20,
                   ),
                 ),
@@ -327,6 +324,7 @@ class AITtsSettingsSheet extends ConsumerWidget {
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   backgroundColor: theme.colorScheme.primary,
+                  foregroundColor: theme.colorScheme.onPrimary,
                 ),
               ),
             ),
@@ -377,7 +375,7 @@ class _SpeedChip extends StatelessWidget {
           label,
           style: theme.textTheme.bodySmall?.copyWith(
             color: isSelected
-                ? Colors.white
+                ? theme.colorScheme.onPrimary
                 : theme.colorScheme.onSurface,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
           ),
@@ -403,45 +401,26 @@ class _PersonaCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final tokens = AppThemeTokens.of(context);
-    
+    final selectedInk = tokens.onAccent;
+    final selectedBg = tokens.kineticAccent;
+
     // Calculate display values
     final displaySpeed = '${(persona.recommendedSpeed * 2).toStringAsFixed(1)}x';
     final pitchLevel = persona.pitch < 0.8 ? 'Low' : persona.pitch > 1.3 ? 'High' : 'Normal';
 
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(tokens.radiusPill),
+      borderRadius: BorderRadius.circular(tokens.radiusLg),
       child: Container(
         width: 140,
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          gradient: isSelected
-              ? LinearGradient(
-                  colors: [
-                    theme.colorScheme.primary,
-                    theme.colorScheme.secondary,
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                )
-              : null,
-          color: isSelected ? null : theme.colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(tokens.radiusPill),
+          color: isSelected ? selectedBg : tokens.elevated,
+          borderRadius: BorderRadius.circular(tokens.radiusLg),
           border: Border.all(
-            color: isSelected
-                ? theme.colorScheme.primary
-                : theme.colorScheme.outline.withValues(alpha: 0.2),
+            color: isSelected ? tokens.kineticAccent : tokens.borderSubtle,
             width: isSelected ? 2 : 1,
           ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: theme.colorScheme.primary.withValues(alpha: 0.3),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : [],
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -454,8 +433,8 @@ class _PersonaCard extends StatelessWidget {
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? Colors.white.withValues(alpha: 0.2)
-                        : theme.colorScheme.primary.withValues(alpha: 0.1),
+                        ? selectedInk.withValues(alpha: 0.14)
+                        : tokens.kineticAccent.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -469,8 +448,8 @@ class _PersonaCard extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? Colors.white.withValues(alpha: 0.3)
-                        : theme.colorScheme.secondary.withValues(alpha: 0.2),
+                        ? selectedInk.withValues(alpha: 0.16)
+                        : tokens.cyanAccent.withValues(alpha: 0.16),
                     borderRadius: BorderRadius.circular(tokens.radiusPill),
                   ),
                   child: Text(
@@ -478,26 +457,26 @@ class _PersonaCard extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
-                      color: isSelected ? Colors.white : theme.colorScheme.secondary,
+                      color: isSelected ? selectedInk : tokens.cyanAccent,
                     ),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 8),
-            
+
             // Name
             Text(
-              persona.name.replaceAll(RegExp(r'[^\w\s]'), ''), // Remove emoji from name
+              persona.name.replaceAll(RegExp(r'[^\w\s]'), ''),
               style: theme.textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: isSelected ? Colors.white : theme.colorScheme.onSurface,
+                color: isSelected ? selectedInk : tokens.textPrimary,
               ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 2),
-            
+
             // Description
             Flexible(
               child: Text(
@@ -505,26 +484,29 @@ class _PersonaCard extends StatelessWidget {
                 style: theme.textTheme.bodySmall?.copyWith(
                   fontSize: 10,
                   color: isSelected
-                      ? Colors.white.withValues(alpha: 0.9)
-                      : theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                      ? selectedInk.withValues(alpha: 0.9)
+                      : tokens.textSecondary,
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            
+
             const SizedBox(height: 6),
-            
+
             // Pitch indicator
             Row(
               children: [
                 Icon(
-                  pitchLevel == 'Low' ? Icons.arrow_downward : 
-                  pitchLevel == 'High' ? Icons.arrow_upward : Icons.remove,
+                  pitchLevel == 'Low'
+                      ? Icons.arrow_downward
+                      : pitchLevel == 'High'
+                          ? Icons.arrow_upward
+                          : Icons.remove,
                   size: 10,
                   color: isSelected
-                      ? Colors.white.withValues(alpha: 0.8)
-                      : theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                      ? selectedInk.withValues(alpha: 0.85)
+                      : tokens.textMuted,
                 ),
                 const SizedBox(width: 4),
                 Text(
@@ -532,15 +514,15 @@ class _PersonaCard extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 9,
                     color: isSelected
-                        ? Colors.white.withValues(alpha: 0.8)
-                        : theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                        ? selectedInk.withValues(alpha: 0.85)
+                        : tokens.textMuted,
                   ),
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 4),
-            
+
             // Selected indicator
             if (isSelected)
               Row(
@@ -549,14 +531,14 @@ class _PersonaCard extends StatelessWidget {
                   Icon(
                     Icons.check_circle,
                     size: 14,
-                    color: Colors.white,
+                    color: selectedInk,
                   ),
                   const SizedBox(width: 4),
                   Text(
                     'Active',
                     style: theme.textTheme.bodySmall?.copyWith(
                       fontSize: 10,
-                      color: Colors.white,
+                      color: selectedInk,
                       fontWeight: FontWeight.w600,
                     ),
                   ),

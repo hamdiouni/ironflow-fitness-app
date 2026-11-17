@@ -2,7 +2,10 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/constants/app_theme.dart';
+import 'package:progression_tracker/core/constants/app_theme.dart';
+import 'package:progression_tracker/core/providers/units_provider.dart';
+import 'package:progression_tracker/core/utils/local_date_window.dart';
+import 'package:progression_tracker/core/utils/workout_streak_calculator.dart';
 import '../../../onboarding/domain/entities/user_profile.dart';
 import '../../../onboarding/presentation/providers/onboarding_provider.dart';
 import '../../../workout/data/exercise_database.dart';
@@ -10,8 +13,8 @@ import '../../../workout/domain/entities/exercise_definition.dart';
 import '../../../workout/domain/entities/workout.dart';
 import '../../../workout/presentation/providers/workout_providers.dart';
 
-/// Lifts & Volume tab merged from Analytics into ProgressScreen.
-/// Displays workout telemetry, frequency curves, volume progression, and muscle group distribution.
+/// Lifts & Volume tab merged from standalone Analytics into ProgressScreen.
+/// Displays workout consistency, frequency curves, volume progression, and muscle balance.
 class LiftsVolumeTab extends ConsumerWidget {
   const LiftsVolumeTab({super.key});
 
@@ -20,6 +23,8 @@ class LiftsVolumeTab extends ConsumerWidget {
     final tokens = AppThemeTokens.of(context);
     final workoutHistoryAsync = ref.watch(workoutHistoryProvider);
     final profileAsync = ref.watch(userProfileProvider);
+    final units = ref.watch(unitsProvider);
+    final unitLabel = UnitsConverter.getWeightUnit(units).toUpperCase();
 
     return workoutHistoryAsync.when(
       loading: () => Center(
@@ -49,39 +54,35 @@ class LiftsVolumeTab extends ConsumerWidget {
         final profile = profileAsync.value;
         final stats = _calculateStats(history, profile);
 
-        return ListView(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppTheme.spacingMedium,
-            vertical: AppTheme.spacingMedium,
+        final statsColumn = [
+          _StatsCard(
+            title: 'Total Workouts',
+            value: stats.totalWorkouts.toString(),
+            icon: Icons.fitness_center_rounded,
+            color: tokens.kineticAccent,
+            tokens: tokens,
           ),
-          children: [
-            // Stats cards
-            _StatsCard(
-              title: 'Total Workouts',
-              value: stats.totalWorkouts.toString(),
-              icon: Icons.fitness_center_rounded,
-              color: tokens.kineticAccent,
-              tokens: tokens,
-            ),
-            const SizedBox(height: 10),
-            _StatsCard(
-              title: 'Current Streak',
-              value: '${stats.currentStreak} days',
-              icon: Icons.local_fire_department_rounded,
-              color: tokens.warning,
-              tokens: tokens,
-            ),
-            const SizedBox(height: 10),
-            _StatsCard(
-              title: 'Weekly Consistency',
-              value: '${(stats.weeklyConsistency * 100).toStringAsFixed(0)}%',
-              icon: Icons.trending_up_rounded,
-              color: tokens.cyanAccent,
-              tokens: tokens,
-            ),
-            const SizedBox(height: 24),
+          const SizedBox(height: 10),
+          _StatsCard(
+            title: 'Current Streak',
+            value: '${stats.currentStreak} days',
+            icon: Icons.local_fire_department_rounded,
+            color: tokens.warning,
+            tokens: tokens,
+          ),
+          const SizedBox(height: 10),
+          _StatsCard(
+            title: 'Weekly Consistency',
+            value: '${(stats.weeklyConsistency * 100).toStringAsFixed(0)}%',
+            icon: Icons.trending_up_rounded,
+            color: tokens.cyanAccent,
+            tokens: tokens,
+          ),
+        ];
 
-            // Frequency chart
+        final frequencySection = Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
             _SectionHeader(
               title: 'Workout Frequency',
               subtitle: 'SESSIONS / WEEK (LAST 12 WEEKS)',
@@ -89,28 +90,93 @@ class LiftsVolumeTab extends ConsumerWidget {
             ),
             const SizedBox(height: 10),
             _WorkoutFrequencyChart(history: history, tokens: tokens),
-            const SizedBox(height: 24),
+          ],
+        );
 
-            // Volume progression chart
+        final volumeSection = Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
             _SectionHeader(
               title: 'Total Volume Over Time',
-              subtitle: 'VOLUME LOAD (KG) PER WEEK',
+              subtitle: 'VOLUME LOAD ($unitLabel) PER WEEK',
               tokens: tokens,
             ),
             const SizedBox(height: 10),
-            _VolumeProgressionChart(history: history, tokens: tokens),
-            const SizedBox(height: 24),
+            _VolumeProgressionChart(
+              history: history,
+              tokens: tokens,
+              units: units,
+            ),
+          ],
+        );
 
-            // Muscle group breakdown
+        final muscleSection = Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
             _SectionHeader(
               title: 'Muscle Group Distribution',
-              subtitle: 'EXERCISE TARGET DENSITY',
+              subtitle: 'EXERCISE TARGET BREAKDOWN',
               tokens: tokens,
             ),
             const SizedBox(height: 10),
             _MuscleGroupChart(history: history, tokens: tokens),
-            const SizedBox(height: 32),
           ],
+        );
+
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            if (constraints.maxWidth >= 900) {
+              return ListView(
+                padding: const EdgeInsets.all(AppTheme.spacingMedium),
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            ...statsColumn,
+                            const SizedBox(height: 24),
+                            frequencySection,
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 20),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            volumeSection,
+                            const SizedBox(height: 24),
+                            muscleSection,
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 32),
+                ],
+              );
+            }
+
+            return ListView(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppTheme.spacingMedium,
+                vertical: AppTheme.spacingMedium,
+              ),
+              children: [
+                ...statsColumn,
+                const SizedBox(height: 24),
+                frequencySection,
+                const SizedBox(height: 24),
+                volumeSection,
+                const SizedBox(height: 24),
+                muscleSection,
+                const SizedBox(height: 32),
+              ],
+            );
+          },
         );
       },
     );
@@ -129,42 +195,23 @@ class LiftsVolumeTab extends ConsumerWidget {
   }
 
   int _calculateStreak(List<Workout> history) {
-    if (history.isEmpty) return 0;
-
-    int streak = 0;
-    DateTime? lastDate;
-
-    // Sort by date descending (most recent first)
-    final sorted = List<Workout>.from(history);
-    sorted.sort((a, b) => b.date.compareTo(a.date));
-
-    for (final workout in sorted) {
-      if (lastDate == null) {
-        streak = 1;
-        lastDate = workout.date;
-      } else {
-        final daysDifference = lastDate.difference(workout.date).inDays;
-        if (daysDifference == 1) {
-          streak++;
-          lastDate = workout.date;
-        } else if (daysDifference > 1) {
-          break;
-        }
-      }
-    }
-
-    return streak;
+    return WorkoutStreakCalculator.calculateFromDates(
+      history.map((w) => w.date),
+    ).currentStreak;
   }
 
   double _calculateWeeklyConsistency(List<Workout> history, UserProfile? profile) {
     if (history.isEmpty) return 0;
 
-    final now = DateTime.now();
-    final weekStart = now.subtract(Duration(days: now.weekday - 1));
-    final weekEnd = weekStart.add(const Duration(days: 7));
-
+    final weekWindow = LocalDateWindow.currentWeekWindow();
     final thisWeekWorkouts = history
-        .where((w) => w.date.isAfter(weekStart) && w.date.isBefore(weekEnd))
+        .where(
+          (w) => LocalDateWindow.contains(
+            w.date,
+            weekWindow.start,
+            weekWindow.endExclusive,
+          ),
+        )
         .length;
 
     final targetDays = profile?.workoutDaysPerWeek ?? 3;
@@ -428,16 +475,19 @@ class _WorkoutFrequencyChart extends StatelessWidget {
   List<int> _groupByWeek(List<Workout> history) {
     if (history.isEmpty) return [];
 
-    final now = DateTime.now();
+    final currentWeek = LocalDateWindow.currentWeekWindow().start;
     final weeks = <int>[];
 
     for (int i = 0; i < 12; i++) {
-      final weekStart =
-          now.subtract(Duration(days: now.weekday - 1 + (i * 7)));
-      final weekEnd = weekStart.add(const Duration(days: 7));
+      final weekStart = DateTime(
+        currentWeek.year,
+        currentWeek.month,
+        currentWeek.day - (i * 7),
+      );
+      final weekEnd = DateTime(weekStart.year, weekStart.month, weekStart.day + 7);
 
       final count = history
-          .where((w) => w.date.isAfter(weekStart) && w.date.isBefore(weekEnd))
+          .where((w) => LocalDateWindow.contains(w.date, weekStart, weekEnd))
           .length;
 
       weeks.add(count);
@@ -450,10 +500,12 @@ class _WorkoutFrequencyChart extends StatelessWidget {
 class _VolumeProgressionChart extends StatelessWidget {
   final List<Workout> history;
   final AppThemeTokens tokens;
+  final UnitsSystem units;
 
   const _VolumeProgressionChart({
     required this.history,
     required this.tokens,
+    required this.units,
   });
 
   @override
@@ -561,19 +613,22 @@ class _VolumeProgressionChart extends StatelessWidget {
   List<double> _calculateVolumeByWeek(List<Workout> history) {
     if (history.isEmpty) return [];
 
-    final now = DateTime.now();
+    final currentWeek = LocalDateWindow.currentWeekWindow().start;
     final volumes = <double>[];
 
     for (int i = 0; i < 12; i++) {
-      final weekStart =
-          now.subtract(Duration(days: now.weekday - 1 + (i * 7)));
-      final weekEnd = weekStart.add(const Duration(days: 7));
+      final weekStart = DateTime(
+        currentWeek.year,
+        currentWeek.month,
+        currentWeek.day - (i * 7),
+      );
+      final weekEnd = DateTime(weekStart.year, weekStart.month, weekStart.day + 7);
 
-      final volume = history
-          .where((w) => w.date.isAfter(weekStart) && w.date.isBefore(weekEnd))
+      final volumeKg = history
+          .where((w) => LocalDateWindow.contains(w.date, weekStart, weekEnd))
           .fold<double>(0.0, (sum, w) => sum + w.totalVolume);
 
-      volumes.add(volume);
+      volumes.add(UnitsConverter.convertWeightToDisplay(volumeKg, units));
     }
 
     return volumes.reversed.toList();

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_theme_tokens.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../domain/services/exercise_catalog.dart';
 import '../../../../shared/presentation/components/components.dart';
 import '../../../../shared/presentation/services/app_haptics.dart';
 import '../../../ai/presentation/widgets/ai_entry_button.dart';
@@ -52,67 +53,66 @@ class WorkoutScreen extends ConsumerWidget {
         actions: [
           const AiEntryButton(contextScreen: 'workout'),
           const SizedBox(width: 4),
-          // Change Split & Edit program buttons
-          activeProgramAsync.when(
-            data: (program) => program != null
-                ? Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      SizedBox(
-                        width: 44,
-                        height: 48,
-                        child: IconButton(
-                          key: const Key('change_split_appbar_btn'),
-                          onPressed: () =>
-                              context.go(AppRoutes.workoutProgramSelection),
-                          icon: Icon(
-                            Icons.auto_awesome_motion_outlined,
-                            color: tokens.cyanAccent,
-                            size: 20,
-                          ),
-                          tooltip: 'Change Split',
-                        ),
-                      ),
-                      SizedBox(
-                        width: 44,
-                        height: 48,
-                        child: IconButton(
-                          onPressed: () => context.go(AppRoutes.workoutEditor),
-                          icon: Icon(
-                            Icons.edit_outlined,
-                            color: tokens.textPrimary,
-                            size: 20,
-                          ),
-                          tooltip: 'Edit Program',
-                        ),
-                      ),
-                    ],
-                  )
-                : const SizedBox.shrink(),
-            loading: () => const SizedBox.shrink(),
-            error: (_, _) => const SizedBox.shrink(),
-          ),
-          SizedBox(
-            width: 48,
-            height: 48,
-            child: IconButton(
-              onPressed: () => PlateCalculatorSheet.show(context),
-              icon: Icon(
-                Icons.calculate_outlined,
-                color: tokens.kineticAccent,
-                size: 20,
-              ),
-              tooltip: 'Plate Calculator',
-            ),
-          ),
-          SizedBox(
-            width: 48,
-            height: 48,
-            child: IconButton(
-              onPressed: () => context.go(AppRoutes.workoutHistory),
-              icon: Icon(Icons.history, color: tokens.textPrimary, size: 20),
-              tooltip: 'History',
-            ),
+          PopupMenuButton<String>(
+            key: const Key('workout_actions_menu_btn'),
+            tooltip: 'Workout Actions',
+            icon: Icon(Icons.more_horiz_rounded, color: tokens.textPrimary),
+            color: tokens.panel,
+            onSelected: (value) {
+              switch (value) {
+                case 'split':
+                  context.go(AppRoutes.workoutProgramSelection);
+                case 'edit':
+                  context.go(AppRoutes.workoutEditor);
+                case 'plates':
+                  PlateCalculatorSheet.show(context);
+                case 'history':
+                  context.go(AppRoutes.workoutHistory);
+              }
+            },
+            itemBuilder: (_) {
+              final hasProgram = activeProgramAsync.valueOrNull != null;
+              return [
+                if (hasProgram) ...[
+                  const PopupMenuItem(
+                    value: 'split',
+                    child: ListTile(
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      leading: Icon(Icons.auto_awesome_motion_outlined),
+                      title: Text('Change Split'),
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'edit',
+                    child: ListTile(
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      leading: Icon(Icons.edit_outlined),
+                      title: Text('Edit Program'),
+                    ),
+                  ),
+                ],
+                const PopupMenuItem(
+                  value: 'plates',
+                  child: ListTile(
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(Icons.calculate_outlined),
+                    title: Text('Plate Calculator'),
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'history',
+                  child: ListTile(
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(Icons.history),
+                    title: Text('Workout History'),
+                  ),
+                ),
+              ];
+            },
           ),
           const SizedBox(width: 8),
         ],
@@ -356,7 +356,7 @@ class _EmptyState extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Browse 80+ compound & isolation movements',
+                        'Browse ${ExerciseCatalog.all.length} compound & isolation movements',
                         style: TextStyle(
                           fontFamily: AppTypography.bodyFontFamily,
                           fontSize: 12,

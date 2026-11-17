@@ -48,7 +48,8 @@ class _AiLoadingStateState extends State<AiLoadingState>
 
   @override
   Widget build(BuildContext context) {
-    final disableAnimations = MediaQuery.of(context).disableAnimations;
+    final disableAnimations =
+        MediaQuery.maybeDisableAnimationsOf(context) ?? false;
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 

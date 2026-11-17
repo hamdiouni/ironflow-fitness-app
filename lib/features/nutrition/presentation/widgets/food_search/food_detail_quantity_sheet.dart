@@ -574,7 +574,7 @@ class _FoodDetailAndQuantitySheetState
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                'EXACT MICRONUTRIENT TELEMETRY',
+                                'MICRONUTRIENT BREAKDOWN',
                                 style: TextStyle(
                                   fontFamily: AppTypography.displayFontFamily,
                                   fontSize: 10,

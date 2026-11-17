@@ -1,110 +1,99 @@
 import 'package:flutter/material.dart';
 import 'app_colors.dart';
 
-/// Direction 4 Soft & Layered typography styles for IronFlow.
+/// Typography tokens for Option B: Iron Scoreboard (`02-kinetic-block`).
 ///
-/// Adapted from DESIGN.md:
-/// - Thin display tier: weight 300 with negative tracking (-1.4px to -0.2px).
-/// - Tabular figures: OpenType `tnum` for all numeric counters, weights, reps, and timers.
-/// - Body tier: Clean editorial density with Inter, deep navy ink in light mode, pure white in dark.
+/// - Headings & numeric metrics: `SpaceGrotesk` with tabular figures (`tnum`).
+/// - Body & controls: `Inter` for crisp small-size readability.
 class AppTypography {
   AppTypography._();
 
-  static const String displayFontFamily = 'Inter';
+  static const String displayFontFamily = 'SpaceGrotesk';
   static const String bodyFontFamily = 'Inter';
   static const String fontFamilyHeadings = displayFontFamily;
   static const String fontFamilyBody = bodyFontFamily;
 
-  /// Generates a complete Material 3 TextTheme adapted to [isDark].
+  /// Generates a Material 3 [TextTheme] adapted to [isDark].
   static TextTheme createTextTheme({required bool isDark}) {
     final textPrimary = isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight;
     final textSecondary = isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight;
     final textMuted = isDark ? AppColors.textMutedDark : AppColors.textMutedLight;
 
     return TextTheme(
-      // ── Stripe Displays (Thin 300 weight with editorial negative tracking) ─
       displayLarge: TextStyle(
         fontFamily: displayFontFamily,
-        fontSize: 48,
-        fontWeight: FontWeight.w300,
-        letterSpacing: -0.96,
+        fontSize: 44,
+        fontWeight: FontWeight.w700,
+        letterSpacing: -0.8,
+        fontFeatures: const [FontFeature.tabularFigures()],
         color: textPrimary,
       ),
       displayMedium: TextStyle(
         fontFamily: displayFontFamily,
         fontSize: 32,
-        fontWeight: FontWeight.w300,
-        letterSpacing: -0.64,
+        fontWeight: FontWeight.w700,
+        letterSpacing: -0.5,
+        fontFeatures: const [FontFeature.tabularFigures()],
         color: textPrimary,
       ),
       displaySmall: TextStyle(
         fontFamily: displayFontFamily,
-        fontSize: 26,
-        fontWeight: FontWeight.w300,
-        letterSpacing: -0.26,
+        fontSize: 24,
+        fontWeight: FontWeight.w700,
+        letterSpacing: -0.3,
         color: textPrimary,
       ),
-
-      // ── Stripe Headlines (Heading tiers 22px / 20px / 18px) ───────────────
       headlineLarge: TextStyle(
         fontFamily: displayFontFamily,
         fontSize: 22,
-        fontWeight: FontWeight.w400,
-        letterSpacing: -0.22,
+        fontWeight: FontWeight.w700,
+        letterSpacing: -0.3,
         color: textPrimary,
       ),
       headlineMedium: TextStyle(
         fontFamily: displayFontFamily,
         fontSize: 20,
-        fontWeight: FontWeight.w400,
+        fontWeight: FontWeight.w700,
         letterSpacing: -0.2,
         color: textPrimary,
       ),
       headlineSmall: TextStyle(
         fontFamily: displayFontFamily,
         fontSize: 18,
-        fontWeight: FontWeight.w400,
-        letterSpacing: 0,
+        fontWeight: FontWeight.w700,
+        letterSpacing: -0.2,
         color: textPrimary,
       ),
-
-      // ── Stripe Titles (Card Headers & Section Banners) ────────────────────
       titleLarge: TextStyle(
         fontFamily: displayFontFamily,
         fontSize: 16,
-        fontWeight: FontWeight.w600,
-        letterSpacing: 0,
+        fontWeight: FontWeight.w700,
+        letterSpacing: -0.1,
         color: textPrimary,
       ),
       titleMedium: TextStyle(
         fontFamily: bodyFontFamily,
         fontSize: 15,
         fontWeight: FontWeight.w600,
-        letterSpacing: 0,
         color: textPrimary,
       ),
       titleSmall: TextStyle(
         fontFamily: bodyFontFamily,
         fontSize: 14,
         fontWeight: FontWeight.w600,
-        letterSpacing: 0,
         color: textPrimary,
       ),
-
-      // ── Stripe Body Copy (body-lg, body-md, caption) ──────────────────────
       bodyLarge: TextStyle(
         fontFamily: bodyFontFamily,
         fontSize: 16,
         fontWeight: FontWeight.w400,
-        letterSpacing: 0,
         height: 1.4,
         color: textPrimary,
       ),
       bodyMedium: TextStyle(
         fontFamily: bodyFontFamily,
-        fontSize: 15,
+        fontSize: 14,
         fontWeight: FontWeight.w400,
-        letterSpacing: 0,
         height: 1.4,
         color: textSecondary,
       ),
@@ -112,43 +101,40 @@ class AppTypography {
         fontFamily: bodyFontFamily,
         fontSize: 13,
         fontWeight: FontWeight.w400,
-        letterSpacing: -0.39,
         height: 1.4,
         color: textMuted,
         fontFeatures: const [FontFeature.tabularFigures()],
       ),
-
-      // ── Stripe Labels, Pills & Eyebrows (button-md, micro-cap) ─────────────
       labelLarge: TextStyle(
-        fontFamily: displayFontFamily,
-        fontSize: 15,
-        fontWeight: FontWeight.w600,
-        letterSpacing: 0.1,
+        fontFamily: bodyFontFamily,
+        fontSize: 14,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0.3,
         color: textPrimary,
       ),
       labelMedium: TextStyle(
         fontFamily: bodyFontFamily,
-        fontSize: 13,
-        fontWeight: FontWeight.w500,
-        letterSpacing: 0.1,
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0.2,
         color: textSecondary,
       ),
       labelSmall: TextStyle(
-        fontFamily: displayFontFamily,
+        fontFamily: bodyFontFamily,
         fontSize: 11,
         fontWeight: FontWeight.w600,
-        letterSpacing: 0.6,
+        letterSpacing: 0.4,
         color: textMuted,
       ),
     );
   }
 
-  /// Stripe Tabular Numeric style for telemetry metrics, weights, reps, and timers.
+  /// Tabular numeric style for weights, reps, timers, and scoreboard callouts.
   static TextStyle tabularMetric({
     required double fontSize,
-    FontWeight fontWeight = FontWeight.w600,
+    FontWeight fontWeight = FontWeight.w700,
     Color? color,
-    double letterSpacing = -0.42,
+    double letterSpacing = -0.35,
   }) {
     return TextStyle(
       fontFamily: displayFontFamily,
@@ -156,9 +142,7 @@ class AppTypography {
       fontWeight: fontWeight,
       letterSpacing: letterSpacing,
       color: color,
-      fontFeatures: const [
-        FontFeature.tabularFigures(),
-      ],
+      fontFeatures: const [FontFeature.tabularFigures()],
     );
   }
 }

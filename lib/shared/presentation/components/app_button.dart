@@ -130,8 +130,8 @@ class _AppButtonState extends State<AppButton> with SingleTickerProviderStateMix
         border = null;
         break;
       case AppButtonVariant.secondary:
-        bg = tokens.isDark ? tokens.elevated : AppColors.canvas;
-        fg = _isEnabled ? (tokens.isDark ? tokens.textPrimary : AppColors.primary) : tokens.textMuted;
+        bg = tokens.elevated;
+        fg = _isEnabled ? tokens.textPrimary : tokens.textMuted;
         border = Border.all(color: tokens.borderSubtle, width: 1);
         break;
       case AppButtonVariant.outline:

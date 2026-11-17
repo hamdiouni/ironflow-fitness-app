@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../../core/constants/app_theme.dart';
+import '../../../../../core/providers/units_provider.dart';
 import '../../../../../shared/presentation/components/app_bottom_sheet.dart';
 import '../../../../../shared/presentation/components/app_button.dart';
 import '../../../../onboarding/domain/entities/user_profile.dart';
@@ -7,14 +8,23 @@ import '../../../domain/calculators/calorie_macro_calculator.dart';
 
 class CalorieMacroSheet extends StatefulWidget {
   final UserProfile? profile;
+  final UnitsSystem units;
 
-  const CalorieMacroSheet({super.key, this.profile});
+  const CalorieMacroSheet({
+    super.key,
+    this.profile,
+    this.units = UnitsSystem.metric,
+  });
 
-  static Future<void> show(BuildContext context, {UserProfile? profile}) {
+  static Future<void> show(
+    BuildContext context, {
+    UserProfile? profile,
+    UnitsSystem units = UnitsSystem.metric,
+  }) {
     return AppBottomSheet.show(
       context: context,
       title: 'CALORIE & MACRO CALCULATOR',
-      child: CalorieMacroSheet(profile: profile),
+      child: CalorieMacroSheet(profile: profile, units: units),
     );
   }
 
@@ -34,12 +44,12 @@ class _CalorieMacroSheetState extends State<CalorieMacroSheet> {
   void initState() {
     super.initState();
     final p = widget.profile;
-    _weight = p?.weightKg ?? 75.0;
-    _height = p?.heightCm ?? 175.0;
-    _age = p?.age ?? 26;
+    _weight = p?.weightKg ?? UserProfileDefaults.weightKg;
+    _height = p?.heightCm ?? UserProfileDefaults.heightCm;
+    _age = p?.age ?? UserProfileDefaults.age;
     _sex = p?.sex ?? BiologicalSex.male;
     _goal = p?.goal ?? FitnessGoal.maintain;
-    _activity = switch (p?.workoutDaysPerWeek ?? 3) {
+    _activity = switch (p?.workoutDaysPerWeek ?? UserProfileDefaults.workoutDaysPerWeek) {
       <= 2 => ActivityLevel.light,
       <= 4 => ActivityLevel.moderate,
       _ => ActivityLevel.heavy,
@@ -49,6 +59,12 @@ class _CalorieMacroSheetState extends State<CalorieMacroSheet> {
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
+    final weightUnit = UnitsConverter.getWeightUnit(widget.units);
+    final lengthUnit = UnitsConverter.getLengthUnit(widget.units);
+    final displayWeight =
+        UnitsConverter.convertWeightToDisplay(_weight, widget.units);
+    final displayHeight =
+        UnitsConverter.convertLengthToDisplay(_height, widget.units);
     final result = CalorieMacroCalculator.calculate(
       weightKg: _weight,
       heightCm: _height,
@@ -68,12 +84,16 @@ class _CalorieMacroSheetState extends State<CalorieMacroSheet> {
               Expanded(
                 child: _buildNumberInput(
                   label: 'WEIGHT',
-                  value: _weight.toStringAsFixed(1),
-                  unit: 'kg',
+                  value: displayWeight.toStringAsFixed(1),
+                  unit: weightUnit,
                   tokens: tokens,
                   onChanged: (v) {
                     final d = double.tryParse(v);
-                    if (d != null && d > 20) setState(() => _weight = d);
+                    if (d != null) {
+                      final kg =
+                          UnitsConverter.convertWeightToStorage(d, widget.units);
+                      if (kg > 20) setState(() => _weight = kg);
+                    }
                   },
                 ),
               ),
@@ -81,12 +101,18 @@ class _CalorieMacroSheetState extends State<CalorieMacroSheet> {
               Expanded(
                 child: _buildNumberInput(
                   label: 'HEIGHT',
-                  value: _height.toStringAsFixed(0),
-                  unit: 'cm',
+                  value: widget.units == UnitsSystem.metric
+                      ? displayHeight.toStringAsFixed(0)
+                      : displayHeight.toStringAsFixed(1),
+                  unit: lengthUnit,
                   tokens: tokens,
                   onChanged: (v) {
                     final d = double.tryParse(v);
-                    if (d != null && d > 50) setState(() => _height = d);
+                    if (d != null) {
+                      final cm =
+                          UnitsConverter.convertLengthToStorage(d, widget.units);
+                      if (cm > 50) setState(() => _height = cm);
+                    }
                   },
                 ),
               ),

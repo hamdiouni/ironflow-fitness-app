@@ -78,12 +78,14 @@ class _AnimatedCountUpTextState extends State<AnimatedCountUpText> with SingleTi
   }
 }
 
-/// Tactile button with animated scale-down on press.
+/// Tactile button with animated scale-down on press, Semantics, and keyboard activation.
 class AnimatedScaleButton extends StatefulWidget {
   final Widget child;
   final VoidCallback? onPressed;
   final double scaleDown;
   final Duration duration;
+  final String? semanticLabel;
+  final String? semanticHint;
 
   const AnimatedScaleButton({
     super.key,
@@ -91,6 +93,8 @@ class AnimatedScaleButton extends StatefulWidget {
     this.onPressed,
     this.scaleDown = 0.96,
     this.duration = const Duration(milliseconds: 110),
+    this.semanticLabel,
+    this.semanticHint,
   });
 
   @override
@@ -136,22 +140,49 @@ class _AnimatedScaleButtonState extends State<AnimatedScaleButton> with SingleTi
   @override
   Widget build(BuildContext context) {
     final disableMotion = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTapDown: disableMotion ? null : _onTapDown,
-      onTapUp: disableMotion ? null : _onTapUp,
-      onTapCancel: disableMotion ? null : _onTapCancel,
-      onTap: disableMotion ? widget.onPressed : null,
-      child: disableMotion
-          ? widget.child
-          : AnimatedBuilder(
-              animation: _controller,
-              builder: (context, child) => Transform.scale(
-                scale: _controller.value,
-                child: child,
-              ),
-              child: widget.child,
+    final enabled = widget.onPressed != null;
+
+    final visual = disableMotion
+        ? widget.child
+        : AnimatedBuilder(
+            animation: _controller,
+            builder: (context, child) => Transform.scale(
+              scale: _controller.value,
+              child: child,
             ),
+            child: widget.child,
+          );
+
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      label: widget.semanticLabel,
+      hint: widget.semanticHint,
+      child: FocusableActionDetector(
+        enabled: enabled,
+        actions: <Type, Action<Intent>>{
+          ActivateIntent: CallbackAction<ActivateIntent>(
+            onInvoke: (_) {
+              widget.onPressed?.call();
+              return null;
+            },
+          ),
+          ButtonActivateIntent: CallbackAction<ButtonActivateIntent>(
+            onInvoke: (_) {
+              widget.onPressed?.call();
+              return null;
+            },
+          ),
+        },
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTapDown: !enabled || disableMotion ? null : _onTapDown,
+          onTapUp: !enabled || disableMotion ? null : _onTapUp,
+          onTapCancel: !enabled || disableMotion ? null : _onTapCancel,
+          onTap: enabled && disableMotion ? widget.onPressed : null,
+          child: visual,
+        ),
+      ),
     );
   }
 }
@@ -308,7 +339,7 @@ class AnimatedStaggerItem extends StatelessWidget {
     final disableMotion = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
     if (disableMotion) return child;
 
-    final delay = baseDelay * index;
+    final delay = baseDelay * index.clamp(0, 8);
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: duration + delay,

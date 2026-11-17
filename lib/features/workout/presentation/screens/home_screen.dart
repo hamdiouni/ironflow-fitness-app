@@ -3,7 +3,9 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:progression_tracker/core/constants/app_theme.dart';
+import 'package:progression_tracker/core/providers/units_provider.dart';
 import 'package:progression_tracker/core/router/app_router.dart';
+import 'package:progression_tracker/core/utils/workout_streak_calculator.dart';
 import 'package:progression_tracker/shared/widgets/ironflow_logo.dart';
 import 'package:progression_tracker/features/onboarding/domain/entities/user_profile.dart';
 import 'package:progression_tracker/features/onboarding/presentation/providers/onboarding_provider.dart';
@@ -23,6 +25,7 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final historyAsync = ref.watch(homeWorkoutDataProvider);
     final profileAsync = ref.watch(userProfileProvider);
+    final units = ref.watch(unitsProvider);
 
     return Scaffold(
       body: SafeArea(
@@ -47,104 +50,127 @@ class HomeScreen extends ConsumerWidget {
           child: CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
-              // 1. Header (Avatar -> Operator Hub, IronFlow Logo, AI Entry)
+              // 1. Header (Logo, Greeting, Streak, AI Entry, Account)
               SliverToBoxAdapter(
-                child: _HomeHeader(profileAsync: profileAsync),
-              ),
-
-              // 2. Hero Readiness & Recovery Banner (Direction 4 Signature)
-              const SliverToBoxAdapter(
-                child: HeroReadinessBanner(),
-              ),
-
-              // 3. Today's Program Directive (Protocol Day or Rest Day card)
-              const SliverToBoxAdapter(
-                child: TodayDirectiveCard(),
-              ),
-
-              // 3. Daily Fuel Telemetry (Summary bar connecting directly to /nutrition)
-              SliverToBoxAdapter(
-                child: DailyFuelSummaryBar(profileAsync: profileAsync),
-              ),
-
-              // 4. Quick Workout Actions (Quick Start + Repeat Last Workout)
-              SliverToBoxAdapter(
-                child: historyAsync.when(
-                  data: (workouts) => QuickWorkoutActions(workouts: workouts),
-                  loading: () => const QuickWorkoutActions(workouts: []),
-                  error: (_, _) => const QuickWorkoutActions(workouts: []),
+                child: _HomeHeader(
+                  profileAsync: profileAsync,
+                  historyAsync: historyAsync,
                 ),
               ),
 
-              // 5. AI Coach Hero Card
-              const SliverToBoxAdapter(
-                child: AiCoachHeroCard(),
-              ),
-
-              // 6. Weekly Activity Section
               SliverToBoxAdapter(
-                child: historyAsync.when(
-                  data: (workouts) => profileAsync.when(
-                    data: (profile) {
-                      if (profile == null) {
-                        return const ProfileSetupPrompt();
-                      }
-                      return WeeklyActivitySection(
-                        workouts: workouts,
-                        target: profile.workoutDaysPerWeek,
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final readiness = const HeroReadinessBanner();
+                    final directive = const TodayDirectiveCard();
+                    final fuel = DailyFuelSummaryBar(profileAsync: profileAsync);
+                    final quick = historyAsync.when(
+                      data: (workouts) => QuickWorkoutActions(workouts: workouts),
+                      loading: () => const QuickWorkoutActions(workouts: []),
+                      error: (_, _) => const QuickWorkoutActions(workouts: []),
+                    );
+                    final coach = const AiCoachHeroCard();
+                    final weekly = historyAsync.when(
+                      data: (workouts) => profileAsync.when(
+                        data: (profile) {
+                          if (profile == null) {
+                            return const ProfileSetupPrompt();
+                          }
+                          return WeeklyActivitySection(
+                            workouts: workouts,
+                            target: profile.workoutDaysPerWeek,
+                          );
+                        },
+                        loading: () => const LoadingWeeklyActivity(),
+                        error: (_, _) => const LoadingWeeklyActivity(),
+                      ),
+                      loading: () => const LoadingWeeklyActivity(),
+                      error: (error, stack) => HomeErrorCard(
+                        message: 'Failed to load workout data',
+                        onRetry: () => ref.invalidate(homeWorkoutDataProvider),
+                      ),
+                    );
+                    final summary = profileAsync.when(
+                      data: (profile) => historyAsync.when(
+                        data: (workouts) => TodaySummaryRow(
+                          workouts: workouts,
+                          profile: profile,
+                          units: units,
+                        ),
+                        loading: () => const LoadingSummaryRow(),
+                        error: (_, _) => const LoadingSummaryRow(),
+                      ),
+                      loading: () => const LoadingSummaryRow(),
+                      error: (_, _) => const LoadingSummaryRow(),
+                    );
+                    final suggestion = historyAsync.when(
+                      data: (workouts) => profileAsync.when(
+                        data: (profile) => HomeSuggestionCard(
+                          workouts: workouts,
+                          profile: profile,
+                        ),
+                        loading: () => const SizedBox.shrink(),
+                        error: (_, _) => const SizedBox.shrink(),
+                      ),
+                      loading: () => const SizedBox.shrink(),
+                      error: (_, _) => const SizedBox.shrink(),
+                    );
+                    final recent = historyAsync.when(
+                      data: (workouts) => workouts.isNotEmpty
+                          ? RecentWorkoutCard(workout: workouts.first)
+                          : const EmptyWorkoutCard(),
+                      loading: () => const LoadingWorkoutCard(),
+                      error: (_, _) => const SizedBox.shrink(),
+                    );
+
+                    if (constraints.maxWidth >= 900) {
+                      return Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            flex: 3,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                directive,
+                                quick,
+                                coach,
+                                recent,
+                              ],
+                            ),
+                          ),
+                          Expanded(
+                            flex: 2,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                readiness,
+                                fuel,
+                                weekly,
+                                summary,
+                                suggestion,
+                              ],
+                            ),
+                          ),
+                        ],
                       );
-                    },
-                    loading: () => const LoadingWeeklyActivity(),
-                    error: (_, _) => const LoadingWeeklyActivity(),
-                  ),
-                  loading: () => const LoadingWeeklyActivity(),
-                  error: (error, stack) => HomeErrorCard(
-                    message: 'Failed to load workout data',
-                    onRetry: () => ref.invalidate(homeWorkoutDataProvider),
-                  ),
-                ),
-              ),
+                    }
 
-              // 7. Today Summary Metric Cards
-              SliverToBoxAdapter(
-                child: profileAsync.when(
-                  data: (profile) => historyAsync.when(
-                    data: (workouts) => TodaySummaryRow(
-                      workouts: workouts,
-                      profile: profile,
-                    ),
-                    loading: () => const LoadingSummaryRow(),
-                    error: (_, _) => const LoadingSummaryRow(),
-                  ),
-                  loading: () => const LoadingSummaryRow(),
-                  error: (_, _) => const LoadingSummaryRow(),
-                ),
-              ),
-
-              // 8. Suggestion Card
-              SliverToBoxAdapter(
-                child: historyAsync.when(
-                  data: (workouts) => profileAsync.when(
-                    data: (profile) => HomeSuggestionCard(
-                      workouts: workouts,
-                      profile: profile,
-                    ),
-                    loading: () => const SizedBox.shrink(),
-                    error: (_, _) => const SizedBox.shrink(),
-                  ),
-                  loading: () => const SizedBox.shrink(),
-                  error: (_, _) => const SizedBox.shrink(),
-                ),
-              ),
-
-              // 9. Recent Workout Card (with Repeat CTA)
-              SliverToBoxAdapter(
-                child: historyAsync.when(
-                  data: (workouts) => workouts.isNotEmpty
-                      ? RecentWorkoutCard(workout: workouts.first)
-                      : const EmptyWorkoutCard(),
-                  loading: () => const LoadingWorkoutCard(),
-                  error: (_, _) => const SizedBox.shrink(),
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        readiness,
+                        directive,
+                        fuel,
+                        quick,
+                        coach,
+                        weekly,
+                        summary,
+                        suggestion,
+                        recent,
+                      ],
+                    );
+                  },
                 ),
               ),
 
@@ -160,12 +186,20 @@ class HomeScreen extends ConsumerWidget {
 // ── Header ───────────────────────────────────────────────────────────────────
 
 class _HomeHeader extends StatelessWidget {
-  const _HomeHeader({required this.profileAsync});
+  const _HomeHeader({
+    required this.profileAsync,
+    required this.historyAsync,
+  });
   final AsyncValue<UserProfile?> profileAsync;
+  final AsyncValue<List<dynamic>> historyAsync;
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
+    final workouts = historyAsync.valueOrNull ?? const [];
+    final streakDays = WorkoutStreakCalculator.calculateFromDates(
+      workouts.map<DateTime>((w) => w.date as DateTime),
+    ).currentStreak;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -219,7 +253,7 @@ class _HomeHeader extends StatelessWidget {
                 Icon(Icons.local_fire_department_rounded, size: 15, color: tokens.warning),
                 const SizedBox(width: 4),
                 Text(
-                  '7 d',
+                  '$streakDays d',
                   style: TextStyle(
                     fontFamily: AppTypography.displayFontFamily,
                     color: tokens.textPrimary,

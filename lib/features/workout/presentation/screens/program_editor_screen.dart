@@ -67,7 +67,7 @@ class _ProgramEditorScreenState extends ConsumerState<ProgramEditorScreen> {
                 padding: const EdgeInsets.all(24),
                 child: AppStateView.empty(
                   title: 'NO ACTIVE PROGRAM',
-                  message: 'Initialize a training split before editing protocol parameters.',
+                  message: 'Choose a training split before editing plan details.',
                 ),
               ),
             ),

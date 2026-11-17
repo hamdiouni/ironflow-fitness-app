@@ -1,4 +1,6 @@
+import 'package:progression_tracker/core/providers/units_provider.dart';
 import 'package:progression_tracker/core/utils/app_logger.dart';
+import 'package:progression_tracker/core/utils/local_date_window.dart';
 import 'package:progression_tracker/features/ai/domain/entities/insight.dart';
 import 'package:progression_tracker/features/ai/domain/entities/insight_cache.dart';
 import 'package:progression_tracker/features/ai/domain/entities/insight_generation_context.dart';
@@ -60,10 +62,11 @@ class GlobalAIInsightHelpers {
     required NutritionRepository nutritionRepository,
     required BodyRepository bodyRepository,
     NutritionTargets? nutritionTargets,
+    UnitsSystem units = UnitsSystem.metric,
   }) async {
     final now = DateTime.now();
-    final thirtyDaysAgo = now.subtract(const Duration(days: 30));
-    final sevenDaysAgo = now.subtract(const Duration(days: 7));
+    final thirtyDaysAgo = LocalDateWindow.rollingDaysWindow(30, now: now).start;
+    final sevenDaysAgo = LocalDateWindow.rollingDaysWindow(7, now: now).start;
 
     final needsWorkouts = context == InsightContext.home ||
         context == InsightContext.workout ||
@@ -105,6 +108,7 @@ class GlobalAIInsightHelpers {
         nutritionTargets: nutritionTargets,
         bodyEntries: bodyEntries,
         generatedAt: now,
+        units: units,
       );
     } catch (e) {
       AppLogger.debug(
@@ -118,6 +122,7 @@ class GlobalAIInsightHelpers {
         nutritionTargets: nutritionTargets,
         bodyEntries: const [],
         generatedAt: now,
+        units: units,
       );
     }
   }

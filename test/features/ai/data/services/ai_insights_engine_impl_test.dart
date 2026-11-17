@@ -1889,9 +1889,9 @@ void main() {
 
       // ASSERT
       expect(insight.message, contains('Your performance is improving.'));
-      expect(insight.message, contains('volume: 2500'));
-      expect(insight.message, contains('workouts: 12'));
-      expect(insight.message, contains('percentage: 85.5'));
+      expect(insight.message, contains('Volume: 2500'));
+      expect(insight.message, contains('Workouts: 12'));
+      expect(insight.message, contains('Percentage: 85.5'));
       expect(insight.message, contains('Keep up the great work!'));
       expect(insight.metadata['analysis'], equals('Your performance is improving.'));
       expect(insight.metadata['actionPlan'], equals('Keep up the great work!'));

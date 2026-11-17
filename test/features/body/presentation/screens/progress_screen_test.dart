@@ -166,7 +166,7 @@ void main() {
       expect(find.text('WEIGHT TREND'), findsOneWidget);
       expect(find.text('RECENT LOGS'), findsOneWidget);
       expect(find.text('LOG WEIGHT'), findsOneWidget);
-      expect(find.text('LATEST TELEMETRY'), findsOneWidget);
+      expect(find.text('LATEST MEASUREMENTS'), findsOneWidget);
       expect(find.text('LOG MEASUREMENTS'), findsOneWidget);
     });
 

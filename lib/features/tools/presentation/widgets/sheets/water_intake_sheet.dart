@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../../core/constants/app_theme.dart';
+import '../../../../../core/providers/units_provider.dart';
 import '../../../../../shared/presentation/components/app_bottom_sheet.dart';
 import '../../../../../shared/presentation/components/app_button.dart';
 import '../../../../onboarding/domain/entities/user_profile.dart';
@@ -7,14 +8,23 @@ import '../../../domain/calculators/water_intake_calculator.dart';
 
 class WaterIntakeSheet extends StatefulWidget {
   final UserProfile? profile;
+  final UnitsSystem units;
 
-  const WaterIntakeSheet({super.key, this.profile});
+  const WaterIntakeSheet({
+    super.key,
+    this.profile,
+    this.units = UnitsSystem.metric,
+  });
 
-  static Future<void> show(BuildContext context, {UserProfile? profile}) {
+  static Future<void> show(
+    BuildContext context, {
+    UserProfile? profile,
+    UnitsSystem units = UnitsSystem.metric,
+  }) {
     return AppBottomSheet.show(
       context: context,
       title: 'DAILY WATER INTAKE',
-      child: WaterIntakeSheet(profile: profile),
+      child: WaterIntakeSheet(profile: profile, units: units),
     );
   }
 
@@ -30,12 +40,15 @@ class _WaterIntakeSheetState extends State<WaterIntakeSheet> {
   @override
   void initState() {
     super.initState();
-    _weight = widget.profile?.weightKg ?? 75.0;
+    _weight = widget.profile?.weightKg ?? UserProfileDefaults.weightKg;
   }
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
+    final weightUnit = UnitsConverter.getWeightUnit(widget.units);
+    final displayWeight =
+        UnitsConverter.convertWeightToDisplay(_weight, widget.units);
     final result = WaterIntakeCalculator.calculate(
       weightKg: _weight,
       workoutMinutes: _workoutMins,
@@ -47,7 +60,7 @@ class _WaterIntakeSheetState extends State<WaterIntakeSheet> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           TextFormField(
-            initialValue: _weight.toStringAsFixed(1),
+            initialValue: displayWeight.toStringAsFixed(1),
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             style: TextStyle(
               fontFamily: AppTypography.displayFontFamily,
@@ -56,7 +69,7 @@ class _WaterIntakeSheetState extends State<WaterIntakeSheet> {
             ),
             decoration: InputDecoration(
               labelText: 'BODY WEIGHT',
-              suffixText: 'kg',
+              suffixText: weightUnit,
               filled: true,
               fillColor: tokens.card,
               border: OutlineInputBorder(
@@ -65,7 +78,11 @@ class _WaterIntakeSheetState extends State<WaterIntakeSheet> {
             ),
             onChanged: (v) {
               final d = double.tryParse(v);
-              if (d != null && d > 20) setState(() => _weight = d);
+              if (d != null) {
+                final kg =
+                    UnitsConverter.convertWeightToStorage(d, widget.units);
+                if (kg > 20) setState(() => _weight = kg);
+              }
             },
           ),
           const SizedBox(height: 12),

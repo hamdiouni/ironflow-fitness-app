@@ -22,7 +22,7 @@ void main() {
 
       // Verify widget elements
       expect(find.byKey(const ValueKey('pr_celebration_badge')), findsOneWidget);
-      expect(find.text('TELEMETRY // MILESTONE'), findsOneWidget);
+      expect(find.text('NEW MILESTONE'), findsOneWidget);
       expect(find.text('PERSONAL RECORD'), findsOneWidget);
       expect(find.text('PERFORMANCE THRESHOLD EXCEEDED'), findsOneWidget);
       expect(find.byIcon(Icons.workspace_premium_rounded), findsOneWidget);

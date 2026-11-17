@@ -1,6 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:progression_tracker/core/constants/app_theme.dart';
+import 'package:progression_tracker/core/router/app_router.dart';
 import 'package:progression_tracker/features/ai/domain/entities/insight.dart';
 import 'package:progression_tracker/features/ai/presentation/providers/global_ai_provider.dart';
 
@@ -108,13 +111,12 @@ class _QuickFeedbackBottomSheetState
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(context).scaffoldBackgroundColor,
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(24),
-          topRight: Radius.circular(24),
-        ),
+        color: tokens.panel,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(tokens.radiusXl)),
+        border: Border(top: BorderSide(color: tokens.borderSubtle)),
       ),
       child: SafeArea(
         child: Padding(
@@ -127,7 +129,7 @@ class _QuickFeedbackBottomSheetState
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey[300],
+                  color: tokens.borderSubtle,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -142,6 +144,7 @@ class _QuickFeedbackBottomSheetState
                 widget.feedback.title,
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
+                      color: tokens.textPrimary,
                     ),
                 textAlign: TextAlign.center,
               ),
@@ -151,7 +154,7 @@ class _QuickFeedbackBottomSheetState
               Text(
                 widget.feedback.message,
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: Colors.grey[700],
+                      color: tokens.textSecondary,
                     ),
                 textAlign: TextAlign.center,
               ),
@@ -162,19 +165,24 @@ class _QuickFeedbackBottomSheetState
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                    // Dismiss bottom sheet
+                    _autoDismissTimer?.cancel();
+                    final router = GoRouter.maybeOf(context);
                     Navigator.of(context).pop();
-                    
-                    // Navigate to AI chat screen
-                    _navigateToAIChat(context);
-                    
-                    // Dismiss quick feedback from state
                     ref.read(globalAIProvider.notifier).dismissQuickFeedback();
+                    router?.push(
+                      AppRoutes.aiChat,
+                      extra: <String, dynamic>{
+                        'initialMessage':
+                            'Tell me more about: ${widget.feedback.title}',
+                      },
+                    );
                   },
                   style: ElevatedButton.styleFrom(
+                    backgroundColor: tokens.kineticAccent,
+                    foregroundColor: tokens.onAccent,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(tokens.radiusSm),
                     ),
                   ),
                   child: const Text(
@@ -265,19 +273,6 @@ class _QuickFeedbackBottomSheetState
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  /// Navigate to AI chat screen with quick feedback context
-  void _navigateToAIChat(BuildContext context) {
-    // TODO: Implement navigation to AI chat screen
-    // This will be implemented in Phase 5 (Screen Integration)
-    // For now, just show a snackbar
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('AI Chat navigation will be implemented in Phase 5'),
-        duration: Duration(seconds: 2),
       ),
     );
   }

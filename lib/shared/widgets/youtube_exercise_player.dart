@@ -223,7 +223,7 @@ class _YouTubeExercisePlayerState extends State<YouTubeExercisePlayer> {
             ),
             const SizedBox(height: 12),
             Text(
-              'INITIALIZING TELEMETRY STREAM...',
+              'LOADING VIDEO STREAM...',
               style: TextStyle(
                 fontFamily: AppTypography.displayFontFamily,
                 color: tokens.textMuted,
@@ -269,15 +269,15 @@ class _YouTubeExercisePlayerState extends State<YouTubeExercisePlayer> {
             ),
           ),
         ),
-        // Monolithic HUD overlay
+        // Token-aware contrast overlay
         Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                Colors.black.withValues(alpha: 0.35),
-                Colors.black.withValues(alpha: 0.85),
+                tokens.panel.withValues(alpha: 0.80),
+                tokens.panel.withValues(alpha: 0.94),
               ],
             ),
           ),

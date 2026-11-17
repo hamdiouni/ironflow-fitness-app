@@ -1,3 +1,5 @@
+import 'package:progression_tracker/core/utils/local_date_window.dart';
+import 'package:progression_tracker/core/utils/workout_streak_calculator.dart';
 import 'package:progression_tracker/features/auth/domain/repositories/auth_repository.dart';
 import 'package:progression_tracker/features/workout/domain/repositories/workout_repository.dart';
 import 'package:progression_tracker/features/workout/domain/repositories/active_program_repository.dart';
@@ -353,43 +355,14 @@ class BuildAIContextUseCase {
   }
 
   int _calculateWorkoutStreak(List<Workout> workouts) {
-    if (workouts.isEmpty) return 0;
-    
-    // Sort workouts by date descending
-    final sortedWorkouts = List<Workout>.from(workouts)
-      ..sort((a, b) => b.date.compareTo(a.date));
-    
-    int streak = 0;
-    DateTime? lastDate;
-    
-    for (final workout in sortedWorkouts) {
-      if (lastDate == null) {
-        // First workout
-        final daysSinceWorkout = DateTime.now().difference(workout.date).inDays;
-        if (daysSinceWorkout > 1) {
-          // Streak is broken if last workout was more than 1 day ago
-          break;
-        }
-        streak = 1;
-        lastDate = workout.date;
-      } else {
-        // Check if this workout is within 1 day of the last one
-        final daysBetween = lastDate.difference(workout.date).inDays;
-        if (daysBetween <= 1) {
-          streak++;
-          lastDate = workout.date;
-        } else {
-          break;
-        }
-      }
-    }
-    
-    return streak;
+    return WorkoutStreakCalculator.calculateFromDates(
+      workouts.map((w) => w.date),
+    ).currentStreak;
   }
 
   int _calculatePRsThisMonth(List<Workout> workouts) {
-    final oneMonthAgo = DateTime.now().subtract(const Duration(days: 30));
-    final recentWorkouts = workouts.where((w) => w.date.isAfter(oneMonthAgo)).toList();
+    final oneMonthAgo = LocalDateWindow.rollingDaysWindow(30).start;
+    final recentWorkouts = workouts.where((w) => !w.date.toLocal().isBefore(oneMonthAgo)).toList();
     
     if (recentWorkouts.isEmpty) return 0;
     

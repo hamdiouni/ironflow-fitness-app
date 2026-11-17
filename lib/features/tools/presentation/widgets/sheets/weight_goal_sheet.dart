@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../../core/constants/app_theme.dart';
+import '../../../../../core/providers/units_provider.dart';
 import '../../../../../shared/presentation/components/app_bottom_sheet.dart';
 import '../../../../../shared/presentation/components/app_button.dart';
 import '../../../../onboarding/domain/entities/user_profile.dart';
@@ -7,14 +8,23 @@ import '../../../domain/calculators/weight_goal_planner.dart';
 
 class WeightGoalSheet extends StatefulWidget {
   final UserProfile? profile;
+  final UnitsSystem units;
 
-  const WeightGoalSheet({super.key, this.profile});
+  const WeightGoalSheet({
+    super.key,
+    this.profile,
+    this.units = UnitsSystem.metric,
+  });
 
-  static Future<void> show(BuildContext context, {UserProfile? profile}) {
+  static Future<void> show(
+    BuildContext context, {
+    UserProfile? profile,
+    UnitsSystem units = UnitsSystem.metric,
+  }) {
     return AppBottomSheet.show(
       context: context,
       title: 'WEIGHT GOAL PLANNER',
-      child: WeightGoalSheet(profile: profile),
+      child: WeightGoalSheet(profile: profile, units: units),
     );
   }
 
@@ -25,19 +35,28 @@ class WeightGoalSheet extends StatefulWidget {
 class _WeightGoalSheetState extends State<WeightGoalSheet> {
   late double _current;
   late double _target;
-  double _weeklyRate = 0.5;
+  double _weeklyRate = WeightGoalPlanner.defaultWeeklyRateKg;
 
   @override
   void initState() {
     super.initState();
     final p = widget.profile;
-    _current = p?.weightKg ?? 80.0;
-    _target = p?.effectiveTargetWeightKg ?? (_current - 5.0);
+    _current = p?.weightKg ?? UserProfileDefaults.weightKg;
+    _target = p?.effectiveTargetWeightKg ??
+        (_current - UserProfileDefaults.targetWeightDeltaKg);
   }
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
+    final weightUnit = UnitsConverter.getWeightUnit(widget.units);
+    final weightScale = UnitsConverter.convertWeightToDisplay(1.0, widget.units);
+    final displayCurrent =
+        UnitsConverter.convertWeightToDisplay(_current, widget.units);
+    final displayTarget =
+        UnitsConverter.convertWeightToDisplay(_target, widget.units);
+    final displayRate =
+        UnitsConverter.convertWeightToDisplay(_weeklyRate, widget.units);
     final result = WeightGoalPlanner.plan(
       currentWeightKg: _current,
       targetWeightKg: _target,
@@ -52,7 +71,7 @@ class _WeightGoalSheetState extends State<WeightGoalSheet> {
             children: [
               Expanded(
                 child: TextFormField(
-                  initialValue: _current.toStringAsFixed(1),
+                  initialValue: displayCurrent.toStringAsFixed(1),
                   keyboardType:
                       const TextInputType.numberWithOptions(decimal: true),
                   style: TextStyle(
@@ -62,7 +81,7 @@ class _WeightGoalSheetState extends State<WeightGoalSheet> {
                   ),
                   decoration: InputDecoration(
                     labelText: 'CURRENT WEIGHT',
-                    suffixText: 'kg',
+                    suffixText: weightUnit,
                     filled: true,
                     fillColor: tokens.card,
                     border: OutlineInputBorder(
@@ -71,14 +90,18 @@ class _WeightGoalSheetState extends State<WeightGoalSheet> {
                   ),
                   onChanged: (v) {
                     final d = double.tryParse(v);
-                    if (d != null && d > 20) setState(() => _current = d);
+                    if (d != null) {
+                      final kg = UnitsConverter.convertWeightToStorage(
+                          d, widget.units);
+                      if (kg > 20) setState(() => _current = kg);
+                    }
                   },
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: TextFormField(
-                  initialValue: _target.toStringAsFixed(1),
+                  initialValue: displayTarget.toStringAsFixed(1),
                   keyboardType:
                       const TextInputType.numberWithOptions(decimal: true),
                   style: TextStyle(
@@ -88,7 +111,7 @@ class _WeightGoalSheetState extends State<WeightGoalSheet> {
                   ),
                   decoration: InputDecoration(
                     labelText: 'TARGET WEIGHT',
-                    suffixText: 'kg',
+                    suffixText: weightUnit,
                     filled: true,
                     fillColor: tokens.card,
                     border: OutlineInputBorder(
@@ -97,7 +120,11 @@ class _WeightGoalSheetState extends State<WeightGoalSheet> {
                   ),
                   onChanged: (v) {
                     final d = double.tryParse(v);
-                    if (d != null && d > 20) setState(() => _target = d);
+                    if (d != null) {
+                      final kg = UnitsConverter.convertWeightToStorage(
+                          d, widget.units);
+                      if (kg > 20) setState(() => _target = kg);
+                    }
                   },
                 ),
               ),
@@ -129,7 +156,7 @@ class _WeightGoalSheetState extends State<WeightGoalSheet> {
                       ),
                     ),
                     Text(
-                      '${_weeklyRate.toStringAsFixed(2)} kg / week',
+                      '${displayRate.toStringAsFixed(2)} $weightUnit / week',
                       style: TextStyle(
                         fontFamily: AppTypography.displayFontFamily,
                         fontSize: 11,
@@ -187,7 +214,10 @@ class _WeightGoalSheetState extends State<WeightGoalSheet> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  result.plainEnglishSummary,
+                  result.formatSummary(
+                    weightUnit: weightUnit,
+                    weightScale: weightScale,
+                  ),
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontFamily: AppTypography.bodyFontFamily,

@@ -3,36 +3,47 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/config/build_stamp.dart';
 import '../../../../core/constants/app_theme.dart';
+import '../../../../core/providers/language_provider.dart';
 import '../../../../core/providers/theme_provider.dart';
+import '../../../../core/providers/units_provider.dart';
 import '../../../../core/router/app_router.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../shared/presentation/services/app_haptics.dart';
 import '../../../ai/presentation/providers/ai_provider.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../../../onboarding/domain/entities/user_profile.dart';
 import '../../../onboarding/presentation/providers/onboarding_provider.dart';
+import '../../../workout/domain/services/exercise_catalog.dart';
 import '../widgets/settings_dialogs.dart';
+import '../widgets/settings_preferences_widgets.dart';
 import '../widgets/settings_section_tiles.dart';
 import 'export_settings_screen.dart';
 import 'privacy_settings_screen.dart';
 
-/// Monolithic Sci-Fi Settings screen organizing all preferences into 7 core sections:
-/// 1. Account (Profile & Biometrics, Edit Profile, Terminate Session)
-/// 2. Training (Tactile Telemetry, Monolithic Dark Theme, Exercise Catalog, Workout History)
-/// 3. Data Management (Export Telemetry, Restore System Data)
+/// Settings screen organizing all preferences into 7 core sections:
+/// 1. Account (Profile & Biometrics, Edit Profile, Log Out)
+/// 2. Training & Preferences (Haptics, Theme, Units, Language, Exercise Catalog, Workout History)
+/// 3. Data Management (Export Data, Restore Backup)
 /// 4. Notifications (Reminder Settings)
-/// 5. Privacy & Compliance (Telemetry Controls, Terms of Service, Privacy Policy)
-/// 6. Developer Protocols (kDebugMode only: AI Diagnostic, Design System Gallery)
-/// 7. Core Application System (App Version, Monolithic Sci-Fi Architecture)
+/// 5. Privacy & Legal (Data Controls, Terms of Service, Privacy Policy)
+/// 6. Developer Tools (kDebugMode only: Reset Onboarding, State Inspector, Design Gallery)
+/// 7. About Application (App Name, Build Version, Commit, Date)
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = AppThemeTokens.of(context);
+    final l10n = AppLocalizations.of(context);
     final themeMode = ref.watch(themeProvider);
     final isDark = themeMode == ThemeMode.dark;
+    final units = ref.watch(unitsProvider);
+    final isMetric = units == UnitsSystem.metric;
+    final currentLocale = ref.watch(languageProvider);
+    final languageLabel =
+        LanguageNotifier.languageNames[currentLocale.languageCode] ?? 'English';
+    final exerciseCount = ExerciseCatalog.all.length;
     final hapticsEnabled = ref.watch(hapticsEnabledProvider);
     final aiConsent = ref.watch(aiPersonalizationConsentProvider);
     final profileAsync = ref.watch(userProfileProvider);
@@ -70,7 +81,7 @@ class SettingsScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'SETTINGS',
+              (l10n?.settings ?? 'SETTINGS').toUpperCase(),
               style: TextStyle(
                 fontFamily: AppTypography.displayFontFamily,
                 fontSize: 18,
@@ -80,7 +91,7 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ),
             Text(
-              'SYSTEM CONFIGURATION',
+              (l10n?.preferences ?? 'PREFERENCES').toUpperCase(),
               style: TextStyle(
                 fontFamily: AppTypography.displayFontFamily,
                 fontSize: 9,
@@ -92,12 +103,15 @@ class SettingsScreen extends ConsumerWidget {
           ],
         ),
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 40),
-        children: [
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 820),
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 40),
+            children: [
           // ── SECTION 1: ACCOUNT ──────────────────────────────────────────
           SettingsSection(
-            title: 'ACCOUNT',
+            title: (l10n?.account ?? 'ACCOUNT').toUpperCase(),
             tokens: tokens,
             children: [
               Container(
@@ -254,7 +268,7 @@ class SettingsScreen extends ConsumerWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'DARK MODE',
+                                  (l10n?.darkMode ?? 'DARK MODE').toUpperCase(),
                                   style: TextStyle(
                                     fontFamily: AppTypography.displayFontFamily,
                                     fontSize: 12,
@@ -265,8 +279,8 @@ class SettingsScreen extends ConsumerWidget {
                                 const SizedBox(height: 2),
                                 Text(
                                   isDark
-                                      ? 'Soft & Layered charcoal canvas (#12131A)'
-                                      : 'Warm Linen light canvas (#F8F7F4)',
+                                      ? 'Iron Scoreboard dark canvas (#0A0B0E)'
+                                      : 'Iron Scoreboard light canvas (#F3F4F6)',
                                   style: TextStyle(
                                     fontFamily: AppTypography.bodyFontFamily,
                                     fontSize: 11,
@@ -291,17 +305,122 @@ class SettingsScreen extends ConsumerWidget {
                       ),
                     ),
                     Divider(color: tokens.borderSubtle, height: 1),
+                    // Measurement units selector
+                    Padding(
+                      key: const Key('settings_units_row'),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: tokens.card,
+                              borderRadius:
+                                  BorderRadius.circular(tokens.radiusSm),
+                              border: Border.all(
+                                color: tokens.borderSubtle,
+                                width: 1,
+                              ),
+                            ),
+                            child: Icon(
+                              Icons.straighten_rounded,
+                              color: tokens.kineticAccent,
+                              size: 18,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  (l10n?.units ?? 'UNITS').toUpperCase(),
+                                  style: TextStyle(
+                                    fontFamily: AppTypography.displayFontFamily,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: tokens.textPrimary,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  isMetric
+                                      ? (l10n?.metric ?? 'Metric (kg, cm)')
+                                      : (l10n?.imperial ?? 'Imperial (lbs, in)'),
+                                  style: TextStyle(
+                                    fontFamily: AppTypography.bodyFontFamily,
+                                    fontSize: 11,
+                                    color: tokens.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              SettingsUnitPill(
+                                pillKey: const Key('settings_units_metric_btn'),
+                                label: 'KG',
+                                selected: isMetric,
+                                tokens: tokens,
+                                onTap: () {
+                                  AppHaptics.shared.selectionChanged();
+                                  ref
+                                      .read(unitsProvider.notifier)
+                                      .setUnits(UnitsSystem.metric);
+                                },
+                              ),
+                              const SizedBox(width: 6),
+                              SettingsUnitPill(
+                                pillKey: const Key('settings_units_imperial_btn'),
+                                label: 'LBS',
+                                selected: !isMetric,
+                                tokens: tokens,
+                                onTap: () {
+                                  AppHaptics.shared.selectionChanged();
+                                  ref
+                                      .read(unitsProvider.notifier)
+                                      .setUnits(UnitsSystem.imperial);
+                                },
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    Divider(color: tokens.borderSubtle, height: 1),
+                    // App language picker
                     SettingsTile(
-                      title: 'Exercise Catalog',
+                      key: const Key('settings_language_tile'),
+                      title: l10n?.language ?? 'Language',
                       subtitle:
-                          'Browse 50+ movement techniques, tips & targeted muscles',
+                          '$languageLabel (${currentLocale.languageCode.toUpperCase()})',
+                      icon: Icons.language_rounded,
+                      tokens: tokens,
+                      onTap: () => showSettingsLanguagePicker(
+                        context,
+                        ref,
+                        tokens,
+                        currentLocale,
+                      ),
+                    ),
+                    Divider(color: tokens.borderSubtle, height: 1),
+                    SettingsTile(
+                      title: l10n?.exerciseCatalog ?? 'Exercise Catalog',
+                      subtitle:
+                          'Browse $exerciseCount movement techniques, tips & targeted muscles',
                       icon: Icons.fitness_center_rounded,
                       tokens: tokens,
                       onTap: () => context.go(AppRoutes.workoutCatalog),
                     ),
                     Divider(color: tokens.borderSubtle, height: 1),
                     SettingsTile(
-                      title: 'Workout History',
+                      title: l10n?.workoutHistory ?? 'Workout History',
                       subtitle:
                           'Historical session logs, volume curves & completed routines',
                       icon: Icons.history_rounded,
@@ -317,7 +436,7 @@ class SettingsScreen extends ConsumerWidget {
 
           // ── SECTION 3: DATA MANAGEMENT & BACKUP ─────────────────────────
           SettingsSection(
-            title: 'DATA MANAGEMENT & BACKUP',
+            title: (l10n?.dataBackup ?? 'DATA MANAGEMENT & BACKUP').toUpperCase(),
             tokens: tokens,
             children: [
               Container(
@@ -366,7 +485,8 @@ class SettingsScreen extends ConsumerWidget {
 
           // ── SECTION 4: NOTIFICATIONS & REMINDERS ─────────────────────────
           SettingsSection(
-            title: 'NOTIFICATIONS & PROTOCOLS',
+            title: (l10n?.notificationsReminders ?? 'NOTIFICATIONS & REMINDERS')
+                .toUpperCase(),
             tokens: tokens,
             children: [
               Container(
@@ -394,7 +514,7 @@ class SettingsScreen extends ConsumerWidget {
 
           // ── SECTION 5: PRIVACY & COMPLIANCE ─────────────────────────────
           SettingsSection(
-            title: 'PRIVACY & LEGAL',
+            title: (l10n?.privacyLegal ?? 'PRIVACY & LEGAL').toUpperCase(),
             tokens: tokens,
             children: [
               Container(
@@ -521,10 +641,10 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 20),
 
-          // ── SECTION 6: DEVELOPER PROTOCOLS (kDebugMode only) ─────────────
+          // ── SECTION 6: DEVELOPER TOOLS (kDebugMode only) ──────────────────
           if (kDebugMode) ...[
             SettingsSection(
-              title: 'DEVELOPER PROTOCOLS [DEBUG ONLY]',
+              title: 'DEVELOPER TOOLS [DEBUG ONLY]',
               tokens: tokens,
               children: [
                 Container(
@@ -539,7 +659,7 @@ class SettingsScreen extends ConsumerWidget {
                   child: Column(
                     children: [
                       SettingsTile(
-                        title: 'Reset Onboarding Protocol',
+                        title: 'Reset Onboarding',
                         subtitle:
                             'Clear onboarding flag and re-run goal selection stepper',
                         icon: Icons.restart_alt_rounded,
@@ -551,7 +671,7 @@ class SettingsScreen extends ConsumerWidget {
                       ),
                       Divider(color: tokens.borderSubtle, height: 1),
                       SettingsTile(
-                        title: 'Inspect App State Telemetry',
+                        title: 'Inspect App State',
                         subtitle:
                             'Inspect live Auth, Onboarding & Gemini API configuration',
                         icon: Icons.monitor_heart_outlined,
@@ -563,7 +683,7 @@ class SettingsScreen extends ConsumerWidget {
                       SettingsTile(
                         title: 'Design System Gallery',
                         subtitle:
-                            'Inspect titanium design system tokens and widgets',
+                            'Inspect Iron Scoreboard design tokens and widgets',
                         icon: Icons.palette_outlined,
                         tokens: tokens,
                         onTap: () => context.push(AppRoutes.designGallery),
@@ -576,54 +696,15 @@ class SettingsScreen extends ConsumerWidget {
             const SizedBox(height: 20),
           ],
 
-          // ── SECTION 7: CORE APPLICATION SYSTEM (ABOUT) ──────────────────
-          SettingsSection(
-            title: 'CORE APPLICATION SYSTEM',
+          // ── SECTION 7: ABOUT APPLICATION ─────────────────────────────────
+          SettingsAboutSection(
             tokens: tokens,
-            children: [
-              GestureDetector(
-                onLongPress: () =>
-                    showSettingsStateInspector(context, ref, tokens),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: tokens.panel,
-                    borderRadius: BorderRadius.circular(tokens.radiusMd),
-                    border: Border.all(color: tokens.borderSubtle, width: 1),
-                  ),
-                  padding: const EdgeInsets.all(AppTheme.spacingMedium),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SettingItem(
-                        label: 'APPLICATION',
-                        value: 'IRONFLOW',
-                        tokens: tokens,
-                      ),
-                      Divider(color: tokens.borderSubtle, height: 20),
-                      SettingItem(
-                        label: 'BUILD VERSION',
-                        value: BuildStamp.version,
-                        tokens: tokens,
-                      ),
-                      Divider(color: tokens.borderSubtle, height: 20),
-                      SettingItem(
-                        label: 'COMMIT',
-                        value: '${BuildStamp.commit} (${BuildStamp.branch})',
-                        tokens: tokens,
-                      ),
-                      Divider(color: tokens.borderSubtle, height: 20),
-                      SettingItem(
-                        label: 'BUILD DATE',
-                        value: BuildStamp.buildDate,
-                        tokens: tokens,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+            onLongPressInspector: () =>
+                showSettingsStateInspector(context, ref, tokens),
           ),
         ],
+      ),
+        ),
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:progression_tracker/core/providers/units_provider.dart';
 import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:progression_tracker/core/utils/record_ownership.dart';
 import 'package:progression_tracker/features/ai/data/services/ai_insights_engine_impl.dart';
@@ -290,6 +291,7 @@ class GlobalAINotifier extends Notifier<GlobalAIState> {
   }) async {
     try {
       final stopwatch = Stopwatch()..start();
+      final units = ref.read(unitsProvider);
       final generationContext =
           await GlobalAIInsightHelpers.buildInsightGenerationContext(
         context: context,
@@ -297,6 +299,7 @@ class GlobalAINotifier extends Notifier<GlobalAIState> {
         nutritionRepository: _nutritionRepository,
         bodyRepository: _bodyRepository,
         nutritionTargets: nutritionTargets,
+        units: units,
       );
 
       final dataFetchMs = stopwatch.elapsedMilliseconds;

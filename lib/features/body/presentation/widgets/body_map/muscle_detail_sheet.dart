@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:progression_tracker/core/constants/app_theme.dart';
+import 'package:progression_tracker/core/providers/units_provider.dart';
 import 'package:progression_tracker/core/router/app_router.dart';
 import 'package:progression_tracker/features/workout/domain/services/exercise_catalog.dart';
 import 'package:progression_tracker/features/body/domain/entities/muscle_recovery_status.dart';
@@ -25,6 +26,12 @@ class MuscleDetailSheet extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = context.tokens;
     final region = recoveryData.region;
+    final units = ref.watch(unitsProvider);
+    final displayVolume = UnitsConverter.convertWeightToDisplay(
+      recoveryData.volumeLoad7Days,
+      units,
+    );
+    final weightUnit = UnitsConverter.getWeightUnit(units);
 
     // Exercises targeting this muscle region
     final targetingExercises = ExerciseCatalog.all
@@ -147,9 +154,9 @@ class MuscleDetailSheet extends ConsumerWidget {
                 child: _buildMiniStatCard(
                   title: '7D VOLUME',
                   value: recoveryData.volumeLoad7Days > 0
-                      ? '${recoveryData.volumeLoad7Days.toInt()}'
+                      ? '${displayVolume.toInt()}'
                       : '0',
-                  unit: 'kg',
+                  unit: weightUnit,
                   tokens: tokens,
                 ),
               ),
@@ -232,9 +239,10 @@ class MuscleDetailSheet extends ConsumerWidget {
             child: ElevatedButton.icon(
               onPressed: () {
                 AppHaptics.shared.selectionChanged();
+                final targetUrl =
+                    '${AppRoutes.workoutCatalog}?muscle=${Uri.encodeComponent(region.coarseGroup.name)}';
                 Navigator.of(context).pop();
-                // Navigate to workout screen
-                context.go(AppRoutes.workout);
+                context.go(targetUrl);
               },
               icon: const Icon(Icons.fitness_center_rounded, size: 18),
               label: Text(

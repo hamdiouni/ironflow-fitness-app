@@ -5,11 +5,11 @@ import 'package:intl/intl.dart';
 import '../../../../core/constants/app_theme.dart';
 import '../../../../shared/presentation/components/app_button.dart';
 import '../../domain/entities/daily_nutrition_summary.dart';
+import '../../domain/entities/nutrition_targets.dart';
 import '../providers/paginated_nutrition_provider.dart';
 
 /// Displays the full nutrition history with lazy loading for performance.
 ///
-/// Upgraded to the Stripe design system.
 /// Uses pagination to load nutrition entries in batches of 20 days.
 class NutritionHistoryScreen extends ConsumerStatefulWidget {
   const NutritionHistoryScreen({super.key});
@@ -165,7 +165,7 @@ class _NutritionHistoryScreenState
             Icon(Icons.inventory_2_outlined, size: 48, color: tokens.textMuted),
             const SizedBox(height: 16),
             Text(
-              'NO ARCHIVED TELEMETRY',
+              'NO NUTRITION HISTORY',
               style: TextStyle(
                 fontFamily: AppTypography.displayFontFamily,
                 fontSize: 16,
@@ -175,7 +175,7 @@ class _NutritionHistoryScreenState
             ),
             const SizedBox(height: 6),
             Text(
-              'Log your first meal to initialize your database',
+              'Log your first meal to start tracking',
               style: TextStyle(color: tokens.textMuted, fontSize: 13),
             ),
           ],
@@ -231,10 +231,13 @@ class _NutritionHistoryItem extends StatelessWidget {
     final mealCount = summary.meals.length;
     final mealCountLabel = '$mealCount meal${mealCount == 1 ? '' : 's'}';
 
-    final calorieTarget = summary.target?.macros.calories ?? 2000;
-    final proteinTarget = summary.target?.macros.protein ?? 150;
-    final carbsTarget = summary.target?.macros.carbs ?? 200;
-    final fatsTarget = summary.target?.macros.fats ?? 60;
+    final fallbackMacros = NutritionDefaults.fallbackMacros;
+    final calorieTarget =
+        summary.target?.macros.calories ?? fallbackMacros.calories;
+    final proteinTarget =
+        summary.target?.macros.protein ?? fallbackMacros.protein;
+    final carbsTarget = summary.target?.macros.carbs ?? fallbackMacros.carbs;
+    final fatsTarget = summary.target?.macros.fats ?? fallbackMacros.fats;
 
     final calorieProgress =
         (summary.totalCalories / calorieTarget).clamp(0.0, 1.0);

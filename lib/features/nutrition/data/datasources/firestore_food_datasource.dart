@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:progression_tracker/core/utils/app_logger.dart';
 import '../../domain/entities/food_item.dart';
 
@@ -18,9 +19,14 @@ class FoodPageResult {
 /// Firestore datasource for food items.
 /// Handles uploading and retrieving bounded pages of foods from Firestore.
 class FirestoreFoodDatasource {
-  FirestoreFoodDatasource(this._firestore);
+  FirestoreFoodDatasource([this._injectedFirestore]);
 
-  final FirebaseFirestore _firestore;
+  final FirebaseFirestore? _injectedFirestore;
+
+  FirebaseFirestore? get _firestoreOrNull {
+    if (_injectedFirestore != null) return _injectedFirestore;
+    return Firebase.apps.isNotEmpty ? FirebaseFirestore.instance : null;
+  }
 
   static const int defaultPageSize = 50;
   static const int maxBatchQueryLimit = 200;
@@ -42,10 +48,13 @@ class FirestoreFoodDatasource {
       );
     }
 
-    final foodsCollection = _firestore.collection('foods');
+    final firestore = _firestoreOrNull;
+    if (firestore == null) return;
+
+    final foodsCollection = firestore.collection('foods');
     // Firestore batches are capped at 500 operations; chunk at 400.
     for (var start = 0; start < foods.length; start += 400) {
-      final batch = _firestore.batch();
+      final batch = firestore.batch();
       for (final food in foods.skip(start).take(400)) {
         batch.set(foodsCollection.doc(food.id), foodToMap(food));
       }
@@ -58,8 +67,12 @@ class FirestoreFoodDatasource {
     int limit = defaultPageSize,
     DocumentSnapshot<Map<String, dynamic>>? startAfter,
   }) async {
+    final firestore = _firestoreOrNull;
+    if (firestore == null) {
+      return const FoodPageResult(items: [], lastDocument: null, hasMore: false);
+    }
     final safeLimit = limit.clamp(1, maxBatchQueryLimit);
-    Query<Map<String, dynamic>> query = _firestore
+    Query<Map<String, dynamic>> query = firestore
         .collection('foods')
         .orderBy('name')
         .limit(safeLimit);
@@ -83,8 +96,10 @@ class FirestoreFoodDatasource {
 
   /// Get bounded foods from Firestore.
   Future<List<FoodItem>> getAllFoods({int limit = maxBatchQueryLimit}) async {
+    final firestore = _firestoreOrNull;
+    if (firestore == null) return const [];
     final safeLimit = limit.clamp(1, maxBatchQueryLimit);
-    final snapshot = await _firestore
+    final snapshot = await firestore
         .collection('foods')
         .orderBy('name')
         .limit(safeLimit)
@@ -100,8 +115,10 @@ class FirestoreFoodDatasource {
     String category, {
     int limit = 100,
   }) async {
+    final firestore = _firestoreOrNull;
+    if (firestore == null) return const [];
     final safeLimit = limit.clamp(1, maxBatchQueryLimit);
-    final snapshot = await _firestore
+    final snapshot = await firestore
         .collection('foods')
         .where('category', isEqualTo: category)
         .limit(safeLimit)
@@ -117,8 +134,10 @@ class FirestoreFoodDatasource {
     String query, {
     int limit = defaultPageSize,
   }) async {
+    final firestore = _firestoreOrNull;
+    if (firestore == null) return const [];
     final safeLimit = limit.clamp(1, maxBatchQueryLimit);
-    final snapshot = await _firestore
+    final snapshot = await firestore
         .collection('foods')
         .where('name', isGreaterThanOrEqualTo: query)
         .where('name', isLessThan: '${query}z')
@@ -132,7 +151,9 @@ class FirestoreFoodDatasource {
 
   /// Get a single food by ID.
   Future<FoodItem?> getFoodById(String id) async {
-    final doc = await _firestore.collection('foods').doc(id).get();
+    final firestore = _firestoreOrNull;
+    if (firestore == null) return null;
+    final doc = await firestore.collection('foods').doc(id).get();
     final data = doc.data();
     if (!doc.exists || data == null) return null;
     return mapToFoodSafe(data, id);
@@ -144,8 +165,10 @@ class FirestoreFoodDatasource {
     int limit = 100,
   }) async {
     if (tags.isEmpty) return getAllFoods(limit: limit);
+    final firestore = _firestoreOrNull;
+    if (firestore == null) return const [];
     final safeLimit = limit.clamp(1, maxBatchQueryLimit);
-    final snapshot = await _firestore
+    final snapshot = await firestore
         .collection('foods')
         .where('dietaryTags', arrayContainsAny: tags)
         .limit(safeLimit)

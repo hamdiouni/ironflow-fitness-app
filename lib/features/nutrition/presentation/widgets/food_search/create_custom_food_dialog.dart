@@ -188,7 +188,7 @@ class _CreateCustomFoodDialogState
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'NEW FUEL ENTRY',
+                    'Create Custom Food',
                     style: TextStyle(
                       fontFamily: AppTypography.displayFontFamily,
                       fontSize: 16,
@@ -207,7 +207,7 @@ class _CreateCustomFoodDialogState
               ),
               const SizedBox(height: 4),
               Text(
-                'Define nutritional values per 100 grams.',
+                'Enter values per 100 grams. Saved to your local Custom Foods library and searchable right alongside USDA foods.',
                 style: TextStyle(fontSize: 11, color: tokens.textSecondary),
               ),
               const SizedBox(height: 16),
@@ -306,7 +306,7 @@ class _CreateCustomFoodDialogState
                   Expanded(
                     flex: 2,
                     child: AppButton(
-                      label: _isSaving ? 'SAVING...' : 'SAVE FUEL',
+                      label: _isSaving ? 'SAVING...' : 'SAVE FOOD',
                       icon: const Icon(Icons.check_rounded, size: 18),
                       onPressed: _isSaving ? null : _saveCustomFood,
                     ),

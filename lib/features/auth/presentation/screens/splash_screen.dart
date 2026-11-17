@@ -123,19 +123,19 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
                 // Brand Name
                 Text(
-                  'IRONFLOW',
+                  'PROGRESSION',
                   style: TextStyle(
                     fontFamily: AppTypography.displayFontFamily,
-                    fontSize: 34,
+                    fontSize: 30,
                     fontWeight: FontWeight.w900,
-                    letterSpacing: 2.5,
+                    letterSpacing: 2.0,
                     color: tokens.textPrimary,
                   ),
                 ),
 
                 const SizedBox(height: 8),
 
-                // Protocol subtitle
+                // App subtitle
                 Text(
                   'SMART WORKOUT & NUTRITION COMPANION',
                   style: TextStyle(
@@ -149,7 +149,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
                 const Spacer(),
 
-                // Futuristic Loading Bar
+                // Loading Bar
                 SizedBox(
                   width: 180,
                   child: Column(
@@ -166,7 +166,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        '// INITIALIZING TERMINAL',
+                        'LOADING WORKSPACE...',
                         style: TextStyle(
                           fontFamily: AppTypography.displayFontFamily,
                           fontSize: 10,

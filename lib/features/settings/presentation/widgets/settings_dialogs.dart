@@ -13,13 +13,13 @@ import '../../../onboarding/data/user_profile_storage.dart';
 import '../../../onboarding/presentation/providers/onboarding_provider.dart';
 import 'settings_section_tiles.dart';
 
-const String kIronFlowTermsOfService = '''By using IronFlow, you agree to the following terms:
+const String kIronFlowTermsOfService = '''By using Progression Tracker, you agree to the following terms:
 
 1. ACCEPTANCE OF TERMS
-By downloading, installing, or using IronFlow, you agree to be bound by these Terms of Service.
+By downloading, installing, or using Progression Tracker, you agree to be bound by these Terms of Service.
 
 2. HEALTH DISCLAIMER
-IronFlow is NOT a medical device and does NOT provide medical advice. Always consult with a healthcare professional before starting any fitness or nutrition program.
+Progression Tracker is NOT a medical device and does NOT provide medical advice. Always consult with a healthcare professional before starting any fitness or nutrition program.
 
 3. USER RESPONSIBILITIES
 - You are responsible for assessing your fitness level
@@ -41,7 +41,7 @@ You agree to use the app for lawful purposes only and not to violate laws or com
 
 Last Updated: October 2026''';
 
-const String kIronFlowPrivacyPolicy = '''IronFlow Privacy Policy
+const String kIronFlowPrivacyPolicy = '''Progression Tracker Privacy Policy
 
 INFORMATION WE COLLECT
 - Account info: Email, name
@@ -151,7 +151,7 @@ void showSettingsLogoutDialog(
                           ),
                           const SizedBox(width: 18),
                           Text(
-                            'Terminating session...',
+                            'Signing out...',
                             style: TextStyle(
                               fontFamily: AppTypography.bodyFontFamily,
                               color: tokens.textPrimary,
@@ -281,7 +281,7 @@ Future<void> resetSettingsOnboarding(
         side: BorderSide(color: tokens.borderSubtle, width: 1),
       ),
       title: Text(
-        'RESET ONBOARDING PROTOCOL',
+        'RESET ONBOARDING',
         style: TextStyle(
           fontFamily: AppTypography.displayFontFamily,
           fontSize: 16,
@@ -312,7 +312,7 @@ Future<void> resetSettingsOnboarding(
         ElevatedButton(
           style: ElevatedButton.styleFrom(
             backgroundColor: tokens.kineticAccent,
-            foregroundColor: Colors.black,
+            foregroundColor: tokens.onAccent,
           ),
           onPressed: () => Navigator.pop(ctx, true),
           child: const Text('RESET & RE-RUN'),
@@ -328,7 +328,10 @@ Future<void> resetSettingsOnboarding(
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Onboarding reset! Redirecting to setup...'),
+          content: Text(
+            'Onboarding reset! Redirecting to setup...',
+            style: TextStyle(color: tokens.onAccent),
+          ),
           backgroundColor: tokens.kineticAccent,
         ),
       );
@@ -363,7 +366,7 @@ void showSettingsStateInspector(
           ),
           const SizedBox(width: 8),
           Text(
-            'APP STATE TELEMETRY',
+            'APP STATE INSPECTOR',
             style: TextStyle(
               fontFamily: AppTypography.displayFontFamily,
               fontSize: 16,

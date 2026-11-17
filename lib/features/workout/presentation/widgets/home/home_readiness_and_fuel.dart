@@ -407,7 +407,8 @@ class DailyFuelSummaryBar extends ConsumerWidget {
     final nutritionAsync =
         ref.watch(dailyNutritionSummaryProvider(todayNutritionDayKey()));
 
-    final targetCalories = profileAsync.valueOrNull?.dailyCalorieTarget ?? 2000.0;
+    final targetCalories = profileAsync.valueOrNull?.dailyCalorieTarget ??
+        UserProfileDefaults.referenceProfile.dailyCalorieTarget;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacings.lg, vertical: AppSpacings.xs),

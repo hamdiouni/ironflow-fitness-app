@@ -64,25 +64,29 @@ class NutritionState with _$NutritionState {
   
   /// Remaining calories (target - consumed)
   double get remainingCalories {
-    final target = targets?.macros.calories ?? 2000;
+    final target =
+        targets?.macros.calories ?? NutritionDefaults.fallbackMacros.calories;
     return target - totalCalories;
   }
   
   /// Remaining protein (target - consumed)
   double get remainingProtein {
-    final target = targets?.macros.protein ?? 150;
+    final target =
+        targets?.macros.protein ?? NutritionDefaults.fallbackMacros.protein;
     return target - totalProtein;
   }
   
   /// Remaining carbs (target - consumed)
   double get remainingCarbs {
-    final target = targets?.macros.carbs ?? 200;
+    final target =
+        targets?.macros.carbs ?? NutritionDefaults.fallbackMacros.carbs;
     return target - totalCarbs;
   }
   
   /// Remaining fats (target - consumed)
   double get remainingFats {
-    final target = targets?.macros.fats ?? 60;
+    final target =
+        targets?.macros.fats ?? NutritionDefaults.fallbackMacros.fats;
     return target - totalFats;
   }
   
@@ -109,28 +113,32 @@ class NutritionState with _$NutritionState {
   
   /// Calorie progress (0.0 to 1.0+)
   double get calorieProgress {
-    final target = targets?.macros.calories ?? 2000;
+    final target =
+        targets?.macros.calories ?? NutritionDefaults.fallbackMacros.calories;
     if (target == 0) return 0.0;
     return (totalCalories / target).clamp(0.0, 2.0);
   }
   
   /// Protein progress (0.0 to 1.0+)
   double get proteinProgress {
-    final target = targets?.macros.protein ?? 150;
+    final target =
+        targets?.macros.protein ?? NutritionDefaults.fallbackMacros.protein;
     if (target == 0) return 0.0;
     return (totalProtein / target).clamp(0.0, 2.0);
   }
   
   /// Carbs progress (0.0 to 1.0+)
   double get carbsProgress {
-    final target = targets?.macros.carbs ?? 200;
+    final target =
+        targets?.macros.carbs ?? NutritionDefaults.fallbackMacros.carbs;
     if (target == 0) return 0.0;
     return (totalCarbs / target).clamp(0.0, 2.0);
   }
   
   /// Fats progress (0.0 to 1.0+)
   double get fatsProgress {
-    final target = targets?.macros.fats ?? 60;
+    final target =
+        targets?.macros.fats ?? NutritionDefaults.fallbackMacros.fats;
     if (target == 0) return 0.0;
     return (totalFats / target).clamp(0.0, 2.0);
   }

@@ -129,7 +129,7 @@ void main() {
       await tester.pumpWidget(createWidgetUnderTest());
       await tester.pumpAndSettle();
 
-      expect(find.text('PROTOCOL GENERATOR'), findsOneWidget);
+      expect(find.text('PROGRAM GENERATOR'), findsOneWidget);
       expect(find.text('STANDARD'), findsOneWidget);
       expect(find.text('HYBRIDS'), findsOneWidget);
       expect(find.text('MIX / CUSTOM'), findsOneWidget);
@@ -178,7 +178,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Guidance badge should appear with non-blocking advisory
-      expect(find.text('PROTOCOL ADVISORY'), findsOneWidget);
+      expect(find.text('PLAN ADVISORY'), findsOneWidget);
       expect(find.text('NON-BLOCKING'), findsOneWidget);
       expect(find.textContaining('lower frequency'), findsOneWidget);
     });
@@ -260,7 +260,7 @@ void main() {
       expect(notifier.archivedProgram, equals(initialActive));
 
       // SnackBar with UNDO should appear
-      expect(find.textContaining('Protocol initialized:'), findsOneWidget);
+      expect(find.textContaining('Program activated:'), findsOneWidget);
       expect(find.text('UNDO'), findsOneWidget);
 
       // Tap UNDO
@@ -269,7 +269,7 @@ void main() {
 
       expect(notifier.undoCalled, isTrue);
       expect(notifier.state.value, equals(initialActive));
-      expect(find.text('Previous protocol restored.'), findsOneWidget);
+      expect(find.text('Previous program restored.'), findsOneWidget);
     });
 
     testWidgets('Cancelling replacement dialog preserves existing active program', (tester) async {

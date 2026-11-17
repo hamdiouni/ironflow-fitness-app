@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/utils/record_ownership.dart';
@@ -20,7 +19,7 @@ final foodRepositoryProvider = Provider<FoodRepository>((ref) {
   final userId =
       ref.watch(currentUserIdProvider) ?? RecordOwnershipRules.guestUserId;
   return FoodRepositoryImpl(
-    firestoreDataSource: FirestoreFoodDatasource(FirebaseFirestore.instance),
+    firestoreDataSource: FirestoreFoodDatasource(),
     hiveDataSource: HiveFoodDataSource(userId: userId),
   );
 });

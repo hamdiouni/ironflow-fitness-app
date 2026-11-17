@@ -143,7 +143,7 @@ class ReminderSettingsNotifier extends AsyncNotifier<ReminderSettings> {
     await _notificationService.showNotification(
       id: 999,
       title: '🔔 Test Notification',
-      body: 'This is a test notification from IronFlow!',
+      body: 'This is a test notification from Progression Tracker!',
       payload: 'test',
     );
   }

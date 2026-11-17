@@ -248,3 +248,29 @@ extension BudgetLevelX on BudgetLevel {
         BudgetLevel.high => 'Premium foods & supplements',
       };
 }
+
+/// Canonical neutral reference metrics and profile used only as pre-setup
+/// fallbacks before the user saves personal body stats or nutrition targets.
+abstract final class UserProfileDefaults {
+  static const double weightKg = 70.0;
+  static const double heightCm = 175.0;
+  static const int age = 26;
+  static const int workoutDaysPerWeek = 3;
+  static const double targetWeightDeltaKg = 5.0;
+  static const double neckCm = 38.0;
+  static const double waistCm = 84.0;
+  static const double hipCm = 96.0;
+
+  static const UserProfile referenceProfile = UserProfile(
+    goal: FitnessGoal.maintain,
+    age: age,
+    weightKg: weightKg,
+    heightCm: heightCm,
+    fitnessLevel: FitnessLevel.intermediate,
+    equipment: EquipmentType.gym,
+    workoutDaysPerWeek: workoutDaysPerWeek,
+    budget: BudgetLevel.medium,
+    sex: BiologicalSex.male,
+    targetWeightKg: weightKg,
+  );
+}

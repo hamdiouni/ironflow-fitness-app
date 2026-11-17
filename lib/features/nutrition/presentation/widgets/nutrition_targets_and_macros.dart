@@ -6,8 +6,10 @@ import 'package:progression_tracker/shared/presentation/components/app_button.da
 import 'package:progression_tracker/shared/presentation/components/app_card.dart';
 import 'package:progression_tracker/features/nutrition/domain/entities/daily_nutrition_summary.dart';
 import 'package:progression_tracker/features/nutrition/domain/entities/diet_plan_state.dart';
+import 'package:progression_tracker/features/nutrition/domain/entities/nutrition_targets.dart';
 import 'package:progression_tracker/features/nutrition/domain/usecases/generate_diet_plan_use_case.dart';
 import 'package:progression_tracker/features/nutrition/presentation/providers/diet_plan_providers.dart';
+import 'package:progression_tracker/features/onboarding/domain/entities/user_profile.dart';
 import 'package:progression_tracker/features/onboarding/presentation/providers/onboarding_provider.dart';
 
 class DefaultTargetsDisplay extends ConsumerWidget {
@@ -17,6 +19,9 @@ class DefaultTargetsDisplay extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = AppThemeTokens.of(context);
     final userProfileAsync = ref.watch(userProfileProvider);
+    final hasUserProfile = userProfileAsync.valueOrNull != null;
+    final referenceProfile =
+        userProfileAsync.valueOrNull ?? UserProfileDefaults.referenceProfile;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacingMedium),
@@ -46,7 +51,7 @@ class DefaultTargetsDisplay extends ConsumerWidget {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'DAILY TARGET PROTOCOL',
+                      'DAILY TARGETS',
                       style: TextStyle(
                         fontFamily: AppTypography.displayFontFamily,
                         fontSize: 11,
@@ -64,7 +69,7 @@ class DefaultTargetsDisplay extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(tokens.radiusPill),
                   ),
                   child: Text(
-                    'STANDARD',
+                    hasUserProfile ? 'ESTIMATED' : 'REFERENCE',
                     style: TextStyle(
                       fontFamily: AppTypography.displayFontFamily,
                       fontSize: 9,
@@ -82,7 +87,7 @@ class DefaultTargetsDisplay extends ConsumerWidget {
                 Expanded(
                   child: _TargetTelemetryChip(
                     label: 'CALORIES',
-                    value: '2000',
+                    value: '${referenceProfile.dailyCalorieTarget.round()}',
                     unit: 'KCAL',
                     color: tokens.textPrimary,
                   ),
@@ -91,7 +96,7 @@ class DefaultTargetsDisplay extends ConsumerWidget {
                 Expanded(
                   child: _TargetTelemetryChip(
                     label: 'PROTEIN',
-                    value: '150',
+                    value: '${referenceProfile.dailyProteinTargetGrams.round()}',
                     unit: 'G',
                     color: tokens.protein,
                   ),
@@ -100,7 +105,7 @@ class DefaultTargetsDisplay extends ConsumerWidget {
                 Expanded(
                   child: _TargetTelemetryChip(
                     label: 'CARBS',
-                    value: '200',
+                    value: '${referenceProfile.dailyCarbTargetGrams.round()}',
                     unit: 'G',
                     color: tokens.carbs,
                   ),
@@ -109,7 +114,7 @@ class DefaultTargetsDisplay extends ConsumerWidget {
                 Expanded(
                   child: _TargetTelemetryChip(
                     label: 'FATS',
-                    value: '60',
+                    value: '${referenceProfile.dailyFatTargetGrams.round()}',
                     unit: 'G',
                     color: tokens.fats,
                   ),
@@ -470,9 +475,11 @@ class RemainingMacrosCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = AppThemeTokens.of(context);
 
-    final targetProtein = summary.target?.macros.protein ?? 150;
-    final targetCarbs = summary.target?.macros.carbs ?? 200;
-    final targetFats = summary.target?.macros.fats ?? 60;
+    final fallbackMacros = NutritionDefaults.fallbackMacros;
+    final targetProtein =
+        summary.target?.macros.protein ?? fallbackMacros.protein;
+    final targetCarbs = summary.target?.macros.carbs ?? fallbackMacros.carbs;
+    final targetFats = summary.target?.macros.fats ?? fallbackMacros.fats;
 
     final proteinRemaining = targetProtein - summary.totalProtein;
     final carbsRemaining = targetCarbs - summary.totalCarbs;

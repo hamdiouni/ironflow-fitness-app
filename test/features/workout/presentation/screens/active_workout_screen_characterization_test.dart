@@ -200,14 +200,14 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('READY TO TRAIN?'), findsOneWidget);
-      expect(find.text('Start a new session and log sets with telemetry.'), findsOneWidget);
+      expect(find.text('Start a new session and log your sets.'), findsOneWidget);
       expect(find.text('▶ BEGIN WORKOUT'), findsOneWidget);
 
       await tester.tap(find.text('▶ BEGIN WORKOUT'));
       await tester.pumpAndSettle();
 
       expect(notifier.startCalled, isTrue);
-      expect(find.text('ACTIVE WORKOUT'), findsOneWidget);
+      expect(find.text('WORKOUT'), findsOneWidget);
       expect(find.text('NO EXERCISES YET'), findsOneWidget);
     });
 
@@ -227,7 +227,7 @@ void main() {
       await tester.pumpWidget(buildTestWidget(notifier: notifier));
       await tester.pumpAndSettle();
 
-      expect(find.text('ACTIVE WORKOUT'), findsOneWidget);
+      expect(find.text('WORKOUT'), findsOneWidget);
       expect(find.text('NO EXERCISES YET'), findsOneWidget);
       expect(find.text('+ ADD EXERCISE'), findsOneWidget);
 
@@ -396,7 +396,7 @@ void main() {
 
       // Restored workout displays directly without "READY TO TRAIN?"
       expect(find.text('READY TO TRAIN?'), findsNothing);
-      expect(find.text('ACTIVE WORKOUT'), findsOneWidget);
+      expect(find.text('WORKOUT'), findsOneWidget);
       expect(find.text('Squat'), findsOneWidget);
       expect(find.text('SET 1: 120.0KG × 5'), findsOneWidget);
       expect(find.text('SET 2: 120.0KG × 5'), findsOneWidget);
@@ -468,6 +468,11 @@ void main() {
       );
 
       await tester.pumpWidget(buildTestWidget(notifier: notifier));
+      await tester.pumpAndSettle();
+
+      final menuBtn = find.byKey(const Key('active_workout_menu_button'));
+      expect(menuBtn, findsOneWidget);
+      await tester.tap(menuBtn);
       await tester.pumpAndSettle();
 
       final discardBtn = find.byKey(const Key('discard_workout_button'));

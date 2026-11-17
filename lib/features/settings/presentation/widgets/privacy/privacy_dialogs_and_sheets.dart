@@ -366,7 +366,7 @@ void showPrivacyPolicySheet(BuildContext context) {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'PRIVACY POLICY & TELEMETRY CHARTER',
+                  'PRIVACY POLICY & DATA CHARTER',
                   style: TextStyle(
                     fontFamily: AppTypography.displayFontFamily,
                     fontSize: 16,
@@ -389,7 +389,7 @@ void showPrivacyPolicySheet(BuildContext context) {
                 _policySection(
                   title: '1. Local-First Architecture',
                   body:
-                      'All workout telemetry, sets, repetitions, Rate of Perceived Exertion (RPE), nutrition logs, and body measurements remain strictly on your personal device by default.',
+                      'All workout data, sets, repetitions, Rate of Perceived Exertion (RPE), nutrition logs, and body measurements remain strictly on your personal device by default.',
                   tokens: tokens,
                 ),
                 _policySection(
