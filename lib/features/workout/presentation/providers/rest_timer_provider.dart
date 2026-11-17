@@ -1,11 +1,13 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../domain/services/rest_timer_live_surface.dart';
 import '../../domain/services/rest_timer_service.dart';
 import '../../../../core/providers/analytics_provider.dart';
 import '../../../../core/utils/record_ownership.dart';
 import '../../../../shared/presentation/services/app_haptics.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
+import '../../../notifications/data/services/rest_timer_live_notification.dart';
 import '../../../notifications/presentation/providers/notification_providers.dart';
 import 'workout_providers.dart';
 
@@ -61,9 +63,16 @@ class RestTimerState {
   }
 }
 
+/// Lock-screen / browser mirror of the rest timer (Wave 8.1, ADR-004).
+/// Override with `null` to disable the live surface.
+final restTimerLiveSurfaceProvider = Provider<RestTimerLiveSurface?>((ref) {
+  return RestTimerLiveNotification();
+});
+
 final restTimerServiceProvider = Provider<RestTimerService>((ref) {
   final notificationService = ref.watch(notificationServiceProvider);
   final stateManager = ref.watch(workoutStateManagerProvider);
+  final liveSurface = ref.watch(restTimerLiveSurfaceProvider);
   String? lastKnownUserId =
       ref.read(currentUserIdProvider) ?? RecordOwnershipRules.guestUserId;
   ref.listen<String?>(currentUserIdProvider, (_, next) {
@@ -73,6 +82,7 @@ final restTimerServiceProvider = Provider<RestTimerService>((ref) {
     notificationService: notificationService,
     stateManager: stateManager,
     currentUserId: () => lastKnownUserId,
+    liveSurface: liveSurface,
   );
   ref.onDispose(() => service.dispose());
   return service;

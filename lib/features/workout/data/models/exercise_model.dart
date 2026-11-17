@@ -21,6 +21,8 @@ class ExerciseModel with _$ExerciseModel {
     int? suggestedSets,
     // Phase 1 schema v2: stable catalog link (ExerciseDefinition.id).
     String? exerciseDefinitionId,
+    // Wave 8.3 (ADR-004): optional superset link. Nullable = old JSON loads.
+    String? supersetGroupId,
   }) = _ExerciseModel;
 
   factory ExerciseModel.fromJson(Map<String, dynamic> json) =>
@@ -35,6 +37,7 @@ class ExerciseModel with _$ExerciseModel {
       suggestedReps: exercise.suggestedReps,
       suggestedSets: exercise.suggestedSets,
       exerciseDefinitionId: exercise.exerciseDefinitionId,
+      supersetGroupId: exercise.supersetGroupId,
     );
   }
 }
@@ -49,6 +52,7 @@ extension ExerciseModelX on ExerciseModel {
       suggestedReps: suggestedReps,
       suggestedSets: suggestedSets,
       exerciseDefinitionId: exerciseDefinitionId,
+      supersetGroupId: supersetGroupId,
     );
   }
 }

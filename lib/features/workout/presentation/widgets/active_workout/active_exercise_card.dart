@@ -13,6 +13,7 @@ import 'package:progression_tracker/shared/widgets/exercise_media_stage.dart';
 import 'package:progression_tracker/features/workout/presentation/widgets/plate_calculator_sheet.dart';
 import 'package:progression_tracker/shared/presentation/services/app_haptics.dart';
 import 'package:progression_tracker/features/workout/domain/usecases/workout_metrics.dart';
+import 'package:progression_tracker/features/workout/domain/services/strength_engine.dart';
 
 class ActiveExerciseCard extends ConsumerStatefulWidget {
   const ActiveExerciseCard({
@@ -25,6 +26,7 @@ class ActiveExerciseCard extends ConsumerStatefulWidget {
     this.programExercise,
     this.weightUnit = WeightUnit.kg,
     this.isFocused = false,
+    this.supersetLabel,
   });
   final Exercise exercise;
   final bool isAnimating;
@@ -34,6 +36,7 @@ class ActiveExerciseCard extends ConsumerStatefulWidget {
   final ProgramExercise? programExercise;
   final WeightUnit weightUnit;
   final bool isFocused;
+  final String? supersetLabel;
   @override
   ConsumerState<ActiveExerciseCard> createState() => ActiveExerciseCardState();
 }
@@ -134,15 +137,71 @@ class ActiveExerciseCardState extends ConsumerState<ActiveExerciseCard> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        widget.exercise.name,
-                        style: TextStyle(
-                          color: tokens.textPrimary,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          fontFamily: AppTypography.fontFamilyHeadings,
-                          letterSpacing: -0.2,
-                        ),
+                      Row(
+                        children: [
+                          if (widget.supersetLabel != null)
+                            Container(
+                              key: Key('superset_badge_${widget.exercise.id}'),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              margin: const EdgeInsets.only(right: 6),
+                              decoration: BoxDecoration(
+                                color: tokens.warning.withValues(alpha: 0.18),
+                                borderRadius: BorderRadius.circular(tokens.radiusXs),
+                                border: Border.all(
+                                  color: tokens.warning,
+                                  width: 1,
+                                ),
+                              ),
+                              child: Text(
+                                widget.supersetLabel!,
+                                style: TextStyle(
+                                  fontFamily: AppTypography.displayFontFamily,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w800,
+                                  color: tokens.warning,
+                                  letterSpacing: 0.4,
+                                ),
+                              ),
+                            ),
+                          Expanded(
+                            child: Text(
+                              widget.exercise.name,
+                              style: TextStyle(
+                                color: tokens.textPrimary,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                fontFamily: AppTypography.fontFamilyHeadings,
+                                letterSpacing: -0.2,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Builder(
+                        builder: (_) {
+                          final bestE1rm = E1rmEngine.bestForExercise(widget.exercise);
+                          if (bestE1rm <= 0) return const SizedBox.shrink();
+                          final displayE1rm = widget.weightUnit == WeightUnit.lb
+                              ? WorkoutMetrics.fromCanonicalKg(bestE1rm, WeightUnit.lb)
+                              : bestE1rm;
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 2),
+                            child: Text(
+                              'e1RM: ${displayE1rm.toStringAsFixed(1)} ${widget.weightUnit.label}',
+                              style: TextStyle(
+                                color: tokens.kineticAccent,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                fontFamily: AppTypography.fontFamilyHeadings,
+                                fontFeatures: const [FontFeature.tabularFigures()],
+                              ),
+                            ),
+                          );
+                        },
                       ),
                       const SizedBox(height: 4),
                       // Display program exercise suggestion if available
@@ -285,7 +344,27 @@ class ActiveExerciseCardState extends ConsumerState<ActiveExerciseCard> {
                     child: InkWell(
                       onTap: () {
                         AppHaptics.shared.selectionChanged();
-                        setState(() => _selectedSetType = type);
+                        setState(() {
+                          _selectedSetType = type;
+                          if (type == SetType.drop &&
+                              widget.exercise.sets.isNotEmpty) {
+                            final lastSet = widget.exercise.sets.last;
+                            final planned = DropSetPlanner.plan(
+                              startWeight: lastSet.weight,
+                              drops: 1,
+                            );
+                            if (planned.isNotEmpty) {
+                              final display = widget.weightUnit == WeightUnit.lb
+                                  ? WorkoutMetrics.fromCanonicalKg(
+                                      planned.first,
+                                      WeightUnit.lb,
+                                    )
+                                  : planned.first;
+                              _weightController.text =
+                                  display.toStringAsFixed(1);
+                            }
+                          }
+                        });
                       },
                       borderRadius: BorderRadius.circular(tokens.radiusSm),
                       child: Container(

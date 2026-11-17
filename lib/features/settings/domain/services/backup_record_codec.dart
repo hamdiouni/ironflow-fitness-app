@@ -38,6 +38,7 @@ class BackupRecordCodec {
                 'suggestedReps': e.suggestedReps,
                 'suggestedSets': e.suggestedSets,
                 'exerciseDefinitionId': e.exerciseDefinitionId,
+                'supersetGroupId': e.supersetGroupId,
               },
             )
             .toList(),
@@ -88,6 +89,7 @@ class BackupRecordCodec {
           suggestedReps: (eMap['suggestedReps'] as num?)?.toInt(),
           suggestedSets: (eMap['suggestedSets'] as num?)?.toInt(),
           exerciseDefinitionId: eMap['exerciseDefinitionId'] as String?,
+          supersetGroupId: eMap['supersetGroupId'] as String?,
         );
       }).toList();
 

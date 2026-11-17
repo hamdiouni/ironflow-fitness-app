@@ -1,13 +1,16 @@
 import 'dart:async';
 import '../../../notifications/domain/services/notification_service.dart';
 import '../repositories/rest_timer_state_persistence.dart';
+import 'rest_timer_live_surface.dart';
 
 /// Service for managing rest timer between sets using an absolute end timestamp
-/// as the source of truth, integrated with inexact local notifications (TRN-02).
+/// as the source of truth, integrated with inexact local notifications (TRN-02)
+/// and an optional lock-screen / browser live surface (Wave 8.1, ADR-004).
 class RestTimerService {
   final NotificationService? _notificationService;
   final RestTimerStatePersistence? _stateManager;
   final String? Function()? _currentUserId;
+  final RestTimerLiveSurface? _liveSurface;
 
   Timer? _timer;
   DateTime? _targetEndTime;
@@ -24,9 +27,21 @@ class RestTimerService {
     NotificationService? notificationService,
     RestTimerStatePersistence? stateManager,
     String? Function()? currentUserId,
+    RestTimerLiveSurface? liveSurface,
   })  : _notificationService = notificationService,
         _stateManager = stateManager,
-        _currentUserId = currentUserId;
+        _currentUserId = currentUserId,
+        _liveSurface = liveSurface;
+
+  void _safeSurface(void Function(RestTimerLiveSurface surface) action) {
+    final surface = _liveSurface;
+    if (surface == null) return;
+    try {
+      action(surface);
+    } catch (_) {
+      // A live surface must never break the rest timer.
+    }
+  }
 
   String? get _scopedUserId {
     try {
@@ -59,6 +74,10 @@ class RestTimerService {
       userId: _scopedUserId,
     );
     _notificationService?.scheduleRestTimer(_targetEndTime!);
+    final endTime = _targetEndTime!;
+    _safeSurface(
+      (s) => s.showRunning(endTime: endTime, totalSeconds: durationSeconds),
+    );
 
     // Notify initial state
     onTick?.call(_remainingSeconds);
@@ -95,6 +114,7 @@ class RestTimerService {
     _pausedRemainingSeconds = null;
     _stateManager?.clearRestTimer(userId: _scopedUserId);
     _notificationService?.cancelRestTimer();
+    _safeSurface((s) => s.clear());
   }
 
   /// Pause the timer
@@ -119,6 +139,8 @@ class RestTimerService {
     _targetEndTime = null;
     _stateManager?.clearRestTimer(userId: _scopedUserId);
     _notificationService?.cancelRestTimer();
+    final paused = _pausedRemainingSeconds!;
+    _safeSurface((s) => s.showPaused(remainingSeconds: paused));
   }
 
   /// Resume the timer with a recomputed target timestamp
@@ -146,6 +168,11 @@ class RestTimerService {
         userId: _scopedUserId,
       );
       _notificationService?.scheduleRestTimer(_targetEndTime!);
+      final endTime = _targetEndTime!;
+      final total = _totalSeconds;
+      _safeSurface(
+        (s) => s.showRunning(endTime: endTime, totalSeconds: total),
+      );
       onTick?.call(_remainingSeconds);
     } else if (_pausedRemainingSeconds != null) {
       _pausedRemainingSeconds =
@@ -156,6 +183,8 @@ class RestTimerService {
         return;
       }
       _remainingSeconds = _pausedRemainingSeconds!;
+      final paused = _pausedRemainingSeconds!;
+      _safeSurface((s) => s.showPaused(remainingSeconds: paused));
       onTick?.call(_remainingSeconds);
     }
   }
@@ -173,6 +202,11 @@ class RestTimerService {
           _totalSeconds = saved.totalSeconds;
           _remainingSeconds = _targetEndTime!.difference(now).inSeconds;
           _isRunning = true;
+          final endTime = saved.targetEndTime;
+          final total = saved.totalSeconds;
+          _safeSurface(
+            (s) => s.showRunning(endTime: endTime, totalSeconds: total),
+          );
           onTick?.call(_remainingSeconds);
           _startForegroundTicker();
           return;
@@ -196,15 +230,19 @@ class RestTimerService {
     }
   }
 
-  /// Complete the timer
-  void _complete() {
+  /// Complete the timer. [natural] is false when the user skipped, so live
+  /// surfaces do not announce "rest complete" for a skip.
+  void _complete({bool natural = true}) {
     stop();
+    if (natural) {
+      _safeSurface((s) => s.showCompleted());
+    }
     onComplete?.call();
   }
 
   /// Skip the timer
   void skip() {
-    _complete();
+    _complete(natural: false);
   }
 
   /// Format time as MM:SS

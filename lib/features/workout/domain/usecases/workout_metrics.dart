@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import '../entities/exercise.dart';
 import '../entities/set_entry.dart';
 import '../entities/workout.dart';
+import '../services/strength_engine.dart';
 
 /// Weight unit supported in active workout entry and display.
 enum WeightUnit {
@@ -108,14 +109,11 @@ class WorkoutMetrics {
   }
 
   /// Calculates estimated 1RM using Epley's formula with a strict 10-rep cap:
-  /// `weight * (1 + min(reps, 10) / 30.0)`.
+  /// `weight * (1 + min(reps, 10) / 30.0)`; a 1-rep set returns its weight.
   /// Non-finite, negative, or zero weights return `0.0`.
+  /// Delegates to [E1rmEngine] (Wave 8.3) so every screen uses one formula.
   static double calculateEstimated1RM(double weight, int reps) {
-    if (!weight.isFinite || weight <= 0 || reps <= 0) {
-      return 0.0;
-    }
-    final cappedReps = math.min(reps, maxRepCapFor1RM);
-    return weight * (1.0 + (cappedReps / 30.0));
+    return E1rmEngine.estimate(weight, reps);
   }
 
   /// Evaluates whether [newSet] is a personal record against [history] for the

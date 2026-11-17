@@ -20,6 +20,7 @@ import 'package:progression_tracker/features/ai/presentation/providers/global_ai
 import 'package:progression_tracker/shared/presentation/services/app_haptics.dart';
 import 'package:progression_tracker/features/workout/domain/usecases/calculate_workout_volume_use_case.dart';
 import 'package:progression_tracker/features/workout/domain/usecases/workout_metrics.dart';
+import '../../domain/services/strength_engine.dart';
 import '../widgets/active_workout/active_exercise_card.dart';
 import '../widgets/active_workout/active_rest_timer_section.dart';
 import '../widgets/active_workout/active_workout_chrome.dart';
@@ -211,29 +212,50 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
                 pe.exerciseName.toLowerCase() == exercise.name.toLowerCase(),
           );
           final isSelected = exercise.id == activeExerciseId;
+          final isLinked =
+              SupersetEngine.isLinkedWithNext(workout.exercises, index);
+          final supersetLabel =
+              SupersetEngine.labelFor(workout.exercises, index);
 
-          return Listener(
-            onPointerDown: (_) {
-              if (_selectedExerciseId != exercise.id) {
-                setState(() => _selectedExerciseId = exercise.id);
-              }
-            },
-            child: ActiveExerciseCard(
-              key: _cardKeyFor(exercise.id),
-              exercise: exercise,
-              programExercise: programExercise,
-              weightUnit: _weightUnit,
-              isFocused: isSelected,
-              isAnimating: _animatingExerciseId == exercise.id,
-              onAnimationComplete: () {
-                if (mounted) setState(() => _animatingExerciseId = null);
-              },
-              onLogSet: (reps, weight, [type = SetType.normal, rpe]) =>
-                  _logSet(exercise, reps, weight, type, rpe),
-              onUpdateSetType: (setIndex, newType) => ref
-                  .read(workoutNotifierProvider.notifier)
-                  .updateSetType(exercise.id, setIndex, newType),
-            ),
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Listener(
+                onPointerDown: (_) {
+                  if (_selectedExerciseId != exercise.id) {
+                    setState(() => _selectedExerciseId = exercise.id);
+                  }
+                },
+                child: ActiveExerciseCard(
+                  key: _cardKeyFor(exercise.id),
+                  exercise: exercise,
+                  programExercise: programExercise,
+                  weightUnit: _weightUnit,
+                  isFocused: isSelected,
+                  isAnimating: _animatingExerciseId == exercise.id,
+                  supersetLabel: supersetLabel,
+                  onAnimationComplete: () {
+                    if (mounted) setState(() => _animatingExerciseId = null);
+                  },
+                  onLogSet: (reps, weight, [type = SetType.normal, rpe]) =>
+                      _logSet(exercise, reps, weight, type, rpe),
+                  onUpdateSetType: (setIndex, newType) => ref
+                      .read(workoutNotifierProvider.notifier)
+                      .updateSetType(exercise.id, setIndex, newType),
+                ),
+              ),
+              if (index < workout.exercises.length - 1)
+                SupersetConnectorDivider(
+                  key: Key('toggle_superset_${exercise.id}'),
+                  isLinked: isLinked,
+                  onToggle: () {
+                    ref.read(appHapticsProvider).selectionChanged();
+                    ref
+                        .read(workoutNotifierProvider.notifier)
+                        .toggleSupersetLink(index);
+                  },
+                ),
+            ],
           );
         },
       );
@@ -580,9 +602,38 @@ class _ActiveWorkoutScreenState extends ConsumerState<ActiveWorkoutScreen> {
       
       if (mounted) setState(() => _animatingExerciseId = exercise.id);
       
-      AppLogger.debug('📊 [WorkoutUI] Starting rest timer...');
-      ref.read(restTimerProvider.notifier).start(90); // 90 seconds default rest time
-      AppLogger.debug('✅ [WorkoutUI] Rest timer started');
+      final currentWorkout = ref.read(workoutNotifierProvider).maybeWhen(
+        inProgress: (w, _) => w,
+        orElse: () => null,
+      );
+      final exIndex =
+          currentWorkout?.exercises.indexWhere((e) => e.id == exercise.id) ?? -1;
+      final shouldRest = currentWorkout == null || exIndex == -1
+          ? (type != SetType.drop)
+          : SupersetEngine.shouldRestAfter(
+              currentWorkout.exercises,
+              exIndex,
+              type: type,
+            );
+
+      if (shouldRest) {
+        AppLogger.debug('📊 [WorkoutUI] Starting rest timer...');
+        ref.read(restTimerProvider.notifier).start(90); // 90 seconds default rest time
+        AppLogger.debug('✅ [WorkoutUI] Rest timer started');
+      } else {
+        AppLogger.debug(
+          '⏭️ [WorkoutUI] Rest skipped for drop set / superset transition',
+        );
+      }
+
+      if (currentWorkout != null && exIndex != -1) {
+        final nextIndex =
+            SupersetEngine.nextInRotation(currentWorkout.exercises, exIndex);
+        if (nextIndex != null && nextIndex != exIndex) {
+          final nextEx = currentWorkout.exercises[nextIndex];
+          setState(() => _selectedExerciseId = nextEx.id);
+        }
+      }
       
       if (isPR && mounted && context.mounted) {
         AppLogger.debug('🎉 [WorkoutUI] New PR detected for ${exercise.name}!');

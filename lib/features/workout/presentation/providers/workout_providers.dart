@@ -9,6 +9,7 @@ import '../../data/repositories/synced_workout_repository.dart';
 import '../../data/repositories/workout_repository_impl.dart';
 import '../../domain/entities/entities.dart';
 import '../../domain/repositories/workout_repository.dart';
+import '../../domain/services/strength_engine.dart';
 import '../../domain/usecases/usecases.dart';
 import '../managers/workout_state_manager.dart';
 import 'active_program_providers.dart';
@@ -278,6 +279,8 @@ class WorkoutNotifier extends Notifier<WorkoutState> {
       sets: const [],
       suggestedReps: e.suggestedReps,
       suggestedSets: e.suggestedSets,
+      // Wave 8.3: repeat keeps the superset layout of the template.
+      supersetGroupId: e.supersetGroupId,
     )).toList();
     await start(initialExercises: freshExercises);
   }
@@ -477,6 +480,31 @@ class WorkoutNotifier extends Notifier<WorkoutState> {
       await _stateManager.saveState(updatedWorkout, startTime, userId: _activeStateUserId);
     } catch (e) {
       AppLogger.debug('❌ [Workout] Failed to update set type: $e');
+    }
+  }
+
+  /// Wave 8.3: links/unlinks the exercise at [upperIndex] with the one below
+  /// it as a superset and persists the in-progress state.
+  Future<void> toggleSupersetLink(int upperIndex) async {
+    try {
+      final current = state;
+      if (current is! _InProgress) return;
+      final workout = current.workout;
+      final updated = SupersetEngine.toggleLinkWithNext(
+        workout.exercises,
+        upperIndex,
+        newGroupId: () => const Uuid().v4(),
+      );
+      if (identical(updated, workout.exercises)) return;
+      final updatedWorkout = workout.copyWith(exercises: updated);
+      state = WorkoutState.inProgress(updatedWorkout, current.startTime);
+      await _stateManager.saveState(
+        updatedWorkout,
+        current.startTime,
+        userId: _activeStateUserId,
+      );
+    } catch (e) {
+      AppLogger.debug('❌ [Workout] Failed to toggle superset: $e');
     }
   }
 

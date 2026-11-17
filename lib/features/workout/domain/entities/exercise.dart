@@ -24,5 +24,10 @@ class Exercise with _$Exercise {
     /// [name] remains the display snapshot; identity/history should prefer
     /// this id when present. Null for legacy/custom entries.
     String? exerciseDefinitionId,
+
+    /// Wave 8.3 (ADR-004): exercises that share the same non-null id and sit
+    /// next to each other form one superset. Null = not in a superset, so
+    /// every pre-Wave-8 record stays valid.
+    String? supersetGroupId,
   }) = _Exercise;
 }

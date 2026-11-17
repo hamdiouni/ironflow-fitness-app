@@ -6,6 +6,7 @@ import 'package:progression_tracker/features/analytics/domain/entities/strength_
 import 'package:progression_tracker/features/analytics/domain/entities/weight_tracking.dart';
 import 'package:progression_tracker/features/analytics/domain/repositories/analytics_repository.dart';
 import 'package:progression_tracker/features/workout/domain/repositories/workout_repository.dart';
+import 'package:progression_tracker/features/workout/domain/services/strength_engine.dart';
 import 'package:progression_tracker/features/body/domain/repositories/body_repository.dart';
 import 'package:progression_tracker/features/onboarding/domain/entities/user_profile.dart';
 
@@ -67,9 +68,12 @@ class AnalyticsRepositoryImpl implements AnalyticsRepository {
             totalReps += reps;
           }
 
-          // Estimate 1RM using Epley formula: weight * (1 + reps/30)
+          // Wave 8.3: e1RM comes from the single best qualifying set
+          // (E1rmEngine: warm-up/drop sets excluded, 10-rep cap). The old
+          // formula mixed the heaviest weight with the average reps of all
+          // sets, including warm-ups, which inflated the estimate.
           final avgReps = totalSets > 0 ? totalReps / totalSets : 0;
-          final estimated1RM = maxWeight * (1 + avgReps / 30);
+          final estimated1RM = E1rmEngine.bestForExercise(exercise);
 
           dataPoints.add(StrengthDataPoint(
             date: workout.date,

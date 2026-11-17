@@ -255,3 +255,63 @@ class KeyboardShortcutsHint extends StatelessWidget {
     );
   }
 }
+
+/// Connector button rendered between consecutive exercises allowing lifters
+/// to link or unlink them as a superset (Wave 8.3, ADR-004).
+class SupersetConnectorDivider extends StatelessWidget {
+  const SupersetConnectorDivider({
+    super.key,
+    required this.isLinked,
+    required this.onToggle,
+  });
+
+  final bool isLinked;
+  final VoidCallback onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: InkWell(
+        onTap: onToggle,
+        borderRadius: BorderRadius.circular(tokens.radiusSm),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: isLinked
+                ? tokens.warning.withValues(alpha: 0.15)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(tokens.radiusSm),
+            border: Border.all(
+              color: isLinked
+                  ? tokens.warning
+                  : tokens.borderSubtle,
+              width: 1,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                isLinked ? Icons.link_off : Icons.link,
+                size: 14,
+                color: isLinked ? tokens.warning : tokens.textMuted,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                isLinked ? 'Linked Superset · Tap to Unlink' : 'Link as Superset',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  fontFamily: AppTypography.displayFontFamily,
+                  color: isLinked ? tokens.warning : tokens.textMuted,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
