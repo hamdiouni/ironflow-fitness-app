@@ -35,7 +35,9 @@ class LocalAICoach {
 
   bool _isMedicalOrSafetyRisk(String message) {
     return message.contains('chest pain') ||
+        message.contains('sharp pain') ||
         message.contains('stabbing pain') ||
+        message.contains('pop in') ||
         message.contains('dizzy') ||
         message.contains('dizziness') ||
         message.contains('breathless') ||
@@ -44,6 +46,7 @@ class LocalAICoach {
         message.contains('steroid') ||
         message.contains('prescribe') ||
         message.contains('medication') ||
+        message.contains('pills') ||
         message.contains('drug') ||
         message.contains('torn') ||
         message.contains('fracture') ||
@@ -54,9 +57,9 @@ class LocalAICoach {
   String _generateMedicalSafetyAdvice(String message) {
     return '⚠️ **Important Health & Safety Notice**\n\n'
         'I cannot provide medical diagnoses, prescribe medications, or evaluate acute symptoms.\n\n'
-        '• If you are experiencing acute pain, severe dizziness, chest discomfort, or shortness of breath, please **stop exercising immediately and consult a doctor or emergency medical professional**.\n'
-        '• For persistent musculoskeletal swelling or suspected injuries, obtain a formal clinical evaluation from a licensed healthcare provider before resuming training.\n'
-        '• This app does not provide medical advice or endorse unregulated anabolic compounds.';
+        '• If you feel chest pain, sharp joint pain, or dizziness, **stop exercising immediately and consult a doctor**.\n'
+        '• Obtain a clinical evaluation from a licensed healthcare provider before resuming training.\n\n'
+        '**Next Step:** Stop your workout right now and consult a licensed doctor or medical professional.';
   }
   
   bool _isAboutWorkout(String message) {

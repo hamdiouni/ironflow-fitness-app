@@ -5,6 +5,7 @@ import 'package:progression_tracker/features/workout/domain/repositories/workout
 import 'package:progression_tracker/features/workout/domain/repositories/active_program_repository.dart';
 import 'package:progression_tracker/features/nutrition/domain/repositories/nutrition_repository.dart';
 import 'package:progression_tracker/features/body/domain/repositories/body_repository.dart';
+import 'package:progression_tracker/features/body/domain/services/muscle_recovery_calculator.dart';
 import 'package:progression_tracker/features/workout/domain/entities/entities.dart';
 import 'package:progression_tracker/features/nutrition/domain/entities/entities.dart';
 import 'package:progression_tracker/features/body/domain/entities/body_entry.dart';
@@ -35,9 +36,18 @@ class BuildAIContextUseCase {
         _nutritionRepository = nutritionRepository,
         _bodyRepository = bodyRepository;
 
-  /// Build comprehensive context string for AI
-  Future<String> execute() async {
+  /// Build comprehensive context string for AI (Wave 7.2 — consent-first, units, streaks, recovery).
+  Future<String> execute({
+    bool hasConsent = true,
+    String unitLabel = 'kg',
+  }) async {
+    if (!hasConsent) {
+      return 'USER PRIVACY:\n- Personalization consent is disabled.\n- Preferred units: $unitLabel';
+    }
+
     final buffer = StringBuffer();
+    buffer.writeln('PREFERRED UNITS: $unitLabel');
+    buffer.writeln();
 
     // Get current user
     final user = await _authRepository.getCurrentUser();
@@ -55,13 +65,13 @@ class BuildAIContextUseCase {
     buffer.writeln(_buildCurrentProgramSection(activeProgram));
     buffer.writeln();
 
-    // 3. Recent Workouts (Last 12 weeks)
+    // 3. Recent Workouts (Last 12 weeks) + Streaks + Muscle Recovery
     final twelveWeeksAgo = DateTime.now().subtract(const Duration(days: 84));
     final recentWorkouts = await _workoutRepository.getWorkoutsByDateRange(
       twelveWeeksAgo,
       DateTime.now(),
     );
-    buffer.writeln(_buildRecentWorkoutsSection(recentWorkouts));
+    buffer.writeln(_buildRecentWorkoutsSection(recentWorkouts, unitLabel: unitLabel));
     buffer.writeln();
 
     // 4. Nutrition (Last 7 days)
@@ -148,21 +158,35 @@ class BuildAIContextUseCase {
     return buffer.toString();
   }
 
-  String _buildRecentWorkoutsSection(List<Workout> workouts) {
+  String _buildRecentWorkoutsSection(
+    List<Workout> workouts, {
+    String unitLabel = 'kg',
+  }) {
     if (workouts.isEmpty) {
       return 'RECENT WORKOUTS (Last 12 weeks):\n- No workouts logged';
     }
 
     final buffer = StringBuffer('RECENT WORKOUTS (Last 12 weeks):');
     buffer.writeln('\n- Total workouts: ${workouts.length}');
-    
+    final streak = WorkoutStreakCalculator.calculateFromDates(
+      workouts.map((w) => w.date),
+    );
+    buffer.writeln(
+      '- Active streak: ${streak.currentStreak} days (Longest: ${streak.longestStreak} days)',
+    );
+    final recoveryMap = const MuscleRecoveryCalculator().calculate(
+      workouts: workouts,
+    );
+    final freshCount = recoveryMap.values.where((r) => r.score >= 0.85).length;
+    buffer.writeln('- Muscle recovery: $freshCount / ${recoveryMap.length} regions fresh (>=85% est.)');
+
     // Calculate average weekly volume
     final totalVolume = workouts.fold<double>(
       0,
       (sum, workout) => sum + workout.totalVolume,
     );
     final avgWeeklyVolume = totalVolume / 12;
-    buffer.writeln('- Average weekly volume: ${avgWeeklyVolume.toStringAsFixed(0)} lbs');
+    buffer.writeln('- Average weekly volume: ${avgWeeklyVolume.toStringAsFixed(0)} $unitLabel');
     
     // Track exercise progression
     final exerciseProgressions = _calculateExerciseProgressions(workouts);
@@ -173,7 +197,7 @@ class BuildAIContextUseCase {
         final progression = entry.value;
         final change = progression['change'] as double;
         final changeStr = change >= 0 ? '+${change.toStringAsFixed(0)}' : change.toStringAsFixed(0);
-        buffer.writeln('  • $exerciseName: ${progression['start']?.toStringAsFixed(0)}lbs → ${progression['end']?.toStringAsFixed(0)}lbs ($changeStr lbs)');
+        buffer.writeln('  • $exerciseName: ${progression['start']?.toStringAsFixed(0)}$unitLabel → ${progression['end']?.toStringAsFixed(0)}$unitLabel ($changeStr $unitLabel)');
       }
     }
 

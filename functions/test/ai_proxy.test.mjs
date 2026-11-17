@@ -356,5 +356,78 @@ describe('IronFlow Cloud Functions AI Proxy (Wave 1 Step 6 — ADR-001)', () => 
     assert.equal(timeoutRefunded, true);
     assert.equal(timeoutCount, 0);
   });
+
+  it('streams SSE chunks incrementally without buffering the whole upstream response and enforces safety thresholds (Wave 7.1)', async () => {
+    const receivedChunks = [];
+    let streamStarted = false;
+    let streamEnded = false;
+    let capturedBody = null;
+
+    const encoder = new TextEncoder();
+    const readableStream = new ReadableStream({
+      start(controller) {
+        controller.enqueue(
+          encoder.encode('data: {"candidates":[{"content":{"parts":[{"text":"Part A "}]}}]}\n\n'),
+        );
+        controller.enqueue(
+          encoder.encode('data: {"candidates":[{"content":{"parts":[{"text":"Part B"}]}}]}\n\n'),
+        );
+        controller.close();
+      },
+    });
+
+    const res = await handleAiProxyRequest({
+      method: 'POST',
+      headers: { authorization: 'Bearer valid' },
+      body: makeValidBody({
+        stream: true,
+        systemInstruction: {
+          parts: [{ text: 'You are an evidence-based strength coach.' }],
+        },
+        safetySettings: [
+          { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+        ],
+      }),
+      verifyIdToken: async () => ({ uid: 'u_stream' }),
+      enforceAppCheck: false,
+      checkAndIncrementDailyQuota: async () => ({ allowed: true, requestCount: 1 }),
+      geminiApiKey: 'secret',
+      fetchImpl: async (_url, options) => {
+        capturedBody = JSON.parse(options.body);
+        return {
+          ok: true,
+          status: 200,
+          body: readableStream,
+        };
+      },
+      onStreamStart: () => {
+        streamStarted = true;
+      },
+      onStreamChunk: (chunk) => {
+        receivedChunks.push(chunk);
+      },
+      onStreamEnd: () => {
+        streamEnded = true;
+      },
+      logger: () => {},
+    });
+
+    assert.equal(res.status, 200);
+    assert.equal(res.streamed, true);
+    assert.equal(streamStarted, true);
+    assert.equal(streamEnded, true);
+    assert.equal(receivedChunks.length, 2);
+    assert.ok(receivedChunks[0].includes('Part A '));
+    assert.ok(receivedChunks[1].includes('Part B'));
+    // Verify native systemInstruction was forwarded
+    assert.equal(
+      capturedBody.systemInstruction.parts[0].text,
+      'You are an evidence-based strength coach.',
+    );
+    // Verify BLOCK_NONE was overridden with BLOCK_MEDIUM_AND_ABOVE
+    for (const s of capturedBody.safetySettings) {
+      assert.equal(s.threshold, 'BLOCK_MEDIUM_AND_ABOVE');
+    }
+  });
 });
 

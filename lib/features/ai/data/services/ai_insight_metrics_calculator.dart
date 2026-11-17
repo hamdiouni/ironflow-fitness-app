@@ -4,12 +4,39 @@ import 'package:progression_tracker/features/body/domain/entities/body_entry.dar
 import 'package:progression_tracker/features/nutrition/domain/entities/daily_nutrition_summary.dart';
 import 'package:progression_tracker/features/nutrition/domain/entities/nutrition_targets.dart';
 import 'package:progression_tracker/features/workout/data/exercise_database.dart';
+import 'package:progression_tracker/features/workout/domain/entities/exercise.dart';
 import 'package:progression_tracker/features/workout/domain/entities/exercise_definition.dart';
 import 'package:progression_tracker/features/workout/domain/entities/workout.dart';
+import 'package:progression_tracker/features/workout/domain/services/exercise_catalog.dart';
 
 /// Pure calculation and formatting helper for [AIInsightsEngineImpl].
 class AIInsightMetricsCalculator {
   const AIInsightMetricsCalculator();
+
+  static ExerciseDefinition? _resolveDefinition(Exercise exercise) {
+    final storedId = exercise.exerciseDefinitionId;
+    if (storedId != null && storedId.isNotEmpty) {
+      final byId = ExerciseCatalog.getById(
+        storedId,
+        exerciseName: exercise.name,
+      );
+      if (byId != null) return byId;
+    }
+    return ExerciseCatalog.getByName(exercise.name) ??
+        ExerciseDatabase.all
+            .where((d) => d.name.toLowerCase() == exercise.name.toLowerCase())
+            .firstOrNull;
+  }
+
+  static String _canonicalExerciseIdentity(Exercise exercise) {
+    final def = _resolveDefinition(exercise);
+    return def?.id.toLowerCase() ?? exercise.name.trim().toLowerCase();
+  }
+
+  static String _canonicalIdentityForName(String name) {
+    final def = ExerciseCatalog.getByName(name);
+    return def?.id.toLowerCase() ?? name.trim().toLowerCase();
+  }
 
   double calculateVolume(Workout workout) {
     double totalVolume = 0.0;
@@ -69,9 +96,16 @@ class AIInsightMetricsCalculator {
     final mostRecentWorkout = sortedWorkouts.first;
     final historicalWorkouts = sortedWorkouts.skip(1).toList();
     
+    final targetKey = specificExercise != null
+        ? _canonicalIdentityForName(specificExercise)
+        : null;
+
     // Check each exercise in the most recent workout
     for (final exercise in mostRecentWorkout.exercises) {
-      if (specificExercise != null && exercise.name != specificExercise) {
+      final exKey = _canonicalExerciseIdentity(exercise);
+      if (targetKey != null &&
+          exKey != targetKey &&
+          exercise.name != specificExercise) {
         continue;
       }
       
@@ -80,11 +114,11 @@ class AIInsightMetricsCalculator {
           ? 0.0 
           : exercise.sets.map((s) => s.weight).reduce((a, b) => a > b ? a : b);
       
-      // Find the historical maximum for this exercise
+      // Find the historical maximum for this exercise (resolved via alias catalog)
       double historicalMaxWeight = 0.0;
       for (final workout in historicalWorkouts) {
         for (final histExercise in workout.exercises) {
-          if (histExercise.name == exercise.name) {
+          if (_canonicalExerciseIdentity(histExercise) == exKey) {
             final exerciseMax = histExercise.sets.isEmpty 
                 ? 0.0 
                 : histExercise.sets.map((s) => s.weight).reduce((a, b) => a > b ? a : b);
@@ -121,16 +155,17 @@ class AIInsightMetricsCalculator {
     
     // Check each exercise in the most recent workout
     for (final exercise in mostRecentWorkout.exercises) {
+      final exKey = _canonicalExerciseIdentity(exercise);
       // Find the maximum weight for this exercise in the recent workout
       final recentMaxWeight = exercise.sets.isEmpty 
           ? 0.0 
           : exercise.sets.map((s) => s.weight).reduce((a, b) => a > b ? a : b);
       
-      // Find the historical maximum for this exercise
+      // Find the historical maximum for this exercise (resolved via alias catalog)
       double historicalMaxWeight = 0.0;
       for (final workout in historicalWorkouts) {
         for (final histExercise in workout.exercises) {
-          if (histExercise.name == exercise.name) {
+          if (_canonicalExerciseIdentity(histExercise) == exKey) {
             final exerciseMax = histExercise.sets.isEmpty 
                 ? 0.0 
                 : histExercise.sets.map((s) => s.weight).reduce((a, b) => a > b ? a : b);
@@ -144,6 +179,10 @@ class AIInsightMetricsCalculator {
       // Add to PR details if it's a new record
       if (recentMaxWeight > historicalMaxWeight) {
         prDetails[exercise.name] = recentMaxWeight;
+        final canonicalName = _resolveDefinition(exercise)?.name;
+        if (canonicalName != null && canonicalName != exercise.name) {
+          prDetails[canonicalName] = recentMaxWeight;
+        }
       }
     }
     
@@ -169,10 +208,7 @@ class AIInsightMetricsCalculator {
     // Track when each muscle group was last trained
     for (final workout in sortedWorkouts) {
       for (final exercise in workout.exercises) {
-        // Find the muscle group for this exercise
-        final exerciseDefinition = ExerciseDatabase.all
-            .where((def) => def.name.toLowerCase() == exercise.name.toLowerCase())
-            .firstOrNull;
+        final exerciseDefinition = _resolveDefinition(exercise);
         
         if (exerciseDefinition != null) {
           final muscleGroup = exerciseDefinition.muscleGroup;

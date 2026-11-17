@@ -13,10 +13,37 @@ export const ALLOWED_MODELS = new Set([
 export const DEFAULT_MODEL = 'gemini-2.5-flash';
 export const MAX_PROMPT_CHARS = 8000;
 export const MAX_TOTAL_PAYLOAD_CHARS = 24000;
+export const MAX_IMAGE_BASE64_CHARS = 1500000;
 export const MAX_MESSAGES_COUNT = 20;
+export const DEFAULT_MAX_OUTPUT_TOKENS = 1024;
 export const MAX_OUTPUT_TOKENS_LIMIT = 4096;
 export const DEFAULT_DAILY_QUOTA = 50;
 export const DEFAULT_TIMEOUT_MS = 25000;
+
+export const ALLOWED_IMAGE_MIME_TYPES = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+]);
+
+export const DEFAULT_SAFETY_SETTINGS = [
+  {
+    category: 'HARM_CATEGORY_HARASSMENT',
+    threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+  },
+  {
+    category: 'HARM_CATEGORY_HATE_SPEECH',
+    threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+  },
+  {
+    category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+    threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+  },
+  {
+    category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+    threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+  },
+];
 
 /**
  * Hashes a user ID with SHA-256 (truncated to 12 hex chars) so operational logs
@@ -94,6 +121,7 @@ export function validateProxyPayload(body) {
   }
 
   let totalChars = 0;
+  let hasInlineMedia = false;
   for (const item of contents) {
     if (!item || typeof item !== 'object' || !Array.isArray(item.parts)) {
       return {
@@ -104,6 +132,27 @@ export function validateProxyPayload(body) {
       };
     }
     for (const part of item.parts) {
+      if (part?.inlineData && typeof part.inlineData === 'object') {
+        const mimeType = String(part.inlineData.mimeType ?? '').trim();
+        const data = String(part.inlineData.data ?? '').trim();
+        if (!ALLOWED_IMAGE_MIME_TYPES.has(mimeType) || data.length === 0) {
+          return {
+            ok: false,
+            status: 400,
+            code: 'INVALID_MEDIA_FORMAT',
+            message: 'Inline media must be image/jpeg, image/png, or image/webp.',
+          };
+        }
+        if (data.length > MAX_IMAGE_BASE64_CHARS) {
+          return {
+            ok: false,
+            status: 400,
+            code: 'PAYLOAD_TOO_LARGE',
+            message: `Inline image exceeds maximum size limit.`,
+          };
+        }
+        hasInlineMedia = true;
+      }
       const text = typeof part?.text === 'string' ? part.text : '';
       if (text.length > MAX_PROMPT_CHARS) {
         return {
@@ -117,7 +166,32 @@ export function validateProxyPayload(body) {
     }
   }
 
-  if (totalChars === 0) {
+  let validatedSystemInstruction = undefined;
+  if (body.systemInstruction && typeof body.systemInstruction === 'object') {
+    const rawParts = Array.isArray(body.systemInstruction.parts)
+      ? body.systemInstruction.parts
+      : [];
+    const cleanParts = [];
+    for (const part of rawParts) {
+      const text = typeof part?.text === 'string' ? part.text.trim() : '';
+      if (!text) continue;
+      if (text.length > MAX_PROMPT_CHARS) {
+        return {
+          ok: false,
+          status: 400,
+          code: 'PAYLOAD_TOO_LARGE',
+          message: `systemInstruction exceeds ${MAX_PROMPT_CHARS} character limit.`,
+        };
+      }
+      totalChars += text.length;
+      cleanParts.push({ text });
+    }
+    if (cleanParts.length > 0) {
+      validatedSystemInstruction = { parts: cleanParts };
+    }
+  }
+
+  if (totalChars === 0 && !hasInlineMedia) {
     return {
       ok: false,
       status: 400,
@@ -146,22 +220,28 @@ export function validateProxyPayload(body) {
   const maxOutputTokens =
     typeof rawGenConfig.maxOutputTokens === 'number'
       ? Math.min(Math.max(Math.trunc(rawGenConfig.maxOutputTokens), 64), MAX_OUTPUT_TOKENS_LIMIT)
-      : 2048;
+      : DEFAULT_MAX_OUTPUT_TOKENS;
+
+  const geminiPayload = {
+    contents,
+    ...(validatedSystemInstruction
+      ? { systemInstruction: validatedSystemInstruction }
+      : {}),
+    generationConfig: {
+      temperature,
+      maxOutputTokens,
+      topP: 0.95,
+      topK: 40,
+    },
+    safetySettings: DEFAULT_SAFETY_SETTINGS,
+  };
 
   return {
     ok: true,
     model: requestedModel,
     stream: Boolean(body.stream),
-    totalChars,
-    geminiPayload: {
-      contents,
-      generationConfig: {
-        temperature,
-        maxOutputTokens,
-        topP: 0.95,
-        topK: 40,
-      },
-    },
+    totalChars: Math.max(totalChars, hasInlineMedia ? 256 : 0),
+    geminiPayload,
   };
 }
 
@@ -197,6 +277,9 @@ export async function handleAiProxyRequest({
   timeoutMs = DEFAULT_TIMEOUT_MS,
   logger = console.log,
   now = new Date(),
+  onStreamStart,
+  onStreamChunk,
+  onStreamEnd,
 }) {
   const startedAt = Date.now();
 
@@ -431,15 +514,80 @@ export async function handleAiProxyRequest({
     });
 
     if (validation.stream) {
-      const sseText = await upstreamResponse.text();
+      const sseHeaders = {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        Connection: 'keep-alive',
+      };
+
+      if (typeof onStreamStart === 'function') {
+        await onStreamStart({ status: 200, headers: sseHeaders });
+      }
+
+      const chunks = [];
+      if (
+        upstreamResponse.body &&
+        typeof upstreamResponse.body.getReader === 'function'
+      ) {
+        const reader = upstreamResponse.body.getReader();
+        const decoder = new TextDecoder('utf-8');
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          const textChunk =
+            typeof value === 'string'
+              ? value
+              : decoder.decode(value, { stream: true });
+          if (textChunk) {
+            chunks.push(textChunk);
+            if (typeof onStreamChunk === 'function') {
+              await onStreamChunk(textChunk);
+            }
+          }
+        }
+        const tail = decoder.decode();
+        if (tail) {
+          chunks.push(tail);
+          if (typeof onStreamChunk === 'function') {
+            await onStreamChunk(tail);
+          }
+        }
+      } else if (
+        upstreamResponse.body &&
+        typeof upstreamResponse.body[Symbol.asyncIterator] === 'function'
+      ) {
+        const decoder = new TextDecoder('utf-8');
+        for await (const value of upstreamResponse.body) {
+          const textChunk =
+            typeof value === 'string'
+              ? value
+              : decoder.decode(value, { stream: true });
+          if (textChunk) {
+            chunks.push(textChunk);
+            if (typeof onStreamChunk === 'function') {
+              await onStreamChunk(textChunk);
+            }
+          }
+        }
+      } else if (typeof upstreamResponse.text === 'function') {
+        const fallbackText = await upstreamResponse.text();
+        if (fallbackText) {
+          chunks.push(fallbackText);
+          if (typeof onStreamChunk === 'function') {
+            await onStreamChunk(fallbackText);
+          }
+        }
+      }
+
+      if (typeof onStreamEnd === 'function') {
+        await onStreamEnd();
+      }
+
       return {
         status: 200,
-        headers: {
-          'Content-Type': 'text/event-stream',
-          'Cache-Control': 'no-cache',
-          Connection: 'keep-alive',
-        },
-        rawBody: sseText,
+        headers: sseHeaders,
+        streamed: typeof onStreamChunk === 'function',
+        rawBody: chunks.join(''),
       };
     }
 

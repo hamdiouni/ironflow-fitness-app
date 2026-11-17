@@ -1,12 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:progression_tracker/core/constants/app_theme.dart';
-import 'package:progression_tracker/features/ai/domain/services/exercise_image_database.dart';
+import 'package:progression_tracker/features/ai/domain/services/ai_coach_action_parser.dart';
+import 'package:progression_tracker/features/ai/presentation/providers/ai_provider.dart';
 import 'package:progression_tracker/features/ai/presentation/providers/tts_provider.dart';
+import 'package:progression_tracker/features/auth/presentation/providers/auth_notifier.dart'
+    show currentUserIdProvider;
+import 'package:progression_tracker/features/workout/domain/entities/exercise_definition.dart';
+import 'package:progression_tracker/features/workout/domain/services/exercise_catalog.dart';
+import 'package:progression_tracker/shared/widgets/exercise_media_stage.dart';
 
-/// Enhanced chat bubble with Stripe styling and markdown support
+/// Enhanced chat bubble with Option B Iron Scoreboard styling, markdown support,
+/// canonical exercise chips, and schema-validated "Tap to apply" action cards
+/// with 1-tap Undo (Wave 7.2 & 7.3 — ADR-003).
 class AIChatBubble extends ConsumerWidget {
   final String role;
   final String content;
@@ -66,7 +73,8 @@ class AIChatBubble extends ConsumerWidget {
                         width: 6,
                         height: 6,
                         decoration: BoxDecoration(
-                          color: isUser ? tokens.textMuted : tokens.kineticAccent,
+                          color:
+                              isUser ? tokens.textMuted : tokens.kineticAccent,
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -78,9 +86,8 @@ class AIChatBubble extends ConsumerWidget {
                           fontSize: 10,
                           fontWeight: FontWeight.w700,
                           letterSpacing: 0.4,
-                          color: isUser
-                              ? tokens.textMuted
-                              : tokens.kineticAccent,
+                          color:
+                              isUser ? tokens.textMuted : tokens.kineticAccent,
                         ),
                       ),
                     ],
@@ -118,7 +125,8 @@ class AIChatBubble extends ConsumerWidget {
                         _AudioControls(
                           content: content,
                           ttsState: ttsState,
-                          onPlay: () => ref.read(ttsProvider.notifier).speak(content),
+                          onPlay: () =>
+                              ref.read(ttsProvider.notifier).speak(content),
                           onStop: () => ref.read(ttsProvider.notifier).stop(),
                         ),
                     ],
@@ -148,31 +156,98 @@ class AIChatBubble extends ConsumerWidget {
   }
 }
 
-/// AI response content with markdown and rich formatting
+/// AI response content with markdown, canonical exercise chips, and "Tap to apply"
+/// action cards (Wave 7.2 & 7.3).
 class _AIResponseContent extends ConsumerWidget {
   final String content;
 
   const _AIResponseContent({required this.content});
 
+  static List<ExerciseDefinition> _extractCanonicalExercises(String text) {
+    final lower = text.toLowerCase();
+    final matched = <ExerciseDefinition>[];
+    for (final def in ExerciseCatalog.all) {
+      if (lower.contains(def.name.toLowerCase())) {
+        matched.add(def);
+        if (matched.length >= 3) break;
+      }
+    }
+    return matched;
+  }
+
+  void _openExercisePreviewSheet(
+    BuildContext context,
+    ExerciseDefinition exercise,
+  ) {
+    final tokens = AppThemeTokens.of(context);
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: tokens.panel,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(tokens.radiusXl),
+        ),
+      ),
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        exercise.name,
+                        style: TextStyle(
+                          fontFamily: AppTypography.displayFontFamily,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
+                          color: tokens.textPrimary,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.of(sheetContext).pop(),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                ExerciseMediaStage(
+                  exerciseName: exercise.name,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = AppThemeTokens.of(context);
-    final theme = Theme.of(context);
-    
-    // Extract exercise images from content
-    final exercises = ExerciseImageDatabase.extractExercises(content);
-    final exerciseImages = exercises
-        .map((e) => ExerciseImageDatabase.getExerciseImage(e))
-        .where((url) => url != null)
-        .cast<String>()
-        .toList();
+    final activeUserId = ref.watch(currentUserIdProvider);
+    final appliedActionIds = ref.watch(
+      aiChatProvider.select((s) => s.appliedActionIds),
+    );
+
+    final parsed = AiCoachActionParser.parse(
+      content,
+      currentUserId: activeUserId,
+    );
+    final mentionedExercises = _extractCanonicalExercises(
+      parsed.displayMarkdown,
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Markdown content
         MarkdownBody(
-          data: content,
+          data: parsed.displayMarkdown,
           selectable: true,
           styleSheet: MarkdownStyleSheet(
             p: TextStyle(
@@ -255,53 +330,226 @@ class _AIResponseContent extends ConsumerWidget {
             tableCellsPadding: const EdgeInsets.all(8),
           ),
         ),
-        
-        // Display exercise images if found
-        if (exerciseImages.isNotEmpty) ...[
-          const SizedBox(height: 16),
+
+        // Canonical ExerciseCatalog chips (replaces legacy Unsplash ExerciseImageDatabase)
+        if (mentionedExercises.isNotEmpty) ...[
+          const SizedBox(height: 12),
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: exerciseImages.take(3).map((imageUrl) {
-              return ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: CachedNetworkImage(
-                  imageUrl: imageUrl,
-                  width: 100,
-                  height: 100,
-                  fit: BoxFit.cover,
-                  placeholder: (context, url) => Container(
-                    width: 100,
-                    height: 100,
-                    color: theme.colorScheme.surfaceContainerHighest,
-                    child: Center(
-                      child: SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            theme.colorScheme.primary,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  errorWidget: (context, url, error) => Container(
-                    width: 100,
-                    height: 100,
-                    color: theme.colorScheme.surfaceContainerHighest,
-                    child: Icon(
-                      Icons.fitness_center,
-                      color: theme.colorScheme.primary.withValues(alpha: 0.5),
-                    ),
+            children: mentionedExercises.map((exercise) {
+              return ActionChip(
+                key: Key('ai_exercise_chip_${exercise.id}'),
+                avatar: Icon(
+                  Icons.fitness_center_rounded,
+                  size: 15,
+                  color: tokens.kineticAccent,
+                ),
+                label: Text(
+                  exercise.name,
+                  style: TextStyle(
+                    fontFamily: AppTypography.displayFontFamily,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: tokens.textPrimary,
                   ),
                 ),
+                backgroundColor: tokens.card,
+                side: BorderSide(color: tokens.borderSubtle),
+                onPressed: () => _openExercisePreviewSheet(context, exercise),
               );
             }).toList(),
           ),
         ],
+
+        // Structured "Tap to apply" action cards with Undo (Wave 7.3 — ADR-003)
+        if (parsed.actions.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          for (final action in parsed.actions)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: _AiActionCard(
+                action: action,
+                isApplied: appliedActionIds.contains(action.id),
+              ),
+            ),
+        ],
       ],
+    );
+  }
+}
+
+class _AiActionCard extends ConsumerWidget {
+  final AiCoachAction action;
+  final bool isApplied;
+
+  const _AiActionCard({
+    required this.action,
+    required this.isApplied,
+  });
+
+  IconData _iconForType(AiCoachActionType type) => switch (type) {
+    AiCoachActionType.saveProgram => Icons.calendar_view_week_rounded,
+    AiCoachActionType.swapExercise => Icons.swap_horiz_rounded,
+    AiCoachActionType.logMeal => Icons.restaurant_rounded,
+  };
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tokens = AppThemeTokens.of(context);
+
+    return Container(
+      key: Key('ai_action_card_${action.id}'),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: tokens.card,
+        borderRadius: BorderRadius.circular(tokens.radiusMd),
+        border: Border.all(
+          color: isApplied
+              ? tokens.success.withValues(alpha: 0.5)
+              : tokens.kineticAccent.withValues(alpha: 0.45),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Icon(
+                _iconForType(action.type),
+                size: 16,
+                color: isApplied ? tokens.success : tokens.kineticAccent,
+              ),
+              Text(
+                action.title,
+                style: TextStyle(
+                  fontFamily: AppTypography.displayFontFamily,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                  color: tokens.textPrimary,
+                ),
+              ),
+              if (action.isEstimate)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: tokens.warning.withValues(alpha: 0.16),
+                    borderRadius: BorderRadius.circular(tokens.radiusXs),
+                    border: Border.all(
+                      color: tokens.warning.withValues(alpha: 0.45),
+                    ),
+                  ),
+                  child: Text(
+                    'ESTIMATE',
+                    style: TextStyle(
+                      fontFamily: AppTypography.displayFontFamily,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.6,
+                      color: tokens.warning,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            action.summary,
+            style: TextStyle(
+              fontFamily: AppTypography.bodyFontFamily,
+              fontSize: 12,
+              color: tokens.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              if (!isApplied)
+                FilledButton.icon(
+                  key: Key('ai_action_apply_${action.id}'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: tokens.kineticAccent,
+                    foregroundColor: tokens.onAccent,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                  ),
+                  icon: const Icon(Icons.touch_app_rounded, size: 16),
+                  label: const Text(
+                    'Tap to apply',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  onPressed: () async {
+                    final err = await ref
+                        .read(aiChatProvider.notifier)
+                        .applyCoachAction(action);
+                    if (!context.mounted) return;
+                    if (err != null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(err)),
+                      );
+                      return;
+                    }
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Applied: ${action.title}'),
+                        action: SnackBarAction(
+                          label: 'Undo',
+                          onPressed: () {
+                            ref
+                                .read(aiChatProvider.notifier)
+                                .undoCoachAction(action.id);
+                          },
+                        ),
+                      ),
+                    );
+                  },
+                )
+              else ...[
+                Icon(Icons.check_circle_rounded, size: 16, color: tokens.success),
+                const SizedBox(width: 4),
+                Text(
+                  'Applied',
+                  style: TextStyle(
+                    fontFamily: AppTypography.displayFontFamily,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: tokens.success,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                OutlinedButton.icon(
+                  key: Key('ai_action_undo_${action.id}'),
+                  icon: const Icon(Icons.undo_rounded, size: 15),
+                  label: const Text(
+                    'Undo',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  onPressed: () async {
+                    await ref
+                        .read(aiChatProvider.notifier)
+                        .undoCoachAction(action.id);
+                  },
+                ),
+              ],
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
@@ -323,12 +571,12 @@ class _AudioControls extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isPlayingThisMessage = ttsState.isSpeaking && ttsState.currentText == content;
+    final isPlayingThisMessage =
+        ttsState.isSpeaking && ttsState.currentText == content;
 
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Play/Stop button
         InkWell(
           onTap: isPlayingThisMessage ? onStop : onPlay,
           borderRadius: BorderRadius.circular(12),
@@ -349,7 +597,9 @@ class _AudioControls extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  isPlayingThisMessage ? Icons.stop_rounded : Icons.volume_up_rounded,
+                  isPlayingThisMessage
+                      ? Icons.stop_rounded
+                      : Icons.volume_up_rounded,
                   size: 16,
                   color: isPlayingThisMessage
                       ? theme.colorScheme.primary
@@ -363,15 +613,14 @@ class _AudioControls extends StatelessWidget {
                         ? theme.colorScheme.primary
                         : theme.colorScheme.onSurface.withValues(alpha: 0.6),
                     fontSize: 11,
-                    fontWeight: isPlayingThisMessage ? FontWeight.w600 : FontWeight.w500,
+                    fontWeight:
+                        isPlayingThisMessage ? FontWeight.w600 : FontWeight.w500,
                   ),
                 ),
               ],
             ),
           ),
         ),
-        
-        // Animated playing indicator
         if (isPlayingThisMessage) ...[
           const SizedBox(width: 8),
           SizedBox(
@@ -387,9 +636,6 @@ class _AudioControls extends StatelessWidget {
                     color: theme.colorScheme.primary,
                   ),
                 );
-              },
-              onEnd: () {
-                // Loop animation
               },
             ),
           ),
@@ -419,11 +665,10 @@ class _AudioWavePainter extends CustomPainter {
     final centerY = size.height / 2;
     final barWidth = size.width / 5;
 
-    // Draw 3 animated bars
     for (int i = 0; i < 3; i++) {
       final x = (i + 1) * barWidth;
       final height = size.height * (0.3 + 0.4 * ((progress + i * 0.3) % 1.0));
-      
+
       canvas.drawLine(
         Offset(x, centerY - height / 2),
         Offset(x, centerY + height / 2),
@@ -437,4 +682,3 @@ class _AudioWavePainter extends CustomPainter {
     return oldDelegate.progress != progress;
   }
 }
-

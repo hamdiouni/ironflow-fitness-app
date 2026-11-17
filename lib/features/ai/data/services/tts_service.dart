@@ -1,5 +1,7 @@
-import 'package:progression_tracker/core/utils/app_logger.dart';
+import 'dart:ui';
+
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:progression_tracker/core/utils/app_logger.dart';
 
 /// Voice Persona for fitness coaching
 class VoicePersona {
@@ -22,327 +24,398 @@ class VoicePersona {
   });
 }
 
-/// Text-to-Speech Service
-/// 
-/// Provides FREE audio narration for AI responses using device TTS
-/// - 100% FREE (uses device built-in TTS)
-/// - No API keys required
-/// - Works offline
-/// - Multiple languages supported
+/// Text-to-Speech Service (Wave 7.4).
+///
+/// Features:
+/// - Syncs TTS language tag with the app's 7 supported locales (`en-US`, `es-ES`,
+///   `fr-FR`, `de-DE`, `pt-BR`, `ja-JP`, `zh-CN`).
+/// - Uses completion, progress, pause, and error handlers (`onStateChanged`)
+///   instead of arbitrary `Future.delayed` timers.
+/// - Implements real `resume()` using character progress offset tracking so
+///   paused narration continues from the remaining text across all platforms.
 class TtsService {
-  final FlutterTts _flutterTts = FlutterTts();
+  TtsService({FlutterTts? flutterTts})
+      : _flutterTts = flutterTts ?? FlutterTts();
+
+  final FlutterTts _flutterTts;
   bool _isInitialized = false;
   bool _isSpeaking = false;
   bool _isPaused = false;
-  
+  String _languageTag = 'en-US';
+  String _lastCleanText = '';
+  int _lastProgressOffset = 0;
+  int _pausedOffset = 0;
+
   List<String> _availableVoices = [];
   String? _currentVoice;
 
-  /// Initialize TTS with optimal settings
-  Future<void> initialize() async {
+  /// Callback invoked whenever speaking/paused/voices state changes.
+  VoidCallback? onStateChanged;
+
+  static const Map<String, String> localeToBcp47 = {
+    'en': 'en-US',
+    'es': 'es-ES',
+    'fr': 'fr-FR',
+    'de': 'de-DE',
+    'pt': 'pt-BR',
+    'ja': 'ja-JP',
+    'zh': 'zh-CN',
+  };
+
+  /// Maps a 2-letter locale code (or BCP-47 tag) to a supported TTS language tag.
+  static String resolveLanguageTag(String? localeCode) {
+    if (localeCode == null || localeCode.trim().isEmpty) return 'en-US';
+    final clean = localeCode.trim();
+    if (clean.contains('-')) return clean;
+    final prefix = clean.split('_').first.toLowerCase();
+    return localeToBcp47[prefix] ?? 'en-US';
+  }
+
+  String get currentLanguageTag => _languageTag;
+  String get remainingResumePreview =>
+      (_pausedOffset > 0 && _pausedOffset < _lastCleanText.length)
+          ? _lastCleanText.substring(_pausedOffset).trimLeft()
+          : _lastCleanText;
+
+  void _notifyStateChanged() {
+    onStateChanged?.call();
+  }
+
+  /// Synchronizes TTS engine language and voice list with the active app language.
+  Future<void> syncWithAppLanguage(String localeCode) async {
+    final nextTag = resolveLanguageTag(localeCode);
+    final languageChanged = _languageTag != nextTag;
+    _languageTag = nextTag;
+
+    if (!_isInitialized) {
+      await initialize(languageCode: nextTag);
+      return;
+    }
+
+    if (languageChanged) {
+      try {
+        await _flutterTts.setLanguage(_languageTag);
+        await _loadAvailableVoices();
+        _notifyStateChanged();
+      } catch (e) {
+        AppLogger.debug('❌ [TTS ERROR] Failed to sync language $_languageTag: $e');
+      }
+    }
+  }
+
+  /// Initialize TTS with event handlers and language settings.
+  Future<void> initialize({String? languageCode}) async {
+    if (languageCode != null && languageCode.trim().isNotEmpty) {
+      _languageTag = resolveLanguageTag(languageCode);
+    }
     if (_isInitialized) return;
 
     try {
-      // Set language to English (US)
-      await _flutterTts.setLanguage('en-US');
-
-      // Set speech rate (0.0 to 1.0, default 0.5)
+      await _flutterTts.setLanguage(_languageTag);
       await _flutterTts.setSpeechRate(0.5);
-
-      // Set volume (0.0 to 1.0, default 1.0)
       await _flutterTts.setVolume(1.0);
-
-      // Set pitch (0.5 to 2.0, default 1.0)
       await _flutterTts.setPitch(1.0);
-      
-      // Get available voices
+
       await _loadAvailableVoices();
 
-      // Set up completion handler
+      _flutterTts.setStartHandler(() {
+        _isSpeaking = true;
+        _isPaused = false;
+        _notifyStateChanged();
+      });
+
       _flutterTts.setCompletionHandler(() {
         _isSpeaking = false;
         _isPaused = false;
+        _lastProgressOffset = 0;
+        _pausedOffset = 0;
+        _notifyStateChanged();
       });
 
-      // Set up error handler
+      _flutterTts.setCancelHandler(() {
+        _isSpeaking = false;
+        _isPaused = false;
+        _notifyStateChanged();
+      });
+
+      _flutterTts.setPauseHandler(() {
+        _isPaused = true;
+        _pausedOffset = _lastProgressOffset;
+        _notifyStateChanged();
+      });
+
+      _flutterTts.setContinueHandler(() {
+        _isPaused = false;
+        _isSpeaking = true;
+        _notifyStateChanged();
+      });
+
+      _flutterTts.setProgressHandler(
+        (String text, int startOffset, int endOffset, String word) {
+          if (endOffset > 0) {
+            _lastProgressOffset = (_pausedOffset + endOffset)
+                .clamp(0, _lastCleanText.length);
+          }
+        },
+      );
+
       _flutterTts.setErrorHandler((msg) {
         AppLogger.debug('🔴 [TTS ERROR] $msg');
         _isSpeaking = false;
         _isPaused = false;
+        _notifyStateChanged();
       });
 
       _isInitialized = true;
-      AppLogger.debug('✅ [TTS] Service initialized successfully');
+      _notifyStateChanged();
+      AppLogger.debug('✅ [TTS] Service initialized ($_languageTag)');
     } catch (e) {
       AppLogger.debug('❌ [TTS ERROR] Failed to initialize: $e');
     }
   }
 
-  /// Speak the given text
+  /// Speak the given text from the beginning.
   Future<void> speak(String text) async {
     if (!_isInitialized) {
       await initialize();
     }
 
     try {
-      // Stop any ongoing speech
       await stop();
 
-      // Clean text for better speech
       final cleanText = _cleanTextForSpeech(text);
+      _lastCleanText = cleanText;
+      _lastProgressOffset = 0;
+      _pausedOffset = 0;
 
-      AppLogger.debug('🔊 [TTS] Speaking: ${cleanText.substring(0, cleanText.length > 50 ? 50 : cleanText.length)}...');
+      if (cleanText.isEmpty) return;
 
       _isSpeaking = true;
       _isPaused = false;
+      _notifyStateChanged();
 
       await _flutterTts.speak(cleanText);
     } catch (e) {
       AppLogger.debug('❌ [TTS ERROR] Failed to speak: $e');
       _isSpeaking = false;
+      _notifyStateChanged();
     }
   }
 
-  /// Pause speech
+  /// Pause speech and snapshot the current character offset for [resume].
   Future<void> pause() async {
     if (_isSpeaking && !_isPaused) {
       try {
+        _pausedOffset = _lastProgressOffset;
         await _flutterTts.pause();
         _isPaused = true;
-        AppLogger.debug('⏸️ [TTS] Paused');
+        _notifyStateChanged();
+        AppLogger.debug('⏸️ [TTS] Paused at offset $_pausedOffset');
       } catch (e) {
         AppLogger.debug('❌ [TTS ERROR] Failed to pause: $e');
       }
     }
   }
 
-  /// Resume speech
+  /// Resume speech from the paused character offset (Wave 7.4).
   Future<void> resume() async {
-    if (_isSpeaking && _isPaused) {
+    if ((_isSpeaking || _lastCleanText.isNotEmpty) && _isPaused) {
       try {
-        // Note: Flutter TTS doesn't have a resume method on all platforms
-        // We'll need to continue from where we left off
         _isPaused = false;
-        AppLogger.debug('▶️ [TTS] Resumed');
+        _isSpeaking = true;
+        _notifyStateChanged();
+
+        final remaining = remainingResumePreview;
+        if (remaining.isNotEmpty) {
+          await _flutterTts.speak(remaining);
+        }
+        AppLogger.debug('▶️ [TTS] Resumed (${remaining.length} chars remaining)');
       } catch (e) {
         AppLogger.debug('❌ [TTS ERROR] Failed to resume: $e');
+        _isSpeaking = false;
+        _notifyStateChanged();
       }
     }
   }
 
-  /// Stop speech
+  /// Stop speech and reset offsets.
   Future<void> stop() async {
-    if (_isSpeaking) {
+    if (_isSpeaking || _isPaused) {
       try {
         await _flutterTts.stop();
-        _isSpeaking = false;
-        _isPaused = false;
-        AppLogger.debug('⏹️ [TTS] Stopped');
       } catch (e) {
         AppLogger.debug('❌ [TTS ERROR] Failed to stop: $e');
       }
+      _isSpeaking = false;
+      _isPaused = false;
+      _lastProgressOffset = 0;
+      _pausedOffset = 0;
+      _notifyStateChanged();
     }
   }
 
-  /// Check if currently speaking
+  /// Simulates progress advancement in deterministic unit tests.
+  void updateProgressForTest(int characterOffset) {
+    _lastProgressOffset = characterOffset.clamp(0, _lastCleanText.length);
+  }
+
   bool get isSpeaking => _isSpeaking;
-
-  /// Check if paused
   bool get isPaused => _isPaused;
+  List<String> get availableVoices => List<String>.unmodifiable(_availableVoices);
+  String? get currentVoice => _currentVoice;
 
-  /// Get available languages
   Future<List<String>> getLanguages() async {
     try {
       final languages = await _flutterTts.getLanguages;
-      return List<String>.from(languages);
+      if (languages is List) {
+        return List<String>.from(languages.map((e) => e.toString()));
+      }
+      return [_languageTag];
     } catch (e) {
-      AppLogger.debug('❌ [TTS ERROR] Failed to get languages: $e');
-      return ['en-US'];
+      return [_languageTag];
     }
   }
-  
-  /// Load available voices
+
   Future<void> _loadAvailableVoices() async {
     try {
       final voices = await _flutterTts.getVoices;
       if (voices is List) {
-        _availableVoices = voices
-            .where((voice) {
-              if (voice is Map) {
-                final locale = voice['locale'] as String?;
-                return locale != null && locale.startsWith('en');
-              }
-              return false;
-            })
-            .map((voice) => (voice as Map)['name'] as String)
-            .toList();
-        
-        AppLogger.debug('🎤 [TTS] Found ${_availableVoices.length} English voices');
-        if (_availableVoices.isNotEmpty) {
-          AppLogger.debug('🎤 [TTS] Available voices: ${_availableVoices.take(5).join(", ")}...');
+        final langPrefix = _languageTag.split('-').first.toLowerCase();
+        final matched = <String>[];
+        final allNames = <String>[];
+
+        for (final voice in voices) {
+          if (voice is Map) {
+            final name = voice['name']?.toString() ?? '';
+            final locale = voice['locale']?.toString().toLowerCase() ?? '';
+            if (name.isEmpty) continue;
+            if (!allNames.contains(name)) allNames.add(name);
+            if (locale.startsWith(langPrefix) && !matched.contains(name)) {
+              matched.add(name);
+            }
+          }
         }
+
+        _availableVoices = matched.isNotEmpty ? matched : allNames;
       }
     } catch (e) {
-      AppLogger.debug('❌ [TTS ERROR] Failed to load voices: $e');
       _availableVoices = [];
     }
   }
-  
-  /// Get available voices
-  List<String> get availableVoices => _availableVoices;
-  
-  /// Get current voice
-  String? get currentVoice => _currentVoice;
-  
-  /// Set voice by name
+
   Future<void> setVoice(String voiceName) async {
     try {
-      await _flutterTts.setVoice({'name': voiceName, 'locale': 'en-US'});
+      await _flutterTts.setVoice({'name': voiceName, 'locale': _languageTag});
       _currentVoice = voiceName;
-      AppLogger.debug('🎤 [TTS] Voice set to: $voiceName');
+      _notifyStateChanged();
     } catch (e) {
       AppLogger.debug('❌ [TTS ERROR] Failed to set voice: $e');
     }
   }
-  
-  /// Apply a voice persona (voice + pitch + speed)
+
   Future<void> applyPersona(VoicePersona persona) async {
     try {
-      // Set voice
       if (persona.voiceName != 'default') {
         await setVoice(persona.voiceName);
       }
-      
-      // Set pitch
       await setPitch(persona.pitch);
-      
-      // Set recommended speed
       await setSpeechRate(persona.recommendedSpeed);
-      
-      AppLogger.debug('🎭 [TTS] Applied persona: ${persona.name}');
-      AppLogger.debug('   Voice: ${persona.voiceName}');
-      AppLogger.debug('   Pitch: ${persona.pitch}');
-      AppLogger.debug('   Speed: ${persona.recommendedSpeed}');
+      _notifyStateChanged();
     } catch (e) {
       AppLogger.debug('❌ [TTS ERROR] Failed to apply persona: $e');
     }
   }
-  
-  /// Get fitness-themed voice personas
+
   List<VoicePersona> getFitnessVoicePersonas() {
-    // EXTREME differences for web browsers where voice selection doesn't work
-    // Pitch range: 0.5 to 2.0 (we'll use 0.5 to 1.8)
-    // Speed range: 0.1 to 1.0 (0.2x to 2.0x display)
-    
     return [
-      // VERY SLOW & LOW - Female
       VoicePersona(
         id: 'yoga_instructor',
         name: '🌸 Yoga Instructor',
         description: 'Very slow & peaceful',
         icon: '🌸',
-        voiceName: _findBestVoice(['female', 'samantha', 'karen', 'moira', 'google us english female']),
-        pitch: 0.5,  // VERY LOW
-        recommendedSpeed: 0.15,  // 0.3x speed - EXTREMELY SLOW
+        voiceName: _findBestVoice(['female', 'samantha', 'karen', 'moira', 'google']),
+        pitch: 0.5,
+        recommendedSpeed: 0.15,
       ),
-      
-      // SLOW & LOW - Female
       VoicePersona(
         id: 'calm_trainer',
         name: '🧘 Calm Trainer',
         description: 'Slow & soothing',
         icon: '🧘',
-        voiceName: _findBestVoice(['female', 'zira', 'samantha', 'karen', 'google us english female']),
-        pitch: 0.7,  // LOW
-        recommendedSpeed: 0.25,  // 0.5x speed - VERY SLOW
+        voiceName: _findBestVoice(['female', 'zira', 'samantha', 'karen', 'google']),
+        pitch: 0.7,
+        recommendedSpeed: 0.25,
       ),
-      
-      // NORMAL - Female
       VoicePersona(
         id: 'wellness_guide',
         name: '🌟 Wellness Guide',
         description: 'Normal & caring',
         icon: '🌟',
-        voiceName: _findBestVoice(['female', 'samantha', 'karen', 'zira', 'google us english female']),
-        pitch: 1.0,  // NORMAL
-        recommendedSpeed: 0.5,  // 1.0x speed - NORMAL
+        voiceName: _findBestVoice(['female', 'samantha', 'karen', 'zira', 'google']),
+        pitch: 1.0,
+        recommendedSpeed: 0.5,
       ),
-      
-      // FAST & HIGH - Female
       VoicePersona(
         id: 'energetic_trainer',
         name: '⚡ Energetic Trainer',
         description: 'Fast & upbeat',
         icon: '⚡',
-        voiceName: _findBestVoice(['female', 'victoria', 'kate', 'zira', 'google us english female']),
-        pitch: 1.4,  // HIGH
-        recommendedSpeed: 0.75,  // 1.5x speed - FAST
+        voiceName: _findBestVoice(['female', 'victoria', 'kate', 'zira', 'google']),
+        pitch: 1.4,
+        recommendedSpeed: 0.75,
       ),
-      
-      // VERY FAST & VERY HIGH - Female
       VoicePersona(
         id: 'intense_female',
         name: '🔥 Intense Coach',
         description: 'Very fast & powerful',
         icon: '🔥',
-        voiceName: _findBestVoice(['female', 'kate', 'victoria', 'samantha', 'google us english female']),
-        pitch: 1.8,  // VERY HIGH
-        recommendedSpeed: 0.95,  // 1.9x speed - VERY FAST
+        voiceName: _findBestVoice(['female', 'kate', 'victoria', 'samantha', 'google']),
+        pitch: 1.8,
+        recommendedSpeed: 0.95,
       ),
-      
-      // SLOW & LOW - Male
       VoicePersona(
         id: 'professional_coach',
         name: '🎯 Professional Coach',
         description: 'Slow & authoritative',
         icon: '🎯',
-        voiceName: _findBestVoice(['male', 'david', 'daniel', 'alex', 'google us english male']),
-        pitch: 0.6,  // LOW
-        recommendedSpeed: 0.3,  // 0.6x speed - SLOW
+        voiceName: _findBestVoice(['male', 'david', 'daniel', 'alex', 'google']),
+        pitch: 0.6,
+        recommendedSpeed: 0.3,
       ),
-      
-      // NORMAL - Male
       VoicePersona(
         id: 'friendly_coach',
         name: '😊 Friendly Coach',
         description: 'Normal & encouraging',
         icon: '😊',
-        voiceName: _findBestVoice(['male', 'david', 'mark', 'james', 'google us english male']),
-        pitch: 1.0,  // NORMAL
-        recommendedSpeed: 0.5,  // 1.0x speed - NORMAL
+        voiceName: _findBestVoice(['male', 'david', 'mark', 'james', 'google']),
+        pitch: 1.0,
+        recommendedSpeed: 0.5,
       ),
-      
-      // FAST & HIGH - Male
       VoicePersona(
         id: 'motivational_coach',
         name: '💪 Motivational Coach',
         description: 'Fast & energetic',
         icon: '💪',
-        voiceName: _findBestVoice(['male', 'david', 'mark', 'james', 'google us english male']),
-        pitch: 1.5,  // HIGH
-        recommendedSpeed: 0.8,  // 1.6x speed - FAST
+        voiceName: _findBestVoice(['male', 'david', 'mark', 'james', 'google']),
+        pitch: 1.5,
+        recommendedSpeed: 0.8,
       ),
-      
-      // VERY FAST & VERY HIGH - Male
       VoicePersona(
         id: 'intense_trainer',
         name: '⚡ Intense Trainer',
         description: 'Very fast & intense',
         icon: '⚡',
-        voiceName: _findBestVoice(['male', 'mark', 'james', 'david', 'google us english male']),
-        pitch: 1.8,  // VERY HIGH
-        recommendedSpeed: 1.0,  // 2.0x speed - MAXIMUM SPEED
+        voiceName: _findBestVoice(['male', 'mark', 'james', 'david', 'google']),
+        pitch: 1.8,
+        recommendedSpeed: 1.0,
       ),
     ];
   }
-  
-  /// Find best matching voice from available voices
+
   String _findBestVoice(List<String> keywords) {
     if (_availableVoices.isEmpty) {
       return 'default';
     }
-    
-    // Try to find a voice matching any keyword
     for (final keyword in keywords) {
       final match = _availableVoices.firstWhere(
         (voice) => voice.toLowerCase().contains(keyword.toLowerCase()),
@@ -352,59 +425,38 @@ class TtsService {
         return match;
       }
     }
-    
-    // Return first available voice as fallback
     return _availableVoices.first;
   }
 
-  /// Set speech rate (0.0 to 1.0)
   Future<void> setSpeechRate(double rate) async {
     try {
       await _flutterTts.setSpeechRate(rate);
-      AppLogger.debug('🎚️ [TTS] Speech rate set to $rate');
     } catch (e) {
       AppLogger.debug('❌ [TTS ERROR] Failed to set speech rate: $e');
     }
   }
 
-  /// Set pitch (0.5 to 2.0)
   Future<void> setPitch(double pitch) async {
     try {
       await _flutterTts.setPitch(pitch);
-      AppLogger.debug('🎚️ [TTS] Pitch set to $pitch');
     } catch (e) {
       AppLogger.debug('❌ [TTS ERROR] Failed to set pitch: $e');
     }
   }
 
-  /// Clean text for better speech synthesis
   String _cleanTextForSpeech(String text) {
     String cleaned = text;
-
-    // Remove markdown headers
     cleaned = cleaned.replaceAll(RegExp(r'^#{1,6}\s+', multiLine: true), '');
-
-    // Remove markdown bold/italic
     cleaned = cleaned.replaceAll(RegExp(r'\*\*([^*]+)\*\*'), r'\1');
     cleaned = cleaned.replaceAll(RegExp(r'\*([^*]+)\*'), r'\1');
     cleaned = cleaned.replaceAll(RegExp(r'__([^_]+)__'), r'\1');
     cleaned = cleaned.replaceAll(RegExp(r'_([^_]+)_'), r'\1');
-
-    // Remove markdown links but keep text
     cleaned = cleaned.replaceAll(RegExp(r'\[([^\]]+)\]\([^)]+\)'), r'\1');
-
-    // Remove markdown code blocks
     cleaned = cleaned.replaceAll(RegExp(r'```[^`]*```'), '');
     cleaned = cleaned.replaceAll(RegExp(r'`([^`]+)`'), r'\1');
-
-    // Remove blockquotes
     cleaned = cleaned.replaceAll(RegExp(r'^>\s+', multiLine: true), '');
-
-    // Remove bullet points and numbers
-    cleaned = cleaned.replaceAll(RegExp(r'^[-*+]\s+', multiLine: true), '');
+    cleaned = cleaned.replaceAll(RegExp(r'^[-*+•]\s+', multiLine: true), '');
     cleaned = cleaned.replaceAll(RegExp(r'^\d+\.\s+', multiLine: true), '');
-
-    // Remove emojis (optional - they can cause issues with some TTS engines)
     cleaned = cleaned.replaceAll(
       RegExp(
         r'[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]',
@@ -412,22 +464,14 @@ class TtsService {
       ),
       '',
     );
-
-    // Replace multiple spaces with single space
     cleaned = cleaned.replaceAll(RegExp(r'\s+'), ' ');
-
-    // Replace multiple newlines with period for better pauses
     cleaned = cleaned.replaceAll(RegExp(r'\n\n+'), '. ');
     cleaned = cleaned.replaceAll(RegExp(r'\n'), ' ');
-
-    // Trim
-    cleaned = cleaned.trim();
-
-    return cleaned;
+    return cleaned.trim();
   }
 
-  /// Dispose resources
   Future<void> dispose() async {
+    onStateChanged = null;
     await stop();
     _isInitialized = false;
   }

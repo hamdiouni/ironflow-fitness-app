@@ -1,43 +1,49 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:progression_tracker/core/providers/analytics_provider.dart';
+import 'package:progression_tracker/core/providers/connectivity_provider.dart';
+import 'package:progression_tracker/core/providers/language_provider.dart';
+import 'package:progression_tracker/core/providers/observability_provider.dart';
+import 'package:progression_tracker/core/providers/units_provider.dart';
 import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:progression_tracker/core/utils/local_date_window.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:progression_tracker/core/utils/record_ownership.dart';
+import 'package:progression_tracker/features/ai/data/datasources/ai_chat_storage.dart';
+import 'package:progression_tracker/features/ai/data/datasources/ai_transport.dart';
+import 'package:progression_tracker/features/ai/data/datasources/gemini_ai_service.dart';
+import 'package:progression_tracker/features/ai/data/repositories/ai_preferences_repository_impl.dart';
+import 'package:progression_tracker/features/ai/data/services/change_detection_service_impl.dart';
 import 'package:progression_tracker/features/ai/domain/entities/chat_message.dart';
 import 'package:progression_tracker/features/ai/domain/repositories/ai_preferences_repository.dart';
+import 'package:progression_tracker/features/ai/domain/services/ai_coach_action_parser.dart';
+import 'package:progression_tracker/features/ai/domain/services/ai_question_normalizer.dart';
 import 'package:progression_tracker/features/ai/domain/services/local_ai_coach.dart';
-import 'package:progression_tracker/features/ai/data/datasources/gemini_ai_service.dart';
-import 'package:progression_tracker/features/ai/data/datasources/ai_chat_storage.dart';
-import 'package:progression_tracker/features/ai/data/repositories/ai_preferences_repository_impl.dart';
+import 'package:progression_tracker/features/ai/presentation/providers/ai_chat_prompt_builder.dart';
+import 'package:progression_tracker/features/auth/domain/entities/user_profile.dart';
+import 'package:progression_tracker/features/auth/presentation/providers/auth_notifier.dart'
+    show currentUserIdProvider;
+import 'package:progression_tracker/features/auth/presentation/providers/auth_provider.dart';
+import 'package:progression_tracker/features/body/domain/entities/body_entry.dart';
+import 'package:progression_tracker/features/body/presentation/providers/body_providers.dart';
+import 'package:progression_tracker/features/nutrition/domain/entities/entities.dart';
+import 'package:progression_tracker/features/nutrition/presentation/providers/nutrition_providers.dart';
+import 'package:progression_tracker/features/workout/domain/entities/entities.dart';
+import 'package:progression_tracker/features/workout/presentation/providers/active_program_providers.dart';
+import 'package:progression_tracker/features/workout/presentation/providers/workout_providers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
-import 'package:progression_tracker/features/auth/presentation/providers/auth_provider.dart';
-import 'package:progression_tracker/features/auth/domain/entities/user_profile.dart';
-import 'package:progression_tracker/features/workout/presentation/providers/workout_providers.dart';
-import 'package:progression_tracker/features/workout/domain/entities/entities.dart';
-import 'package:progression_tracker/features/nutrition/presentation/providers/nutrition_providers.dart';
-import 'package:progression_tracker/features/nutrition/domain/entities/entities.dart';
-import 'package:progression_tracker/features/body/presentation/providers/body_providers.dart';
-import 'package:progression_tracker/features/body/domain/entities/body_entry.dart';
-import 'package:progression_tracker/core/providers/analytics_provider.dart';
-import 'package:progression_tracker/core/providers/observability_provider.dart';
-import 'package:progression_tracker/core/utils/record_ownership.dart';
-import 'package:progression_tracker/features/auth/presentation/providers/auth_notifier.dart'
-    show currentUserIdProvider;
-import 'package:progression_tracker/features/ai/domain/services/ai_question_normalizer.dart';
-
 /// Provider for local AI coach service (fallback)
-final localAICoachProvider = Provider<LocalAICoach>((ref) {
-  return LocalAICoach();
-});
+final localAICoachProvider = Provider<LocalAICoach>((ref) => LocalAICoach());
 
-/// Provider for Gemini AI service (FREE!)
+/// Provider for Gemini AI service
 final geminiAIServiceProvider = Provider<GeminiAIService>((ref) {
   return GeminiAIService(
-    isAiCoachEnabled: () => ref.read(featureFlagsSnapshotProvider).isAiCoachActive,
+    isAiCoachEnabled: () =>
+        ref.read(featureFlagsSnapshotProvider).isAiCoachActive,
   );
 });
 
-/// Provider for AI Question Normalizer and Cache (Wave 6.1 — AI-05)
+/// Provider for AI Question Normalizer and Cache (Wave 6.1 & Wave 7.2 — AI-05)
 final aiQuestionNormalizerProvider = Provider<AiQuestionNormalizer>((ref) {
   return AiQuestionNormalizer();
 });
@@ -63,15 +69,12 @@ class AIPersonalizationConsentNotifier extends Notifier<bool> {
   String? _userId;
   bool _disposed = false;
 
-  /// Account that owns this consent value.
   String? get userId => _userId;
 
   @override
   bool build() {
     _disposed = false;
-    ref.onDispose(() {
-      _disposed = true;
-    });
+    ref.onDispose(() => _disposed = true);
     _userId = _injectedUserId ??
         ref.watch(currentUserIdProvider) ??
         RecordOwnershipRules.guestUserId;
@@ -84,8 +87,6 @@ class AIPersonalizationConsentNotifier extends Notifier<bool> {
     return scopeUserId == null ? key : '${key}_$scopeUserId';
   }
 
-  /// Loads the stored consent for [userId], applying the one-time
-  /// legacy migration used by the provider and privacy screen.
   static Future<bool> loadStoredConsent(
     SharedPreferences prefs, {
     String? userId,
@@ -115,7 +116,7 @@ class AIPersonalizationConsentNotifier extends Notifier<bool> {
   Future<void> toggle() => setConsent(!state);
 }
 
-/// State for AI chat
+/// State for AI chat (Wave 7.1–7.5)
 class AIChatState {
   final List<ChatMessage> messages;
   final bool isLoading;
@@ -124,6 +125,12 @@ class AIChatState {
   final bool isOfflineFallback;
   final bool isKeyMissing;
   final String? lastFailedMessage;
+  final Set<String> appliedActionIds;
+  final int lastInputTokens;
+  final int lastOutputTokens;
+  final double lastRequestCostUsd;
+  final int sessionTotalTokens;
+  final double sessionTotalCostUsd;
 
   AIChatState({
     this.messages = const [],
@@ -133,6 +140,12 @@ class AIChatState {
     this.isOfflineFallback = false,
     this.isKeyMissing = false,
     this.lastFailedMessage,
+    this.appliedActionIds = const {},
+    this.lastInputTokens = 0,
+    this.lastOutputTokens = 0,
+    this.lastRequestCostUsd = 0.0,
+    this.sessionTotalTokens = 0,
+    this.sessionTotalCostUsd = 0.0,
   });
 
   AIChatState copyWith({
@@ -140,24 +153,41 @@ class AIChatState {
     bool? isLoading,
     String? error,
     String? streamingMessage,
+    bool clearStreamingMessage = false,
     bool? isOfflineFallback,
     bool? isKeyMissing,
     String? lastFailedMessage,
     bool clearError = false,
+    Set<String>? appliedActionIds,
+    int? lastInputTokens,
+    int? lastOutputTokens,
+    double? lastRequestCostUsd,
+    int? sessionTotalTokens,
+    double? sessionTotalCostUsd,
   }) {
     return AIChatState(
       messages: messages ?? this.messages,
       isLoading: isLoading ?? this.isLoading,
       error: clearError ? null : (error ?? this.error),
-      streamingMessage: streamingMessage,
+      streamingMessage: clearStreamingMessage
+          ? null
+          : (streamingMessage ?? this.streamingMessage),
       isOfflineFallback: isOfflineFallback ?? this.isOfflineFallback,
       isKeyMissing: isKeyMissing ?? this.isKeyMissing,
       lastFailedMessage: lastFailedMessage ?? this.lastFailedMessage,
+      appliedActionIds: appliedActionIds ?? this.appliedActionIds,
+      lastInputTokens: lastInputTokens ?? this.lastInputTokens,
+      lastOutputTokens: lastOutputTokens ?? this.lastOutputTokens,
+      lastRequestCostUsd: lastRequestCostUsd ?? this.lastRequestCostUsd,
+      sessionTotalTokens: sessionTotalTokens ?? this.sessionTotalTokens,
+      sessionTotalCostUsd: sessionTotalCostUsd ?? this.sessionTotalCostUsd,
     );
   }
 }
 
 class AIChatNotifier extends Notifier<AIChatState> {
+  static const int maxHistoryContextMessages = 10;
+
   AIChatNotifier({
     LocalAICoach? localCoach,
     GeminiAIService? geminiService,
@@ -181,13 +211,12 @@ class AIChatNotifier extends Notifier<AIChatState> {
   late AiQuestionNormalizer _questionNormalizer;
   AIChatStorage? _chatStorage;
   bool _disposed = false;
+  final Map<String, Future<void> Function()> _undoCallbacks = {};
 
   @override
   AIChatState build() {
     _disposed = false;
-    ref.onDispose(() {
-      _disposed = true;
-    });
+    ref.onDispose(() => _disposed = true);
     _localCoach = _injectedLocalCoach ?? ref.watch(localAICoachProvider);
     _geminiService =
         _injectedGeminiService ?? ref.watch(geminiAIServiceProvider);
@@ -197,9 +226,7 @@ class AIChatNotifier extends Notifier<AIChatState> {
         ? _injectedChatStorage
         : (_injectedChatStorage ?? ref.watch(aiChatStorageProvider));
     _loadHistory();
-    return AIChatState(
-      isKeyMissing: !_geminiService.isConfigured,
-    );
+    return AIChatState(isKeyMissing: !_geminiService.isConfigured);
   }
 
   Future<void> _loadHistory() async {
@@ -229,46 +256,75 @@ class AIChatNotifier extends Notifier<AIChatState> {
       }
     }
     final str = error.toString().toLowerCase();
-    if (str.contains('socket') || str.contains('timeout') || str.contains('network') || str.contains('connection')) {
+    if (str.contains('socket') ||
+        str.contains('timeout') ||
+        str.contains('network') ||
+        str.contains('connection')) {
       return 'Could not connect to the fitness assistant. Please check your internet connection and try again.';
     }
     return 'Something went wrong while contacting the coach. Please tap Retry to try again.';
   }
 
+  /// Retries the last failed prompt without duplicating the user's message bubble (Wave 7.2).
   Future<void> retryLastMessage() async {
     final failed = state.lastFailedMessage;
     if (failed != null && failed.trim().isNotEmpty) {
+      final hasTrailingUserMessage = state.messages.isNotEmpty &&
+          state.messages.last.role == 'user' &&
+          state.messages.last.content == failed;
       state = state.copyWith(clearError: true);
-      await sendMessage(failed);
+      await _sendMessageInternal(
+        failed,
+        appendUserMessage: !hasTrailingUserMessage,
+      );
     }
   }
 
-  Future<void> sendMessage(String message) async {
+  List<Map<String, String>> _buildBoundedConversationPayload() {
+    final allMessages = state.messages;
+    final startIdx = allMessages.length > maxHistoryContextMessages
+        ? allMessages.length - maxHistoryContextMessages
+        : 0;
+    return allMessages
+        .sublist(startIdx)
+        .map((m) => <String, String>{'role': m.role, 'content': m.content})
+        .toList();
+  }
+
+  Future<void> sendMessage(String message) =>
+      _sendMessageInternal(message, appendUserMessage: true);
+
+  Future<void> _sendMessageInternal(
+    String message, {
+    required bool appendUserMessage,
+  }) async {
     if (message.trim().isEmpty) return;
 
-    // Add user message
-    final userMessage = ChatMessage(
-      id: const Uuid().v4(),
-      role: 'user',
-      content: message,
-      timestamp: DateTime.now(),
-    );
+    var updatedMessages = state.messages;
+    if (appendUserMessage) {
+      final userMessage = ChatMessage(
+        id: const Uuid().v4(),
+        role: 'user',
+        content: message,
+        timestamp: DateTime.now(),
+      );
+      updatedMessages = [...state.messages, userMessage];
+    }
 
     state = state.copyWith(
-      messages: [...state.messages, userMessage],
+      messages: updatedMessages,
       isLoading: true,
       clearError: true,
+      clearStreamingMessage: true,
     );
     _chatStorage?.saveMessages(state.messages);
 
     try {
-      AppLogger.debug('═══════════════════════════════════════');
-      AppLogger.debug('🚀 [AI CHAT] Starting message processing');
-      AppLogger.debug('📝 [AI CHAT] User message: $message');
-      AppLogger.debug('═══════════════════════════════════════');
-      
-      // Gather user data if personalization consent is granted
       final hasConsent = ref.read(aiPersonalizationConsentProvider);
+      final units = ref.read(unitsProvider);
+      final locale = ref.read(languageProvider);
+      final isOnline = ref.read(isOnlineProvider).valueOrNull ?? true;
+
       UserProfile? profile;
       List<Workout> recentWorkouts = const [];
       List<DailyNutritionSummary> nutritionHistory = const [];
@@ -276,7 +332,6 @@ class AIChatNotifier extends Notifier<AIChatState> {
       List<BodyEntry> bodyEntries = const [];
 
       if (hasConsent) {
-        AppLogger.debug('📊 [AI CHAT] Step 1: Personalization consent ENABLED. Gathering user data...');
         try {
           final authRepo = ref.read(authRepositoryProvider);
           final workoutRepo = ref.read(workoutRepositoryProvider);
@@ -284,63 +339,63 @@ class AIChatNotifier extends Notifier<AIChatState> {
           final bodyRepo = ref.read(bodyRepositoryProvider);
 
           final user = await authRepo.getCurrentUser();
-          profile = user != null ? await authRepo.getUserProfile(user.id) : null;
-          AppLogger.debug('✅ [AI CHAT] User profile: ${profile?.name ?? "Guest"}');
+          profile =
+              user != null ? await authRepo.getUserProfile(user.id) : null;
 
           final now = DateTime.now();
-          final thirtyDaysAgo = LocalDateWindow.rollingDaysWindow(30, now: now).start;
-          recentWorkouts = await workoutRepo.getWorkoutsByDateRange(
-            thirtyDaysAgo,
-            now,
-          );
-          AppLogger.debug('✅ [AI CHAT] Found ${recentWorkouts.length} workouts');
+          final thirtyDaysAgo =
+              LocalDateWindow.rollingDaysWindow(30, now: now).start;
+          recentWorkouts =
+              await workoutRepo.getWorkoutsByDateRange(thirtyDaysAgo, now);
 
-          final sevenDaysAgo = LocalDateWindow.rollingDaysWindow(7, now: now).start;
-          nutritionHistory = await nutritionRepo.getNutritionHistory(
-            sevenDaysAgo,
-            now,
-          );
+          final sevenDaysAgo =
+              LocalDateWindow.rollingDaysWindow(7, now: now).start;
+          nutritionHistory =
+              await nutritionRepo.getNutritionHistory(sevenDaysAgo, now);
           nutritionTargets = await nutritionRepo.getNutritionTargets();
-          AppLogger.debug('✅ [AI CHAT] Found ${nutritionHistory.length} nutrition days');
-
-          bodyEntries = await bodyRepo.getBodyEntriesByDateRange(
-            thirtyDaysAgo,
-            now,
-          );
-          AppLogger.debug('✅ [AI CHAT] Found ${bodyEntries.length} body entries');
+          bodyEntries =
+              await bodyRepo.getBodyEntriesByDateRange(thirtyDaysAgo, now);
         } catch (e) {
           AppLogger.debug('⚠️ [AI CHAT] Error gathering user data: $e');
         }
-      } else {
-        AppLogger.debug('🔒 [AI CHAT] Personalization consent DISABLED. Preserving privacy.');
       }
 
-      // Build system prompt with user context
-      AppLogger.debug('🔧 [AI CHAT] Step 2: Building system prompt...');
+      final dataEpoch = ChangeDetectionServiceImpl.computeDataEpoch(
+        workouts: recentWorkouts,
+        nutrition: nutritionHistory,
+        bodyEntries: bodyEntries,
+      );
+
       final systemPrompt = _buildSystemPrompt(
         hasConsent: hasConsent,
+        units: units,
         profile: profile,
         recentWorkouts: recentWorkouts,
         nutritionHistory: nutritionHistory,
         nutritionTargets: nutritionTargets,
         bodyEntries: bodyEntries,
       );
-      AppLogger.debug('✅ [AI CHAT] System prompt built (${systemPrompt.length} chars)');
 
-      String responseText;
+      String responseText = '';
       bool isFallback = false;
       String? errorMessage;
-      
-      // Wave 6.1 — AI-05: Check normalized question cache & canonical FAQs
+
+      final hasProxyAuth = await _geminiService.hasAvailableAuthForProxy();
+      final canUseRemoteGemini =
+          _geminiService.isConfigured && isOnline && hasProxyAuth;
+
       final resolution = _questionNormalizer.resolve(
         message,
-        includeCanonicalFaqs: !_geminiService.isConfigured,
+        includeCanonicalFaqs: !canUseRemoteGemini,
+        locale: locale.languageCode,
+        units: units.name,
+        hasConsent: hasConsent,
+        dataEpoch: dataEpoch,
       );
+
       if (resolution.cachedResponse != null) {
-        AppLogger.debug('⚡ [AI CHAT] Resolved from question cache (${resolution.isCanonicalFaq ? "canonical FAQ" : "cached entry"})');
         responseText = resolution.cachedResponse!;
-      } else if (!_geminiService.isConfigured) {
-        AppLogger.debug('⚠️ [AI CHAT] No Gemini API key configured. Using Local AI Coach...');
+      } else if (!canUseRemoteGemini) {
         isFallback = true;
         responseText = _localCoach.generateResponse(
           message,
@@ -352,35 +407,42 @@ class AIChatNotifier extends Notifier<AIChatState> {
         );
       } else {
         try {
-          AppLogger.debug('═══════════════════════════════════════');
-          AppLogger.debug('🤖 [AI CHAT] Step 7: Calling Gemini AI');
-          AppLogger.debug('📡 [AI CHAT] Sending request to Gemini API...');
-          AppLogger.debug('═══════════════════════════════════════');
-          
-          responseText = await _geminiService.sendMessage(
-            [{'role': 'user', 'content': message}],
+          final historyPayload = _buildBoundedConversationPayload();
+          final buffer = StringBuffer();
+
+          await for (final chunk in _geminiService.streamMessage(
+            historyPayload,
             systemPrompt: systemPrompt,
             temperature: 0.7,
-            maxTokens: 1000,
+            maxTokens: AiTransport.defaultMaxOutputTokens,
+          )) {
+            buffer.write(chunk);
+            if (!_disposed) {
+              state = state.copyWith(streamingMessage: buffer.toString());
+            }
+          }
+
+          responseText = buffer.toString().trim();
+          if (responseText.isEmpty) {
+            responseText = await _geminiService.sendMessage(
+              historyPayload,
+              systemPrompt: systemPrompt,
+              temperature: 0.7,
+              maxTokens: AiTransport.defaultMaxOutputTokens,
+            );
+          }
+
+          _questionNormalizer.cacheResponse(
+            message,
+            responseText,
+            locale: locale.languageCode,
+            units: units.name,
+            hasConsent: hasConsent,
+            dataEpoch: dataEpoch,
           );
-          
-          // Cache successful response for future queries
-          _questionNormalizer.cacheResponse(message, responseText);
-          
-          AppLogger.debug('═══════════════════════════════════════');
-          AppLogger.debug('✅ [AI CHAT] Gemini response received!');
-          AppLogger.debug('📝 [AI CHAT] Response length: ${responseText.length} chars');
-          AppLogger.debug('═══════════════════════════════════════');
         } catch (e) {
-          AppLogger.debug('═══════════════════════════════════════');
-          AppLogger.debug('❌ [AI CHAT ERROR] Gemini API failed!');
-          AppLogger.debug('🔴 [AI CHAT ERROR] Error message: $e');
-          AppLogger.debug('═══════════════════════════════════════');
-          AppLogger.debug('🔄 [AI CHAT] Falling back to LocalAI with plain English notification...');
-          
           isFallback = true;
           errorMessage = _formatErrorMessage(e);
-          
           responseText = _localCoach.generateResponse(
             message,
             profile: profile,
@@ -392,17 +454,15 @@ class AIChatNotifier extends Notifier<AIChatState> {
         }
       }
 
-      // Wave 6.1 — AI-05: Estimate tokens and compute cost for transparency
-      final inTokens = AiCostEstimator.estimateTokenCount(message);
+      final inTokens = AiCostEstimator.estimateTokenCount(
+        '$systemPrompt\n$message',
+      );
       final outTokens = AiCostEstimator.estimateTokenCount(responseText);
       final cost = AiCostEstimator.calculateCostUsd(
         inputTokens: inTokens,
         outputTokens: outTokens,
       );
-      AppLogger.debug('💰 [AI CHAT] Estimated cost: ${AiCostEstimator.formatCostUsd(cost)} ($inTokens in, $outTokens out)');
 
-      // Add assistant message
-      AppLogger.debug('💾 [AI CHAT] Step 8: Saving response to chat...');
       final assistantMessage = ChatMessage(
         id: const Uuid().v4(),
         role: 'assistant',
@@ -413,13 +473,18 @@ class AIChatNotifier extends Notifier<AIChatState> {
       state = state.copyWith(
         messages: [...state.messages, assistantMessage],
         isLoading: false,
+        clearStreamingMessage: true,
         isOfflineFallback: isFallback,
         error: errorMessage,
         lastFailedMessage: errorMessage != null ? message : null,
+        lastInputTokens: inTokens,
+        lastOutputTokens: outTokens,
+        lastRequestCostUsd: cost,
+        sessionTotalTokens: state.sessionTotalTokens + inTokens + outTokens,
+        sessionTotalCostUsd: state.sessionTotalCostUsd + cost,
       );
       _chatStorage?.saveMessages(state.messages);
-      
-      // Track AI query event
+
       try {
         final analytics = ref.read(analyticsServiceProvider);
         await analytics.logAIQuery(
@@ -427,114 +492,256 @@ class AIChatNotifier extends Notifier<AIChatState> {
           query: message,
           responseLength: responseText.length,
         );
-        AppLogger.debug('📊 [Analytics] AI query event logged');
-      } catch (e) {
-        AppLogger.debug('⚠️ [Analytics] Failed to log AI query event: $e');
-      }
-      
-      AppLogger.debug('═══════════════════════════════════════');
-      AppLogger.debug('🎉 [AI CHAT] Message processing complete!');
-      AppLogger.debug('📊 [AI CHAT] Total messages: ${state.messages.length}');
-      AppLogger.debug('═══════════════════════════════════════');
-    } catch (e, stackTrace) {
-      AppLogger.debug('═══════════════════════════════════════');
-      AppLogger.debug('❌❌❌ [AI CHAT FATAL ERROR] ❌❌❌');
-      AppLogger.debug('🔴 [AI CHAT ERROR] Error message: $e');
-      AppLogger.debug(stackTrace);
-      AppLogger.debug('═══════════════════════════════════════');
-      
+      } catch (_) {}
+    } catch (e) {
       state = state.copyWith(
         isLoading: false,
+        clearStreamingMessage: true,
         error: _formatErrorMessage(e),
         lastFailedMessage: message,
       );
     }
   }
 
-  /// Build system prompt with user context, privacy gating and safety guardrails
+  /// Estimates meal macros from a transient base64 photo through the proxy
+  /// with consent verification, zero photo storage, and an explicit `"ESTIMATE"`
+  /// `"Tap to apply"` card (Wave 7.3 — ADR-003).
+  Future<void> estimateMealPhoto({
+    required String base64Image,
+    String mimeType = 'image/jpeg',
+    String? mealHint,
+  }) async {
+    final hasConsent = ref.read(aiPersonalizationConsentProvider);
+    if (!hasConsent) {
+      state = state.copyWith(
+        error:
+            'Personalization consent is required before estimating meal macros from a photo.',
+      );
+      return;
+    }
+
+    final userMessage = ChatMessage(
+      id: const Uuid().v4(),
+      role: 'user',
+      content: mealHint != null && mealHint.trim().isNotEmpty
+          ? '📷 Estimate meal macros: ${mealHint.trim()}'
+          : '📷 Estimate meal macros from photo (transient, not stored)',
+      timestamp: DateTime.now(),
+    );
+
+    state = state.copyWith(
+      messages: [...state.messages, userMessage],
+      isLoading: true,
+      clearError: true,
+    );
+
+    String responseText;
+    final isOnline = ref.read(isOnlineProvider).valueOrNull ?? true;
+    final hasProxyAuth = await _geminiService.hasAvailableAuthForProxy();
+
+    if (_geminiService.isConfigured && isOnline && hasProxyAuth) {
+      try {
+        responseText = await _geminiService.estimateMealFromPhoto(
+          base64Image: base64Image,
+          mimeType: mimeType,
+        );
+      } catch (_) {
+        responseText = AiChatPromptBuilder.buildFallbackMealPhotoEstimate(mealHint);
+      }
+    } else {
+      responseText = AiChatPromptBuilder.buildFallbackMealPhotoEstimate(mealHint);
+    }
+
+    final assistantMessage = ChatMessage(
+      id: const Uuid().v4(),
+      role: 'assistant',
+      content: responseText,
+      timestamp: DateTime.now(),
+    );
+
+    state = state.copyWith(
+      messages: [...state.messages, assistantMessage],
+      isLoading: false,
+    );
+    _chatStorage?.saveMessages(state.messages);
+  }
+
+  /// Applies a validated [AiCoachAction] on explicit user tap and registers a
+  /// 1-tap `Undo` callback (Wave 7.3 — ADR-003).
+  Future<String?> applyCoachAction(AiCoachAction action) async {
+    final activeUserId = ref.read(currentUserIdProvider);
+    if (!action.isOwnedBy(activeUserId)) {
+      return 'Action rejected: ownership mismatch for current account.';
+    }
+
+    switch (action.type) {
+      case AiCoachActionType.saveProgram:
+        final programRepo = ref.read(activeProgramRepositoryProvider);
+        final priorProgram = await programRepo.loadActiveProgram();
+        final newProgram = WorkoutProgram(
+          id: 'ai_prog_${const Uuid().v4()}',
+          name: action.programName ?? 'AI Custom Program',
+          description: action.summary,
+          difficulty: action.difficulty ?? 'Intermediate',
+          durationWeeks: action.durationWeeks ?? 8,
+          days: action.programDays
+              .map(
+                (d) => ProgramDay(
+                  dayNumber: d.dayNumber,
+                  name: d.name,
+                  focus: d.focus,
+                  isRestDay: d.isRestDay,
+                  exercises: d.exercises
+                      .map(
+                        (e) => ProgramExercise(
+                          exerciseName: e.exerciseName,
+                          exerciseDefinitionId: e.canonicalExerciseId,
+                          sets: e.sets,
+                          reps: e.reps,
+                          restSeconds: e.restSeconds,
+                        ),
+                      )
+                      .toList(),
+                ),
+              )
+              .toList(),
+        );
+        final active = ActiveProgram(
+          id: 'active_${const Uuid().v4()}',
+          program: newProgram,
+          currentDayIndex: 0,
+          isActive: true,
+          userId: activeUserId,
+          updatedAt: DateTime.now(),
+        );
+        await programRepo.saveActiveProgram(active);
+        ref.invalidate(activeProgramProvider);
+
+        _undoCallbacks[action.id] = () async {
+          if (priorProgram != null) {
+            await programRepo.saveActiveProgram(priorProgram);
+          } else {
+            await programRepo.clearActiveProgram();
+          }
+          ref.invalidate(activeProgramProvider);
+        };
+        break;
+
+      case AiCoachActionType.swapExercise:
+        final programRepo = ref.read(activeProgramRepositoryProvider);
+        final currentActive = await programRepo.loadActiveProgram();
+        if (currentActive == null) {
+          return 'No active program found to swap exercises in.';
+        }
+        final updatedDays = currentActive.program.days.map((day) {
+          final updatedEx = day.exercises.map((ex) {
+            if (ex.exerciseName.toLowerCase() ==
+                (action.fromExercise ?? '').toLowerCase()) {
+              return ex.copyWith(
+                exerciseName: action.toExercise ?? ex.exerciseName,
+                exerciseDefinitionId:
+                    action.toCanonicalExerciseId ?? ex.exerciseDefinitionId,
+              );
+            }
+            return ex;
+          }).toList();
+          return day.copyWith(exercises: updatedEx);
+        }).toList();
+
+        final updatedActive = currentActive.copyWith(
+          program: currentActive.program.copyWith(days: updatedDays),
+          updatedAt: DateTime.now(),
+        );
+        await programRepo.saveActiveProgram(updatedActive);
+        ref.invalidate(activeProgramProvider);
+
+        _undoCallbacks[action.id] = () async {
+          await programRepo.saveActiveProgram(currentActive);
+          ref.invalidate(activeProgramProvider);
+        };
+        break;
+
+      case AiCoachActionType.logMeal:
+        final nutritionRepo = ref.read(nutritionRepositoryProvider);
+        final mealId = const Uuid().v4();
+        final meal = Meal(
+          id: mealId,
+          name: action.isEstimate
+              ? '${action.mealName} (Estimate)'
+              : (action.mealName ?? 'Logged Meal'),
+          macros: MealMacros(
+            calories: action.calories ?? 0,
+            protein: action.proteinG ?? 0,
+            carbs: action.carbsG ?? 0,
+            fats: action.fatsG ?? 0,
+          ),
+          micros: const MealMicros(fiber: 0, sugar: 0, sodium: 0, potassium: 0),
+          vitamins: const MealVitamins(
+            vitaminA: 0,
+            vitaminB: 0,
+            vitaminC: 0,
+            vitaminD: 0,
+            vitaminE: 0,
+          ),
+          minerals: const MealMinerals(
+            calcium: 0,
+            iron: 0,
+            magnesium: 0,
+            zinc: 0,
+          ),
+          timestamp: DateTime.now(),
+          userId: activeUserId,
+          updatedAt: DateTime.now(),
+        );
+        await nutritionRepo.saveMealEntry(meal);
+        ref.invalidate(dailyNutritionSummaryProvider(todayNutritionDayKey()));
+
+        _undoCallbacks[action.id] = () async {
+          await nutritionRepo.deleteMealEntry(mealId);
+          ref.invalidate(dailyNutritionSummaryProvider(todayNutritionDayKey()));
+        };
+        break;
+    }
+
+    state = state.copyWith(
+      appliedActionIds: {...state.appliedActionIds, action.id},
+    );
+    return null;
+  }
+
+  /// Reverts a previously applied [AiCoachAction] by [actionId] (Wave 7.3).
+  Future<bool> undoCoachAction(String actionId) async {
+    final undo = _undoCallbacks.remove(actionId);
+    if (undo == null) return false;
+    await undo();
+    final nextApplied = Set<String>.from(state.appliedActionIds)
+      ..remove(actionId);
+    state = state.copyWith(appliedActionIds: nextApplied);
+    return true;
+  }
+
   String _buildSystemPrompt({
     bool hasConsent = false,
+    UnitsSystem units = UnitsSystem.metric,
     UserProfile? profile,
     List<Workout> recentWorkouts = const [],
     List<DailyNutritionSummary> nutritionHistory = const [],
     NutritionTargets? nutritionTargets,
     List<BodyEntry> bodyEntries = const [],
-  }) {
-    final buffer = StringBuffer();
-    
-    buffer.writeln('You are a knowledgeable, supportive fitness and nutrition coach.');
-    buffer.writeln('Your role is to provide short, accurate, evidence-based fitness and nutrition answers in plain English.');
-    buffer.writeln();
-    buffer.writeln('STRICT RESPONSE RULES (CRITICAL):');
-    buffer.writeln('1. Under 80 words: Keep your entire response under 80 words. Be direct, clear, and concise.');
-    buffer.writeln('2. Maximum 3 bullets: If you list items or recommendations, use at most 3 bullet points.');
-    buffer.writeln('3. Exactly 1 next step: Always conclude your response with a clear heading or line "**Next Step:**" followed by exactly 1 practical action the user should take right now.');
-    buffer.writeln('4. Simple English: Speak like an encouraging, knowledgeable human coach. Do NOT use sci-fi, military, or robotic jargon (avoid words like "operator", "directive", "protocol", "telemetry", "cipher", "heuristic", "neural core").');
-    buffer.writeln();
-    buffer.writeln('SAFETY AND MEDICAL GUARDRAILS (CRITICAL):');
-    buffer.writeln('- You are a fitness coach, NOT a physician or doctor.');
-    buffer.writeln('- NEVER provide clinical medical diagnoses or prescribe medications.');
-    buffer.writeln('- If the user asks about chest pain, joint injury, acute dizziness, or sharp pain, instruct them to stop exercising immediately and consult a doctor.');
-    buffer.writeln('- Remind users to adhere to proper warmup and progressive overload.');
-    buffer.writeln();
-    
-    // Add user profile context only if user gave consent
-    if (hasConsent && profile != null) {
-      buffer.writeln('USER PROFILE:');
-      buffer.writeln('- Name: ${profile.name ?? "User"}');
-      
-      // Handle goals
-      if (profile.goals != null && (profile.goals as List).isNotEmpty) {
-        buffer.writeln('- Goals: ${(profile.goals as List).join(", ")}');
-      }
-      
-      // Handle fitness level
-      if (profile.fitnessLevel != null) {
-        buffer.writeln('- Fitness Level: ${profile.fitnessLevel}');
-      }
-      
-      // Handle equipment
-      if (profile.equipment != null && (profile.equipment as List).isNotEmpty) {
-        buffer.writeln('- Available Equipment: ${(profile.equipment as List).join(", ")}');
-      }
-      
-      buffer.writeln();
-    } else if (!hasConsent) {
-      buffer.writeln('USER PRIVACY:');
-      buffer.writeln('- Detailed profile, workout and nutrition sharing is disabled for privacy.');
-      buffer.writeln('- Provide general evidence-based training advice and ask clarifying questions if specifics are needed.');
-      buffer.writeln();
-    }
-    
-    // Add workout context only if user gave consent
-    if (hasConsent && recentWorkouts.isNotEmpty) {
-      buffer.writeln('RECENT ACTIVITY:');
-      buffer.writeln('- ${recentWorkouts.length} workouts in last 30 days');
-      buffer.writeln();
-    }
-    
-    // Add nutrition context only if user gave consent
-    if (hasConsent && nutritionHistory.isNotEmpty) {
-      buffer.writeln('NUTRITION:');
-      buffer.writeln('- Tracking nutrition for ${nutritionHistory.length} days');
-      if (nutritionTargets != null) {
-        buffer.writeln('- Has nutrition targets set');
-      }
-      buffer.writeln();
-    }
-    
-    // Add body tracking context only if user gave consent
-    if (hasConsent && bodyEntries.isNotEmpty) {
-      buffer.writeln('PROGRESS TRACKING:');
-      buffer.writeln('- ${bodyEntries.length} body measurements logged');
-      buffer.writeln();
-    }
-    
-    return buffer.toString();
-  }
+  }) =>
+      AiChatPromptBuilder.buildSystemPrompt(
+        hasConsent: hasConsent,
+        units: units,
+        profile: profile,
+        recentWorkouts: recentWorkouts,
+        nutritionHistory: nutritionHistory,
+        nutritionTargets: nutritionTargets,
+        bodyEntries: bodyEntries,
+      );
 
   Future<void> clearHistory() async {
-    state = state.copyWith(messages: []);
+    _undoCallbacks.clear();
+    state = state.copyWith(messages: [], appliedActionIds: const {});
     await _chatStorage?.clearMessages();
   }
 

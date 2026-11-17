@@ -130,7 +130,32 @@ export const aiGenerate = onRequest(
       logger: (entry: Record<string, unknown>) => {
         console.log(JSON.stringify(entry));
       },
+      onStreamStart: ({
+        status,
+        headers,
+      }: {
+        status: number;
+        headers: Record<string, string>;
+      }) => {
+        res.status(status);
+        for (const [k, v] of Object.entries(headers ?? {})) {
+          res.setHeader(k, String(v));
+        }
+        if (typeof res.flushHeaders === 'function') {
+          res.flushHeaders();
+        }
+      },
+      onStreamChunk: (chunk: string) => {
+        res.write(chunk);
+      },
+      onStreamEnd: () => {
+        res.end();
+      },
     });
+
+    if (result.streamed) {
+      return;
+    }
 
     for (const [k, v] of Object.entries(result.headers ?? {})) {
       res.setHeader(k, String(v));

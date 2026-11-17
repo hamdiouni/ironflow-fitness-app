@@ -1,32 +1,29 @@
 import 'package:progression_tracker/core/utils/app_logger.dart';
 import '../../domain/services/change_detection_service.dart';
 import '../../domain/entities/insight.dart';
+import '../../../workout/domain/entities/workout.dart';
 import '../../../workout/domain/repositories/workout_repository.dart';
+import '../../../nutrition/domain/entities/daily_nutrition_summary.dart';
 import '../../../nutrition/domain/repositories/nutrition_repository.dart';
+import '../../../body/domain/entities/body_entry.dart';
 import '../../../body/domain/repositories/body_repository.dart';
 
-/// Implementation of ChangeDetectionService for tracking data changes
+/// Implementation of [ChangeDetectionService] for tracking data changes (Wave 7.2).
 ///
-/// This service efficiently detects when underlying data has changed by
-/// comparing timestamps of the most recent entries in each data source.
-/// It maintains an in-memory cache of last known timestamps to avoid
-/// unnecessary database queries.
-///
-/// **Optimization Strategy:**
-/// - Fetch only the most recent record from each repository
-/// - Compare timestamps efficiently using milliseconds since epoch
-/// - Update internal timestamp cache after each check
-/// - Use pagination with limit=1 to get latest entries efficiently
-///
-/// **Requirements:**
-/// - 4.4: Track when workout, nutrition, or body data changes
-/// - 4.5: Detect data changes efficiently without full data scans
-/// - 11.5: Optimize timestamp comparison logic
-/// - 11.6: Fetch only latest record from each repository
+/// Uses `limit: 1` pagination for workouts and nutrition while detecting:
+/// 1. New records (`date.isAfter(lastGenerated)`)
+/// 2. In-place edits (`updatedAt.isAfter(lastGenerated)`)
+/// 3. Deletions (when the top record ID or meal/body count changes between checks).
 class ChangeDetectionServiceImpl implements ChangeDetectionService {
   final WorkoutRepository _workoutRepository;
   final NutritionRepository _nutritionRepository;
   final BodyRepository _bodyRepository;
+
+  String? _lastTopWorkoutId;
+  bool _hadWorkoutPreviously = false;
+  int? _lastTopDayMealCount;
+  bool _hadNutritionPreviously = false;
+  int? _lastObservedBodyCount;
 
   ChangeDetectionServiceImpl({
     required WorkoutRepository workoutRepository,
@@ -36,36 +33,97 @@ class ChangeDetectionServiceImpl implements ChangeDetectionService {
         _nutritionRepository = nutritionRepository,
         _bodyRepository = bodyRepository;
 
+  /// Computes a deterministic integer epoch for a user's current dataset across
+  /// workouts, nutrition logs, and body entries so caches invalidate on any
+  /// insert, edit (`updatedAt`), or delete (count change).
+  static int computeDataEpoch({
+    List<Workout> workouts = const [],
+    List<DailyNutritionSummary> nutrition = const [],
+    List<BodyEntry> bodyEntries = const [],
+  }) {
+    var maxMillis = 0;
+    var totalMeals = 0;
+
+    for (final w in workouts) {
+      final d = w.date.millisecondsSinceEpoch;
+      final u = w.updatedAt?.millisecondsSinceEpoch ?? d;
+      if (d > maxMillis) maxMillis = d;
+      if (u > maxMillis) maxMillis = u;
+    }
+
+    for (final day in nutrition) {
+      totalMeals += day.meals.length;
+      final dayMs = day.date.millisecondsSinceEpoch;
+      if (dayMs > maxMillis) maxMillis = dayMs;
+      for (final m in day.meals) {
+        final t = m.timestamp.millisecondsSinceEpoch;
+        final u = m.updatedAt?.millisecondsSinceEpoch ?? t;
+        if (t > maxMillis) maxMillis = t;
+        if (u > maxMillis) maxMillis = u;
+      }
+    }
+
+    for (final b in bodyEntries) {
+      final d = b.date.millisecondsSinceEpoch;
+      final u = b.updatedAt?.millisecondsSinceEpoch ?? d;
+      if (d > maxMillis) maxMillis = d;
+      if (u > maxMillis) maxMillis = u;
+    }
+
+    return Object.hash(
+      workouts.length,
+      totalMeals,
+      bodyEntries.length,
+      maxMillis,
+    );
+  }
+
+  static DateTime _effectiveWorkoutTime(Workout w) {
+    final updated = w.updatedAt;
+    if (updated != null && updated.isAfter(w.date)) {
+      return updated;
+    }
+    return w.date;
+  }
+
+  static DateTime _effectiveBodyTime(BodyEntry b) {
+    final updated = b.updatedAt;
+    if (updated != null && updated.isAfter(b.date)) {
+      return updated;
+    }
+    return b.date;
+  }
+
   @override
   Future<bool> hasWorkoutDataChanged(DateTime lastGenerated) async {
     try {
       AppLogger.debug('🔍 [ChangeDetection] Checking workout data changes...');
-      AppLogger.debug('🔍 [ChangeDetection] Last generated: $lastGenerated');
-      
-      // Get the most recent workout (limit=1, offset=0)
       final recentWorkouts = await _workoutRepository.getWorkoutsPaginated(
         offset: 0,
         limit: 1,
       );
-      
+
       if (recentWorkouts.isEmpty) {
-        AppLogger.debug('🔍 [ChangeDetection] No workouts found');
-        return false;
+        final deletedAll = _hadWorkoutPreviously;
+        _hadWorkoutPreviously = false;
+        _lastTopWorkoutId = null;
+        return deletedAll;
       }
-      
+
       final latestWorkout = recentWorkouts.first;
-      
-      AppLogger.debug('🔍 [ChangeDetection] Latest workout: ${latestWorkout.date}');
-      
-      // Check if latest workout is newer than last generation
-      final hasChanged = latestWorkout.date.isAfter(lastGenerated);
-      
-      AppLogger.debug('🔍 [ChangeDetection] Workout data changed: $hasChanged');
-      return hasChanged;
+      final previousTopId = _lastTopWorkoutId;
+      _hadWorkoutPreviously = true;
+      _lastTopWorkoutId = latestWorkout.id;
+
+      // Detect top-record deletion or replacement even if dates are older
+      if (previousTopId != null && previousTopId != latestWorkout.id) {
+        return true;
+      }
+
+      return _effectiveWorkoutTime(latestWorkout).isAfter(lastGenerated);
     } catch (e, stackTrace) {
       AppLogger.debug('❌ [ChangeDetection] Failed to check workout data changes: $e');
       AppLogger.debug('🔍 [ChangeDetection] Stack trace: $stackTrace');
-      // Return true on error to force regeneration
       return true;
     }
   }
@@ -74,45 +132,44 @@ class ChangeDetectionServiceImpl implements ChangeDetectionService {
   Future<bool> hasNutritionDataChanged(DateTime lastGenerated) async {
     try {
       AppLogger.debug('🔍 [ChangeDetection] Checking nutrition data changes...');
-      AppLogger.debug('🔍 [ChangeDetection] Last generated: $lastGenerated');
-      
-      // Get the most recent nutrition data (limit=1, offset=0)
       final recentNutrition = await _nutritionRepository.getNutritionHistoryPaginated(
         offset: 0,
         limit: 1,
       );
-      
+
       if (recentNutrition.isEmpty) {
-        AppLogger.debug('🔍 [ChangeDetection] No nutrition data found');
-        return false;
+        final deletedAll = _hadNutritionPreviously;
+        _hadNutritionPreviously = false;
+        _lastTopDayMealCount = null;
+        return deletedAll;
       }
-      
+
       final latestNutrition = recentNutrition.first;
-      
-      // Find the most recent meal timestamp from the day's meals
+      final mealCount = latestNutrition.meals.length;
+      final previousMealCount = _lastTopDayMealCount;
+      _hadNutritionPreviously = true;
+      _lastTopDayMealCount = mealCount;
+
+      if (previousMealCount != null && previousMealCount != mealCount) {
+        return true;
+      }
+
       DateTime? mostRecentMealTime;
       for (final meal in latestNutrition.meals) {
-        if (mostRecentMealTime == null || meal.timestamp.isAfter(mostRecentMealTime)) {
-          mostRecentMealTime = meal.timestamp;
+        final mealTime = (meal.updatedAt != null &&
+                meal.updatedAt!.isAfter(meal.timestamp))
+            ? meal.updatedAt!
+            : meal.timestamp;
+        if (mostRecentMealTime == null || mealTime.isAfter(mostRecentMealTime)) {
+          mostRecentMealTime = mealTime;
         }
       }
-      
-      // Use the most recent meal time or the day's date as fallback
+
       final latestDataTime = mostRecentMealTime ?? latestNutrition.date;
-      
-      AppLogger.debug('🔍 [ChangeDetection] Latest nutrition date: ${latestNutrition.date}');
-      AppLogger.debug('🔍 [ChangeDetection] Most recent meal time: $mostRecentMealTime');
-      AppLogger.debug('🔍 [ChangeDetection] Latest data time: $latestDataTime');
-      
-      // Check if latest data is newer than last generation
-      final hasChanged = latestDataTime.isAfter(lastGenerated);
-      
-      AppLogger.debug('🔍 [ChangeDetection] Nutrition data changed: $hasChanged');
-      return hasChanged;
+      return latestDataTime.isAfter(lastGenerated);
     } catch (e, stackTrace) {
       AppLogger.debug('❌ [ChangeDetection] Failed to check nutrition data changes: $e');
       AppLogger.debug('🔍 [ChangeDetection] Stack trace: $stackTrace');
-      // Return true on error to force regeneration
       return true;
     }
   }
@@ -121,31 +178,29 @@ class ChangeDetectionServiceImpl implements ChangeDetectionService {
   Future<bool> hasBodyDataChanged(DateTime lastGenerated) async {
     try {
       AppLogger.debug('🔍 [ChangeDetection] Checking body data changes...');
-      AppLogger.debug('🔍 [ChangeDetection] Last generated: $lastGenerated');
-      
-      // Get all body entries and find the most recent one
-      // Note: BodyRepository doesn't have pagination, so we get all and take the first
       final allBodyEntries = await _bodyRepository.getAllBodyEntries();
-      
+
+      final currentCount = allBodyEntries.length;
+      final previousCount = _lastObservedBodyCount;
+      _lastObservedBodyCount = currentCount;
+
+      if (previousCount != null && currentCount != previousCount) {
+        return true;
+      }
+
       if (allBodyEntries.isEmpty) {
-        AppLogger.debug('🔍 [ChangeDetection] No body entries found');
         return false;
       }
-      
-      // Body entries are sorted by date descending, so first is most recent
-      final latestEntry = allBodyEntries.first;
-      
-      AppLogger.debug('🔍 [ChangeDetection] Latest body entry: ${latestEntry.date}');
-      
-      // Check if latest entry is newer than last generation
-      final hasChanged = latestEntry.date.isAfter(lastGenerated);
-      
-      AppLogger.debug('🔍 [ChangeDetection] Body data changed: $hasChanged');
-      return hasChanged;
+
+      for (final entry in allBodyEntries) {
+        if (_effectiveBodyTime(entry).isAfter(lastGenerated)) {
+          return true;
+        }
+      }
+      return false;
     } catch (e, stackTrace) {
       AppLogger.debug('❌ [ChangeDetection] Failed to check body data changes: $e');
       AppLogger.debug('🔍 [ChangeDetection] Stack trace: $stackTrace');
-      // Return true on error to force regeneration
       return true;
     }
   }
@@ -153,53 +208,39 @@ class ChangeDetectionServiceImpl implements ChangeDetectionService {
   @override
   Future<DateTime?> getLastDataChange(InsightContext context) async {
     try {
-      AppLogger.debug('🔍 [ChangeDetection] Getting last data change for context: ${context.name}');
-      
       final timestamps = <DateTime>[];
-      
-      // Get relevant data sources based on context
+
       switch (context) {
         case InsightContext.home:
-          // Home context uses all data sources
           await _addWorkoutTimestamp(timestamps);
           await _addNutritionTimestamp(timestamps);
           await _addBodyTimestamp(timestamps);
           break;
         case InsightContext.workout:
-          // Workout context uses only workout data
           await _addWorkoutTimestamp(timestamps);
           break;
         case InsightContext.nutrition:
-          // Nutrition context uses only nutrition data
           await _addNutritionTimestamp(timestamps);
           break;
         case InsightContext.profile:
-          // Profile context uses body data and workout data
           await _addBodyTimestamp(timestamps);
           await _addWorkoutTimestamp(timestamps);
           break;
       }
-      
+
       if (timestamps.isEmpty) {
-        AppLogger.debug('🔍 [ChangeDetection] No data found for context: ${context.name}');
         return null;
       }
-      
-      // Find the most recent timestamp
-      timestamps.sort((a, b) => b.compareTo(a)); // Sort descending
-      final mostRecentDate = timestamps.first;
-      
-      AppLogger.debug('🔍 [ChangeDetection] Most recent data change for ${context.name}: $mostRecentDate');
-      return mostRecentDate;
+
+      timestamps.sort((a, b) => b.compareTo(a));
+      return timestamps.first;
     } catch (e, stackTrace) {
       AppLogger.debug('❌ [ChangeDetection] Failed to get last data change for context ${context.name}: $e');
       AppLogger.debug('🔍 [ChangeDetection] Stack trace: $stackTrace');
-      // Return null on error
       return null;
     }
   }
 
-  /// Helper method to add workout timestamp to the list
   Future<void> _addWorkoutTimestamp(List<DateTime> timestamps) async {
     try {
       final recentWorkouts = await _workoutRepository.getWorkoutsPaginated(
@@ -207,14 +248,13 @@ class ChangeDetectionServiceImpl implements ChangeDetectionService {
         limit: 1,
       );
       if (recentWorkouts.isNotEmpty) {
-        timestamps.add(recentWorkouts.first.date);
+        timestamps.add(_effectiveWorkoutTime(recentWorkouts.first));
       }
     } catch (e) {
       AppLogger.debug('⚠️ [ChangeDetection] Failed to get workout timestamp: $e');
     }
   }
 
-  /// Helper method to add nutrition timestamp to the list
   Future<void> _addNutritionTimestamp(List<DateTime> timestamps) async {
     try {
       final recentNutrition = await _nutritionRepository.getNutritionHistoryPaginated(
@@ -223,34 +263,31 @@ class ChangeDetectionServiceImpl implements ChangeDetectionService {
       );
       if (recentNutrition.isNotEmpty) {
         final latestNutrition = recentNutrition.first;
-        
-        // Find the most recent meal timestamp
         DateTime? mostRecentMealTime;
         for (final meal in latestNutrition.meals) {
-          if (mostRecentMealTime == null || meal.timestamp.isAfter(mostRecentMealTime)) {
-            mostRecentMealTime = meal.timestamp;
+          final mealTime = (meal.updatedAt != null &&
+                  meal.updatedAt!.isAfter(meal.timestamp))
+              ? meal.updatedAt!
+              : meal.timestamp;
+          if (mostRecentMealTime == null || mealTime.isAfter(mostRecentMealTime)) {
+            mostRecentMealTime = mealTime;
           }
         }
-        
-        // Use the most recent meal time or the day's date as fallback
-        final latestDataTime = mostRecentMealTime ?? latestNutrition.date;
-        timestamps.add(latestDataTime);
+        timestamps.add(mostRecentMealTime ?? latestNutrition.date);
       }
     } catch (e) {
       AppLogger.debug('⚠️ [ChangeDetection] Failed to get nutrition timestamp: $e');
     }
   }
 
-  /// Helper method to add body timestamp to the list
   Future<void> _addBodyTimestamp(List<DateTime> timestamps) async {
     try {
       final allBodyEntries = await _bodyRepository.getAllBodyEntries();
       if (allBodyEntries.isNotEmpty) {
-        timestamps.add(allBodyEntries.first.date);
+        timestamps.add(_effectiveBodyTime(allBodyEntries.first));
       }
     } catch (e) {
       AppLogger.debug('⚠️ [ChangeDetection] Failed to get body timestamp: $e');
     }
   }
-
 }

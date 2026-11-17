@@ -1,19 +1,21 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:progression_tracker/core/providers/language_provider.dart';
 import 'package:progression_tracker/features/ai/data/services/tts_service.dart';
 
 // Export VoicePersona for use in UI
-export 'package:progression_tracker/features/ai/data/services/tts_service.dart' show VoicePersona;
+export 'package:progression_tracker/features/ai/data/services/tts_service.dart'
+    show VoicePersona;
 
 /// TTS Service Provider
 final ttsServiceProvider = Provider<TtsService>((ref) {
   final service = TtsService();
-  service.initialize();
-  
-  // Dispose when provider is disposed
+  final locale = ref.watch(languageProvider);
+  service.syncWithAppLanguage(locale.languageCode);
+
   ref.onDispose(() {
     service.dispose();
   });
-  
+
   return service;
 });
 
@@ -28,6 +30,7 @@ class TtsState {
   final String? selectedVoice;
   final List<VoicePersona> personas;
   final String? selectedPersonaId;
+  final String languageTag;
 
   const TtsState({
     this.isSpeaking = false,
@@ -39,6 +42,7 @@ class TtsState {
     this.selectedVoice,
     this.personas = const [],
     this.selectedPersonaId,
+    this.languageTag = 'en-US',
   });
 
   TtsState copyWith({
@@ -51,6 +55,8 @@ class TtsState {
     String? selectedVoice,
     List<VoicePersona>? personas,
     String? selectedPersonaId,
+    String? languageTag,
+    bool clearSelectedVoice = false,
   }) {
     return TtsState(
       isSpeaking: isSpeaking ?? this.isSpeaking,
@@ -59,14 +65,16 @@ class TtsState {
       speechRate: speechRate ?? this.speechRate,
       pitch: pitch ?? this.pitch,
       availableVoices: availableVoices ?? this.availableVoices,
-      selectedVoice: selectedVoice ?? this.selectedVoice,
+      selectedVoice:
+          clearSelectedVoice ? null : (selectedVoice ?? this.selectedVoice),
       personas: personas ?? this.personas,
       selectedPersonaId: selectedPersonaId ?? this.selectedPersonaId,
+      languageTag: languageTag ?? this.languageTag,
     );
   }
 }
 
-/// TTS Notifier
+/// TTS Notifier (Wave 7.4 — event-handler driven, zero fixed delays).
 class TtsNotifier extends Notifier<TtsState> {
   TtsNotifier([this._injectedTtsService]);
 
@@ -79,27 +87,49 @@ class TtsNotifier extends Notifier<TtsState> {
     _disposed = false;
     ref.onDispose(() {
       _disposed = true;
+      _ttsService.onStateChanged = null;
     });
+
+    final locale = ref.watch(languageProvider);
     _ttsService = _injectedTtsService ?? ref.watch(ttsServiceProvider);
-    _loadVoices();
-    _loadPersonas();
-    return const TtsState();
+    _ttsService.onStateChanged = _syncFromService;
+
+    _initAndSync(locale.languageCode);
+
+    return TtsState(
+      availableVoices: _ttsService.availableVoices,
+      personas: _ttsService.getFitnessVoicePersonas(),
+      languageTag: TtsService.resolveLanguageTag(locale.languageCode),
+    );
   }
-  
-  /// Load available voices
-  Future<void> _loadVoices() async {
-    await Future.delayed(const Duration(milliseconds: 500)); // Wait for TTS to initialize
+
+  Future<void> _initAndSync(String languageCode) async {
+    await _ttsService.syncWithAppLanguage(languageCode);
+    _syncFromService();
+  }
+
+  void _syncFromService() {
     if (_disposed) return;
     final voices = _ttsService.availableVoices;
-    state = state.copyWith(availableVoices: voices);
-  }
-  
-  /// Load fitness personas
-  Future<void> _loadPersonas() async {
-    await Future.delayed(const Duration(milliseconds: 600)); // Wait for voices to load
-    if (_disposed) return;
     final personas = _ttsService.getFitnessVoicePersonas();
-    state = state.copyWith(personas: personas);
+    final currentVoice = _ttsService.currentVoice;
+    final validSelectedVoice =
+        (currentVoice != null && voices.contains(currentVoice))
+            ? currentVoice
+            : (state.selectedVoice != null &&
+                    voices.contains(state.selectedVoice))
+                ? state.selectedVoice
+                : null;
+
+    state = state.copyWith(
+      isSpeaking: _ttsService.isSpeaking,
+      isPaused: _ttsService.isPaused,
+      availableVoices: voices,
+      personas: personas,
+      selectedVoice: validSelectedVoice,
+      clearSelectedVoice: validSelectedVoice == null,
+      languageTag: _ttsService.currentLanguageTag,
+    );
   }
 
   /// Speak text
@@ -111,67 +141,76 @@ class TtsNotifier extends Notifier<TtsState> {
     );
 
     await _ttsService.speak(text);
-
-    // Update state after a delay to check if still speaking
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (!_disposed) {
-        state = state.copyWith(
-          isSpeaking: _ttsService.isSpeaking,
-          isPaused: _ttsService.isPaused,
-        );
-      }
-    });
+    _syncFromService();
   }
 
   /// Pause speech
   Future<void> pause() async {
     await _ttsService.pause();
-    state = state.copyWith(isPaused: true);
+    _syncFromService();
   }
 
   /// Resume speech
   Future<void> resume() async {
     await _ttsService.resume();
-    state = state.copyWith(isPaused: false);
+    _syncFromService();
   }
 
   /// Stop speech
   Future<void> stop() async {
     await _ttsService.stop();
-    state = state.copyWith(
-      isSpeaking: false,
-      isPaused: false,
-      currentText: null,
-    );
+    if (!_disposed) {
+      state = state.copyWith(
+        isSpeaking: false,
+        isPaused: false,
+        currentText: null,
+      );
+    }
   }
 
   /// Set speech rate
   Future<void> setSpeechRate(double rate) async {
     await _ttsService.setSpeechRate(rate);
-    state = state.copyWith(speechRate: rate);
+    if (!_disposed) {
+      state = state.copyWith(speechRate: rate);
+    }
   }
 
   /// Set pitch
   Future<void> setPitch(double pitch) async {
     await _ttsService.setPitch(pitch);
-    state = state.copyWith(pitch: pitch);
+    if (!_disposed) {
+      state = state.copyWith(pitch: pitch);
+    }
   }
-  
+
   /// Set voice
   Future<void> setVoice(String voiceName) async {
     await _ttsService.setVoice(voiceName);
-    state = state.copyWith(selectedVoice: voiceName);
+    if (!_disposed) {
+      final valid = state.availableVoices.contains(voiceName) ? voiceName : null;
+      state = state.copyWith(
+        selectedVoice: valid,
+        clearSelectedVoice: valid == null,
+      );
+    }
   }
-  
+
   /// Apply persona
   Future<void> applyPersona(VoicePersona persona) async {
     await _ttsService.applyPersona(persona);
-    state = state.copyWith(
-      selectedPersonaId: persona.id,
-      selectedVoice: persona.voiceName,
-      speechRate: persona.recommendedSpeed,
-      pitch: persona.pitch,
-    );
+    if (!_disposed) {
+      final validVoice = state.availableVoices.contains(persona.voiceName)
+          ? persona.voiceName
+          : null;
+      state = state.copyWith(
+        selectedPersonaId: persona.id,
+        selectedVoice: validVoice,
+        clearSelectedVoice: validVoice == null,
+        speechRate: persona.recommendedSpeed,
+        pitch: persona.pitch,
+      );
+    }
   }
 }
 

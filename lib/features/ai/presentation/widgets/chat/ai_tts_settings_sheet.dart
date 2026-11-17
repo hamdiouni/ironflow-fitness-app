@@ -254,52 +254,74 @@ class AITtsSettingsSheet extends ConsumerWidget {
                         ),
                       ),
                       child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: ttsState.selectedVoice,
-                          isExpanded: true,
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                          hint: Row(
-                            children: [
-                              Icon(
-                                Icons.record_voice_over,
-                                size: 20,
-                                color: theme.colorScheme.primary,
+                        child: Builder(
+                          builder: (context) {
+                            final displayedVoices = ttsState.availableVoices
+                                .toSet()
+                                .take(10)
+                                .toList();
+                            final safeSelectedVoice = (ttsState.selectedVoice !=
+                                        null &&
+                                    displayedVoices.contains(
+                                      ttsState.selectedVoice,
+                                    ))
+                                ? ttsState.selectedVoice
+                                : null;
+                            return DropdownButton<String>(
+                              value: safeSelectedVoice,
+                              isExpanded: true,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 4,
                               ),
-                              const SizedBox(width: 12),
-                              Text(
-                                'Select system voice',
-                                style: TextStyle(
-                                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                                ),
-                              ),
-                            ],
-                          ),
-                          items: ttsState.availableVoices.take(10).map((voice) {
-                            return DropdownMenuItem<String>(
-                              value: voice,
-                              child: Row(
+                              hint: Row(
                                 children: [
                                   Icon(
-                                    Icons.person,
-                                    size: 18,
-                                    color: theme.colorScheme.primary.withValues(alpha: 0.7),
+                                    Icons.record_voice_over,
+                                    size: 20,
+                                    color: theme.colorScheme.primary,
                                   ),
                                   const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Text(
-                                      voice,
-                                      style: theme.textTheme.bodyMedium,
-                                      overflow: TextOverflow.ellipsis,
+                                  Text(
+                                    'Select system voice',
+                                    style: TextStyle(
+                                      color: theme.colorScheme.onSurface
+                                          .withValues(alpha: 0.6),
                                     ),
                                   ),
                                 ],
                               ),
+                              items: displayedVoices.map((voice) {
+                                return DropdownMenuItem<String>(
+                                  value: voice,
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.person,
+                                        size: 18,
+                                        color: theme.colorScheme.primary
+                                            .withValues(alpha: 0.7),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Text(
+                                          voice,
+                                          style: theme.textTheme.bodyMedium,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                              onChanged: (voice) {
+                                if (voice != null) {
+                                  ref
+                                      .read(ttsProvider.notifier)
+                                      .setVoice(voice);
+                                }
+                              },
                             );
-                          }).toList(),
-                          onChanged: (voice) {
-                            if (voice != null) {
-                              ref.read(ttsProvider.notifier).setVoice(voice);
-                            }
                           },
                         ),
                       ),
