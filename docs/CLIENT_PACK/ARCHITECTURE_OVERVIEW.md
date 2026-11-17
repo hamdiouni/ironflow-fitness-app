@@ -154,7 +154,7 @@ sequenceDiagram
   - **Macro Goal Updates**: Applies calorie and macro splits directly to nutrition settings.
   - **Exercise Substitution**: Swaps selected exercises with biomechanically equivalent alternatives.
 - **Ephemeral Meal Photo Vision (`ADR-003`)**: Allows users to photograph meals for instant macro estimates. Images are resized on-device and transmitted via base64 data URLs to Gemini Vision without saving to Firestore or Cloud Storage.
-- **Normalized Question Cache (`6.1`)**: Common fitness queries (e.g., protein requirements, progressive overload mechanics, rest intervals) are answered instantly from a zero-latency local cache, cutting API costs by over 40%.
+- **Normalized Question Cache (`6.1`)**: Common fitness queries (e.g., protein requirements, progressive overload mechanics, rest intervals) are answered instantly from a zero-latency local cache, avoiding a proxy call for every cache hit. *(The actual cost saving depends on real-world query mix and has not been measured; track the cache hit rate after launch.)*
 - **Medical Guardrails (`LEG-03`)**: Queries involving acute chest pain, injury diagnosis, or illegal steroids are intercepted with explicit medical refusal disclaimers.
 
 ---

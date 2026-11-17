@@ -49,7 +49,7 @@ This `docs/CLIENT_PACK/` package contains everything required for your technical
 - **Cloud Backend**: Google Firebase (Authentication, Cloud Firestore, Cloud Storage, Cloud Functions 2nd Gen, Hosting, App Check)
 - **AI Intelligence**: Google Gemini 2.5 Flash via serverless authenticated proxy with local question cache, SSE streaming, and structured tap-to-apply action cards
 - **Vector Graphics**: Pure Flutter `CustomPainter` with normalized `ui.Path` coordinates
-- **Platforms**: Android (Min SDK 24, Target SDK 34), Web PWA (CanvasKit/Wasm ready), iOS (Compile-ready)
+- **Platforms**: Android (Min SDK 24, Target SDK 34), Web PWA (CanvasKit / JS build; not yet Wasm-compatible — `flutter_secure_storage_web` and `flutter_tts` fail the Wasm dry run), iOS (compile check defined in CI on `macos-latest`; not built or device-tested in this handover)
 
 ---
 
@@ -60,10 +60,10 @@ This `docs/CLIENT_PACK/` package contains everything required for your technical
                       IronFlow Production Quality Metrics (Wave 9)
 ========================================================================================
  Static Analysis:           0 issues found (0 errors, 0 warnings, 0 fatal infos)
- Unit & Integration Tests:  1,117+ tests passing (100% pass rate, 0 failed, 0 skipped)
- Code Coverage:             71.68% overall (well exceeding baseline across all features)
+ Unit & Integration Tests:  1,118 tests passing (100% pass rate, 0 failed, 0 skipped)
+ Code Coverage:             71.73% overall (coverage ratchet gate passed for all areas)
  Architecture Hygiene:      10/10 rules passed (all non-generated files <= 800 lines)
- Web Gzipped JS Bundle:     1.60 MB (well below 2.5 MB performance budget)
+ Web Gzipped JS Bundle:     1.63 MB main.dart.js (5.77 MB raw; below 2.5 MB budget)
  Recovery Calculation:      <5ms for 1-year workout history (3,000+ sets)
  Body Map Paint Latency:    <0.4ms per frame on mobile and web
  Rest Timer Battery Load:   0% (uses Android system notification chronometer)

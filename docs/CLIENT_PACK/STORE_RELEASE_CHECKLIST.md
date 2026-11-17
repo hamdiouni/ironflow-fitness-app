@@ -9,7 +9,7 @@ Use this checklist before shipping an IronFlow release candidate (`2.0.0+9`).
 - [ ] `firebase-emulator-rules`: `firebase emulators:exec --only firestore,storage "npm --prefix functions run test:rules"` passes all Firestore & Storage owner isolation, validation, and delete tests.
 - [ ] `flutter-verify`:
   - `flutter analyze --no-pub --no-fatal-infos lib test` exits 0 with zero warnings/errors.
-  - `flutter test --no-pub --coverage --timeout=60s` passes 100% of unit, characterization, navigation E2E, and widget tests (1,117+ tests, 0 failed, 0 skipped).
+  - `flutter test --no-pub --coverage --timeout=60s` passes 100% of unit, characterization, navigation E2E, and widget tests (1,118 tests at Release 2.0.0+9, 0 failed, 0 skipped).
   - `flutter test --no-pub test/architecture/architecture_hygiene_test.dart` passes all 10 architecture rules (all files <= 800 lines).
   - `python3 scripts/check_coverage.py --baseline docs/quality/coverage_baseline.json --fail-on-drop` exits 0 (no regressions; meets overall 71%+ goal).
   - `flutter build web --release --dart-define-from-file=config/production.json` succeeds and contains zero leaked key strings in `build/web/`.
