@@ -16,10 +16,7 @@
 # Keep Flutter generated plugins
 -keep class io.flutter.plugins.GeneratedPluginRegistrant { *; }
 
-# Hive & TypeAdapters
--keep class io.hive.** { *; }
--keep class * extends io.hive.TypeAdapter { *; }
--keepnames class * extends io.hive.TypeAdapter
+# Generic signature & annotation attributes for reflection/serialization
 -keepattributes *Annotation*,Signature,InnerClasses,EnclosingMethod
 
 # Firebase & Google Play Services

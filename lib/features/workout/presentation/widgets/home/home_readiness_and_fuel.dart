@@ -156,40 +156,46 @@ class TodayDirectiveCard extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: tokens.kineticAccent.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(tokens.radiusPill),
-                        ),
-                        child: Text(
-                          'TODAY\'S FOCUS',
-                          style: TextStyle(
-                            fontFamily: AppTypography.displayFontFamily,
-                            color: tokens.kineticAccent,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.8,
+                  SizedBox(
+                    width: double.infinity,
+                    child: Wrap(
+                      alignment: WrapAlignment.spaceBetween,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 8,
+                      runSpacing: 4,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: tokens.kineticAccent.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(tokens.radiusPill),
+                          ),
+                          child: Text(
+                            'TODAY\'S FOCUS',
+                            style: TextStyle(
+                              fontFamily: AppTypography.displayFontFamily,
+                              color: tokens.kineticAccent,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.8,
+                            ),
                           ),
                         ),
-                      ),
-                      TextButton.icon(
-                        onPressed: () => context.go(AppRoutes.workoutProgramSelection),
-                        icon: Icon(Icons.tune_rounded, size: 14, color: tokens.kineticAccent),
-                        label: Text(
-                          'SELECT PROGRAM',
-                          style: TextStyle(
-                            fontFamily: AppTypography.displayFontFamily,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w800,
-                            color: tokens.kineticAccent,
+                        TextButton.icon(
+                          onPressed: () => context.go(AppRoutes.workoutProgramSelection),
+                          icon: Icon(Icons.tune_rounded, size: 14, color: tokens.kineticAccent),
+                          label: Text(
+                            'SELECT PROGRAM',
+                            style: TextStyle(
+                              fontFamily: AppTypography.displayFontFamily,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              color: tokens.kineticAccent,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 12),
                   Text(
@@ -450,39 +456,45 @@ class DailyFuelSummaryBar extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'DAILY FUEL',
-                            style: TextStyle(
-                              fontFamily: AppTypography.displayFontFamily,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 0.8,
-                              color: tokens.textMuted,
-                            ),
-                          ),
-                          Row(
-                            children: [
-                              Text(
-                                'VIEW FUEL',
-                                style: TextStyle(
-                                  fontFamily: AppTypography.displayFontFamily,
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w700,
-                                  color: tokens.kineticAccent,
-                                ),
+                      SizedBox(
+                        width: double.infinity,
+                        child: Wrap(
+                          alignment: WrapAlignment.spaceBetween,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          spacing: 8,
+                          runSpacing: 4,
+                          children: [
+                            Text(
+                              'DAILY FUEL',
+                              style: TextStyle(
+                                fontFamily: AppTypography.displayFontFamily,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.8,
+                                color: tokens.textMuted,
                               ),
-                              Icon(Icons.chevron_right, size: 14, color: tokens.kineticAccent),
-                            ],
-                          ),
-                        ],
+                            ),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  'VIEW FUEL',
+                                  style: TextStyle(
+                                    fontFamily: AppTypography.displayFontFamily,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w700,
+                                    color: tokens.kineticAccent,
+                                  ),
+                                ),
+                                Icon(Icons.chevron_right, size: 14, color: tokens.kineticAccent),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                       const SizedBox(height: 4),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.baseline,
-                        textBaseline: TextBaseline.alphabetic,
+                      Wrap(
+                        crossAxisAlignment: WrapCrossAlignment.end,
                         children: [
                           Text(
                             '${consumed.toInt()}',
@@ -506,12 +518,12 @@ class DailyFuelSummaryBar extends ConsumerWidget {
                         ],
                       ),
                       const SizedBox(height: 8),
-                      Row(
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 4,
                         children: [
                           _FuelMacroChip(label: 'P', value: '${protein}g', color: tokens.cyanAccent, tokens: tokens),
-                          const SizedBox(width: 6),
                           _FuelMacroChip(label: 'C', value: '${carbs}g', color: tokens.warning, tokens: tokens),
-                          const SizedBox(width: 6),
                           _FuelMacroChip(label: 'F', value: '${fats}g', color: tokens.violetAccent, tokens: tokens),
                         ],
                       ),

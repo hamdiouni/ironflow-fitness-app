@@ -39,6 +39,12 @@ final activeProgramRepositoryProvider = Provider<ActiveProgramRepository>((ref) 
   final dataSource = ref.watch(hiveActiveProgramDataSourceProvider);
   // Phase 1: saved programs are stamped with the signed-in owner.
   final userId = ref.watch(currentUserIdProvider);
+  if (userId == null || userId.isEmpty) {
+    return ActiveProgramRepositoryImpl(
+      dataSource,
+      userId: userId,
+    );
+  }
   // Phase 2: every save/update enqueues the full program state to the
   // single outbox (previously nothing ever enqueued program actions).
   final syncService = ref.watch(syncServiceProvider);

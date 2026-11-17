@@ -304,28 +304,34 @@ class RecentWorkoutCard extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'LAST WORKOUT',
-                  style: TextStyle(
-                    fontFamily: AppTypography.displayFontFamily,
-                    color: tokens.textMuted,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.8,
+            SizedBox(
+              width: double.infinity,
+              child: Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 8,
+                runSpacing: 4,
+                children: [
+                  Text(
+                    'LAST WORKOUT',
+                    style: TextStyle(
+                      fontFamily: AppTypography.displayFontFamily,
+                      color: tokens.textMuted,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.8,
+                    ),
                   ),
-                ),
-                Text(
-                  dateStr,
-                  style: TextStyle(
-                    fontFamily: AppTypography.bodyFontFamily,
-                    color: tokens.textSecondary,
-                    fontSize: 12,
+                  Text(
+                    dateStr,
+                    style: TextStyle(
+                      fontFamily: AppTypography.bodyFontFamily,
+                      color: tokens.textSecondary,
+                      fontSize: 12,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
             const SizedBox(height: AppSpacings.sm),
             Text(

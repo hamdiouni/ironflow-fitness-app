@@ -63,5 +63,7 @@
 		<string>ja</string>
 		<string>zh</string>
 	</array>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 </dict>
 </plist>

@@ -153,8 +153,9 @@ class _BodyMapViewState extends ConsumerState<BodyMapView>
                   ),
                 ),
 
-                Row(
-                  mainAxisSize: MainAxisSize.min,
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 4,
                   children: [
                     // Metric Mode Toggle (Recovery vs Heatmap)
                     Container(
@@ -192,7 +193,6 @@ class _BodyMapViewState extends ConsumerState<BodyMapView>
                         ],
                       ),
                     ),
-                    const SizedBox(width: 4),
 
                     // Accessible List View Toggle
                     IconButton(

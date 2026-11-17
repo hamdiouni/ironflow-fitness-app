@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <!--
     If you are serving your web app in a path other than the root, change the
@@ -18,47 +18,139 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="IronFlow - Smart Fitness, Workout & Nutrition Tracking Companion.">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <meta name="description" content="Precision strength, recovery, and nutrition tracking.">
+  <meta name="theme-color" content="#0A0B0E" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#F3F4F6" media="(prefers-color-scheme: light)">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="IronFlow">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <title>IronFlow - Fitness & Nutrition Tracking</title>
+  <title>IronFlow</title>
   <link rel="manifest" href="manifest.json">
 
-  <!-- Anti-cache & Service Worker clean sweep for instant updates -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(function(registrations) {
-        for (let r of registrations) {
-          r.unregister();
-        }
-      });
-    }
-    if ('caches' in window) {
-      caches.keys().then(function(names) {
-        for (let n of names) {
-          caches.delete(n);
-        }
-      });
-    }
-  </script>
-
   <style>
-    body {
+    :root {
+      --bg-canvas: #0A0B0E;
+      --bg-card: #12151C;
+      --border-subtle: #242A36;
+      --text-primary: #F9FAFB;
+      --text-secondary: #9CA3AF;
+      --accent-amber: #F59E0B;
+      color-scheme: dark light;
+    }
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg-canvas: #F3F4F6;
+        --bg-card: #FFFFFF;
+        --border-subtle: #D1D5DB;
+        --text-primary: #111827;
+        --text-secondary: #4B5563;
+        --accent-amber: #D97706;
+      }
+    }
+    html, body {
+      background-color: var(--bg-canvas);
+      color: var(--text-primary);
       margin: 0;
-      background-color: #12131A;
-      color: #F4F4F8;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    #ironflow-splash {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background-color: var(--bg-canvas);
+      z-index: 9999;
+      transition: opacity 180ms ease-out;
+    }
+    #ironflow-splash.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .splash-card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 24px 32px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      min-width: 220px;
+    }
+    .splash-title {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-primary);
+    }
+    .splash-bar-track {
+      width: 140px;
+      height: 4px;
+      background-color: var(--border-subtle);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .splash-bar-fill {
+      width: 55%;
+      height: 100%;
+      background-color: var(--accent-amber);
+      border-radius: 2px;
+    }
+    .splash-stamp {
+      font-size: 11px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      color: var(--text-secondary);
+      letter-spacing: 0.04em;
     }
   </style>
 </head>
 <body>
+  <div id="ironflow-splash" role="status" aria-live="polite" aria-label="Loading application">
+    <div class="splash-card">
+      <div class="splash-title">IRONFLOW</div>
+      <div class="splash-bar-track">
+        <div class="splash-bar-fill"></div>
+      </div>
+      <div
+        id="ironflow-build-stamp"
+        class="splash-stamp"
+        data-sw-version="{{flutter_service_worker_version}}"
+      >
+        SW {{flutter_service_worker_version}}
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Versioned PWA service-worker lifecycle & splash cleanup (no unconditional cache wiping).
+    window.addEventListener('flutter-first-frame', function () {
+      var splash = document.getElementById('ironflow-splash');
+      if (splash) {
+        splash.classList.add('hidden');
+        window.setTimeout(function () {
+          if (splash && splash.parentNode) {
+            splash.parentNode.removeChild(splash);
+          }
+        }, 200);
+      }
+    });
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

@@ -137,10 +137,13 @@ jobs:
             --dart-define=GIT_COMMIT=${{ github.sha }}
 
       - name: Build Android release split APKs (R8 verified)
+        env:
+          ALLOW_UNSIGNED_RELEASE: "true"
         run: |
           flutter build apk --release --split-per-abi \
             --dart-define-from-file=config/production.json \
-            --dart-define=GIT_COMMIT=${{ github.sha }}
+            --dart-define=GIT_COMMIT=${{ github.sha }} \
+            --dart-define=ALLOW_UNSIGNED_RELEASE=true
 
       - name: Verify R8 mapping.txt emitted
         run: test -s build/app/outputs/mapping/release/mapping.txt

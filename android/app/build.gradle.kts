@@ -60,10 +60,6 @@ android {
         isCoreLibraryDesugaringEnabled = true
     }
 
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_17.toString()
-    }
-
     signingConfigs {
         if (hasReleaseSigning) {
             create("release") {
@@ -89,6 +85,20 @@ android {
         versionName = flutter.versionName
     }
 
+    val allowUnsignedRelease =
+        (project.findProperty("allowUnsignedRelease")?.toString()?.toBoolean() == true) ||
+        (System.getenv("ALLOW_UNSIGNED_RELEASE")?.equals("true", ignoreCase = true) == true) ||
+        (dartDefineMap["ALLOW_UNSIGNED_RELEASE"]?.equals("true", ignoreCase = true) == true)
+    val isReleaseTaskRequested = gradle.startParameter.taskNames.any { taskName ->
+        taskName.contains("Release", ignoreCase = true)
+    }
+    if (isReleaseTaskRequested && !hasReleaseSigning && !allowUnsignedRelease) {
+        throw GradleException(
+            "Release build requires android/key.properties (storeFile, storePassword, keyAlias, keyPassword). " +
+            "For keyless CI/local R8 verification builds, set ALLOW_UNSIGNED_RELEASE=true or pass --dart-define=ALLOW_UNSIGNED_RELEASE=true."
+        )
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
@@ -100,10 +110,16 @@ android {
             signingConfig = if (hasReleaseSigning) {
                 signingConfigs.getByName("release")
             } else {
-                // Local-only fallback; Play uploads require key.properties.
+                // Only reachable when ALLOW_UNSIGNED_RELEASE=true is explicitly set for R8 verification.
                 signingConfigs.getByName("debug")
             }
         }
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
     }
 }
 
@@ -113,12 +129,4 @@ flutter {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
-    
-    // Import the Firebase BoM
-    implementation(platform("com.google.firebase:firebase-bom:34.13.0"))
-    
-    // Firebase products (versions managed by BoM)
-    implementation("com.google.firebase:firebase-analytics")
-    implementation("com.google.firebase:firebase-auth")
-    implementation("com.google.firebase:firebase-firestore")
 }
