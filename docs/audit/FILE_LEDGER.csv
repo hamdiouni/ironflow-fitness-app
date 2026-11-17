@@ -15,6 +15,12 @@ path,area,lines,generated,real_test_coverage_pct,verdict,reason,risk,linked_work
 .kiro/INTEGRATION_CHECKLIST.md,root-config,753,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 .kiro/IRONFLOW_PLATFORM_UPGRADE_COMPLETE.md,root-config,486,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 .kiro/NEXT_STEPS.md,root-config,241,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+.kiro/PHASES_1_2_COMPLETE.md,root-config,359,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+.kiro/PHASES_4_5_SUMMARY.md,root-config,150,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+.kiro/PHASES_6_12_IMPLEMENTATION_STATUS.md,root-config,549,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+.kiro/PHASES_6_8_SUMMARY.md,root-config,178,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+.kiro/PHASES_7_9_SUMMARY.md,root-config,210,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+.kiro/PHASES_8_12_IMPLEMENTATION_SUMMARY.md,root-config,393,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 .kiro/PHASE_1_IMPLEMENTATION_SUMMARY.md,root-config,359,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 .kiro/PHASE_1_PROGRESS.md,root-config,256,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 .kiro/PHASE_2_PROGRESS.md,root-config,284,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
@@ -26,12 +32,6 @@ path,area,lines,generated,real_test_coverage_pct,verdict,reason,risk,linked_work
 .kiro/PHASE_4_IMPLEMENTATION_SUMMARY.md,root-config,291,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 .kiro/PHASE_5_COMPLETE.md,root-config,104,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 .kiro/PHASE_6_IMPLEMENTATION_SUMMARY.md,root-config,391,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
-.kiro/PHASES_1_2_COMPLETE.md,root-config,359,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
-.kiro/PHASES_4_5_SUMMARY.md,root-config,150,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
-.kiro/PHASES_6_12_IMPLEMENTATION_STATUS.md,root-config,549,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
-.kiro/PHASES_6_8_SUMMARY.md,root-config,178,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
-.kiro/PHASES_7_9_SUMMARY.md,root-config,210,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
-.kiro/PHASES_8_12_IMPLEMENTATION_SUMMARY.md,root-config,393,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 .kiro/PLATFORM_UPGRADE_FILES.md,root-config,386,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 .kiro/PLATFORM_UPGRADE_SUMMARY.md,root-config,514,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 .kiro/SPEC_COMPLETION_REPORT.md,root-config,451,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
@@ -44,8 +44,8 @@ path,area,lines,generated,real_test_coverage_pct,verdict,reason,risk,linked_work
 .kiro/specs/critical-mobile-bugs-fix/design.md,root-config,654,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 .kiro/specs/critical-mobile-bugs-fix/tasks.md,root-config,403,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 .kiro/specs/debug-logging-system/.config.kiro,root-config,1,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
-.kiro/specs/debug-logging-system/design.md,root-config,734,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 .kiro/specs/debug-logging-system/DOCUMENTATION_SUMMARY.md,root-config,325,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+.kiro/specs/debug-logging-system/design.md,root-config,734,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 .kiro/specs/debug-logging-system/requirements.md,root-config,710,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 .kiro/specs/debug-logging-system/tasks.md,root-config,32,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 .kiro/specs/global-ai-coach/.config.kiro,root-config,1,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
@@ -74,6 +74,11 @@ path,area,lines,generated,real_test_coverage_pct,verdict,reason,risk,linked_work
 .kiro/specs/progression-tracker-app/task-2.2-summary.md,root-config,148,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 .kiro/specs/progression-tracker-app/tasks.md,root-config,566,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 .vscode/settings.json,root-config,4,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+CHANGELOG.md,root-config,37,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+CONTRIBUTING.md,root-config,216,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+DESIGN.md,root-config,487,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+LICENSE,root-config,21,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+README.md,root-config,613,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 analysis_options.yaml,root-config,21,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 android/.gitignore,android,14,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 android/.kotlin/errors/errors-1776026881608.log,android,174,no,N/A (non-lib),KEEP,"Added in Wave 1-3 architecture, security, catalog, or modularization work",LOW,W3
@@ -119,16 +124,39 @@ backend/ai_proxy/README.md,root-config,83,no,N/A (non-lib),KEEP,Reviewed; confor
 backend/ai_proxy/worker.js,root-config,167,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 backend/ai_proxy/wrangler.toml,root-config,16,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 build.yaml,root-config,40,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
-CHANGELOG.md,root-config,37,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 config/dev.json,config,14,no,N/A (non-lib),KEEP,"Added in Wave 1-3 architecture, security, catalog, or modularization work",LOW,W3
 config/production.json,config,14,no,N/A (non-lib),KEEP,"Added in Wave 1-3 architecture, security, catalog, or modularization work",LOW,W3
 config/staging.json,config,14,no,N/A (non-lib),KEEP,"Added in Wave 1-3 architecture, security, catalog, or modularization work",LOW,W3
-CONTRIBUTING.md,root-config,216,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
-DESIGN.md,root-config,487,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 devtools_options.yaml,root-config,3,no,N/A (non-lib),KEEP,"Added in Wave 1-3 architecture, security, catalog, or modularization work",LOW,W3
+docs/ARCHITECTURE.md,docs,98,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+docs/CLIENT_PACK/ARCHITECTURE_OVERVIEW.md,docs,151,no,N/A,KEEP,Technical system architecture overview for client (Wave 6.3),LOW,W6
+docs/CLIENT_PACK/DEPENDENCY_LICENSES.csv,docs,228,no,N/A,KEEP,Machine-readable dependency license audit (Wave 6.3),LOW,W6
+docs/CLIENT_PACK/DEPLOYMENT_RUNBOOK.md,docs,147,no,N/A,KEEP,Production deployment runbook for client (Wave 6.3),LOW,W6
+docs/CLIENT_PACK/KEY_ROTATION_AND_CREDENTIALS.md,docs,97,no,N/A,KEEP,Zero-trust key rotation and credentials SOP (Wave 6.3),LOW,W6
+docs/CLIENT_PACK/README.md,docs,75,no,N/A,KEEP,Executive client handover summary and package index (Wave 6.3),LOW,W6
+docs/CLIENT_PACK/STORE_RELEASE_CHECKLIST.md,docs,85,no,N/A,KEEP,Google Play and Web PWA store release checklist (Wave 6.3),LOW,W6
+docs/CODEBASE_ANALYSIS_AND_UPGRADE_REPORT.md,docs,906,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+docs/COPY_GUIDE.md,docs,60,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+docs/DESIGN_INVENTORY.md,docs,89,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+docs/DESIGN_MIGRATION.md,docs,117,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+docs/LOGGING.md,docs,362,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+docs/LOGGING_DEVELOPER_GUIDE.md,docs,683,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+docs/LOGGING_PATTERNS.md,docs,723,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+docs/LOGGING_VERIFICATION.md,docs,384,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+docs/PRIVACY_POLICY_DRAFT.md,docs,97,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+docs/README.md,docs,126,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+docs/REDESIGN_GAP.md,docs,118,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+docs/ROADMAP.md,docs,526,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+docs/SESSION_HANDOVER_GUIDED_PLAN_AND_TOOLS.md,docs,100,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+docs/SESSION_HANDOVER_ONBOARDING_AND_FUEL.md,docs,80,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+docs/STORE_DATA_DISCLOSURE.md,docs,77,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+docs/UI_UX_SUGGESTIONS.md,docs,57,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+docs/WAVE2_PERFORMANCE.md,docs,74,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/adr/001-ai-backend-proxy-architecture.md,docs,23,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/adr/002-local-health-data-encryption.md,docs,23,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+docs/adr/003-ai-actions-and-meal-photo-estimate.md,docs,55,no,N/A,KEEP,ADR-003: AI actions and opt-in meal photo macro estimation,LOW,W7
 docs/adr/003-riverpod-notifier-without-codegen.md,docs,21,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+docs/adr/004-lock-screen-rest-timer-and-strength-engine.md,docs,70,no,N/A,KEEP,ADR-004: Lock-screen rest timer and strength engine,LOW,W8
 docs/adr/004-static-catalogs-storage-engine.md,docs,22,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/adr/005-observability-and-feature-flags.md,docs,21,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/adr/006-body-map-rendering-2d-vs-3d.md,docs,21,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
@@ -136,7 +164,6 @@ docs/adr/ADR-005-observability-and-feature-flags.md,docs,26,no,N/A (non-lib),KEE
 docs/adr/ADR-006-lint-rules-and-deprecation-policy.md,docs,34,no,N/A (non-lib),KEEP,"Added in Wave 1-3 architecture, security, catalog, or modularization work",LOW,W3
 docs/adr/ADR-007-riverpod-notifier-migration.md,docs,56,no,N/A (non-lib),KEEP,"Added in Wave 1-3 architecture, security, catalog, or modularization work",LOW,W3
 docs/adr/ADR-008-static-catalog-architecture.md,docs,56,no,N/A (non-lib),KEEP,"Added in Wave 1-3 architecture, security, catalog, or modularization work",LOW,W3
-docs/ARCHITECTURE.md,docs,98,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/architecture/CLOUD_SYNC_IMPLEMENTATION.md,docs,705,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/architecture/DATABASE_AND_SYNC_AUDIT.md,docs,810,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/architecture/DEEP_PROJECT_AUDIT_2026-10-24.md,docs,515,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
@@ -151,8 +178,8 @@ docs/audit/B_backend_and_api.md,docs,9,no,N/A (non-lib),KEEP,Reviewed; conforms 
 docs/audit/C_ai.md,docs,9,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/audit/D_data_layer.md,docs,9,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/audit/E_state_management.md,docs,8,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
-docs/audit/F_frontend.md,docs,8,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/audit/FILE_LEDGER.csv,docs,750,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+docs/audit/F_frontend.md,docs,8,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/audit/G_platforms.md,docs,8,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/audit/H_quality.md,docs,8,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/audit/I_release_and_operations.md,docs,8,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
@@ -163,14 +190,6 @@ docs/audit/OLD_REPORT_VERIFICATION.md,docs,14,no,N/A (non-lib),KEEP,Reviewed; co
 docs/audit/PROPOSAL_AND_RELEASE_PLAN.md,docs,63,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/audit/SCORECARD.md,docs,21,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/audit/TECHNOLOGY_INVENTORY.md,docs,90,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
-docs/CLIENT_PACK/ARCHITECTURE_OVERVIEW.md,151,0,N/A,KEEP,Technical system architecture overview for client (Wave 6.3)
-docs/CLIENT_PACK/DEPENDENCY_LICENSES.csv,228,0,N/A,KEEP,Machine-readable dependency license audit (Wave 6.3)
-docs/CLIENT_PACK/DEPLOYMENT_RUNBOOK.md,147,0,N/A,KEEP,Production deployment runbook for client (Wave 6.3)
-docs/CLIENT_PACK/KEY_ROTATION_AND_CREDENTIALS.md,97,0,N/A,KEEP,Zero-trust key rotation and credentials SOP (Wave 6.3)
-docs/CLIENT_PACK/README.md,75,0,N/A,KEEP,Executive client handover summary and package index (Wave 6.3)
-docs/CLIENT_PACK/STORE_RELEASE_CHECKLIST.md,85,0,N/A,KEEP,Google Play and Web PWA store release checklist (Wave 6.3)
-docs/CODEBASE_ANALYSIS_AND_UPGRADE_REPORT.md,docs,906,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
-docs/COPY_GUIDE.md,docs,60,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/deployment/AI_PROXY_AND_APP_CHECK_DEPLOYMENT.md,docs,60,no,N/A (non-lib),KEEP,"Added in Wave 1-3 architecture, security, catalog, or modularization work",LOW,W3
 docs/deployment/PHASE_A_STAGING_RUNBOOK.md,docs,214,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/design-preview/01-slate-teal/01-today-dark.png,docs,243,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
@@ -185,6 +204,7 @@ docs/design-preview/01-slate-teal/08-exercise-detail.png,docs,395,no,N/A (non-li
 docs/design-preview/01-slate-teal/09-progress-bento.png,docs,308,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/design-preview/01-slate-teal/10-components.png,docs,240,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/design-preview/01-slate-teal/11-onboarding.png,docs,307,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+docs/design-preview/01-slate-teal/README.md,docs,119,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/design-preview/01-slate-teal/active_workout_390x844.png,docs,247,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/design-preview/01-slate-teal/component_sheet_390x844.png,docs,240,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/design-preview/01-slate-teal/component_sheet_wide_1280x800.png,docs,529,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
@@ -194,7 +214,6 @@ docs/design-preview/01-slate-teal/fuel_quantity_sheet_390x844.png,docs,103,no,N/
 docs/design-preview/01-slate-teal/onboarding_step1_390x844.png,docs,307,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/design-preview/01-slate-teal/progress_charts_390x844.png,docs,308,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/design-preview/01-slate-teal/progress_charts_wide_1280x800.png,docs,258,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
-docs/design-preview/01-slate-teal/README.md,docs,119,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/design-preview/01-slate-teal/real_design_gallery_slate_teal_390x844.png,docs,599,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/design-preview/01-slate-teal/real_home_slate_teal_390x844.png,docs,952,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/design-preview/01-slate-teal/real_workout_summary_slate_teal_390x844.png,docs,919,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
@@ -216,6 +235,7 @@ docs/design-preview/02-nordic-calm/08-exercise-detail.png,docs,463,no,N/A (non-l
 docs/design-preview/02-nordic-calm/09-progress-bento.png,docs,352,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/design-preview/02-nordic-calm/10-components.png,docs,368,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/design-preview/02-nordic-calm/11-onboarding.png,docs,383,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+docs/design-preview/02-nordic-calm/README.md,docs,100,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/design-preview/02-nordic-calm/active_workout_390x844.png,docs,204,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/design-preview/02-nordic-calm/component_sheet_390x844.png,docs,368,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/design-preview/02-nordic-calm/component_sheet_wide_1280x800.png,docs,503,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
@@ -225,7 +245,6 @@ docs/design-preview/02-nordic-calm/fuel_quantity_sheet_390x844.png,docs,115,no,N
 docs/design-preview/02-nordic-calm/onboarding_step1_390x844.png,docs,383,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/design-preview/02-nordic-calm/progress_charts_390x844.png,docs,352,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/design-preview/02-nordic-calm/progress_charts_wide_1280x800.png,docs,291,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
-docs/design-preview/02-nordic-calm/README.md,docs,100,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/design-preview/02-nordic-calm/today_alt_390x844.png,docs,305,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/design-preview/02-nordic-calm/today_main_390x844.png,docs,272,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/design-preview/02-nordic-calm/today_wide_1280x800.png,docs,230,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
@@ -244,6 +263,7 @@ docs/design-preview/03-kinetic-block/08-exercise-detail.png,docs,334,no,N/A (non
 docs/design-preview/03-kinetic-block/09-progress-bento.png,docs,255,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/design-preview/03-kinetic-block/10-components.png,docs,278,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/design-preview/03-kinetic-block/11-onboarding.png,docs,326,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+docs/design-preview/03-kinetic-block/README.md,docs,101,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/design-preview/03-kinetic-block/active_workout_390x844.png,docs,201,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/design-preview/03-kinetic-block/component_sheet_390x844.png,docs,278,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/design-preview/03-kinetic-block/component_sheet_wide_1280x800.png,docs,416,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
@@ -253,7 +273,6 @@ docs/design-preview/03-kinetic-block/fuel_quantity_sheet_390x844.png,docs,82,no,
 docs/design-preview/03-kinetic-block/onboarding_step1_390x844.png,docs,326,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/design-preview/03-kinetic-block/progress_charts_390x844.png,docs,255,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/design-preview/03-kinetic-block/progress_charts_wide_1280x800.png,docs,237,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
-docs/design-preview/03-kinetic-block/README.md,docs,101,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/design-preview/03-kinetic-block/today_alt_390x844.png,docs,204,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/design-preview/03-kinetic-block/today_main_390x844.png,docs,207,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/design-preview/03-kinetic-block/today_wide_1280x800.png,docs,164,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
@@ -272,6 +291,7 @@ docs/design-preview/04-soft-layered/08-exercise-detail.png,docs,415,no,N/A (non-
 docs/design-preview/04-soft-layered/09-progress-bento.png,docs,329,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/design-preview/04-soft-layered/10-components.png,docs,371,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/design-preview/04-soft-layered/11-onboarding.png,docs,321,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+docs/design-preview/04-soft-layered/README.md,docs,100,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/design-preview/04-soft-layered/active_workout_390x844.png,docs,213,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/design-preview/04-soft-layered/component_sheet_390x844.png,docs,371,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/design-preview/04-soft-layered/component_sheet_wide_1280x800.png,docs,668,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
@@ -281,7 +301,6 @@ docs/design-preview/04-soft-layered/fuel_quantity_sheet_390x844.png,docs,90,no,N
 docs/design-preview/04-soft-layered/onboarding_step1_390x844.png,docs,321,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/design-preview/04-soft-layered/progress_charts_390x844.png,docs,329,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/design-preview/04-soft-layered/progress_charts_wide_1280x800.png,docs,251,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
-docs/design-preview/04-soft-layered/README.md,docs,100,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/design-preview/04-soft-layered/today_alt_390x844.png,docs,290,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/design-preview/04-soft-layered/today_main_390x844.png,docs,263,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/design-preview/04-soft-layered/today_wide_1280x800.png,docs,246,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
@@ -314,8 +333,6 @@ docs/design-research/run1-performance/design-system/ironflow/pages/today.md,docs
 docs/design-research/run1-performance/design-system/ironflow/pages/workout.md,docs,49,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/design-research/run2-calm/design-system/ironflow/MASTER.md,docs,233,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/design-research/run3-energetic/design-system/ironflow/MASTER.md,docs,233,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
-docs/DESIGN_INVENTORY.md,docs,89,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
-docs/DESIGN_MIGRATION.md,docs,117,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/ACTION_REQUIRED_GOOGLE_SIGNIN.md,docs,141,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/AI_AND_NOTIFICATIONS_AUDIT_REPORT.md,docs,556,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/AI_CHAT_UI_ENHANCED.md,docs,406,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
@@ -331,7 +348,6 @@ docs/development/ALL_TASKS_COMPLETE.md,docs,245,no,N/A (non-lib),KEEP,Reviewed; 
 docs/development/ALL_THREE_ISSUES_FIXED.md,docs,331,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/ANALYTICS_INTEGRATION_COMPLETE.md,docs,438,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/ANALYTICS_INTEGRATION_FINAL_STATUS.md,docs,313,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
-docs/development/analyze_output.txt,docs,1966,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/APK_BUILD_FIX.md,docs,177,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/APP_RUNNING_STATUS.md,docs,150,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/APP_RUNNING_SUCCESSFULLY.md,docs,192,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
@@ -361,9 +377,9 @@ docs/development/COMPREHENSIVE_FIXES_V2.md,docs,483,no,N/A (non-lib),KEEP,Review
 docs/development/CORRUPTED_PUB_CACHE_ISSUE.md,docs,148,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/CRITICAL_BUGS_FIXED.md,docs,492,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/CRITICAL_ERRORS_SUMMARY.md,docs,192,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
-docs/development/CRITICAL_FIX_INSIGHT_GENERATION.md,docs,103,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/CRITICAL_FIXES_NEEDED.md,docs,230,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/CRITICAL_FIXES_SUMMARY.md,docs,243,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+docs/development/CRITICAL_FIX_INSIGHT_GENERATION.md,docs,103,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/CRITICAL_ISSUES_DIAGNOSIS_AND_FIXES.md,docs,503,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/CURRENT_FIREBASE_STATUS.md,docs,456,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/CURRENT_SESSION_SUMMARY.md,docs,199,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
@@ -372,12 +388,12 @@ docs/development/CURRENT_STATUS_AND_NEXT_STEPS.md,docs,158,no,N/A (non-lib),KEEP
 docs/development/CUSTOM_FOOD_CREATION_FIX.md,docs,420,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/DEBUG_LOGGING_PLAN.md,docs,317,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/DEPLOYMENT.md,docs,268,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+docs/development/ERRORS_FIXED_SUMMARY.md,docs,230,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+docs/development/ERRORS_FIXED_UI_WORKING.md,docs,122,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/ERROR_ANALYSIS.md,docs,206,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/ERROR_FIXED.md,docs,185,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/ERROR_FIXED_APP_RUNNING.md,docs,240,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/ERROR_LOGGING_ADDED.md,docs,219,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
-docs/development/ERRORS_FIXED_SUMMARY.md,docs,230,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
-docs/development/ERRORS_FIXED_UI_WORKING.md,docs,122,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/FAQ_GOOGLE_SIGNIN.md,docs,273,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/FINAL_BUILD_STATUS.md,docs,253,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/FINAL_FIXES_APPLIED.md,docs,193,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
@@ -396,19 +412,15 @@ docs/development/FIREBASE_CONFIGURATION_COMPLETE.md,docs,303,no,N/A (non-lib),KE
 docs/development/FIREBASE_IMPLEMENTATION_COMPLETE.md,docs,441,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/FIREBASE_IMPLEMENTATION_FILES.md,docs,512,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/FITNESS_VOICE_PERSONAS_ADDED.md,docs,420,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
-docs/development/FIX_COMPLETE_SUMMARY.md,docs,195,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/FIXES_APPLIED.md,docs,186,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/FIXES_APPLIED_PART1.md,docs,142,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/FIXES_APPLIED_SUMMARY.md,docs,207,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/FIXES_SUMMARY_FINAL.md,docs,331,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/FIXES_VISUAL_SUMMARY.md,docs,324,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/FIXING_ALL_BROKEN_FEATURES.md,docs,211,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
-docs/development/flutter_01.log,docs,93,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
-docs/development/flutter_02.log,docs,93,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
-docs/development/flutter_03.log,docs,93,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
-docs/development/flutter_input.txt,docs,1,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
-docs/development/FREE_AI_PLATFORMS_GUIDE.md,docs,188,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+docs/development/FIX_COMPLETE_SUMMARY.md,docs,195,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/FREEZED_ISSUE_SOLUTION.md,docs,122,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+docs/development/FREE_AI_PLATFORMS_GUIDE.md,docs,188,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/GEMINI_AI_STATUS.md,docs,199,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/GEMINI_AI_TEST_SUCCESS.md,docs,322,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/GEMINI_API_SETUP_COMPLETE.md,docs,328,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
@@ -442,20 +454,20 @@ docs/development/IMPLEMENTATION_COMPLETE.md,docs,365,no,N/A (non-lib),KEEP,Revie
 docs/development/IMPLEMENTATION_COMPLETE_SUMMARY.md,docs,208,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/IMPLEMENTATION_STATUS_REPORT.md,docs,403,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/INCOMPLETE_RESPONSES_FIXED.md,docs,307,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
-docs/development/ISSUE_1_FIXED.md,docs,117,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/ISSUES_2_AND_3_FIXED.md,docs,97,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/ISSUES_ANALYSIS.md,docs,194,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+docs/development/ISSUE_1_FIXED.md,docs,117,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/LAZY_LOADING_IMPLEMENTATION.md,docs,151,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/LOGOUT_FIXED.md,docs,291,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/NEW_UI_READY.md,docs,189,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/NEXT_FEATURES_ROADMAP.md,docs,569,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+docs/development/NOTIFICATIONS_SYSTEM_COMPLETE.md,docs,571,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+docs/development/NOTIFICATIONS_USER_GUIDE.md,docs,302,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/NOTIFICATION_DIAGNOSTIC.md,docs,387,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/NOTIFICATION_FIXES_APPLIED.md,docs,291,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/NOTIFICATION_FIXES_COMPLETE.md,docs,138,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/NOTIFICATION_HIVE_BOX_FIX.md,docs,233,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/NOTIFICATION_TYPE_FIX.md,docs,184,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
-docs/development/NOTIFICATIONS_SYSTEM_COMPLETE.md,docs,571,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
-docs/development/NOTIFICATIONS_USER_GUIDE.md,docs,302,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/NUTRITION_FIX_IMPLEMENTATION_SUMMARY.md,docs,414,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/NUTRITION_FIX_READY.md,docs,381,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/NUTRITION_INSTANT_UPDATE_FIX.md,docs,272,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
@@ -496,7 +508,6 @@ docs/development/TASK_2.3_SUMMARY.md,docs,171,no,N/A (non-lib),KEEP,Reviewed; co
 docs/development/TASK_3.1_IMPLEMENTATION_SUMMARY.md,docs,159,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/TASK_3.3_SUMMARY.md,docs,85,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/TASK_4_1_IMPLEMENTATION_SUMMARY.md,docs,216,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
-docs/development/temp_reload.txt,docs,1,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/TERMINAL_CHECK_SUMMARY.md,docs,286,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/TERMS_ACCEPTANCE_COMPLETE_SUMMARY.md,docs,424,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/TERMS_ACCEPTANCE_IMPLEMENTED.md,docs,317,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
@@ -512,6 +523,12 @@ docs/development/WEEKLY_TARGET_FIX_COMPLETE.md,docs,287,no,N/A (non-lib),KEEP,Re
 docs/development/WHAT_TO_DO_NEXT.md,docs,152,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/WORKOUT_SUMMARY_FIX.md,docs,434,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/development/YOUR_GOOGLE_SIGNIN_CONFIG.md,docs,278,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+docs/development/analyze_output.txt,docs,1966,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+docs/development/flutter_01.log,docs,93,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+docs/development/flutter_02.log,docs,93,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+docs/development/flutter_03.log,docs,93,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+docs/development/flutter_input.txt,docs,1,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+docs/development/temp_reload.txt,docs,1,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/guides/APK_BUILD_GUIDE.md,docs,336,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/guides/DEPLOYMENT_GUIDE.md,docs,586,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/guides/MOBILE_TESTING_ON_PC_GUIDE.md,docs,398,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
@@ -524,21 +541,16 @@ docs/guides/QUICK_START_TESTING.md,docs,173,no,N/A (non-lib),KEEP,Reviewed; conf
 docs/guides/START_HERE_FREE_AI.md,docs,161,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/guides/START_HERE_GOOGLE_SIGNIN.md,docs,150,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/guides/USER_TESTING_INSTRUCTIONS.md,docs,103,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
-docs/legal/FITNESS_AND_MEDICAL_DISCLAIMER.md,63,0,N/A,KEEP,Fitness and medical disclaimer document (Wave 6.2)
-docs/legal/PRIVACY_POLICY.md,98,0,N/A,KEEP,Production Privacy Policy document (Wave 6.2)
-docs/legal/TERMS_OF_SERVICE.md,80,0,N/A,KEEP,Production Terms of Service document (Wave 6.2)
+docs/legal/FITNESS_AND_MEDICAL_DISCLAIMER.md,docs,63,no,N/A,KEEP,Fitness and medical disclaimer document (Wave 6.2),LOW,W6
+docs/legal/PRIVACY_POLICY.md,docs,98,no,N/A,KEEP,Production Privacy Policy document (Wave 6.2),LOW,W6
+docs/legal/TERMS_OF_SERVICE.md,docs,80,no,N/A,KEEP,Production Terms of Service document (Wave 6.2),LOW,W6
 docs/localization/TRANSLATION_WORKFLOW.md,docs,105,no,N/A,KEEP,Translation SOP and ARB management guide,Low,Wave 5.5
-docs/LOGGING.md,docs,362,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
-docs/LOGGING_DEVELOPER_GUIDE.md,docs,683,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
-docs/LOGGING_PATTERNS.md,docs,723,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
-docs/LOGGING_VERIFICATION.md,docs,384,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+docs/plans/wave-7-plan.md,docs,66,no,N/A,KEEP,Wave 7 plan and execution record,LOW,W7
+docs/plans/wave-8-plan.md,docs,50,no,N/A,KEEP,Wave 8 plan and execution record,LOW,W8
+docs/plans/wave-9-plan.md,docs,35,no,N/A,KEEP,Wave 9 plan and final acceptance record,LOW,W9
 docs/platform/STORE_DATA_SAFETY_MAPPING.md,docs,63,no,N/A,KEEP,Google Play and Apple App Privacy declarations,Low,Wave 5.3
-docs/PRIVACY_POLICY_DRAFT.md,docs,97,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/quality/TEST_STRATEGY_AND_COVERAGE_GATES.md,docs,46,no,N/A (non-lib),KEEP,"Added in Wave 1-3 architecture, security, catalog, or modularization work",LOW,W3
-docs/README.md,docs,126,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
-docs/REDESIGN_GAP.md,docs,118,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/release/RELEASE_ENGINEERING_AND_SIGNING.md,docs,101,no,N/A (non-lib),KEEP,"Added in Wave 1-3 architecture, security, catalog, or modularization work",LOW,W3
-docs/ROADMAP.md,docs,526,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/screenshots/after/after_active_workout_390x844.png,docs,8,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/screenshots/after/after_active_workout_screen.png,docs,341,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/screenshots/after/after_ai_chat_390x844.png,docs,498,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
@@ -664,9 +676,7 @@ docs/screenshots/current/current_workout_390x844.png,docs,214,no,N/A (non-lib),K
 docs/screenshots/current/current_workout_history_390x844.png,docs,99,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/screenshots/current/current_workout_summary_390x844.png,docs,302,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/screenshots/current/current_workout_summary_screen.png,docs,974,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
-docs/SESSION_HANDOVER_GUIDED_PLAN_AND_TOOLS.md,docs,100,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
-docs/SESSION_HANDOVER_ONBOARDING_AND_FUEL.md,docs,80,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
-docs/setup/ENVIRONMENT_AND_FLAVORS.md,81,0,N/A,KEEP,Canonical environment and flavor configuration guide (Wave 6.3)
+docs/setup/ENVIRONMENT_AND_FLAVORS.md,docs,81,no,N/A,KEEP,Canonical environment and flavor configuration guide (Wave 6.3),LOW,W6
 docs/setup/FIREBASE_QUICK_START.md,docs,213,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/setup/FIREBASE_SETUP_GUIDE.md,docs,495,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/setup/FIREBASE_SETUP_INSTRUCTIONS.md,docs,245,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
@@ -678,21 +688,18 @@ docs/setup/REALTIME_DATABASE_SETUP.md,docs,385,no,N/A (non-lib),KEEP,Reviewed; c
 docs/setup/SETUP.md,docs,186,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/setup/SETUP_COMPLETE_NEXT_STEPS.md,docs,157,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/setup/SETUP_FREE_AI.md,docs,266,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
-docs/STORE_DATA_DISCLOSURE.md,docs,77,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/testing/FIXES_APPLIED_AND_TESTING_GUIDE.md,docs,450,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/testing/IMAGE_TESTING_GUIDE.md,docs,302,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+docs/testing/TESTING_CHECKLIST.md,docs,202,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+docs/testing/TESTING_IMPROVED_AI.md,docs,135,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+docs/testing/TESTING_REPORT_EMULATOR.md,docs,310,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/testing/TEST_FILES_REMOVED.md,docs,49,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/testing/TEST_GEMINI_IN_APP.md,docs,306,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/testing/TEST_GOOGLE_SIGNIN.md,docs,283,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/testing/TEST_YOUR_API_NOW.md,docs,157,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
-docs/testing/TESTING_CHECKLIST.md,docs,202,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
-docs/testing/TESTING_IMPROVED_AI.md,docs,135,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
-docs/testing/TESTING_REPORT_EMULATOR.md,docs,310,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/testing/VIDEO_SYSTEM_TESTING_GUIDE.md,docs,251,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/testing/WEB_APP_TESTING_REPORT.md,docs,149,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 docs/testing/WEB_TESTING_GUIDE.md,docs,293,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
-docs/UI_UX_SUGGESTIONS.md,docs,57,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
-docs/WAVE2_PERFORMANCE.md,docs,74,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 env.example.json,root-config,6,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 env.json,root-config,6,no,N/A (non-lib),KEEP,"Added in Wave 1-3 architecture, security, catalog, or modularization work",LOW,W3
 firebase.json,root-config,40,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
@@ -704,9 +711,9 @@ functions/src/index.ts,functions,115,no,N/A (non-lib),KEEP,"Added in Wave 1-3 ar
 functions/src/proxy_core.mjs,functions,449,no,N/A (non-lib),KEEP,"Added in Wave 1-3 architecture, security, catalog, or modularization work",LOW,W3
 functions/test/ai_proxy.test.mjs,functions,241,no,N/A (non-lib),KEEP,"Added in Wave 1-3 architecture, security, catalog, or modularization work",LOW,W3
 functions/tsconfig.json,functions,18,no,N/A (non-lib),KEEP,"Added in Wave 1-3 architecture, security, catalog, or modularization work",LOW,W3
-integration_test/nutrition_flow_logging_test.dart,integration_test,445,no,N/A (test),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 integration_test/README.md,integration_test,136,no,N/A (test),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 integration_test/TEST_SUMMARY.md,integration_test,275,no,N/A (test),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+integration_test/nutrition_flow_logging_test.dart,integration_test,445,no,N/A (test),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 integration_test/theme_flow_logging_test.dart,integration_test,270,no,N/A (test),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 integration_test/wave2_e2e_journeys_test.dart,integration_test,18,no,N/A (test),KEEP,"Added in Wave 1-3 architecture, security, catalog, or modularization work",LOW,W3
 integration_test/wave2_screen_performance_trace_test.dart,integration_test,262,no,N/A (test),KEEP,Reviewed; conforms to current module contract,LOW,NONE
@@ -714,9 +721,9 @@ integration_test/workout_flow_logging_test.dart,integration_test,324,no,N/A (tes
 ios/.gitignore,ios,34,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 ios/Flutter/AppFrameworkInfo.plist,ios,26,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 ios/Flutter/Debug.xcconfig,ios,1,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
-ios/Flutter/flutter_export_environment.sh,ios,13,no,N/A (non-lib),KEEP,"Added in Wave 1-3 architecture, security, catalog, or modularization work",LOW,W3
 ios/Flutter/Generated.xcconfig,ios,14,no,N/A (non-lib),KEEP,"Added in Wave 1-3 architecture, security, catalog, or modularization work",LOW,W3
 ios/Flutter/Release.xcconfig,ios,1,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+ios/Flutter/flutter_export_environment.sh,ios,13,no,N/A (non-lib),KEEP,"Added in Wave 1-3 architecture, security, catalog, or modularization work",LOW,W3
 ios/Runner.xcodeproj/project.pbxproj,ios,616,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 ios/Runner.xcodeproj/project.xcworkspace/contents.xcworkspacedata,ios,7,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 ios/Runner.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist,ios,8,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
@@ -759,10 +766,16 @@ l10n.yaml,root-config,3,no,N/A (non-lib),KEEP,Reviewed; conforms to current modu
 legal/LEGAL_SETUP_GUIDE.md,root-config,311,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 legal/PRIVACY_POLICY.md,root-config,230,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
 legal/TERMS_OF_SERVICE.md,root-config,366,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+lib/core/platform/browser_notifier.dart,core,4,no,100.0%,KEEP,Cross-platform conditional export for browser notifications,LOW,W8.1
+lib/core/platform/browser_notifier_stub.dart,core,24,no,100.0%,KEEP,Non-web stub for browser notifications,LOW,W8.1
+lib/core/platform/browser_notifier_web.dart,core,55,no,N/A (web-only),KEEP,Web Notification API bridge via dart:js_interop,LOW,W8.1
 lib/core/utils/retry_helper.dart,core,69,no,78.9%,KEEP,Exponential backoff retry helper with jitter,Low,Wave 5.6
-lib/features/ai/domain/services/ai_question_normalizer.dart,235,235,100.0%,KEEP,AI question normalizer and cost estimator service (Wave 6.1)
-lib/features/auth/data/services/local_sample_data_seeder.dart,435,0,N/A,KEEP,Offline-first local guest & interactive demo showcase Hive seeder (Wave 1/6 Web Launch)
-lib/features/auth/presentation/widgets/offline_access_section.dart,166,0,N/A,KEEP,Direction 4 Soft & Layered offline local access & demo card on Login/SignUp
+lib/features/ai/domain/services/ai_coach_action_parser.dart,ai,335,no,88.5%,KEEP,Structured Tap to apply action parser and validator,LOW,W7
+lib/features/ai/domain/services/ai_coach_eval_rubric.dart,ai,205,no,100.0%,KEEP,Golden evaluation rubric for AI coach output,LOW,W7
+lib/features/ai/domain/services/ai_question_normalizer.dart,lib,235,no,100.0%,KEEP,AI question normalizer and cost estimator service (Wave 6.1),LOW,W6
+lib/features/ai/presentation/providers/ai_chat_prompt_builder.dart,ai,165,no,95.0%,KEEP,Consent-first prompt builder extracted for 800-line compliance,LOW,W7
+lib/features/auth/data/services/local_sample_data_seeder.dart,lib,435,no,N/A,KEEP,Offline-first local guest & interactive demo showcase Hive seeder (Wave 1/6 Web Launch),LOW,W8
+lib/features/auth/presentation/widgets/offline_access_section.dart,lib,166,no,N/A,KEEP,Direction 4 Soft & Layered offline local access & demo card on Login/SignUp,LOW,W8
 lib/features/body/domain/entities/muscle_recovery_status.dart,body/domain,128,no,22.7%,KEEP,Muscle recovery tiers and status models,low,Wave 4 - Body Map
 lib/features/body/domain/entities/muscle_region.dart,body/domain,246,no,100.0%,KEEP,Canonical 20-region anatomical muscle model,low,Wave 4 - Body Map
 lib/features/body/domain/services/muscle_recovery_calculator.dart,body/domain,289,no,87.5%,KEEP,Scientific recovery engine and volume load aggregator,low,Wave 4 - Body Map
@@ -771,21 +784,24 @@ lib/features/body/presentation/widgets/body_map/body_map_painter.dart,body/prese
 lib/features/body/presentation/widgets/body_map/body_map_paths.dart,body/presentation,414,no,99.3%,KEEP,Pre-parsed 2D vector paths and viewBox hit-tester,low,Wave 4 - Body Map
 lib/features/body/presentation/widgets/body_map/body_map_view.dart,body/presentation,472,no,84.0%,KEEP,Interactive 2D Body Map view with toolbar and accessibility,low,Wave 4 - Body Map
 lib/features/body/presentation/widgets/body_map/muscle_detail_sheet.dart,body/presentation,419,no,84.0%,KEEP,Muscle recovery detail bottom sheet and Train CTA,low,Wave 4 - Body Map
-lib/shared/presentation/components/medical_disclaimer_banner.dart,144,0,N/A,KEEP,Medical and fitness disclaimer banner component (Wave 6.2)
-LICENSE,root-config,21,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
-README.md,root-config,613,no,N/A (non-lib),KEEP,Reviewed; conforms to current module contract,LOW,NONE
+lib/features/notifications/data/services/rest_timer_live_notification.dart,notifications,190,no,92.0%,KEEP,Lock-screen chronometer countdown and background completion alert,LOW,W8.1
+lib/features/workout/domain/services/rest_timer_live_surface.dart,workout,18,no,100.0%,KEEP,Domain contract for rest timer external mirrors,LOW,W8.1
+lib/features/workout/domain/services/strength_engine.dart,workout,265,no,98.0%,KEEP,"Pure domain E1rmEngine, DropSetPlanner, and SupersetEngine",LOW,W8.3
+lib/shared/presentation/components/medical_disclaimer_banner.dart,lib,144,no,N/A,KEEP,Medical and fitness disclaimer banner component (Wave 6.2),LOW,W6
 scripts/check_perf_budgets.py,scripts,123,no,N/A,KEEP,CI performance and size budget gate script,Low,Wave 5.1
-scripts/serve_web_nocache.py,70,0,N/A,KEEP,No-cache SPA HTTP server with strict Cache-Control headers for localhost web builds
+scripts/serve_web_nocache.py,scripts,70,no,N/A,KEEP,No-cache SPA HTTP server with strict Cache-Control headers for localhost web builds,LOW,W8
 test/accessibility/text_scale_and_semantics_test.dart,test,156,no,N/A,KEEP,"Accessibility verification (reduced motion, semantics, 2x text scale)",Low,Wave 5.4
 test/core/utils/retry_helper_test.dart,test,82,no,N/A,KEEP,Unit tests for RetryHelper withExponentialBackoff,Low,Wave 5.6
-test/features/ai/ai_prompt_evaluation_test.dart,165,165,100.0%,KEEP,25-prompt golden evaluation suite with safety rubric (Wave 6.1)
-test/features/ai/ai_question_normalizer_test.dart,110,110,100.0%,KEEP,Unit tests for AI question normalization and cost estimator (Wave 6.1)
-test/features/auth/local_offline_and_demo_mode_test.dart,227,227,100.0%,KEEP,"Unit and widget regression tests for offline local mode, demo showcase, and Google auth error surfacing"
+test/features/ai/ai_prompt_evaluation_test.dart,test,165,no,100.0%,KEEP,25-prompt golden evaluation suite with safety rubric (Wave 6.1),LOW,W6
+test/features/ai/ai_question_normalizer_test.dart,test,110,no,100.0%,KEEP,Unit tests for AI question normalization and cost estimator (Wave 6.1),LOW,W6
+test/features/ai/wave7_ai_coach_upgrade_test.dart,test,759,no,100.0%,KEEP,"Verification suite for Wave 7 streaming, change detection, actions, TTS, and eval rubric",LOW,W7
+test/features/auth/local_offline_and_demo_mode_test.dart,test,227,no,100.0%,KEEP,"Unit and widget regression tests for offline local mode, demo showcase, and Google auth error surfacing",LOW,W8
 test/features/body/domain/muscle_recovery_calculator_test.dart,test,157,no,0.0%,KEEP,Unit test suite for MuscleRecoveryCalculator,low,Wave 4 - Body Map
 test/features/body/domain/muscle_region_test.dart,test,66,no,0.0%,KEEP,Unit test suite for MuscleRegion canonical model,low,Wave 4 - Body Map
 test/features/body/presentation/body_map_paths_test.dart,test,110,no,0.0%,KEEP,Geometry and hit-test verification for BodyMapPaths,low,Wave 4 - Body Map
 test/features/body/presentation/body_map_view_test.dart,test,147,no,0.0%,KEEP,Widget test suite for BodyMapView and controls,low,Wave 4 - Body Map
+test/features/workout/wave8_approved_features_test.dart,test,350,no,100.0%,KEEP,Wave 8 unit and integration tests for rest timer and strength engine,LOW,W8
 test/localization/localization_completeness_and_rtl_test.dart,test,140,no,N/A,KEEP,Localization ARB parity across 7 locales and RTL layout tests,Low,Wave 5.5
 test/performance/screen_frame_budget_test.dart,test,101,no,N/A,KEEP,Screen frame budget and render benchmarks,Low,Wave 5.1
 test/performance/yearly_data_benchmark_test.dart,test,124,no,N/A,KEEP,1-year heavy data volume and recovery benchmarks,Low,Wave 5.6
-test/shared/presentation/components/medical_disclaimer_banner_test.dart,68,68,100.0%,KEEP,Widget tests for medical disclaimer banner (Wave 6.2)
+test/shared/presentation/components/medical_disclaimer_banner_test.dart,test,68,no,100.0%,KEEP,Widget tests for medical disclaimer banner (Wave 6.2),LOW,W6

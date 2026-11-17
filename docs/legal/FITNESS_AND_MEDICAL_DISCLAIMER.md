@@ -1,6 +1,6 @@
 # Fitness, Health & Medical Disclaimer for IronFlow
 
-**Last Updated:** November 7, 2026
+**Last Updated:** November 17, 2026
 
 ---
 

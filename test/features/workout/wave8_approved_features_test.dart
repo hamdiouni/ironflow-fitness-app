@@ -1,21 +1,16 @@
-import 'package:flutter/foundation.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:progression_tracker/core/platform/browser_notifier.dart';
 import 'package:progression_tracker/features/notifications/data/services/rest_timer_live_notification.dart';
 import 'package:progression_tracker/features/notifications/domain/services/notification_service.dart';
 import 'package:progression_tracker/features/settings/domain/services/backup_record_codec.dart';
 import 'package:progression_tracker/features/workout/data/models/exercise_model.dart';
-import 'package:progression_tracker/features/workout/data/models/set_entry_model.dart';
 import 'package:progression_tracker/features/workout/domain/entities/entities.dart';
 import 'package:progression_tracker/features/workout/domain/services/rest_timer_live_surface.dart';
 import 'package:progression_tracker/features/workout/domain/services/rest_timer_service.dart';
 import 'package:progression_tracker/features/workout/domain/services/strength_engine.dart';
 import 'package:progression_tracker/features/workout/domain/usecases/workout_metrics.dart';
 import 'package:progression_tracker/features/workout/presentation/managers/workout_state_manager.dart';
-import 'package:progression_tracker/features/workout/presentation/providers/rest_timer_provider.dart';
 
 class _SpyNotificationGateway implements LocalNotificationGateway {
   final List<String> calls = [];
@@ -49,13 +44,11 @@ class _SpyNotificationGateway implements LocalNotificationGateway {
 
 class _SpyBrowserNotifier extends BrowserNotifier {
   _SpyBrowserNotifier({
-    this.supported = true,
-    this.perm = 'default',
     this.hidden = false,
   });
 
-  final bool supported;
-  String perm;
+  bool supported = true;
+  String perm = 'default';
   bool hidden;
   bool requested = false;
   final List<String> shownTitles = [];

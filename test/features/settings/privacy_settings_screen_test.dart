@@ -308,5 +308,42 @@ void main() {
       expect(prefs.getBool('crash_reporting_enabled'), isFalse);
       expect(prefs.getBool('telemetry_consent_prompt_shown'), isTrue);
     });
+
+    testWidgets('7. Opens Data Attributions & Open Database Notices sheet and verifies contents', (tester) async {
+      SharedPreferences.setMockInitialValues({'telemetry_consent_prompt_shown': true});
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      await tester.pumpWidget(createSubject());
+      await tester.pumpAndSettle();
+
+      final attributionsFinder = find.text('Data Attributions & Open Database Notices');
+      await tester.scrollUntilVisible(
+        attributionsFinder,
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
+
+      expect(attributionsFinder, findsOneWidget);
+      await tester.tap(attributionsFinder);
+      await tester.pumpAndSettle();
+
+      expect(find.text('DATA ATTRIBUTIONS & LICENSES'), findsOneWidget);
+      expect(find.text('OPEN FOOD FACTS'), findsOneWidget);
+      expect(find.text('USDA FOODDATA CENTRAL'), findsOneWidget);
+      expect(find.text('TYPOGRAPHY & FONTS'), findsOneWidget);
+      expect(find.text('ANATOMICAL VECTOR DATA'), findsOneWidget);
+      expect(find.text('THIRD-PARTY SOFTWARE'), findsOneWidget);
+      expect(find.text('VIEW ALL OPEN SOURCE LICENSES'), findsOneWidget);
+      expect(find.text('CLOSE'), findsOneWidget);
+
+      // Close the sheet
+      await tester.tap(find.text('CLOSE'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('DATA ATTRIBUTIONS & LICENSES'), findsNothing);
+    });
   });
 }

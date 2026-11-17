@@ -117,7 +117,18 @@ void main() {
       scrollable: find.byType(Scrollable).first,
     );
     await tester.pumpAndSettle();
-    expect(find.text('PROGRESSION TRACKER'), findsOneWidget);
+    expect(find.textContaining('PROGRESSION TRACKER'), findsOneWidget);
     expect(buildDateFinder, findsOneWidget);
+
+    // Open attributions from About section
+    final attrBtn = find.byKey(const Key('settings_view_attributions_button'));
+    expect(attrBtn, findsOneWidget);
+    await tester.tap(attrBtn);
+    await tester.pumpAndSettle();
+
+    expect(find.text('DATA ATTRIBUTIONS & LICENSES'), findsOneWidget);
+    Navigator.of(tester.element(find.text('DATA ATTRIBUTIONS & LICENSES'))).pop();
+    await tester.pumpAndSettle();
+    expect(find.text('DATA ATTRIBUTIONS & LICENSES'), findsNothing);
   });
 }

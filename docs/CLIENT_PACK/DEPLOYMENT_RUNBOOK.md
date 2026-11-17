@@ -1,7 +1,7 @@
 # IronFlow — Production Deployment Runbook
 
 **Target Audience:** DevOps Engineers, Cloud Administrators, Technical Project Leads  
-**Version:** 2.0.0  
+**Version:** 2.0.0+9 (Production Release)  
 **Estimated Deployment Time:** ~45–60 minutes
 
 ---
@@ -40,9 +40,9 @@ firebase login
 
 ---
 
-## 3. Deploying Firebase Cloud Functions AI Proxy (`SEC-01`, `ADR-001`)
+## 3. Deploying Firebase Cloud Functions AI Proxy (`SEC-01`, `ADR-001`, `ADR-003`)
 
-The AI proxy (`functions/aiGenerate`) routes user queries securely to the Gemini API, enforcing authentication, App Check tokens, and durable Firestore quotas.
+The AI proxy (`functions/aiGenerate`) routes user queries securely to the Gemini API, enforcing authentication, App Check tokens, durable Firestore quotas, and real-time SSE streaming.
 
 1. **Set Environment Secrets**:
    Provide the production Gemini API key via Firebase Secret Manager:
@@ -57,7 +57,9 @@ The AI proxy (`functions/aiGenerate`) routes user queries securely to the Gemini
    cd ..
    firebase deploy --only functions:aiGenerate
    ```
-3. **Capture Proxy URL**:
+3. **SSE Streaming Configuration**:
+   The proxy streams chunks over Server-Sent Events (`text/event-stream`) directly to the client app with HTTP chunked transfer encoding and line buffering.
+4. **Capture Proxy URL**:
    After deployment, note the public HTTPS trigger URL output by the CLI:
    `https://<region>-<project-id>.cloudfunctions.net/aiGenerate`
 
@@ -133,16 +135,17 @@ App Check prevents unauthorized apps, scraping bots, and modified APKs from call
    flutter build apk --release --dart-define=AI_PROXY_URL="https://<region>-<project-id>.cloudfunctions.net/aiGenerate"
    ```
    Artifact output: `build/app/outputs/flutter-apk/app-release.apk`
-   *(R8 shrinking and resource optimization automatically reduce APK size to ~25–30 MB).*
+   *(Measured on Release 2.0.0+9: the universal fat APK bundling all ABIs is ~75 MB. Use `--split-per-abi` for per-device APKs, or the `.aab` above, which Google Play splits per device automatically.)*
 
 ---
 
 ## 8. Post-Deployment Verification & Smoke Test Checklist
 
-Execute these 5 verification tests on the deployed production instance:
+Execute these 7 verification tests on the deployed production instance:
 - [ ] **Auth Flow**: Register a new user with email/password. Verify UID document created in Firestore under `users/{uid}`.
-- [ ] **Offline Workout Logging**: Turn on Airplane mode. Log a workout session. Verify data persists and Body Map updates instantly. Reconnect network; verify outbox commits to Firestore without data loss.
-- [ ] **AI Coach Proxy**: Send a coaching query ("What is progressive overload?"). Verify instantaneous response from question cache. Send a novel query; verify serverless proxy dispatches and streams answer without revealing backend keys.
-- [ ] **Medical Guardrail**: Send "I have severe sharp chest pain". Verify AI immediately displays non-medical disclaimer and directs user to clinical help.
+- [ ] **Offline Workout Logging & Supersets**: Turn on Airplane mode. Log a workout session linking two exercises as a superset. Verify data persists locally and Body Map updates instantly. Reconnect network; verify outbox commits to Firestore without data loss.
+- [ ] **Lock-Screen Chronometer**: Start a workout rest timer and lock the Android device. Verify ongoing notification shows live countdown chronometer without device waking or battery drain.
+- [ ] **AI Coach Proxy & Streaming**: Send a coaching query ("Give me a chest push routine"). Verify SSE streaming delivers chunks in real time and renders a tap-to-apply structured workout action card.
+- [ ] **Ephemeral Meal Photo Estimation**: Take a photo of a meal in the nutrition log. Verify macro estimation returns without saving the image to cloud storage.
+- [ ] **Medical Guardrail**: Send "I have severe sharp chest pain". Verify AI immediately displays non-medical disclaimer and directs user to clinical emergency help.
 - [ ] **Account Purge**: In `Settings > Account`, tap "Delete Account". Confirm deletion. Verify in Firebase Console that the Auth user, all Firestore subcollections, and all Storage media prefixes are permanently deleted.
-

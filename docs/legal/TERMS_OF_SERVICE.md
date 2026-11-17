@@ -1,7 +1,7 @@
 # Terms of Service for IronFlow
 
-**Last Updated:** November 7, 2026  
-**Effective Date:** November 7, 2026
+**Last Updated:** November 17, 2026  
+**Effective Date:** November 17, 2026
 
 Welcome to **IronFlow** ("Application", "Service", "we", "us", or "our"). These Terms of Service ("Terms") govern your access to and use of the IronFlow mobile application, web application, and related services.
 

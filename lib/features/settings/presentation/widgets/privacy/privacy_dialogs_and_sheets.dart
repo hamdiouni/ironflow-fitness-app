@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../../../core/config/build_stamp.dart';
 import '../../../../../core/constants/app_constants.dart';
 import '../../../../../core/constants/app_theme.dart';
 import '../../../../../shared/presentation/services/app_haptics.dart';
@@ -556,6 +557,134 @@ void showPrivacyErrorDialog(
         ),
       ],
     ),
+  );
+}
+
+/// Bottom sheet displaying third-party data attributions and open database
+/// licenses (Wave 9.1, Legal & Attribution).
+void showAttributionsSheet(BuildContext context) {
+  final tokens = AppThemeTokens.of(context);
+
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: tokens.canvas,
+    shape: RoundedRectangleBorder(
+      borderRadius:
+          BorderRadius.vertical(top: Radius.circular(tokens.radiusLg)),
+    ),
+    builder: (sheetCtx) {
+      return DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.75,
+        minChildSize: 0.45,
+        maxChildSize: 0.95,
+        builder: (ctx, scrollController) {
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+            child: ListView(
+              controller: scrollController,
+              children: [
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: tokens.borderSubtle,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'DATA ATTRIBUTIONS & LICENSES',
+                  style: TextStyle(
+                    fontFamily: AppTypography.displayFontFamily,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: tokens.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'OPEN DATABASES, TYPOGRAPHY & ASSETS',
+                  style: TextStyle(
+                    fontFamily: AppTypography.fontFamilyHeadings,
+                    fontSize: 11,
+                    letterSpacing: 0.8,
+                    color: tokens.cyanAccent,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _policySection(
+                  title: 'OPEN FOOD FACTS',
+                  body:
+                      'Food database information is provided by Open Food Facts (https://world.openfoodfacts.org/) under the Open Database License (ODbL) v1.0. Individual database contents are licensed under the Database Contents License (DbCL) v1.0.',
+                  tokens: tokens,
+                ),
+                _policySection(
+                  title: 'USDA FOODDATA CENTRAL',
+                  body:
+                      'Nutrient values and food composition data derived from U.S. Department of Agriculture, Agricultural Research Service. FoodData Central public domain database.',
+                  tokens: tokens,
+                ),
+                _policySection(
+                  title: 'TYPOGRAPHY & FONTS',
+                  body:
+                      'Inter font family by Rasmus Andersson and Space Grotesk font family by Florian Karsten are bundled locally and licensed under the SIL Open Font License, Version 1.1 (OFL-1.1).',
+                  tokens: tokens,
+                ),
+                _policySection(
+                  title: 'ANATOMICAL VECTOR DATA',
+                  body:
+                      'High-performance 2D vector anatomical maps, body regions, and muscle recovery models are proprietary vector assets © 2026 IronFlow Team.',
+                  tokens: tokens,
+                ),
+                _policySection(
+                  title: 'THIRD-PARTY SOFTWARE',
+                  body:
+                      'All 227 underlying Flutter and Dart open-source packages use permissive licenses (MIT, BSD-3-Clause, Apache-2.0, ISC). Complete legal notices are accessible via the Open Source Licenses viewer.',
+                  tokens: tokens,
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: () {
+                      Navigator.of(sheetCtx).pop();
+                      showLicensePage(
+                        context: context,
+                        applicationName: 'IronFlow (Progression Tracker)',
+                        applicationVersion: BuildStamp.version,
+                      );
+                    },
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: tokens.kineticAccent,
+                      side: BorderSide(color: tokens.kineticAccent),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    child: const Text('VIEW ALL OPEN SOURCE LICENSES'),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: tokens.panel,
+                      foregroundColor: tokens.textPrimary,
+                    ),
+                    onPressed: () => Navigator.of(sheetCtx).pop(),
+                    child: const Text('CLOSE'),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    },
   );
 }
 

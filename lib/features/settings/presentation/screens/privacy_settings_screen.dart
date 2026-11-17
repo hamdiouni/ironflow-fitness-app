@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/config/build_stamp.dart';
 import '../../../../core/constants/app_theme.dart';
 import '../../../../core/utils/record_ownership.dart';
 import '../../../../core/widgets/telemetry_consent_dialog.dart';
@@ -503,6 +504,16 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen> {
                 ),
                 Divider(color: tokens.borderSubtle, height: 1),
                 ExportActionTile(
+                  title: 'Data Attributions & Open Database Notices',
+                  subtitle:
+                      'Open Food Facts (ODbL), USDA FoodData Central, and bundled typography',
+                  icon: Icons.menu_book_outlined,
+                  accentColor: tokens.warning,
+                  tokens: tokens,
+                  onTap: () => showAttributionsSheet(context),
+                ),
+                Divider(color: tokens.borderSubtle, height: 1),
+                ExportActionTile(
                   title: 'Open Source & Font Licenses',
                   subtitle:
                       'View bundled OFL font licenses (Inter, Space Grotesk) and package notices',
@@ -511,8 +522,8 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen> {
                   tokens: tokens,
                   onTap: () => showLicensePage(
                     context: context,
-                    applicationName: 'Progression Tracker',
-                    applicationVersion: '1.0.0',
+                    applicationName: 'IronFlow (Progression Tracker)',
+                    applicationVersion: BuildStamp.version,
                   ),
                 ),
               ],

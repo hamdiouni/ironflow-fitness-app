@@ -6,6 +6,7 @@ import '../../../../core/constants/app_theme.dart';
 import '../../../../core/providers/language_provider.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../shared/presentation/services/app_haptics.dart';
+import 'privacy/privacy_dialogs_and_sheets.dart';
 import 'settings_section_tiles.dart';
 
 /// Opens the modal picker dialog for switching the application language.
@@ -210,7 +211,7 @@ class SettingsAboutSection extends StatelessWidget {
               children: [
                 SettingItem(
                   label: 'APPLICATION',
-                  value: 'PROGRESSION TRACKER',
+                  value: 'IRONFLOW (PROGRESSION TRACKER)',
                   tokens: tokens,
                 ),
                 Divider(color: tokens.borderSubtle, height: 20),
@@ -230,6 +231,56 @@ class SettingsAboutSection extends StatelessWidget {
                   label: 'BUILD DATE',
                   value: BuildStamp.buildDate,
                   tokens: tokens,
+                ),
+                Divider(color: tokens.borderSubtle, height: 20),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        key: const Key('settings_view_licenses_button'),
+                        onPressed: () => showLicensePage(
+                          context: context,
+                          applicationName: 'IronFlow (Progression Tracker)',
+                          applicationVersion: BuildStamp.version,
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: tokens.cyanAccent,
+                          side: BorderSide(color: tokens.borderSubtle),
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                        ),
+                        child: Text(
+                          'LICENSES',
+                          style: TextStyle(
+                            fontFamily: AppTypography.displayFontFamily,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.4,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: OutlinedButton(
+                        key: const Key('settings_view_attributions_button'),
+                        onPressed: () => showAttributionsSheet(context),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: tokens.warning,
+                          side: BorderSide(color: tokens.borderSubtle),
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                        ),
+                        child: Text(
+                          'ATTRIBUTIONS',
+                          style: TextStyle(
+                            fontFamily: AppTypography.displayFontFamily,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.4,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

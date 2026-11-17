@@ -1,7 +1,7 @@
 # Privacy Policy for IronFlow
 
-**Last Updated:** November 7, 2026  
-**Effective Date:** November 7, 2026
+**Last Updated:** November 17, 2026  
+**Effective Date:** November 17, 2026
 
 At **IronFlow** ("we", "our", "us"), we are deeply committed to user privacy, data minimization, and transparent data processing. This Privacy Policy outlines what information we collect, how it is encrypted and processed, and how you control your personal health and workout data.
 
@@ -26,6 +26,12 @@ If you create an authenticated cloud account:
 - **Crash Reporting & Diagnostics**: Handled via Firebase Crashlytics. **Default is OFF (opt-in only)**.
 - **Usage Analytics**: Screen navigation, feature engagement, and workout completion events via Firebase Analytics. **Default is OFF (opt-in only)**.
 - **App Integrity**: Firebase App Check tokens (Play Integrity on Android, App Attest on iOS, reCAPTCHA Enterprise on Web) to prevent bot abuse and tampering.
+
+### D. Ephemeral Meal Estimation Photos
+If you use the optional AI meal estimation feature:
+- Photos taken or selected are resized client-side on your device.
+- The image data is transmitted directly and securely to the private AI proxy via HTTPS for instantaneous nutritional analysis.
+- **Zero Cloud Retention**: Meal estimation images are never stored in Cloud Storage, never saved to Firestore, and are immediately discarded from server memory upon response completion.
 
 ---
 
@@ -54,6 +60,12 @@ When interacting with IronFlow's AI Coach:
 We do **not** sell, rent, or trade your personal or health data. We share data only with verified cloud infrastructure providers necessary to operate the service:
 - **Google Firebase / Google Cloud Platform**: Authentication, Firestore cloud sync, Storage, Cloud Functions, and Firebase App Check.
 - **Google Gemini API**: Real-time natural language coaching (routed through private backend proxy).
+
+### Open Data Sources & Attributions
+IronFlow references open databases to supply nutritional metrics:
+- **Open Food Facts**: Made available under the Open Database License (ODbL) v1.0. Individual contents are licensed under the Database Contents License (DbCL) v1.0.
+- **USDA FoodData Central**: U.S. Department of Agriculture public domain nutrition datasets.
+- Full notices and source URLs are viewable in-app at `Settings > Privacy & Telemetry > Data Attributions & Open Database Notices` and `Settings > About`.
 
 ---
 
