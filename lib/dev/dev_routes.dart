@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../core/router/app_router.dart';
 import 'design_gallery_screen.dart';
+import 'design_lab/design_lab_screen.dart';
 
 /// Developer-only routes gated out of release builds (Wave 3.5 / SEC-05).
 List<RouteBase> buildDebugRoutes() {
@@ -12,7 +13,7 @@ List<RouteBase> buildDebugRoutes() {
   return <RouteBase>[
     GoRoute(
       path: AppRoutes.designPreview,
-      builder: (context, state) => const DesignGalleryScreen(),
+      builder: (context, state) => const DesignLabScreen(),
     ),
     GoRoute(
       path: AppRoutes.designGallery,
