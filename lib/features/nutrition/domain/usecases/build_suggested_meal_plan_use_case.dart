@@ -8,7 +8,7 @@ import '../entities/food_item.dart';
 /// Pure, deterministic domain use case to build an authoritative suggested meal plan
 /// tailored to the user's budget tier, daily calorie target, and macro goals.
 ///
-/// Uses ONLY verified USDA foods from [verifiedFoodsList].
+/// Uses ONLY verified USDA foods from [FoodCatalog.verifiedFoods].
 /// Guarantees that total daily calories match the user's metabolic targets within ±5%.
 class BuildSuggestedMealPlanUseCase {
   const BuildSuggestedMealPlanUseCase();
@@ -232,13 +232,7 @@ class BuildSuggestedMealPlanUseCase {
     );
   }
 
-  FoodItem? _lookupFood(String id) {
-    try {
-      return verifiedFoodsList.firstWhere((f) => f.id == id);
-    } catch (_) {
-      return null;
-    }
-  }
+  FoodItem? _lookupFood(String id) => FoodCatalog.getFoodById(id);
 
   _MealConfig _getMealConfig(MealType mealType, int dayIndex, BudgetLevel budget) {
     final dayKey = (dayIndex % 3);

@@ -71,7 +71,6 @@ class AppRoutes {
   static const String exportSettings = '/settings/export';
   static const String privacySettings = '/settings/privacy';
   static const String aiChat = '/ai-chat';
-  static const String aiTest = '/ai-test';
   static const String designGallery = '/design-gallery';
   static const String designPreview = '/design-preview';
   static const String tools = '/tools';
@@ -91,7 +90,6 @@ class AppRoutes {
         path == signup ||
         path == splash ||
         path == onboarding ||
-        path == aiTest ||
         path == designPreview ||
         path == designGallery) {
       return home;
@@ -194,7 +192,7 @@ final routerProvider = Provider<GoRouter>((ref) {
 
 /// Builds the top-level route table.
 ///
-/// Developer/preview routes (`/design-preview`, `/design-gallery`, `/ai-test`)
+/// Developer/preview routes (`/design-preview`, `/design-gallery`)
 /// are included ONLY when [includeDebugRoutes] is true (`kDebugMode && !kReleaseMode`),
 /// guaranteeing they are never exposed in release builds (SEC-05).
 List<RouteBase> buildAppRoutes({

@@ -1,5 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-import '../../domain/entities/food_item_full.dart';
+import '../../domain/entities/food_item.dart';
 import '../../domain/entities/meal.dart';
 import '../../domain/entities/nutrition_targets.dart';
 
@@ -19,10 +19,10 @@ part 'nutrition_state.freezed.dart';
 class NutritionState with _$NutritionState {
   const factory NutritionState({
     /// All preloaded foods from database
-    @Default([]) List<FoodItemFull> allFoods,
+    @Default([]) List<FoodItem> allFoods,
     
     /// User-created custom foods
-    @Default([]) List<FoodItemFull> customFoods,
+    @Default([]) List<FoodItem> customFoods,
     
     /// Today's logged meals
     @Default([]) List<Meal> todayMeals,
@@ -92,7 +92,7 @@ class NutritionState with _$NutritionState {
   
   /// All searchable foods (preloaded + custom)
   /// This is the list used for food search
-  List<FoodItemFull> get searchableFoods => [...allFoods, ...customFoods];
+  List<FoodItem> get searchableFoods => [...allFoods, ...customFoods];
   
   /// Number of meals logged today
   int get mealCount => todayMeals.length;
@@ -150,7 +150,7 @@ class NutritionState with _$NutritionState {
   }
   
   /// Get a custom food by ID
-  FoodItemFull? getCustomFood(String id) {
+  FoodItem? getCustomFood(String id) {
     try {
       return customFoods.firstWhere((f) => f.id == id);
     } catch (_) {

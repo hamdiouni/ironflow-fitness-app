@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../../../onboarding/domain/entities/user_profile.dart' show BudgetLevel;
 
 /// A structured food item with macros, serving definitions, budget tier,
@@ -6,6 +8,7 @@ import '../../../onboarding/domain/entities/user_profile.dart' show BudgetLevel;
 /// All macro and micro values are stored per 100g according to authoritative
 /// USDA FoodData Central standards. Use [FoodItem.macrosForGrams] or
 /// [FoodItem.macrosForServings] to calculate values for specific portions.
+@immutable
 class FoodItem {
   const FoodItem({
     required this.id,
@@ -25,11 +28,17 @@ class FoodItem {
     this.fdcId,
     this.source = 'USDA FoodData Central (Public Domain)',
     this.microsPer100g,
+    this.rawCategory,
   });
 
   final String id;
   final String name;
   final FoodCategory category;
+
+  /// Optional original free-form category label (e.g. from custom foods or
+  /// Firestore docs) preserved across round-trips when it differs from
+  /// [FoodCategory.name].
+  final String? rawCategory;
 
   /// Calories per 100g (kcal)
   final double caloriesPer100g;
@@ -73,6 +82,54 @@ class FoodItem {
   /// Exact micronutrients per 100g. Null indicates nutrient was unmeasured/missing.
   final FoodMicros? microsPer100g;
 
+  /// Backward-compatible alias for [tags].
+  List<String> get dietaryTags => tags;
+
+  /// Preserves free-form category label if present, otherwise [category.name].
+  String get categoryName => rawCategory ?? category.name;
+
+  FoodItem copyWith({
+    String? id,
+    String? name,
+    FoodCategory? category,
+    String? rawCategory,
+    double? caloriesPer100g,
+    double? proteinPer100g,
+    double? carbsPer100g,
+    double? fatPer100g,
+    String? imageUrl,
+    List<String>? tags,
+    String? description,
+    String? servingUnit,
+    double? servingWeightGrams,
+    String? servingDescription,
+    BudgetLevel? budgetTier,
+    String? fdcId,
+    String? source,
+    FoodMicros? microsPer100g,
+  }) {
+    return FoodItem(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      category: category ?? this.category,
+      rawCategory: rawCategory ?? this.rawCategory,
+      caloriesPer100g: caloriesPer100g ?? this.caloriesPer100g,
+      proteinPer100g: proteinPer100g ?? this.proteinPer100g,
+      carbsPer100g: carbsPer100g ?? this.carbsPer100g,
+      fatPer100g: fatPer100g ?? this.fatPer100g,
+      imageUrl: imageUrl ?? this.imageUrl,
+      tags: tags ?? this.tags,
+      description: description ?? this.description,
+      servingUnit: servingUnit ?? this.servingUnit,
+      servingWeightGrams: servingWeightGrams ?? this.servingWeightGrams,
+      servingDescription: servingDescription ?? this.servingDescription,
+      budgetTier: budgetTier ?? this.budgetTier,
+      fdcId: fdcId ?? this.fdcId,
+      source: source ?? this.source,
+      microsPer100g: microsPer100g ?? this.microsPer100g,
+    );
+  }
+
   /// Returns macros scaled to [grams] quantity.
   FoodMacros macrosForGrams(double grams) {
     final factor = grams / 100.0;
@@ -103,6 +160,7 @@ class FoodItem {
         'id': id,
         'name': name,
         'category': category.name,
+        if (rawCategory != null) 'rawCategory': rawCategory,
         'caloriesPer100g': caloriesPer100g,
         'proteinPer100g': proteinPer100g,
         'carbsPer100g': carbsPer100g,
@@ -119,46 +177,184 @@ class FoodItem {
         if (microsPer100g != null) 'microsPer100g': microsPer100g!.toJson(),
       };
 
-  factory FoodItem.fromJson(Map<String, dynamic> json) {
+  /// Parses canonical `foods_catalog.json` maps as well as legacy Hive
+  /// `FoodItemFullModel` maps and nested Firestore `foods` documents.
+  factory FoodItem.fromAnyJson(Map<String, dynamic> json) {
+    final macrosMap = json['macros'] is Map
+        ? Map<String, dynamic>.from(json['macros'] as Map)
+        : null;
+    if (macrosMap != null) {
+      return _fromLegacyOrFirestoreJson(json, macrosMap);
+    }
+
+    final rawCat = json['rawCategory']?.toString() ?? json['category']?.toString();
+    final category = FoodCategoryX.fromName(json['category']?.toString());
+    final rawMicros = json['microsPer100g'];
+
     return FoodItem(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      category: FoodCategory.values.firstWhere(
-        (c) => c.name == json['category'],
-        orElse: () => FoodCategory.protein,
-      ),
-      caloriesPer100g: (json['caloriesPer100g'] as num).toDouble(),
-      proteinPer100g: (json['proteinPer100g'] as num).toDouble(),
-      carbsPer100g: (json['carbsPer100g'] as num).toDouble(),
-      fatPer100g: (json['fatPer100g'] as num).toDouble(),
-      imageUrl: json['imageUrl'] as String? ?? '',
-      tags: (json['tags'] as List<dynamic>?)
-              ?.map((e) => e.toString())
-              .toList() ??
-          const [],
-      description: json['description'] as String? ?? '',
-      servingUnit: json['servingUnit'] as String? ?? 'g',
+      id: json['id']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+      category: category,
+      rawCategory: (rawCat != null && rawCat != category.name) ? rawCat : null,
+      caloriesPer100g: (json['caloriesPer100g'] as num?)?.toDouble() ?? 0.0,
+      proteinPer100g: (json['proteinPer100g'] as num?)?.toDouble() ?? 0.0,
+      carbsPer100g: (json['carbsPer100g'] as num?)?.toDouble() ?? 0.0,
+      fatPer100g: (json['fatPer100g'] as num?)?.toDouble() ?? 0.0,
+      imageUrl: json['imageUrl']?.toString() ?? '',
+      tags: _parseTags(json['tags'] ?? json['dietaryTags']),
+      description: json['description']?.toString() ?? '',
+      servingUnit: json['servingUnit']?.toString() ?? 'g',
       servingWeightGrams:
           (json['servingWeightGrams'] as num?)?.toDouble() ?? 100.0,
-      servingDescription: json['servingDescription'] as String? ?? '100g',
-      budgetTier: json['budgetTier'] != null
-          ? BudgetLevel.values.firstWhere(
-              (b) => b.name == json['budgetTier'],
-              orElse: () => BudgetLevel.medium,
-            )
-          : BudgetLevel.medium,
-      fdcId: json['fdcId'] as String?,
-      source: json['source'] as String? ??
+      servingDescription: json['servingDescription']?.toString() ?? '100g',
+      budgetTier: _parseBudget(json['budgetTier']?.toString()),
+      fdcId: json['fdcId']?.toString(),
+      source: json['source']?.toString() ??
           'USDA FoodData Central (Public Domain)',
-      microsPer100g: json['microsPer100g'] != null
-          ? FoodMicros.fromJson(
-              json['microsPer100g'] as Map<String, dynamic>)
+      microsPer100g: rawMicros is Map
+          ? FoodMicros.fromJson(Map<String, dynamic>.from(rawMicros))
           : null,
     );
   }
+
+  factory FoodItem.fromJson(Map<String, dynamic> json) =>
+      FoodItem.fromAnyJson(json);
+
+  static FoodItem _fromLegacyOrFirestoreJson(
+    Map<String, dynamic> json,
+    Map<String, dynamic> macrosMap,
+  ) {
+    final microsMap = json['micros'] is Map
+        ? Map<String, dynamic>.from(json['micros'] as Map)
+        : const <String, dynamic>{};
+    final vitaminsMap = json['vitamins'] is Map
+        ? Map<String, dynamic>.from(json['vitamins'] as Map)
+        : const <String, dynamic>{};
+    final mineralsMap = json['minerals'] is Map
+        ? Map<String, dynamic>.from(json['minerals'] as Map)
+        : const <String, dynamic>{};
+
+    final hasMicros = microsMap.isNotEmpty ||
+        vitaminsMap.isNotEmpty ||
+        mineralsMap.isNotEmpty;
+
+    final rawCat = json['rawCategory']?.toString() ?? json['category']?.toString();
+    final category = FoodCategoryX.fromName(rawCat);
+
+    return FoodItem(
+      id: json['id']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+      category: category,
+      rawCategory: (rawCat != null && rawCat != category.name) ? rawCat : null,
+      caloriesPer100g: _firstNum(macrosMap, ['caloriesPer100g', 'calories']) ?? 0.0,
+      proteinPer100g: _firstNum(macrosMap, ['proteinPer100g', 'protein']) ?? 0.0,
+      carbsPer100g: _firstNum(macrosMap, ['carbsPer100g', 'carbs']) ?? 0.0,
+      fatPer100g: _firstNum(macrosMap, ['fatsPer100g', 'fats', 'fat']) ?? 0.0,
+      imageUrl: json['imageUrl']?.toString() ?? '',
+      tags: _parseTags(json['tags'] ?? json['dietaryTags']),
+      description: json['description']?.toString() ?? '',
+      servingUnit: json['servingUnit']?.toString() ?? 'g',
+      servingWeightGrams:
+          (json['servingWeightGrams'] as num?)?.toDouble() ?? 100.0,
+      servingDescription: json['servingDescription']?.toString() ?? '100g',
+      budgetTier: _parseBudget(json['budgetTier']?.toString()),
+      fdcId: json['fdcId']?.toString(),
+      source: json['source']?.toString() ??
+          'USDA FoodData Central (Public Domain)',
+      microsPer100g: hasMicros
+          ? FoodMicros(
+              fiberGrams: _firstNum(microsMap, ['fiberPer100g', 'fiber']),
+              sugarGrams: _firstNum(microsMap, ['sugarPer100g', 'sugar']),
+              sodiumMg: _firstNum(microsMap, ['sodiumPer100g', 'sodium']),
+              potassiumMg:
+                  _firstNum(microsMap, ['potassiumPer100g', 'potassium']),
+              calciumMg: _firstNum(mineralsMap, ['calciumPer100g', 'calcium']),
+              ironMg: _firstNum(mineralsMap, ['ironPer100g', 'iron']),
+              magnesiumMg:
+                  _firstNum(mineralsMap, ['magnesiumPer100g', 'magnesium']),
+              zincMg: _firstNum(mineralsMap, ['zincPer100g', 'zinc']),
+              vitaminAMcg: _firstNum(vitaminsMap, ['aPer100g', 'vitaminA']),
+              vitaminBMg: _firstNum(vitaminsMap, ['bPer100g', 'vitaminB']),
+              vitaminCMg: _firstNum(vitaminsMap, ['cPer100g', 'vitaminC']),
+              vitaminDMcg: _firstNum(vitaminsMap, ['dPer100g', 'vitaminD']),
+              vitaminEMg: _firstNum(vitaminsMap, ['ePer100g', 'vitaminE']),
+            )
+          : null,
+    );
+  }
+
+  static double? _firstNum(Map<String, dynamic> map, List<String> keys) {
+    for (final key in keys) {
+      final val = map[key];
+      if (val is num) return val.toDouble();
+    }
+    return null;
+  }
+
+  static List<String> _parseTags(dynamic raw) {
+    if (raw is List) {
+      return raw.map((e) => e.toString()).toList();
+    }
+    return const [];
+  }
+
+  static BudgetLevel _parseBudget(String? raw) {
+    if (raw == null) return BudgetLevel.medium;
+    return BudgetLevel.values.firstWhere(
+      (b) => b.name == raw,
+      orElse: () => BudgetLevel.medium,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is FoodItem &&
+        other.id == id &&
+        other.name == name &&
+        other.category == category &&
+        other.rawCategory == rawCategory &&
+        other.caloriesPer100g == caloriesPer100g &&
+        other.proteinPer100g == proteinPer100g &&
+        other.carbsPer100g == carbsPer100g &&
+        other.fatPer100g == fatPer100g &&
+        other.imageUrl == imageUrl &&
+        listEquals(other.tags, tags) &&
+        other.description == description &&
+        other.servingUnit == servingUnit &&
+        other.servingWeightGrams == servingWeightGrams &&
+        other.servingDescription == servingDescription &&
+        other.budgetTier == budgetTier &&
+        other.fdcId == fdcId &&
+        other.source == source &&
+        other.microsPer100g == microsPer100g;
+  }
+
+  @override
+  int get hashCode => Object.hash(
+        id,
+        name,
+        category,
+        rawCategory,
+        caloriesPer100g,
+        proteinPer100g,
+        carbsPer100g,
+        fatPer100g,
+        imageUrl,
+        Object.hashAll(tags),
+        description,
+        servingUnit,
+        servingWeightGrams,
+        servingDescription,
+        budgetTier,
+        fdcId,
+        source,
+        microsPer100g,
+      );
 }
 
 /// Calculated macros for a specific quantity of a [FoodItem].
+@immutable
 class FoodMacros {
   const FoodMacros({
     required this.calories,
@@ -189,11 +385,26 @@ class FoodMacros {
         fat: (json['fat'] as num).toDouble(),
         grams: (json['grams'] as num).toDouble(),
       );
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is FoodMacros &&
+        other.calories == calories &&
+        other.protein == protein &&
+        other.carbs == carbs &&
+        other.fat == fat &&
+        other.grams == grams;
+  }
+
+  @override
+  int get hashCode => Object.hash(calories, protein, carbs, fat, grams);
 }
 
-/// Exact micronutrients for a food item.
-/// Null fields indicate the nutrient was not measured or not in the USDA record.
-/// (Prevents misleading zero values).
+/// Exact micronutrients per 100g (or scaled quantity) for a [FoodItem].
+///
+/// Null fields indicate the nutrient was not measured or not in the source record.
+@immutable
 class FoodMicros {
   const FoodMicros({
     this.fiberGrams,
@@ -204,6 +415,12 @@ class FoodMicros {
     this.ironMg,
     this.vitaminDMcg,
     this.saturatedFatGrams,
+    this.vitaminAMcg,
+    this.vitaminBMg,
+    this.vitaminCMg,
+    this.vitaminEMg,
+    this.magnesiumMg,
+    this.zincMg,
   });
 
   final double? fiberGrams;
@@ -214,6 +431,12 @@ class FoodMicros {
   final double? ironMg;
   final double? vitaminDMcg;
   final double? saturatedFatGrams;
+  final double? vitaminAMcg;
+  final double? vitaminBMg;
+  final double? vitaminCMg;
+  final double? vitaminEMg;
+  final double? magnesiumMg;
+  final double? zincMg;
 
   FoodMicros scale(double factor) {
     return FoodMicros(
@@ -226,6 +449,12 @@ class FoodMicros {
       vitaminDMcg: vitaminDMcg != null ? vitaminDMcg! * factor : null,
       saturatedFatGrams:
           saturatedFatGrams != null ? saturatedFatGrams! * factor : null,
+      vitaminAMcg: vitaminAMcg != null ? vitaminAMcg! * factor : null,
+      vitaminBMg: vitaminBMg != null ? vitaminBMg! * factor : null,
+      vitaminCMg: vitaminCMg != null ? vitaminCMg! * factor : null,
+      vitaminEMg: vitaminEMg != null ? vitaminEMg! * factor : null,
+      magnesiumMg: magnesiumMg != null ? magnesiumMg! * factor : null,
+      zincMg: zincMg != null ? zincMg! * factor : null,
     );
   }
 
@@ -238,6 +467,12 @@ class FoodMicros {
         'ironMg': ironMg,
         'vitaminDMcg': vitaminDMcg,
         'saturatedFatGrams': saturatedFatGrams,
+        if (vitaminAMcg != null) 'vitaminAMcg': vitaminAMcg,
+        if (vitaminBMg != null) 'vitaminBMg': vitaminBMg,
+        if (vitaminCMg != null) 'vitaminCMg': vitaminCMg,
+        if (vitaminEMg != null) 'vitaminEMg': vitaminEMg,
+        if (magnesiumMg != null) 'magnesiumMg': magnesiumMg,
+        if (zincMg != null) 'zincMg': zincMg,
       };
 
   factory FoodMicros.fromJson(Map<String, dynamic> json) {
@@ -250,8 +485,52 @@ class FoodMicros {
       ironMg: (json['ironMg'] as num?)?.toDouble(),
       vitaminDMcg: (json['vitaminDMcg'] as num?)?.toDouble(),
       saturatedFatGrams: (json['saturatedFatGrams'] as num?)?.toDouble(),
+      vitaminAMcg: (json['vitaminAMcg'] as num?)?.toDouble(),
+      vitaminBMg: (json['vitaminBMg'] as num?)?.toDouble(),
+      vitaminCMg: (json['vitaminCMg'] as num?)?.toDouble(),
+      vitaminEMg: (json['vitaminEMg'] as num?)?.toDouble(),
+      magnesiumMg: (json['magnesiumMg'] as num?)?.toDouble(),
+      zincMg: (json['zincMg'] as num?)?.toDouble(),
     );
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is FoodMicros &&
+        other.fiberGrams == fiberGrams &&
+        other.sugarGrams == sugarGrams &&
+        other.sodiumMg == sodiumMg &&
+        other.potassiumMg == potassiumMg &&
+        other.calciumMg == calciumMg &&
+        other.ironMg == ironMg &&
+        other.vitaminDMcg == vitaminDMcg &&
+        other.saturatedFatGrams == saturatedFatGrams &&
+        other.vitaminAMcg == vitaminAMcg &&
+        other.vitaminBMg == vitaminBMg &&
+        other.vitaminCMg == vitaminCMg &&
+        other.vitaminEMg == vitaminEMg &&
+        other.magnesiumMg == magnesiumMg &&
+        other.zincMg == zincMg;
+  }
+
+  @override
+  int get hashCode => Object.hash(
+        fiberGrams,
+        sugarGrams,
+        sodiumMg,
+        potassiumMg,
+        calciumMg,
+        ironMg,
+        vitaminDMcg,
+        saturatedFatGrams,
+        vitaminAMcg,
+        vitaminBMg,
+        vitaminCMg,
+        vitaminEMg,
+        magnesiumMg,
+        zincMg,
+      );
 }
 
 enum FoodCategory {
@@ -263,6 +542,7 @@ enum FoodCategory {
   fats,
   snacks,
   beverages,
+  custom,
 }
 
 extension FoodCategoryX on FoodCategory {
@@ -275,5 +555,25 @@ extension FoodCategoryX on FoodCategory {
         FoodCategory.fats => 'Fats',
         FoodCategory.snacks => 'Snacks',
         FoodCategory.beverages => 'Beverages',
+        FoodCategory.custom => 'Custom',
       };
+
+  static FoodCategory fromName(String? raw) {
+    final norm = (raw ?? '').trim().toLowerCase();
+    for (final c in FoodCategory.values) {
+      if (c.name.toLowerCase() == norm || c.displayName.toLowerCase() == norm) {
+        return c;
+      }
+    }
+    return switch (norm) {
+      'vegetable' => FoodCategory.vegetables,
+      'fruit' => FoodCategory.fruits,
+      'fat' => FoodCategory.fats,
+      'snack' => FoodCategory.snacks,
+      'beverage' => FoodCategory.beverages,
+      'carb' => FoodCategory.carbs,
+      'custom' => FoodCategory.custom,
+      _ => FoodCategory.snacks,
+    };
+  }
 }

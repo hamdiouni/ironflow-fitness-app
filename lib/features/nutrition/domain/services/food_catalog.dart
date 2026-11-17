@@ -1,82 +1,104 @@
+import 'package:flutter/services.dart';
+
+import '../../../../core/catalog/catalog_search_index.dart';
 import '../../../onboarding/domain/entities/user_profile.dart' show BudgetLevel;
 import '../entities/food_item.dart';
-import 'supplementary_foods_part1.dart';
-import 'supplementary_foods_part2.dart';
-import 'supplementary_foods_part3.dart';
-import 'supplementary_foods_part4.dart';
-import 'verified_foods_part1.dart';
-import 'verified_foods_part2.dart';
-import 'verified_foods_part3.dart';
-import 'verified_foods_part4.dart';
 
-/// Authoritative USDA FoodData Central verified foods list.
-const List<FoodItem> kVerifiedFoodsList = [
-  ...kVerifiedFoodsPart1,
-  ...kVerifiedFoodsPart2,
-  ...kVerifiedFoodsPart3,
-  ...kVerifiedFoodsPart4,
-];
-
-/// Domain-level alias matching legacy `verifiedFoodsList`.
-const List<FoodItem> verifiedFoodsList = kVerifiedFoodsList;
-
-/// Supplementary general food items list.
-const List<FoodItem> kSupplementaryFoodsList = [
-  ...kSupplementaryFoodsPart1,
-  ...kSupplementaryFoodsPart2,
-  ...kSupplementaryFoodsPart3,
-  ...kSupplementaryFoodsPart4,
-];
-
-/// Domain-layer food catalog and deduplicated lookup service (Wave 3.4).
+/// Domain-layer food catalog backed by lazy asset JSON loading via
+/// [LazyJsonCatalogLoader] (Wave 3.3).
+///
+/// Replaces the legacy 8 compiled Dart shard files so the 282-food dataset is
+/// decoded off the main isolate on demand rather than baked into the main
+/// application bundle.
 class FoodCatalog {
   const FoodCatalog._();
 
-  /// Authoritative USDA verified foods only.
-  static List<FoodItem> get verifiedFoods => kVerifiedFoodsList;
+  static List<FoodItem> _foods = const [];
+  static int _verifiedCount = 0;
+  static Map<String, FoodItem> _byId = const {};
+  static bool _isLoaded = false;
+  static Future<List<FoodItem>>? _inFlightLoad;
 
-  /// Supplementary legacy foods list.
-  static List<FoodItem> get supplementaryFoods => kSupplementaryFoodsList;
+  /// Whether the catalog JSON has been loaded into memory.
+  static bool get isLoaded => _isLoaded;
 
-  /// Combined deduplicated master food catalog (USDA verified foods prioritized).
-  static final List<FoodItem> foods = _buildCombinedFoods();
-
-  static List<FoodItem> _buildCombinedFoods() {
-    final verifiedIds = kVerifiedFoodsList.map((f) => f.id).toSet();
-    final verifiedNames =
-        kVerifiedFoodsList.map((f) => f.name.toLowerCase()).toSet();
-    final uniqueLegacy = kSupplementaryFoodsList.where((f) {
-      return !verifiedIds.contains(f.id) &&
-          !verifiedNames.contains(f.name.toLowerCase());
-    }).toList();
-    return [...kVerifiedFoodsList, ...uniqueLegacy];
+  /// Lazily loads and indexes `assets/data/foods_catalog.json` via
+  /// [LazyJsonCatalogLoader] (single-flight).
+  static Future<List<FoodItem>> ensureLoaded({AssetBundle? bundle}) {
+    if (_isLoaded && bundle == null) {
+      return Future<List<FoodItem>>.value(_foods);
+    }
+    return _inFlightLoad ??= _loadInternal(bundle: bundle).whenComplete(() {
+      _inFlightLoad = null;
+    });
   }
 
-  static final Map<String, FoodItem> _byId = {
-    for (final f in foods) f.id: f,
-  };
+  static Future<List<FoodItem>> _loadInternal({AssetBundle? bundle}) async {
+    final loaded = await LazyJsonCatalogLoader.loadFoodsCatalog(bundle: bundle);
+    setLoadedFoods(loaded.index.all, verifiedCount: loaded.verifiedCount);
+    return _foods;
+  }
 
-  static int get foodCount => foods.length;
+  /// Populates the catalog directly from a parsed JSON string (useful in tests).
+  static void loadFromJsonString(String rawJson) {
+    final parsed = LazyJsonCatalogLoader.parseFoodsCatalogSync(rawJson);
+    setLoadedFoods(parsed.index.all, verifiedCount: parsed.verifiedCount);
+  }
+
+  /// Sets the active in-memory food catalog (single-source cache shared with
+  /// [foodsCatalogIndexProvider]).
+  static void setLoadedFoods(List<FoodItem> foods, {int? verifiedCount}) {
+    _foods = List<FoodItem>.unmodifiable(foods);
+    _verifiedCount = (verifiedCount ??
+            foods.where((f) => f.id.startsWith('usda_')).length)
+        .clamp(0, foods.length);
+    _byId = Map<String, FoodItem>.unmodifiable({
+      for (final f in _foods) f.id: f,
+    });
+    _isLoaded = true;
+  }
+
+  /// Clears cached catalog state (for unit tests).
+  static void resetForTest() {
+    _foods = const [];
+    _verifiedCount = 0;
+    _byId = const {};
+    _isLoaded = false;
+    _inFlightLoad = null;
+  }
+
+  /// Authoritative USDA verified foods only.
+  static List<FoodItem> get verifiedFoods =>
+      _foods.take(_verifiedCount).toList(growable: false);
+
+  /// Supplementary general food items list.
+  static List<FoodItem> get supplementaryFoods =>
+      _foods.skip(_verifiedCount).toList(growable: false);
+
+  /// Combined deduplicated master food catalog (USDA verified foods prioritized).
+  static List<FoodItem> get foods => _foods;
+
+  static int get foodCount => _foods.length;
 
   static FoodItem? getFoodById(String id) => _byId[id];
 
   static List<FoodItem> searchByName(String query) {
-    if (query.isEmpty) return foods;
+    if (query.isEmpty) return _foods;
     final lowerQuery = query.toLowerCase().trim();
-    return foods
+    return _foods
         .where((food) => food.name.toLowerCase().contains(lowerQuery))
         .toList();
   }
 
   static List<FoodItem> filterByCategory(FoodCategory category) =>
-      foods.where((food) => food.category == category).toList();
+      _foods.where((food) => food.category == category).toList();
 
   static List<FoodItem> filterByBudget(BudgetLevel budget) =>
-      foods.where((food) => food.budgetTier == budget).toList();
+      _foods.where((food) => food.budgetTier == budget).toList();
 
   static List<FoodItem> filterByTags(List<String> tags) {
-    if (tags.isEmpty) return foods;
-    return foods
+    if (tags.isEmpty) return _foods;
+    return _foods
         .where((food) => tags.every((tag) => food.tags.contains(tag)))
         .toList();
   }
@@ -87,7 +109,7 @@ class FoodCatalog {
     BudgetLevel? budgetTier,
     List<String>? tags,
   }) {
-    var results = foods;
+    var results = _foods;
     if (query != null && query.trim().isNotEmpty) {
       final q = query.toLowerCase().trim();
       results = results
@@ -109,10 +131,10 @@ class FoodCatalog {
   }
 
   static List<FoodCategory> getAllCategories() =>
-      {for (final food in foods) food.category}.toList();
+      {for (final food in _foods) food.category}.toList();
 
   static List<String> getAllTags() =>
-      ({for (final food in foods) ...food.tags}.toList()..sort());
+      ({for (final food in _foods) ...food.tags}.toList()..sort());
 
   static Map<FoodCategory, List<FoodItem>> getFoodsByCategory() => {
         for (final category in getAllCategories())
@@ -120,5 +142,5 @@ class FoodCatalog {
       };
 
   static List<FoodItem> getFoodsByTag(String tag) =>
-      foods.where((food) => food.tags.contains(tag)).toList();
+      _foods.where((food) => food.tags.contains(tag)).toList();
 }

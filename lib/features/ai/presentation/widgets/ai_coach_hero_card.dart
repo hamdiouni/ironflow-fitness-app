@@ -58,7 +58,7 @@ class _AiCoachHeroCardState extends ConsumerState<AiCoachHeroCard> {
 
     // Check configuration and connectivity
     final hasKey = widget.isConfigured ??
-        (AppConfig.hasOpenAI || AppConfig.hasGemini || AppConfig.hasNvidia);
+        (AppConfig.hasGemini || AppConfig.hasNvidia);
     final isOnline = ref.watch(isOnlineProvider).value ?? true;
 
     // Watch GlobalAIState for Home context

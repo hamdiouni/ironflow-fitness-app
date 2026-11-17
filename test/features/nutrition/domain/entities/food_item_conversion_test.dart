@@ -1,11 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:progression_tracker/features/nutrition/domain/entities/food_item.dart';
-import 'package:progression_tracker/features/nutrition/domain/entities/food_item_conversion.dart';
-import 'package:progression_tracker/features/nutrition/domain/entities/food_item_full.dart';
 
 void main() {
-  group('FoodItem conversion', () {
-    test('toFoodItemFull copies measured values and zeroes only unknowns', () {
+  group('Unified FoodItem JSON & legacy FoodItemFull compatibility', () {
+    test('toJson/fromAnyJson copies measured values and keeps unknowns null', () {
       const item = FoodItem(
         id: 'salmon',
         name: 'Salmon',
@@ -28,67 +26,53 @@ void main() {
         ),
       );
 
-      final full = item.toFoodItemFull();
+      final roundTripped = FoodItem.fromAnyJson(item.toJson());
 
-      expect(full.id, 'salmon');
-      expect(full.category, 'protein');
-      expect(full.macros.calories, 208);
-      expect(full.macros.protein, 20);
-      expect(full.macros.fats, 13);
-      expect(full.micros.sodium, 59);
-      expect(full.micros.potassium, 490);
-      expect(full.vitamins.vitaminD, 11);
-      expect(full.minerals.calcium, 11);
-      expect(full.minerals.iron, 0.9);
-      expect(full.dietaryTags, ['glutenFree']);
+      expect(roundTripped.id, 'salmon');
+      expect(roundTripped.category, FoodCategory.protein);
+      expect(roundTripped.categoryName, 'protein');
+      expect(roundTripped.caloriesPer100g, 208);
+      expect(roundTripped.proteinPer100g, 20);
+      expect(roundTripped.fatPer100g, 13);
+      expect(roundTripped.microsPer100g?.sodiumMg, 59);
+      expect(roundTripped.microsPer100g?.potassiumMg, 490);
+      expect(roundTripped.microsPer100g?.vitaminDMcg, 11);
+      expect(roundTripped.microsPer100g?.calciumMg, 11);
+      expect(roundTripped.microsPer100g?.ironMg, 0.9);
+      expect(roundTripped.dietaryTags, ['glutenFree']);
 
-      // The catalog does not measure these. They must remain unknown
-      // (zero in the non-nullable Full shape), not category stereotypes.
-      expect(full.vitamins.vitaminA, 0);
-      expect(full.vitamins.vitaminB, 0);
-      expect(full.vitamins.vitaminC, 0);
-      expect(full.vitamins.vitaminE, 0);
-      expect(full.minerals.magnesium, 0);
-      expect(full.minerals.zinc, 0);
+      // Unmeasured micros stay null instead of being filled with category guesses.
+      expect(roundTripped.microsPer100g?.vitaminAMcg, isNull);
+      expect(roundTripped.microsPer100g?.vitaminBMg, isNull);
+      expect(roundTripped.microsPer100g?.vitaminCMg, isNull);
+      expect(roundTripped.microsPer100g?.vitaminEMg, isNull);
+      expect(roundTripped.microsPer100g?.magnesiumMg, isNull);
+      expect(roundTripped.microsPer100g?.zincMg, isNull);
     });
 
-    test('toFoodItem maps all nutrients FoodItem can represent', () {
-      const full = FoodItemFull(
-        id: 'yogurt',
-        name: 'Greek Yogurt',
-        category: 'Dairy',
-        macros: MacrosPer100g(
-          calories: 97,
-          protein: 9,
-          carbs: 3.9,
-          fats: 5,
-        ),
-        micros: MicrosPer100g(
-          fiber: 0,
-          sugar: 4,
-          sodium: 36,
-          potassium: 141,
-        ),
-        vitamins: VitaminsPer100g(
-          vitaminA: 90,
-          vitaminB: 0.6,
-          vitaminC: 0,
-          vitaminD: 0.1,
-          vitaminE: 0.03,
-        ),
-        minerals: MineralsPer100g(
-          calcium: 110,
-          iron: 0.07,
-          magnesium: 11,
-          zinc: 0.52,
-        ),
-        imageUrl: '',
-        dietaryTags: ['vegetarian'],
-      );
+    test('fromAnyJson parses legacy nested FoodItemFull Hive/Firestore maps', () {
+      final legacyMap = <String, dynamic>{
+        'id': 'yogurt',
+        'name': 'Greek Yogurt',
+        'category': 'Dairy',
+        'macros': {'calories': 97, 'protein': 9, 'carbs': 3.9, 'fats': 5},
+        'micros': {'fiber': 0, 'sugar': 4, 'sodium': 36, 'potassium': 141},
+        'vitamins': {
+          'vitaminA': 90,
+          'vitaminB': 0.6,
+          'vitaminC': 0,
+          'vitaminD': 0.1,
+          'vitaminE': 0.03,
+        },
+        'minerals': {'calcium': 110, 'iron': 0.07, 'magnesium': 11, 'zinc': 0.52},
+        'imageUrl': '',
+        'dietaryTags': ['vegetarian'],
+      };
 
-      final item = full.toFoodItem();
+      final item = FoodItem.fromAnyJson(legacyMap);
 
       expect(item.category, FoodCategory.dairy);
+      expect(item.categoryName, 'Dairy');
       expect(item.caloriesPer100g, 97);
       expect(item.proteinPer100g, 9);
       expect(item.tags, ['vegetarian']);
@@ -96,12 +80,15 @@ void main() {
       expect(item.microsPer100g?.potassiumMg, 141);
       expect(item.microsPer100g?.calciumMg, 110);
       expect(item.microsPer100g?.vitaminDMcg, 0.1);
+      expect(item.microsPer100g?.vitaminAMcg, 90);
+      expect(item.microsPer100g?.magnesiumMg, 11);
+      expect(item.microsPer100g?.zincMg, 0.52);
     });
 
-    test('foodCategoryFromName is case-insensitive with a generic fallback',
-        () {
-      expect(foodCategoryFromName(' VEGETABLES '), FoodCategory.vegetables);
-      expect(foodCategoryFromName('ready-meal'), FoodCategory.snacks);
+    test('FoodCategoryX.fromName is case-insensitive with a generic fallback', () {
+      expect(FoodCategoryX.fromName(' VEGETABLES '), FoodCategory.vegetables);
+      expect(FoodCategoryX.fromName('ready-meal'), FoodCategory.snacks);
+      expect(FoodCategoryX.fromName('Custom'), FoodCategory.custom);
     });
   });
 }

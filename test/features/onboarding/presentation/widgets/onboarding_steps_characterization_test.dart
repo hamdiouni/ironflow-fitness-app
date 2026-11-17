@@ -6,6 +6,7 @@ import 'package:progression_tracker/features/nutrition/domain/entities/diet_plan
 import 'package:progression_tracker/features/nutrition/domain/entities/nutrition_targets.dart';
 import 'package:progression_tracker/features/nutrition/domain/repositories/diet_plan_repository.dart';
 import 'package:progression_tracker/features/nutrition/domain/repositories/nutrition_repository.dart';
+import 'package:progression_tracker/features/nutrition/domain/services/food_catalog.dart';
 import 'package:progression_tracker/features/nutrition/domain/usecases/generate_diet_plan_use_case.dart';
 import 'package:progression_tracker/features/nutrition/domain/usecases/save_diet_plan_use_case.dart';
 import 'package:progression_tracker/features/onboarding/data/user_profile_storage.dart';
@@ -67,6 +68,12 @@ class _InMemoryNutritionRepo extends Fake implements NutritionRepository {
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUpAll(() async {
+    await FoodCatalog.ensureLoaded();
+  });
+
   setUp(() {
     AppHaptics.shared = AppHaptics(isEnabled: false);
   });

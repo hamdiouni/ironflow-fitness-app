@@ -3,23 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
-import '../../domain/entities/food_item_full.dart';
+import '../../domain/entities/food_item.dart';
 import '../../domain/usecases/get_food_alternatives_use_case.dart';
 import '../providers/nutrition_providers.dart';
 
 /// Widget to display food alternatives in a horizontal scrollable list.
-///
-/// Shows alternatives with:
-/// - Food image
-/// - Food name
-/// - Macro comparison (calories, protein, carbs, fats)
-/// - Quality score badge
-/// - One-tap swap button
-///
-/// **Validates: Requirements 3.3**
 class FoodAlternativesWidget extends ConsumerWidget {
-  final FoodItemFull selectedFood;
-  final Function(FoodItemFull) onSwap;
+  final FoodItem selectedFood;
+  final Function(FoodItem) onSwap;
 
   const FoodAlternativesWidget({
     super.key,
@@ -98,7 +89,7 @@ class FoodAlternativesWidget extends ConsumerWidget {
 /// Card widget for displaying a single food alternative.
 class _AlternativeFoodCard extends StatelessWidget {
   final FoodAlternative alternative;
-  final Function(FoodItemFull) onSwap;
+  final Function(FoodItem) onSwap;
 
   const _AlternativeFoodCard({
     required this.alternative,
@@ -201,11 +192,11 @@ class _AlternativeFoodCard extends StatelessWidget {
                   children: [
                     _MacroComparisonRow(
                       label: 'Cal',
-                      value: food.macros.calories.toStringAsFixed(0),
+                      value: food.caloriesPer100g.toStringAsFixed(0),
                     ),
                     _MacroComparisonRow(
                       label: 'P',
-                      value: food.macros.protein.toStringAsFixed(1),
+                      value: food.proteinPer100g.toStringAsFixed(1),
                     ),
                   ],
                 ),

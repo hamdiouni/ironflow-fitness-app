@@ -277,6 +277,9 @@ class InMemoryWorkoutStore implements HiveWorkoutDataSource {
   final Map<String, WorkoutModel> storage = {};
 
   @override
+  Future<WorkoutModel?> getWorkoutById(String id) async => storage[id];
+
+  @override
   Future<void> saveWorkout(WorkoutModel workout) async {
     storage[workout.id] = workout;
   }
@@ -295,12 +298,13 @@ class InMemoryWorkoutStore implements HiveWorkoutDataSource {
   }
 
   @override
-  Future<int> getWorkoutCount() async => storage.length;
+  Future<int> getWorkoutCount({String? userId}) async => storage.length;
 
   @override
   Future<List<WorkoutModel>> getWorkoutsPaginated({
     int offset = 0,
     int limit = 20,
+    String? userId,
   }) async =>
       storage.values.skip(offset).take(limit).toList();
 }

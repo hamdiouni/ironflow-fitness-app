@@ -6,7 +6,6 @@ import 'package:progression_tracker/core/theme/app_typography.dart';
 import 'package:progression_tracker/shared/presentation/components/app_button.dart';
 import 'package:progression_tracker/shared/presentation/services/app_haptics.dart';
 import 'package:progression_tracker/features/nutrition/domain/entities/food_item.dart';
-import 'package:progression_tracker/features/nutrition/domain/entities/food_item_full.dart';
 import 'package:progression_tracker/features/nutrition/presentation/providers/food_providers.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -84,7 +83,7 @@ class EmptyFoodSearchState extends StatelessWidget {
 
 class CreateCustomFoodDialog extends ConsumerStatefulWidget {
   const CreateCustomFoodDialog({super.key, required this.onFoodCreated});
-  final void Function(FoodItemFull food) onFoodCreated;
+  final void Function(FoodItem food) onFoodCreated;
 
   @override
   ConsumerState<CreateCustomFoodDialog> createState() =>
@@ -135,36 +134,16 @@ class _CreateCustomFoodDialogState
     setState(() => _isSaving = true);
 
     try {
-      final customFood = FoodItemFull(
+      final customFood = FoodItem(
         id: 'custom_${const Uuid().v4()}',
         name: _nameController.text.trim(),
-        category: _selectedCategory.displayName.toLowerCase(),
+        category: _selectedCategory,
+        caloriesPer100g: double.parse(_caloriesController.text),
+        proteinPer100g: double.parse(_proteinController.text),
+        carbsPer100g: double.parse(_carbsController.text),
+        fatPer100g: double.parse(_fatController.text),
         imageUrl: '',
-        macros: MacrosPer100g(
-          calories: double.parse(_caloriesController.text),
-          protein: double.parse(_proteinController.text),
-          carbs: double.parse(_carbsController.text),
-          fats: double.parse(_fatController.text),
-        ),
-        micros: const MicrosPer100g(
-          fiber: 0,
-          sugar: 0,
-          sodium: 0,
-          potassium: 0,
-        ),
-        vitamins: const VitaminsPer100g(
-          vitaminA: 0,
-          vitaminB: 0,
-          vitaminC: 0,
-          vitaminD: 0,
-          vitaminE: 0,
-        ),
-        minerals: const MineralsPer100g(
-          calcium: 0,
-          iron: 0,
-          magnesium: 0,
-          zinc: 0,
-        ),
+        source: 'User Custom Food',
       );
 
       await ref.read(customFoodsProvider.notifier).addCustomFood(customFood);

@@ -1,11 +1,17 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:progression_tracker/features/nutrition/data/verified_foods_data.dart';
 import 'package:progression_tracker/features/nutrition/domain/entities/meal.dart';
+import 'package:progression_tracker/features/nutrition/domain/services/food_catalog.dart';
 import 'package:progression_tracker/features/nutrition/domain/usecases/get_budget_food_alternatives_use_case.dart';
 import 'package:progression_tracker/features/onboarding/domain/entities/user_profile.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   late GetBudgetFoodAlternativesUseCase useCase;
+
+  setUpAll(() async {
+    await FoodCatalog.ensureLoaded();
+  });
 
   setUp(() {
     useCase = const GetBudgetFoodAlternativesUseCase();

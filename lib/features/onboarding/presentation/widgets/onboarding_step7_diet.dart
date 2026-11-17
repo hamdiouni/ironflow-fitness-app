@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:progression_tracker/core/constants/app_theme.dart';
 import 'package:progression_tracker/features/nutrition/domain/entities/diet_plan.dart';
+import 'package:progression_tracker/features/nutrition/domain/entities/food_item.dart';
+import 'package:progression_tracker/features/nutrition/domain/services/food_catalog.dart';
 import 'package:progression_tracker/features/nutrition/domain/usecases/build_suggested_meal_plan_use_case.dart';
 import 'package:progression_tracker/features/onboarding/domain/entities/user_profile.dart';
 import 'package:progression_tracker/shared/presentation/services/app_haptics.dart';
@@ -23,6 +25,29 @@ class OnboardingDietSuggestionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (!FoodCatalog.isLoaded) {
+      return FutureBuilder<List<FoodItem>>(
+        future: FoodCatalog.ensureLoaded(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState != ConnectionState.done) {
+            return Container(
+              decoration: BoxDecoration(
+                color: tokens.card,
+                borderRadius: BorderRadius.circular(tokens.radiusMd),
+                border: Border.all(color: tokens.borderSubtle),
+              ),
+              padding: const EdgeInsets.all(24),
+              child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+            );
+          }
+          return _buildCard(context);
+        },
+      );
+    }
+    return _buildCard(context);
+  }
+
+  Widget _buildCard(BuildContext context) {
     final plan = const BuildSuggestedMealPlanUseCase().call(tempProfile);
     final day1 = plan.days.isNotEmpty ? plan.days.first : null;
 

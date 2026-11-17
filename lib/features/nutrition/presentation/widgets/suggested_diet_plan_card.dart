@@ -9,6 +9,7 @@ import '../../../onboarding/presentation/providers/onboarding_provider.dart';
 import '../../domain/entities/diet_plan.dart';
 import '../../domain/entities/diet_plan_state.dart';
 import '../../domain/entities/meal.dart';
+import '../../domain/services/food_catalog.dart';
 import '../../domain/usecases/build_suggested_meal_plan_use_case.dart';
 import '../providers/diet_plan_providers.dart';
 
@@ -504,6 +505,7 @@ class _SuggestedDietPlanCardState extends ConsumerState<SuggestedDietPlanCard> {
       final profile = await ref.read(userProfileProvider.future);
       if (profile == null) throw Exception('Profile not found');
 
+      await FoodCatalog.ensureLoaded();
       final plan = const BuildSuggestedMealPlanUseCase().call(profile);
       await ref.read(saveDietPlanUseCaseProvider).call(plan);
       ref.invalidate(dietPlanProvider);

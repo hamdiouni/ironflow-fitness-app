@@ -1,14 +1,14 @@
 import 'dart:io';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:progression_tracker/core/services/telemetry_preferences.dart';
 import 'package:progression_tracker/features/ai/data/repositories/ai_preferences_repository_impl.dart';
 import 'package:progression_tracker/features/nutrition/data/datasources/firestore_food_datasource.dart';
 import 'package:progression_tracker/features/nutrition/data/datasources/hive_food_datasource.dart';
-import 'package:progression_tracker/features/nutrition/data/models/food_item_full_model.dart';
 import 'package:progression_tracker/features/nutrition/data/repositories/food_repository_impl.dart';
-import 'package:progression_tracker/features/nutrition/domain/entities/food_item_full.dart';
+import 'package:progression_tracker/features/nutrition/domain/entities/food_item.dart';
 import 'package:progression_tracker/features/settings/data/repositories/privacy_preferences_repository_impl.dart';
 import 'package:progression_tracker/features/workout/data/datasources/hive_active_program_datasource.dart';
 import 'package:progression_tracker/features/workout/data/models/active_program_model.dart';
@@ -18,20 +18,37 @@ import 'package:progression_tracker/features/workout/domain/entities/workout_pro
 import 'package:progression_tracker/features/workout/domain/exceptions/workout_exceptions.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class _FakeFirestoreFoodDatasource implements FirestoreFoodDatasource {
+class _FakeFirestoreFoodDatasource extends Fake
+    implements FirestoreFoodDatasource {
   _FakeFirestoreFoodDatasource(this.remoteFoods);
 
-  List<FoodItemFull> remoteFoods;
+  List<FoodItem> remoteFoods;
   bool shouldFail = false;
 
   @override
-  Future<List<FoodItemFull>> getAllFoods() async {
+  Future<FoodPageResult> getFoodsPage({
+    int limit = FirestoreFoodDatasource.defaultPageSize,
+    DocumentSnapshot<Map<String, dynamic>>? startAfter,
+  }) async {
     if (shouldFail) throw Exception('Firestore offline');
-    return List<FoodItemFull>.from(remoteFoods);
+    final items = remoteFoods.take(limit).toList();
+    return FoodPageResult(
+      items: items,
+      lastDocument: null,
+      hasMore: false,
+    );
   }
 
   @override
-  Future<FoodItemFull?> getFoodById(String id) async {
+  Future<List<FoodItem>> getAllFoods({
+    int limit = FirestoreFoodDatasource.maxBatchQueryLimit,
+  }) async {
+    if (shouldFail) throw Exception('Firestore offline');
+    return remoteFoods.take(limit).toList();
+  }
+
+  @override
+  Future<FoodItem?> getFoodById(String id) async {
     if (shouldFail) throw Exception('Firestore offline');
     for (final f in remoteFoods) {
       if (f.id == id) return f;
@@ -40,42 +57,58 @@ class _FakeFirestoreFoodDatasource implements FirestoreFoodDatasource {
   }
 
   @override
-  Future<List<FoodItemFull>> getFoodsByCategory(String category) async {
+  Future<List<FoodItem>> getFoodsByCategory(
+    String category, {
+    int limit = 100,
+  }) async {
     if (shouldFail) throw Exception('Firestore offline');
     return remoteFoods
-        .where((f) => f.category.toLowerCase() == category.toLowerCase())
+        .where((f) => f.categoryName.toLowerCase() == category.toLowerCase())
+        .take(limit)
         .toList();
   }
 
   @override
-  Future<List<FoodItemFull>> getFoodsByTags(List<String> tags) async {
+  Future<List<FoodItem>> getFoodsByTags(
+    List<String> tags, {
+    int limit = 100,
+  }) async {
     if (shouldFail) throw Exception('Firestore offline');
     return remoteFoods
         .where((f) => tags.any((t) => f.dietaryTags.contains(t)))
+        .take(limit)
         .toList();
   }
 
   @override
-  Future<List<FoodItemFull>> searchFoods(String query) async {
+  Future<List<FoodItem>> searchFoods(
+    String query, {
+    int limit = FirestoreFoodDatasource.defaultPageSize,
+  }) async {
     if (shouldFail) throw Exception('Firestore offline');
     final q = query.toLowerCase();
     return remoteFoods
         .where((f) => f.name.toLowerCase().contains(q))
+        .take(limit)
         .toList();
   }
 
   @override
-  Future<void> uploadFoods(List<FoodItemFull> foods) async {
+  Future<void> uploadFoods(List<FoodItem> foods) async {
     if (shouldFail) throw Exception('Firestore offline');
-    remoteFoods = List<FoodItemFull>.from(foods);
+    remoteFoods = List<FoodItem>.from(foods);
   }
 
   @override
-  Map<String, dynamic> foodToMap(FoodItemFull food) => {};
+  Map<String, dynamic> foodToMap(FoodItem food) => food.toJson();
 
   @override
-  FoodItemFull mapToFood(Map<String, dynamic> data, String id) =>
-      remoteFoods.first;
+  FoodItem? mapToFoodSafe(Map<String, dynamic>? data, String id) =>
+      data == null ? null : FoodItem.fromAnyJson({...data, 'id': id});
+
+  @override
+  FoodItem mapToFood(Map<String, dynamic> data, String id) =>
+      FoodItem.fromAnyJson({...data, 'id': id});
 }
 
 class _FaultyActiveProgramDataSource extends HiveActiveProgramDataSource {
@@ -103,43 +136,38 @@ class _FaultyActiveProgramDataSource extends HiveActiveProgramDataSource {
   }
 }
 
-FoodItemFull _sampleFood({
+FoodItem _sampleFood({
   required String id,
   required String name,
   String category = 'protein',
   List<String> dietaryTags = const ['high_protein', 'gluten_free'],
 }) {
-  return FoodItemFull(
+  return FoodItem(
     id: id,
     name: name,
-    category: category,
-    macros: const MacrosPer100g(
-      calories: 165,
-      protein: 31,
-      carbs: 0,
-      fats: 3.6,
-    ),
-    micros: const MicrosPer100g(
-      fiber: 0,
-      sugar: 0,
-      sodium: 74,
-      potassium: 256,
-    ),
-    vitamins: const VitaminsPer100g(
-      vitaminA: 6,
-      vitaminB: 0.6,
-      vitaminC: 0,
-      vitaminD: 0.1,
-      vitaminE: 0.3,
-    ),
-    minerals: const MineralsPer100g(
-      calcium: 15,
-      iron: 1.0,
-      magnesium: 29,
-      zinc: 1.0,
-    ),
+    category: FoodCategoryX.fromName(category),
+    rawCategory: category,
+    caloriesPer100g: 165,
+    proteinPer100g: 31,
+    carbsPer100g: 0,
+    fatPer100g: 3.6,
     imageUrl: 'https://example.com/$id.png',
-    dietaryTags: dietaryTags,
+    tags: dietaryTags,
+    microsPer100g: const FoodMicros(
+      fiberGrams: 0,
+      sugarGrams: 0,
+      sodiumMg: 74,
+      potassiumMg: 256,
+      calciumMg: 15,
+      ironMg: 1.0,
+      magnesiumMg: 29,
+      zincMg: 1.0,
+      vitaminAMcg: 6,
+      vitaminBMg: 0.6,
+      vitaminCMg: 0,
+      vitaminDMcg: 0.1,
+      vitaminEMg: 0.3,
+    ),
   );
 }
 
@@ -187,11 +215,13 @@ void main() {
     tempDir = Directory.systemTemp.createTempSync('wave3_data_repos_');
     Hive.init(tempDir.path);
     await Hive.openBox<dynamic>('foods');
+    await Hive.openBox<dynamic>('custom_foods');
     await Hive.openBox<Map>('active_program');
   });
 
   setUp(() async {
     await Hive.box<dynamic>('foods').clear();
+    await Hive.box<dynamic>('custom_foods').clear();
     await Hive.box<Map>('active_program').clear();
     SharedPreferences.setMockInitialValues({});
   });
@@ -328,7 +358,7 @@ void main() {
   group('Wave 3.4 & 3.7 — FoodRepositoryImpl & HiveFoodDataSource', () {
     test('populates Hive cache from remote, searches/filters/counts, and falls back offline',
         () async {
-      final seedFoods = <FoodItemFull>[
+      final seedFoods = <FoodItem>[
         _sampleFood(id: 'food_chicken', name: 'Chicken Breast', category: 'protein'),
         _sampleFood(
           id: 'food_oats',
@@ -357,12 +387,9 @@ void main() {
       expect(await repo.isCacheValid(), isTrue);
       expect(await repo.getCachedFoodCount(), seedFoods.length);
 
-      // Model JSON round-trip sanity
-      final model = FoodItemFullModel.fromEntity(seedFoods.first);
-      expect(
-        FoodItemFullModel.fromJson(model.toJson()).toEntity().id,
-        seedFoods.first.id,
-      );
+      // JSON round-trip sanity
+      final encoded = seedFoods.first.toJson();
+      expect(FoodItem.fromAnyJson(encoded).id, seedFoods.first.id);
 
       // Cached lookups while remote is offline
       remote.shouldFail = true;

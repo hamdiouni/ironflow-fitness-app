@@ -1,7 +1,7 @@
-import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../domain/entities/food_item_full.dart';
+import 'package:progression_tracker/core/utils/app_logger.dart';
+import '../../domain/entities/food_item.dart';
 import '../../domain/entities/meal.dart';
 import '../../domain/entities/nutrition_targets.dart';
 import '../../domain/repositories/food_repository.dart';
@@ -83,8 +83,8 @@ class NutritionNotifier extends Notifier<NutritionState> {
       ]);
       if (_disposed) return;
       
-      final allFoods = results[0] as List<FoodItemFull>;
-      final customFoods = results[1] as List<FoodItemFull>;
+      final allFoods = results[0] as List<FoodItem>;
+      final customFoods = results[1] as List<FoodItem>;
       final todayMeals = results[2] as List<Meal>;
       final targets = results[3] as NutritionTargets?;
       
@@ -243,11 +243,11 @@ class NutritionNotifier extends Notifier<NutritionState> {
   /// 2. Save to repository (Hive)
   /// 3. Update state immediately (immutable)
   /// 4. Food appears in search instantly
-  Future<void> addCustomFood(FoodItemFull food) async {
+  Future<void> addCustomFood(FoodItem food) async {
     try {
       if (kDebugMode) {
         AppLogger.debug('📊 [Nutrition] Adding custom food: ${food.name}');
-        AppLogger.debug('🔍 [Nutrition] Macros - Calories: ${food.macros.calories}, Protein: ${food.macros.protein}g, Carbs: ${food.macros.carbs}g, Fats: ${food.macros.fats}g');
+        AppLogger.debug('🔍 [Nutrition] Macros - Calories: ${food.caloriesPer100g}, Protein: ${food.proteinPer100g}g, Carbs: ${food.carbsPer100g}g, Fats: ${food.fatPer100g}g');
       }
       
       // 1. Validate
@@ -255,8 +255,8 @@ class NutritionNotifier extends Notifier<NutritionState> {
         throw Exception('Food name cannot be empty');
       }
       
-      if (food.macros.calories < 0 || food.macros.protein < 0 || 
-          food.macros.carbs < 0 || food.macros.fats < 0) {
+      if (food.caloriesPer100g < 0 || food.proteinPer100g < 0 || 
+          food.carbsPer100g < 0 || food.fatPer100g < 0) {
         throw Exception('Macros must be positive numbers');
       }
       
@@ -343,7 +343,7 @@ class NutritionNotifier extends Notifier<NutritionState> {
   /// 
   /// Searches in both preloaded and custom foods
   /// Returns results immediately (no async)
-  List<FoodItemFull> searchFoods(String query) {
+  List<FoodItem> searchFoods(String query) {
     if (query.isEmpty) {
       return state.searchableFoods;
     }
@@ -357,14 +357,18 @@ class NutritionNotifier extends Notifier<NutritionState> {
   /// Filter foods by category (local, instant)
   /// 
   /// Returns results immediately (no async)
-  List<FoodItemFull> filterByCategory(String? category) {
+  List<FoodItem> filterByCategory(String? category) {
     if (category == null || category.isEmpty) {
       return state.searchableFoods;
     }
     
     final lowerCategory = category.toLowerCase();
     return state.searchableFoods
-        .where((f) => f.category.toLowerCase() == lowerCategory)
+        .where(
+          (f) =>
+              f.categoryName.toLowerCase() == lowerCategory ||
+              f.category.name == lowerCategory,
+        )
         .toList();
   }
   
@@ -372,7 +376,7 @@ class NutritionNotifier extends Notifier<NutritionState> {
   /// 
   /// Combines search query and category filter
   /// Returns results immediately (no async)
-  List<FoodItemFull> searchAndFilter({
+  List<FoodItem> searchAndFilter({
     String? query,
     String? category,
   }) {
@@ -390,7 +394,11 @@ class NutritionNotifier extends Notifier<NutritionState> {
     if (category != null && category.isNotEmpty) {
       final lowerCategory = category.toLowerCase();
       results = results
-          .where((f) => f.category.toLowerCase() == lowerCategory)
+          .where(
+            (f) =>
+                f.categoryName.toLowerCase() == lowerCategory ||
+                f.category.name == lowerCategory,
+          )
           .toList();
     }
     

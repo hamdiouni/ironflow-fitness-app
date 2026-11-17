@@ -162,6 +162,8 @@ class FoodListTile extends StatelessWidget {
         return Icons.cookie_rounded;
       case FoodCategory.beverages:
         return Icons.local_cafe_rounded;
+      case FoodCategory.custom:
+        return Icons.tune_rounded;
     }
   }
 

@@ -12,7 +12,6 @@ import 'package:flutter/foundation.dart';
 class AppConfig {
   const AppConfig._();
 
-  static const String _envOpenAiKey = String.fromEnvironment('OPENAI_API_KEY');
   static const String _envGeminiKey = String.fromEnvironment('GEMINI_API_KEY');
   static const String _envNvidiaKey = String.fromEnvironment('NVIDIA_API_KEY');
   static const String _envAiProxyUrl = String.fromEnvironment('AI_PROXY_URL');
@@ -35,10 +34,6 @@ class AppConfig {
     return '';
   }
 
-  /// Retrieves the debug-only OpenAI API key, or empty when direct keys are
-  /// disabled (including every profile/release build).
-  static String getOpenAIApiKey() => _directKey(_envOpenAiKey);
-
   /// Retrieves the debug-only Gemini API key, or empty when direct keys are
   /// disabled. Production Gemini traffic must use [getAiProxyUrl].
   static String getGeminiApiKey() => _directKey(_envGeminiKey);
@@ -51,9 +46,6 @@ class AppConfig {
   /// `--dart-define-from-file`.
   static String getAiProxyUrl() => _envAiProxyUrl;
 
-  /// Whether OpenAI is configured through an allowed debug direct key.
-  static bool get hasOpenAI => getOpenAIApiKey().isNotEmpty;
-
   /// Whether Gemini is configured through the proxy or an allowed debug key.
   static bool get hasGemini => hasAiProxy || getGeminiApiKey().isNotEmpty;
 
@@ -64,5 +56,5 @@ class AppConfig {
   static bool get hasAiProxy => getAiProxyUrl().isNotEmpty;
 
   /// Whether any AI route is configured under the current build policy.
-  static bool get hasAnyAi => hasAiProxy || hasOpenAI || hasGemini || hasNvidia;
+  static bool get hasAnyAi => hasAiProxy || hasGemini || hasNvidia;
 }

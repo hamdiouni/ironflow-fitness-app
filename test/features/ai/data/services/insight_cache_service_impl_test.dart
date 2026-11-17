@@ -1,11 +1,14 @@
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:progression_tracker/core/utils/hive_manager.dart';
 import 'package:progression_tracker/features/ai/data/services/insight_cache_service_impl.dart';
 import 'package:progression_tracker/features/ai/domain/entities/insight.dart';
 import 'package:progression_tracker/features/ai/domain/entities/insight_cache.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   group('InsightCacheServiceImpl', () {
     late InsightCacheServiceImpl service;
     late Box<Map> testBox;
@@ -18,10 +21,11 @@ void main() {
 
     setUp(() async {
       service = InsightCacheServiceImpl();
-      
-      // Open a test box
-      testBox = await Hive.openBox<Map>('test_insight_cache');
-      
+
+      // Open the real insight cache box unencrypted in unit tests to bypass
+      // FlutterSecureStorage while exercising HiveManager.ensureInsightCacheBox.
+      testBox = await Hive.openBox<Map>(HiveManager.insightCacheBox);
+
       // Clear any existing data
       await testBox.clear();
     });

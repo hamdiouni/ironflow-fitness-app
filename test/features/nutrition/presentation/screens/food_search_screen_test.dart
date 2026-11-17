@@ -2,11 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:progression_tracker/features/nutrition/domain/entities/food_item.dart';
+import 'package:progression_tracker/features/nutrition/domain/services/food_catalog.dart';
 import 'package:progression_tracker/features/nutrition/presentation/screens/food_search_screen.dart';
 import 'package:progression_tracker/features/onboarding/presentation/providers/onboarding_provider.dart';
 import 'package:progression_tracker/shared/presentation/components/app_card.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUpAll(() async {
+    await FoodCatalog.ensureLoaded();
+  });
+
   Widget buildTestableWidget({
     required void Function(FoodItem food, double grams) onFoodLogged,
   }) {

@@ -4,9 +4,16 @@ import 'package:progression_tracker/features/nutrition/data/models/meal_model.da
 import 'package:progression_tracker/features/nutrition/data/verified_foods_data.dart';
 import 'package:progression_tracker/features/nutrition/domain/entities/food_item.dart';
 import 'package:progression_tracker/features/nutrition/domain/entities/meal.dart';
+import 'package:progression_tracker/features/nutrition/domain/services/food_catalog.dart';
 import 'package:progression_tracker/features/onboarding/domain/entities/user_profile.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUpAll(() async {
+    await FoodCatalog.ensureLoaded();
+  });
+
   group('Meal Snapshot Stability and Provenance', () {
     test('Logged meal captures and freezes macros and micros from FoodItem', () {
       final salmon = verifiedFoodsList.firstWhere((f) => f.id == 'usda_salmon_atlantic_wild_raw');

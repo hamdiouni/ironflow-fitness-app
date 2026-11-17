@@ -78,7 +78,7 @@ void main() {
       );
     });
 
-    test('buildAppRoutes excludes /design-preview, /design-gallery, and /ai-test when includeDebugRoutes is false (SEC-05)', () {
+    test('buildAppRoutes excludes /design-preview and /design-gallery when includeDebugRoutes is false (SEC-05)', () {
       final releaseRoutes = buildAppRoutes(includeDebugRoutes: false)
           .whereType<GoRoute>()
           .map((r) => r.path)
@@ -86,7 +86,6 @@ void main() {
 
       expect(releaseRoutes.contains(AppRoutes.designPreview), isFalse);
       expect(releaseRoutes.contains(AppRoutes.designGallery), isFalse);
-      expect(releaseRoutes.contains(AppRoutes.aiTest), isFalse);
 
       // Core production routes remain present
       expect(releaseRoutes.contains(AppRoutes.login), isTrue);
@@ -100,7 +99,6 @@ void main() {
           .toSet();
       expect(debugRoutes.contains(AppRoutes.designPreview), isTrue);
       expect(debugRoutes.contains(AppRoutes.designGallery), isTrue);
-      expect(debugRoutes.contains(AppRoutes.aiTest), isTrue);
     });
 
     test('AppRoutes.resolvePostAuthRedirect blocks auth routes, external URLs, and dev/preview routes (SEC-06)', () {
@@ -109,7 +107,6 @@ void main() {
       expect(AppRoutes.resolvePostAuthRedirect('https://evil.com'), equals(AppRoutes.home));
       expect(AppRoutes.resolvePostAuthRedirect(AppRoutes.designPreview), equals(AppRoutes.home));
       expect(AppRoutes.resolvePostAuthRedirect(AppRoutes.designGallery), equals(AppRoutes.home));
-      expect(AppRoutes.resolvePostAuthRedirect(AppRoutes.aiTest), equals(AppRoutes.home));
       expect(AppRoutes.resolvePostAuthRedirect('/workout'), equals('/workout'));
     });
 

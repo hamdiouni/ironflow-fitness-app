@@ -32,11 +32,8 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
     );
   }
 
-  Future<WorkoutModel?> _findExistingWorkout(String id) async {
-    for (final model in await dataSource.getAllWorkouts()) {
-      if (model.id == id) return model;
-    }
-    return null;
+  Future<WorkoutModel?> _findExistingWorkout(String id) {
+    return dataSource.getWorkoutById(id);
   }
 
   String? _ownerForSave(String? ownerId) {
@@ -82,15 +79,17 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
     int offset = 0,
     int limit = 20,
   }) async {
-    final workouts = await getAllWorkouts();
-    if (offset >= workouts.length) return <Workout>[];
-    final endIndex = (offset + limit).clamp(0, workouts.length);
-    return workouts.sublist(offset, endIndex);
+    final models = await dataSource.getWorkoutsPaginated(
+      offset: offset,
+      limit: limit,
+      userId: _currentUserId,
+    );
+    return models.map((m) => m.toEntity()).toList();
   }
 
   @override
-  Future<int> getWorkoutCount() async {
-    return (await getAllWorkouts()).length;
+  Future<int> getWorkoutCount() {
+    return dataSource.getWorkoutCount(userId: _currentUserId);
   }
 
   @override

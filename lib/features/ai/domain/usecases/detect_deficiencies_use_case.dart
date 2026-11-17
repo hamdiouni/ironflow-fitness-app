@@ -136,7 +136,7 @@ class DetectDeficienciesUseCase {
         currentAverage: avgProtein,
         target: targets.macros.protein,
         foods: foods,
-        nutrientExtractor: (food) => food.macros.protein,
+        nutrientExtractor: (food) => food.proteinPer100g,
         mealIdeas: [
           'Grilled chicken breast with quinoa',
           'Greek yogurt with berries and nuts',
@@ -154,7 +154,7 @@ class DetectDeficienciesUseCase {
         currentAverage: avgFiber,
         target: targets.micros.fiber,
         foods: foods,
-        nutrientExtractor: (food) => food.micros.fiber,
+        nutrientExtractor: (food) => food.microsPer100g?.fiberGrams ?? 0,
         mealIdeas: [
           'Oatmeal with chia seeds and berries',
           'Black bean and vegetable burrito',
@@ -172,7 +172,7 @@ class DetectDeficienciesUseCase {
         currentAverage: avgVitaminA,
         target: targets.vitamins.vitaminA,
         foods: foods,
-        nutrientExtractor: (food) => food.vitamins.vitaminA,
+        nutrientExtractor: (food) => food.microsPer100g?.vitaminAMcg ?? 0,
         mealIdeas: [
           'Roasted sweet potato with butter',
           'Carrot and ginger soup',
@@ -190,7 +190,7 @@ class DetectDeficienciesUseCase {
         currentAverage: avgVitaminB,
         target: targets.vitamins.vitaminB,
         foods: foods,
-        nutrientExtractor: (food) => food.vitamins.vitaminB,
+        nutrientExtractor: (food) => food.microsPer100g?.vitaminBMg ?? 0,
         mealIdeas: [
           'Whole grain cereal with milk',
           'Tuna sandwich on whole wheat',
@@ -208,7 +208,7 @@ class DetectDeficienciesUseCase {
         currentAverage: avgVitaminC,
         target: targets.vitamins.vitaminC,
         foods: foods,
-        nutrientExtractor: (food) => food.vitamins.vitaminC,
+        nutrientExtractor: (food) => food.microsPer100g?.vitaminCMg ?? 0,
         mealIdeas: [
           'Orange and strawberry smoothie',
           'Bell pepper and hummus snack',
@@ -226,7 +226,7 @@ class DetectDeficienciesUseCase {
         currentAverage: avgVitaminD,
         target: targets.vitamins.vitaminD,
         foods: foods,
-        nutrientExtractor: (food) => food.vitamins.vitaminD,
+        nutrientExtractor: (food) => food.microsPer100g?.vitaminDMcg ?? 0,
         mealIdeas: [
           'Grilled salmon with asparagus',
           'Scrambled eggs with mushrooms',
@@ -244,7 +244,7 @@ class DetectDeficienciesUseCase {
         currentAverage: avgVitaminE,
         target: targets.vitamins.vitaminE,
         foods: foods,
-        nutrientExtractor: (food) => food.vitamins.vitaminE,
+        nutrientExtractor: (food) => food.microsPer100g?.vitaminEMg ?? 0,
         mealIdeas: [
           'Almond butter on whole grain toast',
           'Sunflower seed trail mix',
@@ -262,7 +262,7 @@ class DetectDeficienciesUseCase {
         currentAverage: avgCalcium,
         target: targets.minerals.calcium,
         foods: foods,
-        nutrientExtractor: (food) => food.minerals.calcium,
+        nutrientExtractor: (food) => food.microsPer100g?.calciumMg ?? 0,
         mealIdeas: [
           'Greek yogurt with granola',
           'Cheese and whole grain crackers',
@@ -280,7 +280,7 @@ class DetectDeficienciesUseCase {
         currentAverage: avgIron,
         target: targets.minerals.iron,
         foods: foods,
-        nutrientExtractor: (food) => food.minerals.iron,
+        nutrientExtractor: (food) => food.microsPer100g?.ironMg ?? 0,
         mealIdeas: [
           'Beef stir-fry with spinach',
           'Lentil curry with rice',
@@ -298,7 +298,7 @@ class DetectDeficienciesUseCase {
         currentAverage: avgMagnesium,
         target: targets.minerals.magnesium,
         foods: foods,
-        nutrientExtractor: (food) => food.minerals.magnesium,
+        nutrientExtractor: (food) => food.microsPer100g?.magnesiumMg ?? 0,
         mealIdeas: [
           'Dark chocolate and almond snack',
           'Pumpkin seed trail mix',
@@ -316,7 +316,7 @@ class DetectDeficienciesUseCase {
         currentAverage: avgZinc,
         target: targets.minerals.zinc,
         foods: foods,
-        nutrientExtractor: (food) => food.minerals.zinc,
+        nutrientExtractor: (food) => food.microsPer100g?.zincMg ?? 0,
         mealIdeas: [
           'Oysters with lemon',
           'Beef and vegetable stew',
@@ -343,8 +343,8 @@ class DetectDeficienciesUseCase {
     required String nutrient,
     required double currentAverage,
     required double target,
-    required List<FoodItemFull> foods,
-    required double Function(FoodItemFull) nutrientExtractor,
+    required List<FoodItem> foods,
+    required double Function(FoodItem) nutrientExtractor,
     required List<String> mealIdeas,
   }) {
     final deficitAmount = target - currentAverage;

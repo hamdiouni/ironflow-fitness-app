@@ -1,8 +1,9 @@
 import 'package:hive/hive.dart';
+import '../../../../core/utils/app_logger.dart';
 import '../../../../core/utils/hive_json_utils.dart';
 import '../../../../core/utils/hive_manager.dart';
 import '../../../../core/utils/record_ownership.dart';
-import '../models/food_item_full_model.dart';
+import '../../domain/entities/food_item.dart';
 
 /// Hive-based local data source for caching foods and storing user custom foods.
 ///
@@ -17,10 +18,6 @@ class HiveFoodDataSource {
   static const int _currentCacheVersion = 1;
 
   /// Account that owns custom foods read/written by this instance.
-  ///
-  /// The shared catalog cache remains device-global, but custom foods
-  /// are personal records and use `custom_foods_<userId>`. Existing
-  /// direct constructions without a user keep using the legacy key.
   final String? userId;
 
   HiveFoodDataSource({this.userId});
@@ -40,6 +37,20 @@ class HiveFoodDataSource {
 
   /// Dedicated encrypted box for user custom foods (`custom_foods`).
   Future<Box<dynamic>> get _customFoodsBox => HiveManager.ensureCustomFoodsBox();
+
+  List<FoodItem> _decodeFoodList(List<dynamic>? rawList) {
+    if (rawList == null || rawList.isEmpty) return <FoodItem>[];
+    final parsed = <FoodItem>[];
+    for (final entry in rawList) {
+      if (entry is! Map) continue;
+      try {
+        parsed.add(FoodItem.fromAnyJson(deepCastMap(entry)));
+      } catch (e) {
+        AppLogger.debug('⚠️ [HiveFood] Skipping corrupt stored food entry: $e');
+      }
+    }
+    return parsed;
+  }
 
   Future<List<dynamic>?> _customFoodsJson() async {
     final customBox = await _customFoodsBox;
@@ -61,10 +72,6 @@ class HiveFoodDataSource {
       return scopedJson;
     }
 
-    // One-time adoption of pre-scoping custom foods, only when no
-    // account-scoped custom-food list exists yet. Custom food records
-    // carry no owner field, so once scoped lists exist the legacy list
-    // cannot be safely attributed to the requesting account.
     final hasScopedInCustom = customBox.keys.any(
       (key) => key.toString().startsWith('${_customFoodsKey}_'),
     );
@@ -77,7 +84,6 @@ class HiveFoodDataSource {
       return legacyJson;
     }
 
-    // Fallback adoption from legacy entries stored inside `foods` prior to v4.
     if (Hive.isBoxOpen(HiveManager.foodsBox) ||
         await Hive.boxExists(HiveManager.foodsBox)) {
       final catalogBox = await _catalogBox;
@@ -104,19 +110,13 @@ class HiveFoodDataSource {
     return null;
   }
 
-  /// Cache all foods locally
-  /// Stores foods with timestamp for cache invalidation
-  Future<void> cacheFoods(List<FoodItemFullModel> foods) async {
+  /// Cache all foods locally.
+  Future<void> cacheFoods(List<FoodItem> foods) async {
     try {
       final box = await _catalogBox;
-      // Store foods as JSON list
       final foodsJson = foods.map((f) => f.toJson()).toList();
       await box.put(_foodsKey, foodsJson);
-      
-      // Store cache timestamp
       await box.put(_cacheTimestampKey, DateTime.now().toIso8601String());
-      
-      // Store cache version
       await box.put(_cacheVersionKey, _currentCacheVersion);
     } catch (e) {
       throw Exception('Failed to cache foods: $e');
@@ -125,7 +125,7 @@ class HiveFoodDataSource {
 
   /// Upsert a single food item into the shared foods cache without overwriting
   /// other cached foods.
-  Future<void> upsertCachedFood(FoodItemFullModel food) async {
+  Future<void> upsertCachedFood(FoodItem food) async {
     try {
       final box = await _catalogBox;
       final rawList = box.get(_foodsKey) as List<dynamic>?;
@@ -152,16 +152,11 @@ class HiveFoodDataSource {
     }
   }
 
-  /// Save a custom food created by the user
-  Future<void> saveCustomFood(FoodItemFullModel food) async {
+  /// Save a custom food created by the user.
+  Future<void> saveCustomFood(FoodItem food) async {
     try {
-      // Get existing custom foods
       final customFoods = await getCustomFoods();
-      
-      // Add new food
       customFoods.add(food);
-      
-      // Save back to dedicated encrypted custom_foods box
       final customBox = await _customFoodsBox;
       final foodsJson = customFoods.map((f) => f.toJson()).toList();
       await customBox.put(_scopedCustomFoodsKey, foodsJson);
@@ -170,28 +165,21 @@ class HiveFoodDataSource {
     }
   }
 
-  /// Get all custom foods created by the user
-  Future<List<FoodItemFullModel>> getCustomFoods() async {
+  /// Get all custom foods created by the user.
+  Future<List<FoodItem>> getCustomFoods() async {
     try {
       final foodsJson = await _customFoodsJson();
-      if (foodsJson == null || foodsJson.isEmpty) {
-        return [];
-      }
-
-      return foodsJson
-          .map((json) => FoodItemFullModel.fromJson(deepCastMap(json)))
-          .toList();
-    } catch (e) {
+      return _decodeFoodList(foodsJson);
+    } catch (_) {
       return [];
     }
   }
 
-  /// Delete a custom food by ID
+  /// Delete a custom food by ID.
   Future<void> deleteCustomFood(String id) async {
     try {
       final customFoods = await getCustomFoods();
       customFoods.removeWhere((food) => food.id == id);
-      
       final customBox = await _customFoodsBox;
       final foodsJson = customFoods.map((f) => f.toJson()).toList();
       await customBox.put(_scopedCustomFoodsKey, foodsJson);
@@ -200,19 +188,12 @@ class HiveFoodDataSource {
     }
   }
 
-  /// Get all cached foods (including custom foods)
-  /// Returns empty list if cache is empty
-  Future<List<FoodItemFullModel>> getCachedFoods() async {
+  /// Get all cached foods (including custom foods).
+  Future<List<FoodItem>> getCachedFoods() async {
     try {
       final box = await _catalogBox;
       final foodsJson = box.get(_foodsKey) as List<dynamic>?;
-      final cachedFoods = foodsJson == null || foodsJson.isEmpty
-          ? <FoodItemFullModel>[]
-          : foodsJson
-              .map((json) => FoodItemFullModel.fromJson(deepCastMap(json)))
-              .toList();
-
-      // Add custom foods
+      final cachedFoods = _decodeFoodList(foodsJson);
       final customFoods = await getCustomFoods();
       return [...cachedFoods, ...customFoods];
     } catch (e) {
@@ -220,26 +201,25 @@ class HiveFoodDataSource {
     }
   }
 
-  /// Get a single cached food by ID
-  Future<FoodItemFullModel?> getCachedFoodById(String id) async {
+  /// Get a single cached food by ID.
+  Future<FoodItem?> getCachedFoodById(String id) async {
     try {
       final foods = await getCachedFoods();
-      return foods.firstWhere(
-        (food) => food.id == id,
-        orElse: () => throw Exception('Food not found'),
-      );
-    } catch (e) {
+      for (final food in foods) {
+        if (food.id == id) return food;
+      }
+      return null;
+    } catch (_) {
       return null;
     }
   }
 
-  /// Search cached foods by name (case-insensitive)
-  Future<List<FoodItemFullModel>> searchCachedFoods(String query) async {
+  /// Search cached foods by name (case-insensitive).
+  Future<List<FoodItem>> searchCachedFoods(String query) async {
     try {
       if (query.isEmpty) {
         return getCachedFoods();
       }
-
       final foods = await getCachedFoods();
       final lowerQuery = query.toLowerCase();
       return foods
@@ -250,68 +230,65 @@ class HiveFoodDataSource {
     }
   }
 
-  /// Filter cached foods by category
-  Future<List<FoodItemFullModel>> filterCachedByCategory(
-    String category,
-  ) async {
+  /// Filter cached foods by category.
+  Future<List<FoodItem>> filterCachedByCategory(String category) async {
     try {
       final foods = await getCachedFoods();
-      return foods.where((food) => food.category == category).toList();
+      final lowerCat = category.toLowerCase();
+      return foods
+          .where(
+            (food) =>
+                food.categoryName.toLowerCase() == lowerCat ||
+                food.category.name == lowerCat,
+          )
+          .toList();
     } catch (e) {
       throw Exception('Failed to filter cached foods by category: $e');
     }
   }
 
-  /// Filter cached foods by dietary tags
-  Future<List<FoodItemFullModel>> filterCachedByTags(
-    List<String> tags,
-  ) async {
+  /// Filter cached foods by dietary tags.
+  Future<List<FoodItem>> filterCachedByTags(List<String> tags) async {
     try {
       if (tags.isEmpty) {
         return getCachedFoods();
       }
-
       final foods = await getCachedFoods();
       return foods
-          .where((food) =>
-              tags.every((tag) => food.dietaryTags.contains(tag)))
+          .where((food) => tags.every((tag) => food.tags.contains(tag)))
           .toList();
     } catch (e) {
       throw Exception('Failed to filter cached foods by tags: $e');
     }
   }
 
-  /// Check if cache exists and is valid
-  /// Returns true if cache has foods
+  /// Check if cache exists and is valid.
   Future<bool> isCacheValid() async {
     try {
       final box = await _catalogBox;
       final foodsJson = box.get(_foodsKey) as List<dynamic>?;
       final version = box.get(_cacheVersionKey) as int?;
-      
-      return foodsJson != null && 
-             foodsJson.isNotEmpty && 
-             version == _currentCacheVersion;
-    } catch (e) {
+      return foodsJson != null &&
+          foodsJson.isNotEmpty &&
+          version == _currentCacheVersion;
+    } catch (_) {
       return false;
     }
   }
 
-  /// Get cache timestamp
-  /// Returns null if cache doesn't exist
+  /// Get cache timestamp.
   Future<DateTime?> getCacheTimestamp() async {
     try {
       final box = await _catalogBox;
       final timestamp = box.get(_cacheTimestampKey) as String?;
       if (timestamp == null) return null;
       return DateTime.parse(timestamp);
-    } catch (e) {
+    } catch (_) {
       return null;
     }
   }
 
-  /// Invalidate cache by clearing all food data
-  /// Keeps timestamp for reference
+  /// Invalidate cache by clearing all food data.
   Future<void> invalidateCache() async {
     try {
       final box = await _catalogBox;
@@ -323,8 +300,6 @@ class HiveFoodDataSource {
   }
 
   /// Clear the shared catalog cache and this instance's custom foods.
-  ///
-  /// Other accounts' scoped custom-food lists are left untouched.
   Future<void> clearCache() async {
     try {
       final catalogBox = await _catalogBox;
@@ -339,23 +314,23 @@ class HiveFoodDataSource {
     }
   }
 
-  /// Get count of cached foods
+  /// Get count of cached foods.
   Future<int> getCachedFoodCount() async {
     try {
       final foods = await getCachedFoods();
       return foods.length;
-    } catch (e) {
+    } catch (_) {
       return 0;
     }
   }
 
-  /// Get all unique categories from cached foods
+  /// Get all unique categories from cached foods.
   Future<List<String>> getCachedCategories() async {
     try {
       final foods = await getCachedFoods();
       final categories = <String>{};
       for (final food in foods) {
-        categories.add(food.category);
+        categories.add(food.categoryName);
       }
       return categories.toList()..sort();
     } catch (e) {
@@ -363,13 +338,13 @@ class HiveFoodDataSource {
     }
   }
 
-  /// Get all unique dietary tags from cached foods
+  /// Get all unique dietary tags from cached foods.
   Future<List<String>> getCachedDietaryTags() async {
     try {
       final foods = await getCachedFoods();
       final tags = <String>{};
       for (final food in foods) {
-        tags.addAll(food.dietaryTags);
+        tags.addAll(food.tags);
       }
       return tags.toList()..sort();
     } catch (e) {
@@ -377,29 +352,22 @@ class HiveFoodDataSource {
     }
   }
 
-  /// Get foods by category from cache
-  Future<List<FoodItemFullModel>> getCachedFoodsByCategory(
-    String category,
-  ) async {
+  /// Get foods by category from cache sorted by name.
+  Future<List<FoodItem>> getCachedFoodsByCategory(String category) async {
     try {
-      final foods = await getCachedFoods();
-      return foods
-          .where((food) => food.category == category)
-          .toList()
-          ..sort((a, b) => a.name.compareTo(b.name));
+      final foods = await filterCachedByCategory(category);
+      return foods..sort((a, b) => a.name.compareTo(b.name));
     } catch (e) {
       throw Exception('Failed to get foods by category: $e');
     }
   }
 
-  /// Get foods by dietary tag from cache
-  Future<List<FoodItemFullModel>> getCachedFoodsByTag(String tag) async {
+  /// Get foods by dietary tag from cache sorted by name.
+  Future<List<FoodItem>> getCachedFoodsByTag(String tag) async {
     try {
       final foods = await getCachedFoods();
-      return foods
-          .where((food) => food.dietaryTags.contains(tag))
-          .toList()
-          ..sort((a, b) => a.name.compareTo(b.name));
+      return foods.where((food) => food.tags.contains(tag)).toList()
+        ..sort((a, b) => a.name.compareTo(b.name));
     } catch (e) {
       throw Exception('Failed to get foods by tag: $e');
     }

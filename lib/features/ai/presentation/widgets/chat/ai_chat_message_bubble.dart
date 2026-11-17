@@ -3,9 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:progression_tracker/core/constants/app_theme.dart';
-import 'package:progression_tracker/features/ai/data/services/image_generation_service.dart';
+import 'package:progression_tracker/features/ai/domain/services/exercise_image_database.dart';
 import 'package:progression_tracker/features/ai/presentation/providers/tts_provider.dart';
-import 'package:progression_tracker/features/ai/presentation/providers/image_generation_provider.dart';
 
 /// Enhanced chat bubble with Stripe styling and markdown support
 class AIChatBubble extends ConsumerWidget {
@@ -159,7 +158,6 @@ class _AIResponseContent extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = AppThemeTokens.of(context);
     final theme = Theme.of(context);
-    final imageState = ref.watch(imageGenerationProvider);
     
     // Extract exercise images from content
     final exercises = ExerciseImageDatabase.extractExercises(content);
@@ -303,79 +301,6 @@ class _AIResponseContent extends ConsumerWidget {
             }).toList(),
           ),
         ],
-        
-        // Generated image display
-        if (imageState.generatedImage != null) ...[
-          const SizedBox(height: 16),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: Image.memory(
-              imageState.generatedImage!,
-              width: double.infinity,
-              fit: BoxFit.cover,
-            ),
-          ),
-        ],
-        
-        // Image generation loading
-        if (imageState.isGenerating) ...[
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: theme.colorScheme.primary.withValues(alpha: 0.3),
-              ),
-            ),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      theme.colorScheme.primary,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    '🎨 Generating custom image...',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.primary,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-        
-        // Generate image button (disabled on web due to CORS)
-        // Will work on Android/iOS apps
-        // Uncomment for mobile testing:
-        // if (ref.read(imageGenerationServiceProvider).shouldGenerateImage(content) &&
-        //     imageState.generatedImage == null &&
-        //     !imageState.isGenerating) ...[
-        //   const SizedBox(height: 12),
-        //   OutlinedButton.icon(
-        //     onPressed: () {
-        //       final prompt = content.split('\n').first.replaceAll(RegExp(r'[#*]'), '').trim();
-        //       ref.read(imageGenerationProvider.notifier).generateImage(prompt);
-        //     },
-        //     icon: const Icon(Icons.image, size: 18),
-        //     label: const Text('Generate Image'),
-        //     style: OutlinedButton.styleFrom(
-        //       foregroundColor: theme.colorScheme.primary,
-        //       side: BorderSide(color: theme.colorScheme.primary.withValues(alpha: 0.5)),
-        //     ),
-        //   ),
-        // ],
       ],
     );
   }

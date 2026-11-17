@@ -137,21 +137,29 @@ class LazyJsonCatalogLoader {
     );
   }
 
-  static CatalogSearchIndex<FoodItem> _parseAndIndexFoods(String rawJson) {
+  static ({CatalogSearchIndex<FoodItem> index, int verifiedCount})
+      parseFoodsCatalogSync(String rawJson) {
     final decoded = jsonDecode(rawJson);
     final rawList = decoded is Map<String, dynamic>
         ? (decoded['foods'] as List<dynamic>? ?? const [])
         : (decoded as List<dynamic>);
+    final verifiedCount = decoded is Map<String, dynamic>
+        ? ((decoded['verifiedCount'] as int?) ?? 82)
+        : rawList.length;
     final list = rawList
-        .map((f) => FoodItem.fromJson(Map<String, dynamic>.from(f as Map)))
+        .map((f) => FoodItem.fromAnyJson(Map<String, dynamic>.from(f as Map)))
         .toList();
-    return CatalogSearchIndex.buildSync<FoodItem>(
+    final index = CatalogSearchIndex.buildSync<FoodItem>(
       items: list,
       idOf: (f) => f.id,
       searchableTextOf: (f) =>
           '${f.name} ${f.category.name} ${f.tags.join(" ")}',
     );
+    return (index: index, verifiedCount: verifiedCount);
   }
+
+  static CatalogSearchIndex<FoodItem> _parseAndIndexFoods(String rawJson) =>
+      parseFoodsCatalogSync(rawJson).index;
 
   /// Lazily loads `assets/data/exercises_catalog.json` and builds the search
   /// index in a background isolate via [compute].
@@ -160,6 +168,14 @@ class LazyJsonCatalogLoader {
   }) async {
     final raw = await (bundle ?? rootBundle).loadString(exercisesAssetPath);
     return compute(_parseAndIndexExercises, raw);
+  }
+
+  /// Lazily loads `assets/data/foods_catalog.json` and builds the search
+  /// index plus verified count in a background isolate via [compute].
+  static Future<({CatalogSearchIndex<FoodItem> index, int verifiedCount})>
+      loadFoodsCatalog({AssetBundle? bundle}) async {
+    final raw = await (bundle ?? rootBundle).loadString(foodsAssetPath);
+    return compute(parseFoodsCatalogSync, raw);
   }
 
   /// Lazily loads `assets/data/foods_catalog.json` and builds the search

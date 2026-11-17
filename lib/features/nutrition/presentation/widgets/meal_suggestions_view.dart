@@ -3,7 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_theme.dart';
-import '../../domain/entities/food_item_full.dart';
+import '../../domain/entities/food_item.dart';
 import '../../domain/entities/macro_target.dart';
 import '../../domain/entities/meal_category.dart';
 import '../../domain/entities/meal_suggestion.dart';
@@ -83,14 +83,13 @@ class MealSuggestionsView extends ConsumerWidget {
     );
   }
 
-  /// Adapts a [FoodItemFull] into a [MealSuggestion] for display. Category is
+  /// Adapts a [FoodItem] into a [MealSuggestion] for display. Category is
   /// high-protein if protein is >=40% of calories, high-carb if carbs are
   /// >=50%, otherwise balanced.
-  static MealSuggestion _toSuggestion(FoodItemFull food) {
-    final m = food.macros;
-    final proteinKcal = m.protein * 4;
-    final carbKcal = m.carbs * 4;
-    final total = proteinKcal + carbKcal + (m.fats * 9);
+  static MealSuggestion _toSuggestion(FoodItem food) {
+    final proteinKcal = food.proteinPer100g * 4;
+    final carbKcal = food.carbsPer100g * 4;
+    final total = proteinKcal + carbKcal + (food.fatPer100g * 9);
 
     MealCategory category = MealCategory.balanced;
     if (total > 0) {
@@ -103,9 +102,9 @@ class MealSuggestionsView extends ConsumerWidget {
 
     return MealSuggestion(
       name: food.name,
-      protein: m.protein,
-      carbs: m.carbs,
-      fats: m.fats,
+      protein: food.proteinPer100g,
+      carbs: food.carbsPer100g,
+      fats: food.fatPer100g,
       category: category,
     );
   }

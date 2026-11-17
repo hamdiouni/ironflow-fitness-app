@@ -134,7 +134,6 @@ void main() {
           final resolved = resolveImport(norm, target);
 
           final isDevScreen = resolved.startsWith('lib/dev/design_lab/') ||
-              resolved.endsWith('/ai_test_screen.dart') ||
               resolved.endsWith('/design_gallery_screen.dart') ||
               resolved.endsWith('/design_preview_screen.dart');
           if (isDevScreen) {
@@ -161,7 +160,6 @@ void main() {
 
       expect(topPaths, isNot(contains(AppRoutes.designPreview)));
       expect(topPaths, isNot(contains(AppRoutes.designGallery)));
-      expect(topPaths, isNot(contains(AppRoutes.aiTest)));
 
       expect(
         shouldUseFirebaseAuth(

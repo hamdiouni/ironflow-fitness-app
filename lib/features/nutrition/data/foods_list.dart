@@ -1,5 +1,5 @@
 import '../domain/entities/food_item.dart';
 import '../domain/services/food_catalog.dart';
 
-/// Backward-compatible alias to [kSupplementaryFoodsList] (Wave 3.4).
-final List<FoodItem> foodsList = List<FoodItem>.from(kSupplementaryFoodsList);
+/// Backward-compatible alias to [FoodCatalog.foods] (Wave 3.4).
+List<FoodItem> get foodsList => FoodCatalog.foods;

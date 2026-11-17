@@ -11,7 +11,7 @@ import '../../../ai/presentation/providers/global_ai_provider.dart';
 import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../../domain/entities/daily_nutrition_summary.dart';
 import '../../domain/entities/diet_plan.dart' show MealType;
-import '../../domain/entities/food_item_full.dart';
+import '../../domain/entities/food_item.dart';
 import '../../domain/entities/meal.dart';
 import '../../domain/repositories/nutrition_repository.dart';
 import 'food_repository_provider.dart';
@@ -381,7 +381,7 @@ final recentFoodsProvider = FutureProvider<List<Meal>>((ref) async {
 /// - targetCarbs: Target carbs in grams
 /// - targetFat: Target fat in grams
 final mealSuggestionsProvider = FutureProvider.family<
-    List<FoodItemFull>,
+    List<FoodItem>,
     ({
       double targetCalories,
       double targetProtein,
@@ -416,18 +416,14 @@ final mealSuggestionsProvider = FutureProvider.family<
 // ---------------------------------------------------------------------------
 
 /// Provides filtered foods based on search query.
-///
-/// Renamed from `foodSearchProvider` (Phase 3, F-10): that name now
-/// belongs solely to the `Notifier` UI-state provider in
-/// `food_providers.dart` used by the food search screen.
 final foodSearchResultsProvider =
-    FutureProvider.family<List<FoodItemFull>, String>((ref, query) async {
+    FutureProvider.family<List<FoodItem>, String>((ref, query) async {
   try {
     AppLogger.debug('📊 [Nutrition] Searching for foods...');
     AppLogger.debug('🔍 [Nutrition] Query: "$query"');
     
     final repository = ref.watch(foodRepositoryProvider);
-    final List<FoodItemFull> results;
+    final List<FoodItem> results;
     
     if (query.isEmpty) {
       AppLogger.debug('📊 [Nutrition] Empty query, fetching all foods...');
@@ -458,7 +454,7 @@ enum DietaryPreference { vegetarian, vegan, glutenFree, dairyFree }
 
 /// Provides filtered foods based on meal type and dietary preferences.
 final foodFilterProvider = FutureProvider.family<
-    List<FoodItemFull>,
+    List<FoodItem>,
     ({
       MealType? mealType,
       List<DietaryPreference> dietaryPreferences,
@@ -476,7 +472,7 @@ final foodFilterProvider = FutureProvider.family<
       // Filter by meal type if specified
       if (params.mealType != null) {
         final mealTypeStr = params.mealType.toString().split('.').last;
-        if (food.category.toLowerCase() != mealTypeStr.toLowerCase()) {
+        if (food.categoryName.toLowerCase() != mealTypeStr.toLowerCase()) {
           return false;
         }
       }
@@ -484,7 +480,7 @@ final foodFilterProvider = FutureProvider.family<
       // Filter by dietary preferences
       for (final pref in params.dietaryPreferences) {
         final prefStr = pref.toString().split('.').last;
-        if (!food.dietaryTags.contains(prefStr)) {
+        if (!food.tags.contains(prefStr)) {
           return false;
         }
       }
@@ -513,11 +509,11 @@ final foodFilterProvider = FutureProvider.family<
 /// **Validates: Requirements 3.3**
 final foodAlternativesProvider = FutureProvider.family<
     List<FoodAlternative>,
-    FoodItemFull>((ref, targetFood) async {
+    FoodItem>((ref, targetFood) async {
   try {
     AppLogger.debug('📊 [Nutrition] Finding food alternatives...');
     AppLogger.debug('🔍 [Nutrition] Target food: ${targetFood.name}');
-    AppLogger.debug('🔍 [Nutrition] Target macros - Calories: ${targetFood.macros.calories}, Protein: ${targetFood.macros.protein}g, Carbs: ${targetFood.macros.carbs}g, Fat: ${targetFood.macros.fats}g');
+    AppLogger.debug('🔍 [Nutrition] Target macros - Calories: ${targetFood.caloriesPer100g}, Protein: ${targetFood.proteinPer100g}g, Carbs: ${targetFood.carbsPer100g}g, Fat: ${targetFood.fatPer100g}g');
     
     final useCase = ref.watch(getFoodAlternativesUseCaseProvider);
     final alternatives = await useCase.getAlternatives(targetFood);

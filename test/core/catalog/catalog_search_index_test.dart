@@ -6,7 +6,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:progression_tracker/core/catalog/catalog_search_index.dart';
 import 'package:progression_tracker/features/nutrition/data/datasources/hive_food_datasource.dart';
-import 'package:progression_tracker/features/nutrition/data/models/food_item_full_model.dart';
 import 'package:progression_tracker/features/nutrition/domain/entities/food_item.dart';
 import 'package:progression_tracker/features/nutrition/domain/services/food_catalog.dart';
 import 'package:progression_tracker/features/workout/domain/entities/exercise_definition.dart';
@@ -35,6 +34,7 @@ void main() {
       tempDir = await Directory.systemTemp.createTemp('ironflow_catalog_idx_');
       Hive.init(tempDir.path);
       await Hive.openBox('foods');
+      await Hive.openBox('custom_foods');
     });
 
     tearDownAll(() async {
@@ -82,6 +82,7 @@ void main() {
 
     test('Food JSON catalog matches FoodCatalog 1:1 and keeps user custom foods separate', () async {
       final bundle = _DiskAssetBundle();
+      await FoodCatalog.ensureLoaded(bundle: bundle);
       final swLoad = Stopwatch()..start();
       final index = await LazyJsonCatalogLoader.loadFoodsIndex(bundle: bundle);
       swLoad.stop();
@@ -114,36 +115,25 @@ void main() {
       final user1CustomDs = HiveFoodDataSource(userId: 'user_1');
       final user2CustomDs = HiveFoodDataSource(userId: 'user_2');
       await user1CustomDs.saveCustomFood(
-        const FoodItemFullModel(
+        const FoodItem(
           id: 'custom_protein_pancake_u1',
           name: 'My Homemade Protein Pancake',
-          category: 'protein',
-          macros: MacrosPer100gModel(
-            calories: 310,
-            protein: 32,
-            carbs: 28,
-            fats: 6,
-          ),
-          micros: MicrosPer100gModel(
-            fiber: 3,
-            sugar: 4,
-            sodium: 180,
-            potassium: 210,
-          ),
-          vitamins: VitaminsPer100gModel(
-            vitaminA: 0,
-            vitaminB: 0,
-            vitaminC: 0,
-            vitaminD: 0,
-            vitaminE: 0,
-          ),
-          minerals: MineralsPer100gModel(
-            calcium: 80,
-            iron: 1.2,
-            magnesium: 20,
-            zinc: 1.0,
-          ),
+          category: FoodCategory.protein,
+          caloriesPer100g: 310,
+          proteinPer100g: 32,
+          carbsPer100g: 28,
+          fatPer100g: 6,
           imageUrl: '',
+          microsPer100g: FoodMicros(
+            fiberGrams: 3,
+            sugarGrams: 4,
+            sodiumMg: 180,
+            potassiumMg: 210,
+            calciumMg: 80,
+            ironMg: 1.2,
+            magnesiumMg: 20,
+            zincMg: 1.0,
+          ),
         ),
       );
       final user1Custom = await user1CustomDs.getCustomFoods();

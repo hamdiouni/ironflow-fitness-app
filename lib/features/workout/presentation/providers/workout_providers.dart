@@ -39,11 +39,12 @@ final workoutRepositoryProvider = Provider<WorkoutRepository>((ref) {
   // Watching the auth user id rebuilds this provider on login/logout.
   // Local Hive remains the source of truth either way.
   final userId = ref.watch(currentUserIdProvider);
+  final localRepository = WorkoutRepositoryImpl(dataSource, userId: userId);
   if (userId == null || userId.isEmpty) {
-    return WorkoutRepositoryImpl(dataSource, userId: userId);
+    return localRepository;
   }
   return SyncedWorkoutRepository(
-    hiveDataSource: dataSource,
+    delegate: localRepository,
     syncService: ref.watch(syncServiceProvider),
     userId: userId,
   );

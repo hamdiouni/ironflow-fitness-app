@@ -43,10 +43,11 @@ import 'package:progression_tracker/features/body/domain/repositories/body_repos
 import 'package:progression_tracker/features/notifications/domain/services/notification_service.dart';
 import 'package:progression_tracker/features/nutrition/data/datasources/hive_food_datasource.dart';
 import 'package:progression_tracker/features/nutrition/data/datasources/hive_nutrition_datasource.dart';
-import 'package:progression_tracker/features/nutrition/data/models/food_item_full_model.dart';
 import 'package:progression_tracker/features/nutrition/data/repositories/nutrition_repository_impl.dart';
+import 'package:progression_tracker/features/nutrition/domain/entities/food_item.dart';
 import 'package:progression_tracker/features/nutrition/domain/entities/meal.dart';
 import 'package:progression_tracker/features/nutrition/domain/entities/nutrition_targets.dart';
+import 'package:progression_tracker/features/nutrition/domain/services/food_catalog.dart';
 import 'package:progression_tracker/features/nutrition/domain/usecases/get_daily_nutrition_summary_use_case.dart';
 import 'package:progression_tracker/features/nutrition/domain/usecases/save_meal_use_case.dart';
 import 'package:progression_tracker/features/nutrition/domain/utils/macro_calculator.dart';
@@ -372,9 +373,10 @@ void main() {
 void defineWave2Journeys() {
   late Directory tempDir;
 
-  setUpAll(() {
+  setUpAll(() async {
     tempDir = Directory.systemTemp.createTempSync('ironflow_wave2_journeys_');
     Hive.init(tempDir.path);
+    await FoodCatalog.ensureLoaded();
   });
 
   setUp(() async {
@@ -561,21 +563,25 @@ void defineWave2Journeys() {
       // this journey covers the custom-food path that exists today.
       const chefId = 'uid_chef';
       final chefFoods = HiveFoodDataSource(userId: chefId);
-      await chefFoods.saveCustomFood(const FoodItemFullModel(
+      await chefFoods.saveCustomFood(const FoodItem(
         id: 'custom_overnight_oats',
         name: 'My overnight oats',
-        category: 'custom',
-        macros: MacrosPer100gModel(calories: 150, protein: 6, carbs: 24, fats: 3.5),
-        micros: MicrosPer100gModel(fiber: 3, sugar: 8, sodium: 40, potassium: 150),
-        vitamins: VitaminsPer100gModel(
-          vitaminA: 0,
-          vitaminB: 0,
-          vitaminC: 0,
-          vitaminD: 0,
-          vitaminE: 0,
-        ),
-        minerals: MineralsPer100gModel(calcium: 80, iron: 1, magnesium: 30, zinc: 1),
+        category: FoodCategory.custom,
+        caloriesPer100g: 150,
+        proteinPer100g: 6,
+        carbsPer100g: 24,
+        fatPer100g: 3.5,
         imageUrl: '',
+        microsPer100g: FoodMicros(
+          fiberGrams: 3,
+          sugarGrams: 8,
+          sodiumMg: 40,
+          potassiumMg: 150,
+          calciumMg: 80,
+          ironMg: 1,
+          magnesiumMg: 30,
+          zincMg: 1,
+        ),
       ));
 
       final mine = await chefFoods.getCustomFoods();
@@ -585,10 +591,10 @@ void defineWave2Journeys() {
 
       final recipe = mine.single;
       final portion = MacroCalculator.scaleMacros(
-        caloriesPer100g: recipe.macros.calories,
-        proteinPer100g: recipe.macros.protein,
-        carbsPer100g: recipe.macros.carbs,
-        fatsPer100g: recipe.macros.fats,
+        caloriesPer100g: recipe.caloriesPer100g,
+        proteinPer100g: recipe.proteinPer100g,
+        carbsPer100g: recipe.carbsPer100g,
+        fatsPer100g: recipe.fatPer100g,
         grams: 250,
       );
       expect(portion.calories, closeTo(375, 0.001));

@@ -1,9 +1,16 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:progression_tracker/features/nutrition/domain/services/food_catalog.dart';
 import 'package:progression_tracker/features/nutrition/domain/usecases/build_suggested_meal_plan_use_case.dart';
 import 'package:progression_tracker/features/nutrition/domain/usecases/generate_diet_plan_use_case.dart';
 import 'package:progression_tracker/features/onboarding/domain/entities/user_profile.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUpAll(() async {
+    await FoodCatalog.ensureLoaded();
+  });
+
   group('BuildSuggestedMealPlanUseCase', () {
     const useCase = BuildSuggestedMealPlanUseCase();
 

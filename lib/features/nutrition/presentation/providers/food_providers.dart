@@ -1,9 +1,10 @@
-import 'package:progression_tracker/core/utils/app_logger.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/catalog/catalog_search_index.dart';
+import '../../../../core/utils/app_logger.dart';
 import '../../domain/entities/food_item.dart';
-import '../../domain/entities/food_item_full.dart';
 import '../../domain/repositories/food_repository.dart';
+import '../../domain/services/food_catalog.dart';
 import '../../domain/usecases/search_food_use_case.dart';
 import 'food_repository_provider.dart';
 
@@ -52,28 +53,61 @@ final foodSearchProvider =
   FoodSearchNotifier.new,
 );
 
+/// Lazy background-isolate loader + search index for the bundled food catalog.
+final foodsCatalogIndexProvider =
+    FutureProvider<CatalogSearchIndex<FoodItem>>((ref) async {
+  if (FoodCatalog.isLoaded) {
+    return CatalogSearchIndex.buildSync<FoodItem>(
+      items: FoodCatalog.foods,
+      idOf: (f) => f.id,
+      searchableTextOf: (f) =>
+          '${f.name} ${f.category.name} ${f.tags.join(" ")}',
+    );
+  }
+  final loaded = await LazyJsonCatalogLoader.loadFoodsCatalog();
+  FoodCatalog.setLoadedFoods(
+    loaded.index.all,
+    verifiedCount: loaded.verifiedCount,
+  );
+  return loaded.index;
+});
+
 final filteredFoodProvider = Provider<List<FoodItem>>((ref) {
   final s = ref.watch(foodSearchProvider);
-  return SearchFoodUseCase()(
-    query: s.query,
-    category: s.category,
-    budgetTier: s.budgetTier,
-  );
+  final catalogAsync = ref.watch(foodsCatalogIndexProvider);
+  final index = catalogAsync.valueOrNull;
+  if (index == null) {
+    if (FoodCatalog.isLoaded) {
+      return SearchFoodUseCase()(
+        query: s.query,
+        category: s.category,
+        budgetTier: s.budgetTier,
+      );
+    }
+    return const [];
+  }
+  List<FoodItem> results =
+      s.query.trim().isEmpty ? index.all : index.search(s.query);
+  if (s.category != null) {
+    results = results.where((f) => f.category == s.category).toList();
+  }
+  if (s.budgetTier != null) {
+    results = results.where((f) => f.budgetTier == s.budgetTier).toList();
+  }
+  return results;
 });
 
 /// Custom Foods Notifier for managing user-created foods
-class CustomFoodsNotifier extends Notifier<AsyncValue<List<FoodItemFull>>> {
+class CustomFoodsNotifier extends Notifier<AsyncValue<List<FoodItem>>> {
   CustomFoodsNotifier([this._injectedRepository]);
 
   final FoodRepository? _injectedRepository;
 
-  // Was `dynamic` (F-10): with a single typed foodRepositoryProvider
-  // this can be the real interface again.
   late FoodRepository _repository;
   bool _disposed = false;
 
   @override
-  AsyncValue<List<FoodItemFull>> build() {
+  AsyncValue<List<FoodItem>> build() {
     _disposed = false;
     ref.onDispose(() {
       _disposed = true;
@@ -108,7 +142,7 @@ class CustomFoodsNotifier extends Notifier<AsyncValue<List<FoodItemFull>>> {
   }
 
   /// Add a new custom food
-  Future<void> addCustomFood(FoodItemFull food) async {
+  Future<void> addCustomFood(FoodItem food) async {
     try {
       if (kDebugMode) {
         AppLogger.debug('📊 [CustomFoods] Adding custom food: ${food.name}');
@@ -181,7 +215,7 @@ class CustomFoodsNotifier extends Notifier<AsyncValue<List<FoodItemFull>>> {
 
 /// Provider for custom foods with instant updates
 final customFoodsProvider =
-    NotifierProvider<CustomFoodsNotifier, AsyncValue<List<FoodItemFull>>>(
+    NotifierProvider<CustomFoodsNotifier, AsyncValue<List<FoodItem>>>(
   CustomFoodsNotifier.new,
 );
 

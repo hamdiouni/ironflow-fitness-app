@@ -4,9 +4,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:progression_tracker/features/nutrition/data/food_database.dart';
 import 'package:progression_tracker/features/nutrition/data/verified_foods_data.dart';
 import 'package:progression_tracker/features/nutrition/domain/entities/food_item.dart';
+import 'package:progression_tracker/features/nutrition/domain/services/food_catalog.dart';
 import 'package:progression_tracker/features/onboarding/domain/entities/user_profile.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUpAll(() async {
+    await FoodCatalog.ensureLoaded();
+  });
+
   group('Verified Food Dataset (USDA FoodData Central)', () {
     test('contains at least 80 verified fitness foods', () {
       expect(verifiedFoodsList.length, greaterThanOrEqualTo(80));
@@ -120,15 +127,17 @@ void main() {
           equals(food.microsPer100g!.potassiumMg));
     });
 
-    test('assets/data/verified_foods.json exists and is valid', () {
-      final file = File('assets/data/verified_foods.json');
+    test('assets/data/foods_catalog.json exists and matches FoodCatalog', () {
+      final file = File('assets/data/foods_catalog.json');
       expect(file.existsSync(), isTrue);
 
       final content = file.readAsStringSync();
-      final decoded = jsonDecode(content) as List<dynamic>;
-      expect(decoded.length, equals(verifiedFoodsList.length));
+      final decoded = jsonDecode(content) as Map<String, dynamic>;
+      final foodsJson = decoded['foods'] as List<dynamic>;
+      expect(foodsJson.length, equals(FoodCatalog.foods.length));
+      expect(decoded['verifiedCount'], equals(verifiedFoodsList.length));
 
-      final first = FoodItem.fromJson(decoded.first as Map<String, dynamic>);
+      final first = FoodItem.fromJson(foodsJson.first as Map<String, dynamic>);
       expect(first.id, equals(verifiedFoodsList.first.id));
     });
   });

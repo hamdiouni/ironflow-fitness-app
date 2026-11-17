@@ -4,46 +4,31 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:progression_tracker/features/nutrition/data/datasources/firestore_food_datasource.dart';
 import 'package:progression_tracker/features/nutrition/data/datasources/hive_food_datasource.dart';
-import 'package:progression_tracker/features/nutrition/data/models/food_item_full_model.dart';
 import 'package:progression_tracker/features/nutrition/data/repositories/food_repository_impl.dart';
-import 'package:progression_tracker/features/nutrition/domain/entities/food_item_full.dart';
+import 'package:progression_tracker/features/nutrition/domain/entities/food_item.dart';
 
 void main() {
   late Directory tempDir;
   late Box foodsBox;
   late Box customFoodsBox;
 
-  FoodItemFullModel food({required String id, required String name}) {
-    return FoodItemFullModel(
+  FoodItem food({required String id, required String name}) {
+    return FoodItem(
       id: id,
       name: name,
-      category: 'Test',
-      macros: const MacrosPer100gModel(
-        calories: 100,
-        protein: 10,
-        carbs: 10,
-        fats: 2,
-      ),
-      micros: const MicrosPer100gModel(
-        fiber: 1,
-        sugar: 1,
-        sodium: 10,
-        potassium: 20,
-      ),
-      vitamins: const VitaminsPer100gModel(
-        vitaminA: 0,
-        vitaminB: 0,
-        vitaminC: 0,
-        vitaminD: 0,
-        vitaminE: 0,
-      ),
-      minerals: const MineralsPer100gModel(
-        calcium: 0,
-        iron: 0,
-        magnesium: 0,
-        zinc: 0,
-      ),
+      category: FoodCategory.custom,
+      rawCategory: 'Test',
+      caloriesPer100g: 100,
+      proteinPer100g: 10,
+      carbsPer100g: 10,
+      fatPer100g: 2,
       imageUrl: '',
+      microsPer100g: const FoodMicros(
+        fiberGrams: 1,
+        sugarGrams: 1,
+        sodiumMg: 10,
+        potassiumMg: 20,
+      ),
     );
   }
 
@@ -69,7 +54,7 @@ void main() {
   test('custom foods are stored separately for each user', () async {
     final aliceSource = HiveFoodDataSource(userId: 'Alice');
     final bobSource = HiveFoodDataSource(userId: 'bob');
-    await aliceSource.cacheFoods(<FoodItemFullModel>[
+    await aliceSource.cacheFoods(<FoodItem>[
       food(id: 'catalog-1', name: 'Catalog Food'),
     ]);
 
@@ -135,7 +120,7 @@ void main() {
 
   test('upsertCachedFood preserves existing cached foods and updates matching id in place (Wave 1.7e)', () async {
     final ds = HiveFoodDataSource(userId: 'u1');
-    await ds.cacheFoods(<FoodItemFullModel>[
+    await ds.cacheFoods(<FoodItem>[
       food(id: 'f1', name: 'Oats'),
     ]);
 
@@ -151,13 +136,13 @@ void main() {
 
   test('FoodRepositoryImpl.getFoodById upserts into cache without clobbering existing entries (Wave 1.7e)', () async {
     final ds = HiveFoodDataSource(userId: 'u1');
-    await ds.cacheFoods(<FoodItemFullModel>[
+    await ds.cacheFoods(<FoodItem>[
       food(id: 'f1', name: 'Existing Oats'),
     ]);
 
     final repo = FoodRepositoryImpl(
       firestoreDataSource: _FakeFirestoreFoodDatasource({
-        'f2': food(id: 'f2', name: 'Fetched Banana').toEntity(),
+        'f2': food(id: 'f2', name: 'Fetched Banana'),
       }),
       hiveDataSource: ds,
     );
@@ -174,8 +159,8 @@ class _FakeFirestoreFoodDatasource extends Fake
     implements FirestoreFoodDatasource {
   _FakeFirestoreFoodDatasource(this.foodsById);
 
-  final Map<String, FoodItemFull> foodsById;
+  final Map<String, FoodItem> foodsById;
 
   @override
-  Future<FoodItemFull?> getFoodById(String id) async => foodsById[id];
+  Future<FoodItem?> getFoodById(String id) async => foodsById[id];
 }

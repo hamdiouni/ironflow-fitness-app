@@ -1,36 +1,21 @@
-import '../entities/food_item_full.dart';
+import '../entities/food_item.dart';
 import '../repositories/food_repository.dart';
 
 /// Use case for getting meal suggestions based on macro targets.
-///
-/// Filters meals by macro targets (within 10% tolerance) and returns
-/// at least 3 alternatives if available, sorted by macro match quality.
 class GetMealSuggestionsUseCase {
   final FoodRepository _repository;
 
   GetMealSuggestionsUseCase(this._repository);
 
-  /// Gets meal suggestions for the given macro targets.
-  ///
-  /// [targetCalories] - Target calories for the meal
-  /// [targetProtein] - Target protein in grams
-  /// [targetCarbs] - Target carbs in grams
-  /// [targetFat] - Target fat in grams
-  /// [tolerance] - Tolerance percentage (default 10%)
-  ///
-  /// Returns list of meals sorted by macro match quality.
-  Future<List<FoodItemFull>> call({
+  Future<List<FoodItem>> call({
     required double targetCalories,
     required double targetProtein,
     required double targetCarbs,
     required double targetFat,
     double tolerance = 0.1,
   }) async {
-    // Get all foods from repository
     final allFoods = await _repository.getAllFoods();
-
-    // Filter by macro targets with tolerance
-    final suggestions = <FoodItemFull>[];
+    final suggestions = <FoodItem>[];
 
     for (final food in allFoods) {
       if (_matchesMacros(
@@ -45,7 +30,6 @@ class GetMealSuggestionsUseCase {
       }
     }
 
-    // Sort by macro match quality (closest to target)
     suggestions.sort((a, b) {
       final scoreA = _calculateMacroScore(
         a,
@@ -64,13 +48,11 @@ class GetMealSuggestionsUseCase {
       return scoreA.compareTo(scoreB);
     });
 
-    // Return at least 3 alternatives if available
     return suggestions.take(3).toList();
   }
 
-  /// Checks if a food matches the macro targets within tolerance.
   bool _matchesMacros(
-    FoodItemFull food,
+    FoodItem food,
     double targetCalories,
     double targetProtein,
     double targetCarbs,
@@ -82,31 +64,28 @@ class GetMealSuggestionsUseCase {
     final carbsRange = targetCarbs * tolerance;
     final fatRange = targetFat * tolerance;
 
-    return (food.macros.calories >= targetCalories - calorieRange &&
-            food.macros.calories <= targetCalories + calorieRange) &&
-        (food.macros.protein >= targetProtein - proteinRange &&
-            food.macros.protein <= targetProtein + proteinRange) &&
-        (food.macros.carbs >= targetCarbs - carbsRange &&
-            food.macros.carbs <= targetCarbs + carbsRange) &&
-        (food.macros.fats >= targetFat - fatRange && food.macros.fats <= targetFat + fatRange);
+    return (food.caloriesPer100g >= targetCalories - calorieRange &&
+            food.caloriesPer100g <= targetCalories + calorieRange) &&
+        (food.proteinPer100g >= targetProtein - proteinRange &&
+            food.proteinPer100g <= targetProtein + proteinRange) &&
+        (food.carbsPer100g >= targetCarbs - carbsRange &&
+            food.carbsPer100g <= targetCarbs + carbsRange) &&
+        (food.fatPer100g >= targetFat - fatRange &&
+            food.fatPer100g <= targetFat + fatRange);
   }
 
-  /// Calculates a score for how well a food matches the macro targets.
-  ///
-  /// Lower score = better match
   double _calculateMacroScore(
-    FoodItemFull food,
+    FoodItem food,
     double targetCalories,
     double targetProtein,
     double targetCarbs,
     double targetFat,
   ) {
-    final caloriesDiff = (food.macros.calories - targetCalories).abs();
-    final proteinDiff = (food.macros.protein - targetProtein).abs();
-    final carbsDiff = (food.macros.carbs - targetCarbs).abs();
-    final fatDiff = (food.macros.fats - targetFat).abs();
+    final caloriesDiff = (food.caloriesPer100g - targetCalories).abs();
+    final proteinDiff = (food.proteinPer100g - targetProtein).abs();
+    final carbsDiff = (food.carbsPer100g - targetCarbs).abs();
+    final fatDiff = (food.fatPer100g - targetFat).abs();
 
-    // Weighted score (calories weighted more heavily)
     return (caloriesDiff * 0.4) +
         (proteinDiff * 0.2) +
         (carbsDiff * 0.2) +

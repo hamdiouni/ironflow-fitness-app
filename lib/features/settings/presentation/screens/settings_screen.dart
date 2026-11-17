@@ -561,14 +561,6 @@ class SettingsScreen extends ConsumerWidget {
                       ),
                       Divider(color: tokens.borderSubtle, height: 1),
                       SettingsTile(
-                        title: 'AI Diagnostic Test',
-                        subtitle: 'Test Gemini inference and mock responses',
-                        icon: Icons.bug_report_outlined,
-                        tokens: tokens,
-                        onTap: () => context.push(AppRoutes.aiTest),
-                      ),
-                      Divider(color: tokens.borderSubtle, height: 1),
-                      SettingsTile(
                         title: 'Design System Gallery',
                         subtitle:
                             'Inspect titanium design system tokens and widgets',

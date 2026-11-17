@@ -1,22 +1,35 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../domain/entities/food_item_full.dart';
+import 'package:progression_tracker/core/utils/app_logger.dart';
+import '../../domain/entities/food_item.dart';
+
+/// Paginated Firestore food result carrying the cursor document for subsequent pages.
+class FoodPageResult {
+  const FoodPageResult({
+    required this.items,
+    required this.lastDocument,
+    required this.hasMore,
+  });
+
+  final List<FoodItem> items;
+  final DocumentSnapshot<Map<String, dynamic>>? lastDocument;
+  final bool hasMore;
+}
 
 /// Firestore datasource for food items.
-/// Handles uploading and retrieving foods from Firestore.
+/// Handles uploading and retrieving bounded pages of foods from Firestore.
 class FirestoreFoodDatasource {
-  final FirebaseFirestore _firestore;
-
   FirestoreFoodDatasource(this._firestore);
 
+  final FirebaseFirestore _firestore;
+
+  static const int defaultPageSize = 50;
+  static const int maxBatchQueryLimit = 200;
+
   /// Upload all foods to Firestore.
-  /// This is typically called once during app initialization or via admin script.
   ///
   /// IDs are preserved EXACTLY (Phase 2, F-14): `Meal.foodItemId`s
-  /// reference these catalog IDs, so the previous duplicate-handling
-  /// (`id`, `id_1`, `id_2`…) silently forked identity between the local
-  /// catalog and the cloud. Duplicate IDs are a source-catalog data
-  /// bug — fail loudly instead.
-  Future<void> uploadFoods(List<FoodItemFull> foods) async {
+  /// reference these catalog IDs. Duplicate IDs fail loudly.
+  Future<void> uploadFoods(List<FoodItem> foods) async {
     final seen = <String>{};
     final duplicates = <String>{};
     for (final food in foods) {
@@ -40,132 +53,187 @@ class FirestoreFoodDatasource {
     }
   }
 
-  /// Get all foods from Firestore.
-  Future<List<FoodItemFull>> getAllFoods() async {
-    final snapshot = await _firestore.collection('foods').get();
+  /// Fetches a bounded cursor-paginated slice of foods ordered by name.
+  Future<FoodPageResult> getFoodsPage({
+    int limit = defaultPageSize,
+    DocumentSnapshot<Map<String, dynamic>>? startAfter,
+  }) async {
+    final safeLimit = limit.clamp(1, maxBatchQueryLimit);
+    Query<Map<String, dynamic>> query = _firestore
+        .collection('foods')
+        .orderBy('name')
+        .limit(safeLimit);
+    if (startAfter != null) {
+      query = query.startAfterDocument(startAfter);
+    }
+
+    final snapshot = await query.get();
+    final items = <FoodItem>[];
+    for (final doc in snapshot.docs) {
+      final parsed = mapToFoodSafe(doc.data(), doc.id);
+      if (parsed != null) items.add(parsed);
+    }
+
+    return FoodPageResult(
+      items: items,
+      lastDocument: snapshot.docs.isEmpty ? null : snapshot.docs.last,
+      hasMore: snapshot.docs.length >= safeLimit,
+    );
+  }
+
+  /// Get bounded foods from Firestore.
+  Future<List<FoodItem>> getAllFoods({int limit = maxBatchQueryLimit}) async {
+    final safeLimit = limit.clamp(1, maxBatchQueryLimit);
+    final snapshot = await _firestore
+        .collection('foods')
+        .orderBy('name')
+        .limit(safeLimit)
+        .get();
     return snapshot.docs
-        .map((doc) => mapToFood(doc.data(), doc.id))
+        .map((doc) => mapToFoodSafe(doc.data(), doc.id))
+        .whereType<FoodItem>()
         .toList();
   }
 
-  /// Get foods by category.
-  Future<List<FoodItemFull>> getFoodsByCategory(String category) async {
+  /// Get foods by category (bounded).
+  Future<List<FoodItem>> getFoodsByCategory(
+    String category, {
+    int limit = 100,
+  }) async {
+    final safeLimit = limit.clamp(1, maxBatchQueryLimit);
     final snapshot = await _firestore
         .collection('foods')
         .where('category', isEqualTo: category)
+        .limit(safeLimit)
         .get();
     return snapshot.docs
-        .map((doc) => mapToFood(doc.data(), doc.id))
+        .map((doc) => mapToFoodSafe(doc.data(), doc.id))
+        .whereType<FoodItem>()
         .toList();
   }
 
-  /// Search foods by name.
-  Future<List<FoodItemFull>> searchFoods(String query) async {
+  /// Search foods by name prefix (bounded).
+  Future<List<FoodItem>> searchFoods(
+    String query, {
+    int limit = defaultPageSize,
+  }) async {
+    final safeLimit = limit.clamp(1, maxBatchQueryLimit);
     final snapshot = await _firestore
         .collection('foods')
         .where('name', isGreaterThanOrEqualTo: query)
         .where('name', isLessThan: '${query}z')
+        .limit(safeLimit)
         .get();
     return snapshot.docs
-        .map((doc) => mapToFood(doc.data(), doc.id))
+        .map((doc) => mapToFoodSafe(doc.data(), doc.id))
+        .whereType<FoodItem>()
         .toList();
   }
 
   /// Get a single food by ID.
-  Future<FoodItemFull?> getFoodById(String id) async {
+  Future<FoodItem?> getFoodById(String id) async {
     final doc = await _firestore.collection('foods').doc(id).get();
-    if (!doc.exists) return null;
-    return mapToFood(doc.data()!, id);
+    final data = doc.data();
+    if (!doc.exists || data == null) return null;
+    return mapToFoodSafe(data, id);
   }
 
-  /// Get foods by dietary tags.
-  Future<List<FoodItemFull>> getFoodsByTags(List<String> tags) async {
-    if (tags.isEmpty) return getAllFoods();
-    
+  /// Get foods by dietary tags (bounded).
+  Future<List<FoodItem>> getFoodsByTags(
+    List<String> tags, {
+    int limit = 100,
+  }) async {
+    if (tags.isEmpty) return getAllFoods(limit: limit);
+    final safeLimit = limit.clamp(1, maxBatchQueryLimit);
     final snapshot = await _firestore
         .collection('foods')
         .where('dietaryTags', arrayContainsAny: tags)
+        .limit(safeLimit)
         .get();
     return snapshot.docs
-        .map((doc) => mapToFood(doc.data(), doc.id))
+        .map((doc) => mapToFoodSafe(doc.data(), doc.id))
+        .whereType<FoodItem>()
         .toList();
   }
 
-  /// Convert FoodItemFull to Firestore map.
-  Map<String, dynamic> foodToMap(FoodItemFull food) {
+  /// Convert [FoodItem] to Firestore document map.
+  Map<String, dynamic> foodToMap(FoodItem food) {
+    final micros = food.microsPer100g;
     return {
       'id': food.id,
       'name': food.name,
-      'category': food.category,
+      'category': food.categoryName,
       'macros': {
-        'caloriesPer100g': food.macros.calories,
-        'proteinPer100g': food.macros.protein,
-        'carbsPer100g': food.macros.carbs,
-        'fatsPer100g': food.macros.fats,
+        'caloriesPer100g': food.caloriesPer100g,
+        'proteinPer100g': food.proteinPer100g,
+        'carbsPer100g': food.carbsPer100g,
+        'fatsPer100g': food.fatPer100g,
       },
       'micros': {
-        'fiberPer100g': food.micros.fiber,
-        'sugarPer100g': food.micros.sugar,
-        'sodiumPer100g': food.micros.sodium,
-        'potassiumPer100g': food.micros.potassium,
+        'fiberPer100g': micros?.fiberGrams ?? 0.0,
+        'sugarPer100g': micros?.sugarGrams ?? 0.0,
+        'sodiumPer100g': micros?.sodiumMg ?? 0.0,
+        'potassiumPer100g': micros?.potassiumMg ?? 0.0,
       },
       'vitamins': {
-        'aPer100g': food.vitamins.vitaminA,
-        'bPer100g': food.vitamins.vitaminB,
-        'cPer100g': food.vitamins.vitaminC,
-        'dPer100g': food.vitamins.vitaminD,
-        'ePer100g': food.vitamins.vitaminE,
+        'aPer100g': micros?.vitaminAMcg ?? 0.0,
+        'bPer100g': micros?.vitaminBMg ?? 0.0,
+        'cPer100g': micros?.vitaminCMg ?? 0.0,
+        'dPer100g': micros?.vitaminDMcg ?? 0.0,
+        'ePer100g': micros?.vitaminEMg ?? 0.0,
       },
       'minerals': {
-        'calciumPer100g': food.minerals.calcium,
-        'ironPer100g': food.minerals.iron,
-        'magnesiumPer100g': food.minerals.magnesium,
-        'zincPer100g': food.minerals.zinc,
+        'calciumPer100g': micros?.calciumMg ?? 0.0,
+        'ironPer100g': micros?.ironMg ?? 0.0,
+        'magnesiumPer100g': micros?.magnesiumMg ?? 0.0,
+        'zincPer100g': micros?.zincMg ?? 0.0,
       },
       'imageUrl': food.imageUrl,
-      'dietaryTags': food.dietaryTags,
+      'dietaryTags': food.tags,
+      'servingUnit': food.servingUnit,
+      'servingWeightGrams': food.servingWeightGrams,
+      'servingDescription': food.servingDescription,
+      'budgetTier': food.budgetTier.name,
+      if (food.fdcId != null) 'fdcId': food.fdcId,
+      'source': food.source,
       'createdAt': FieldValue.serverTimestamp(),
     };
   }
 
-  /// Convert Firestore map to FoodItemFull.
-  FoodItemFull mapToFood(Map<String, dynamic> data, String id) {
-    final macrosData = data['macros'] as Map<String, dynamic>;
-    final microsData = data['micros'] as Map<String, dynamic>;
-    final vitaminsData = data['vitamins'] as Map<String, dynamic>;
-    final mineralsData = data['minerals'] as Map<String, dynamic>;
+  /// Null-safe parser for Firestore food maps. Returns `null` (and logs) when
+  /// essential fields (`name`, numeric macro map/values) are missing or malformed.
+  FoodItem? mapToFoodSafe(Map<String, dynamic>? data, String id) {
+    if (data == null) return null;
+    final nameRaw = data['name'];
+    if (nameRaw is! String || nameRaw.trim().isEmpty) {
+      AppLogger.debug('⚠️ [FirestoreFood] Skipping food "$id": missing name');
+      return null;
+    }
 
-    return FoodItemFull(
-      id: id,
-      name: data['name'] as String,
-      category: data['category'] as String,
-      macros: MacrosPer100g(
-        calories: (macrosData['caloriesPer100g'] as num).toDouble(),
-        protein: (macrosData['proteinPer100g'] as num).toDouble(),
-        carbs: (macrosData['carbsPer100g'] as num).toDouble(),
-        fats: (macrosData['fatsPer100g'] as num).toDouble(),
-      ),
-      micros: MicrosPer100g(
-        fiber: (microsData['fiberPer100g'] as num).toDouble(),
-        sugar: (microsData['sugarPer100g'] as num).toDouble(),
-        sodium: (microsData['sodiumPer100g'] as num).toDouble(),
-        potassium: (microsData['potassiumPer100g'] as num).toDouble(),
-      ),
-      vitamins: VitaminsPer100g(
-        vitaminA: (vitaminsData['aPer100g'] as num).toDouble(),
-        vitaminB: (vitaminsData['bPer100g'] as num).toDouble(),
-        vitaminC: (vitaminsData['cPer100g'] as num).toDouble(),
-        vitaminD: (vitaminsData['dPer100g'] as num).toDouble(),
-        vitaminE: (vitaminsData['ePer100g'] as num).toDouble(),
-      ),
-      minerals: MineralsPer100g(
-        calcium: (mineralsData['calciumPer100g'] as num).toDouble(),
-        iron: (mineralsData['ironPer100g'] as num).toDouble(),
-        magnesium: (mineralsData['magnesiumPer100g'] as num).toDouble(),
-        zinc: (mineralsData['zincPer100g'] as num).toDouble(),
-      ),
-      imageUrl: data['imageUrl'] as String,
-      dietaryTags: List<String>.from(data['dietaryTags'] as List<dynamic>? ?? []),
-    );
+    final hasNestedMacros = data['macros'] is Map &&
+        ((data['macros'] as Map)['caloriesPer100g'] is num ||
+            (data['macros'] as Map)['calories'] is num);
+    final hasFlatMacros = data['caloriesPer100g'] is num;
+    if (!hasNestedMacros && !hasFlatMacros) {
+      AppLogger.debug('⚠️ [FirestoreFood] Skipping food "$id": missing macros');
+      return null;
+    }
+
+    try {
+      return FoodItem.fromAnyJson(<String, dynamic>{...data, 'id': id});
+    } catch (e) {
+      AppLogger.debug('⚠️ [FirestoreFood] Skipping malformed food "$id": $e');
+      return null;
+    }
+  }
+
+  /// Parses Firestore map using null-safe rules. Throws [FormatException] only
+  /// when essential fields are malformed for direct non-null callers.
+  FoodItem mapToFood(Map<String, dynamic> data, String id) {
+    final parsed = mapToFoodSafe(data, id);
+    if (parsed == null) {
+      throw FormatException('Malformed Firestore food document "$id"');
+    }
+    return parsed;
   }
 }
