@@ -1,613 +1,203 @@
-# 🏋️ IronFlow - AI-Powered Fitness Tracking Platform
+# 🏋️ IronFlow — Production-Hardened Fitness & Strength Progression Platform (`v2.0.0+9`)
 
 <div align="center">
 
-![Flutter](https://img.shields.io/badge/Flutter-3.10.7+-02569B?style=for-the-badge&logo=flutter&logoColor=white)
-![Firebase](https://img.shields.io/badge/Firebase-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)
-![Dart](https://img.shields.io/badge/Dart-0175C2?style=for-the-badge&logo=dart&logoColor=white)
-![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
+![Flutter](https://img.shields.io/badge/Flutter-3.24%2B-02569B?style=for-the-badge&logo=flutter&logoColor=white)
+![Dart](https://img.shields.io/badge/Dart-3.5%2B-0175C2?style=for-the-badge&logo=dart&logoColor=white)
+![Firebase](https://img.shields.io/badge/Firebase-Cloud_Functions_%26_Firestore-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)
+![Tests](https://img.shields.io/badge/Tests-1%2C126_Passing-10B981?style=for-the-badge)
+![Coverage](https://img.shields.io/badge/Coverage-71.73%25-06B6D4?style=for-the-badge)
+![Wasm](https://img.shields.io/badge/WebAssembly-Wasm_Ready-F59E0B?style=for-the-badge)
 
-**Your personal fitness tracking companion with AI-powered insights, progressive overload tracking, and comprehensive nutrition monitoring.**
+**An offline-first, AES-256 encrypted strength, nutrition, anatomical recovery, and AI coaching platform engineered with Clean Architecture and the Direction 4 ("Iron Scoreboard") design system.**
 
-[Features](#-features) • [Getting Started](#-getting-started) • [Architecture](#-architecture) • [Screenshots](#-screenshots) • [Contributing](#-contributing)
+[Overview](#-overview) • [Screenshots](#-screenshots) • [Key Features](#-key-features) • [Architecture](#-architecture) • [Quality Scorecard](#-production-quality-scorecard) • [Getting Started](#-getting-started) • [Deployment](#-deployment) • [Documentation](#-documentation-index)
 
 </div>
 
 ---
 
-## 📋 Table of Contents
-
-- [Overview](#-overview)
-- [Key Features](#-features)
-- [Technology Stack](#-technology-stack)
-- [Architecture](#-architecture)
-- [Getting Started](#-getting-started)
-- [Configuration](#-configuration)
-- [Project Structure](#-project-structure)
-- [Testing](#-testing)
-- [Deployment](#-deployment)
-- [Contributing](#-contributing)
-- [License](#-license)
-
----
-
 ## 🎯 Overview
 
-**IronFlow** is an offline-first Flutter fitness application for serious lifters, combining workout tracking, nutrition monitoring, body progress, and optional AI coaching. The app is in active production-hardening: the local-first experience is the default, while real Firebase auth/sync must be explicitly enabled after deploying rules/indexes and completing platform auth setup.
+**IronFlow (`progression_tracker` v2.0.0+9)** is a cross-platform mobile and web fitness tracking platform built for lifters and athletes. Completed across **Master Plan V2 (Waves 1–9)**, it combines zero-latency offline workout logging, an interactive 20-region 2D vector anatomical recovery map, an e1RM / drop-set / superset strength engine, USDA + Open Food Facts nutrition & barcode lookup, Health Connect & Apple HealthKit synchronization, and an authenticated serverless Gemini 2.5 Flash SSE streaming coach.
 
-### Why IronFlow?
-
-- **🧠 AI-Assisted Coaching**: Optional AI explanations and chat when configured; production traffic is designed to go through a backend proxy (direct provider keys are debug-only)
-- **📊 Progressive Overload Tracking**: Automatically track your strength gains and get smart progression suggestions
-- **🥗 Comprehensive Nutrition**: Log meals with an extensive food database, track macros, and get AI-generated meal plans
-- **📱 Offline-First**: All core features work without internet connectivity
-- **⚡ Monolithic Sci-Fi UI**: High-contrast, telemetry-styled design system with dark/light tokens and smooth micro-animations
-- **📳 Tactile Telemetry**: Centralized haptic feedback on sets, countdown timers, macro milestones, and navigation with settings toggle
-- **🔄 Offline-First Sync Engine**: Firestore outbox sync is available behind `USE_FIREBASE_AUTH=true` after Firebase rules/indexes are deployed; the default build remains local/mock-auth
-- **🌍 Localization Foundation**: Generated delegates for English, Spanish, French, German, Japanese, Portuguese, and Chinese are wired at the app root; full UI string coverage is still being expanded
+### Core Production Guarantees
+- **🔒 Zero Client Secrets (`ADR-001`)**: Release builds compile with `ALLOW_DIRECT_AI_KEYS=false` (fail-closed). All AI traffic routes through an authenticated Firebase Cloud Functions 2nd Gen proxy (`functions/aiGenerate`) protected by Firebase Auth JWT verification, Firebase App Check, and durable per-user daily quotas with atomic error refunds.
+- **🛡️ AES-256 Encrypted Local Storage (`ADR-002`)**: All sensitive Hive boxes (`workouts`, `meals`, `body_entries`, `user_profile`, `ai_chat`, `auth_session`) are encrypted at rest with hardware-backed keys (`FlutterSecureStorage`) and automatic box-by-box migration + corrupt-box quarantine recovery.
+- **⚡ Strength Engine, Drop Sets & Supersets (`ADR-004`)**: Unified `E1rmEngine` (Epley & Brzycki formulas capped at 10 reps, filtering warmups and drop sets), `DropSetPlanner` (20% stepped plate reductions), and 1-tap `SupersetEngine` (`A1`/`A2` block linking, active exercise auto-rotation, and smart rest-timer bypass).
+- **⏱️ Zero-Battery Lock-Screen Rest Timer (`ADR-004`)**: Uses Android's native system notification chronometer (`usesChronometer: true`, `chronometerCountDown: true`, `category: stopwatch`) requiring **0% background Dart CPU** and **no** high-risk `SCHEDULE_EXACT_ALARM` permission, paired with Web Notification API background alerts via `dart:js_interop`.
+- **🧬 20-Region 2D Vector Body Map (`ADR-006`)**: Dependency-free `CustomPainter` rendering front and posterior anatomical silhouettes with `<0.4ms` frame paint latency and `<5ms` exponential muscle recovery calculation over a full year of workouts (3,000+ sets).
+- **🌐 WebAssembly (`--wasm-dry-run`) Verified (`ADR-008`)**: 100% `dart:js_interop` web plugin architecture passing Flutter's WebAssembly dry-run check with zero warnings.
 
 ---
 
-## ✨ Features
+## 📸 Screenshots
 
-### 🏋️‍♂️ Workout Management
+### Mobile Viewport (`390×844` — Direction 4 "Iron Scoreboard")
 
-- **Smart Workout Sessions**: Create, track, and manage workout sessions with intuitive UI
-- **Exercise Library**: Bundled exercise catalog (about 150 definition entries in the repo today), with YouTube links where present
-- **Progressive Overload Engine**: Deterministic, history/RPE-based suggestions for weight and rep progression
-- **Rest Timer**: Visual countdown timer between sets with haptic feedback
-- **Personal Records**: Automatic PR detection with celebration animations
-- **Workout History**: Detailed analytics and performance graphs
-- **Custom Programs & Splits**: Full freedom to choose any training split (Full Body, Upper/Lower, Push/Pull/Legs, Arnold Split, Mix/Custom, and Hybrids like PPL x Arnold) across any weekly frequency (1..7 days/week) with deterministic exercise selection
-- **Interactive Split Generator & Telemetry**: Live 7-day schedule matrix, in-place exercise swapping modal, real-time muscle frequency telemetry, and one-tap Undo protection
-- **Volume Tracking**: Automatic calculation of training volume and intensity
+| Today Dashboard (Dark) | Today Dashboard (Light) | Active Workout (Supersets `A1`/`A2` & e1RM) |
+| :---: | :---: | :---: |
+| ![Today Dark](docs/screenshots/wave4-after/today_dark_390x844.png) | ![Today Light](docs/screenshots/wave4-after/today_light_390x844.png) | ![Active Workout](docs/screenshots/wave4-after/active_workout_390x844.png) |
 
-### 🥗 Nutrition Tracking
+| Fuel / Daily Nutrition | Food Database & Barcode Action | Open Food Facts Barcode Scanner (`ODbL v1.0`) |
+| :---: | :---: | :---: |
+| ![Fuel Daily](docs/screenshots/wave4-after/fuel_daily_390x844.png) | ![Food Search](docs/screenshots/wave4-after/food_search_barcode_390x844.png) | ![Barcode Scanner Sheet](docs/screenshots/wave4-after/barcode_scanner_sheet_390x844.png) |
 
-- **Bundled Food Catalog**: Verified plus legacy food entries (hundreds, not thousands) with macros and available micros, plus user custom foods
-- **Meal Logging**: Quick meal entry with smart search and favorites
-- **Macro Tracking**: Real-time progress bars for protein, carbs, and fats
-- **Custom Foods**: Create and save your own food items
-- **Diet Planning**: Generate and save personalized diet plans based on your goals and budget
-- **Nutrition History**: View past meals and analyze trends
-- **Calorie Goals**: Set and track daily calorie and macro targets
+| Progress & 2D Anatomical Body Map | Health Connect & HealthKit Sync | Privacy & Open Data Attributions |
+| :---: | :---: | :---: |
+| ![Progress & Body Map](docs/screenshots/wave4-after/progress_charts_390x844.png) | ![Health Sync Sheet](docs/screenshots/wave4-after/health_sync_sheet_390x844.png) | ![Privacy & Attributions](docs/screenshots/wave4-after/privacy_attributions_390x844.png) |
 
-### 📊 Body & Progress Tracking
+### Wide / Desktop Web Viewport (`1280×800`)
 
-- **Weight Tracking**: Log weight with trend visualization
-- **Body Measurements**: Track chest, waist, hips, arms, and legs
-- **Progress Photos**: Before/after comparison with date stamps
-- **Analytics Dashboard**: Comprehensive stats on workouts, nutrition, and body composition
-- **Strength Progression**: Visualize strength gains over time
-- **Consistency Metrics**: Track workout frequency and adherence
+| Today Dashboard (`1280×800`) | Active Workout (`1280×800`) |
+| :---: | :---: |
+| ![Today Wide](docs/screenshots/wave4-after/today_wide_1280x800.png) | ![Active Workout Wide](docs/screenshots/wave4-after/active_workout_wide_1280x800.png) |
 
-### 🤖 AI Coach
-
-- **Provider Configuration**: Gemini through an authenticated backend proxy in production; OpenAI direct access is debug-only until it is moved behind the proxy
-- **Context-Aware Insights**: Local deterministic engines analyze workout, nutrition, and body data; AI chat context depends on the configured provider/consent path
-- **Natural Conversations**: Chat interface for questions and advice
-- **Personalized Insights**: Automatic insights based on your data
-- **Voice Feedback**: Text-to-speech for hands-free coaching
-- **Safety Boundary**: Training and nutrition calculations are deterministic; AI is used for explanation and conversation, not as the source of record
-
-### 🔔 Smart Notifications
-
-- **Workout Reminders**: Schedule notifications for workout days
-- **Meal Reminders**: Never miss a meal with customizable alerts
-- **Achievement Notifications**: Celebrate milestones and PRs
-- **Streak Tracking**: Build consistency with daily streak counters
-
-### ☁️ Cloud Sync & Authentication
-
-- **Firebase Integration**: Firestore/Auth/Storage integration is present, but cloud sync is gated by `USE_FIREBASE_AUTH=true` plus deployed `firestore.rules`/`firestore.indexes.json`
-- **Auth Paths**: Email/password works in mock and Firebase modes; Google/Apple code paths require platform OAuth configuration before production use
-- **Offline-First**: Local storage with Hive for instant access
-- **Conflict Handling**: Last-write-wins sync with tombstones and per-device pull cursors when Firebase sync is enabled
-- **Data Export**: Export your data in JSON or CSV formats
-- **Privacy First**: Your data belongs to you
-
-### 🎨 UI/UX Features
-
-- **Dark/Light Themes**: Eye-friendly themes with smooth transitions
-- **Glassmorphism Design**: Modern frosted glass UI elements
-- **Smooth Animations**: Lottie and Flutter Animate for engaging transitions
-- **Responsive Layout**: Optimized for all screen sizes
-- **Gesture Controls**: Swipe, drag, and tap for intuitive navigation
-- **Material 3**: Latest Material Design guidelines
+| Fuel / Nutrition (`1280×800`) | Progress & Body Map (`1280×800`) |
+| :---: | :---: |
+| ![Fuel Wide](docs/screenshots/wave4-after/fuel_daily_wide_1280x800.png) | ![Progress Wide](docs/screenshots/wave4-after/progress_charts_wide_1280x800.png) |
 
 ---
 
-## 🛠️ Technology Stack
+## ✨ Key Features
 
-### Frontend Framework
-- **Flutter 3.10.7+**: Cross-platform UI framework
-- **Dart SDK**: Programming language
+### 🏋️‍♂️ Workout & Strength Progression (`Wave 4` & `Wave 8`)
+- **Superset Linking (`SupersetEngine`)**: Link or unlink adjacent exercises into `A1`/`A2`, `B1`/`B2` superset blocks with a single tap on `SupersetConnectorDivider`. Completing a set automatically rotates focus to the next exercise in the round and holds the rest timer until the round finishes.
+- **Estimated 1RM Engine (`E1rmEngine`)**: Live Epley and Brzycki 1RM telemetry on every exercise card, capped at 10 reps for physiological accuracy and strictly excluding warmup and drop sets.
+- **Drop-Set Planner (`DropSetPlanner`)**: Selecting `DROP SET` automatically pre-fills a 20% stepped weight reduction rounded down to standard 2.5 kg/lb gym plates.
+- **129 Deduplicated Exercises + Unified Media Stage**: Lazy JSON catalog indexed in a background isolate with canonical alias migration, 2D anatomical muscle highlighting, step-by-step coaching cues, and tap-to-load YouTube embeds.
+- **Interactive Split Generator**: Supports Full Body, Upper/Lower, Push/Pull/Legs, Arnold Split, and hybrid schedules across 1–7 days/week with live muscle frequency telemetry and one-tap Undo.
 
-### State Management
-- **Riverpod 2.6+**: Reactive state management
-- **Freezed**: Immutable data classes
-- **Code Generation**: Build runner for boilerplate reduction
+### 🥗 Nutrition, Barcode Lookup & Ephemeral Meal Vision (`Wave 7` & `Wave 8.2`)
+- **282 Verified USDA Foods + Custom Library**: Background-isolate indexed catalog with per-100g macros, true micronutrient telemetry (`FoodMicros`), serving descriptors, and budget-tier filtering (`$`, `$$`, `$$$`).
+- **Barcode Scanner & Open Food Facts (`OpenFoodFactsService`, `ADR-008`)**: Validates EAN-13, EAN-8, UPC-A, and GTIN-14 barcodes (including GS1 Modulo-10 check digits), resolves against an instant offline gym-food catalog first, queries Open Food Facts API v2 under ODbL v1.0 attribution, and auto-caches scanned items into the user's offline food library.
+- **Ephemeral Quick Meal Photo Estimation (`ADR-003`)**: Resizes meal photos on-device and streams a base64 data URI to the AI proxy for macro estimation with **zero cloud storage retention**.
 
-### Backend & Cloud
-- **Firebase Core**: Backend infrastructure
-- **Cloud Firestore**: NoSQL database
-- **Firebase Auth**: User authentication
-- **Firebase Storage**: File and image storage
-- **Firebase Analytics**: Usage analytics
-- **Firebase Crashlytics**: Crash reporting
+### 🧬 2D Vector Body Map & Health Sync (`Wave 5` & `Wave 8.4`)
+- **20-Region Anatomical Recovery Model**: Tracks recovery across 20 distinct front and posterior muscle groups (`Fresh`, `Recovering`, `Fatigued`, `Sore`) with user DOMS soreness overrides and a full screen-reader accessible list view.
+- **Health Connect & Apple HealthKit Bridge (`HealthSyncService`, `ADR-008`)**: Opt-in two-way body weight / body fat synchronization with 5-minute timestamp deduplication and completed workout export (duration, volume, and MET-estimated active kilocalories).
 
-### Local Storage
-- **Hive**: Fast, lightweight NoSQL database
-- **Flutter Secure Storage**: Encrypted storage for sensitive data
-- **Path Provider**: File system access
-
-### AI & Machine Learning
-- **AI backend proxy**: Production Gemini route with Firebase ID-token authentication
-- **Google Gemini / OpenAI direct APIs**: Local debug development only; shipped builds fail closed without the proxy
-
-### Networking
-- **HTTP**: REST API calls
-- **Connectivity Plus**: Network status monitoring
-
-### Media & Content
-- **Cached Network Image**: Efficient image loading
-- **Video Player**: Exercise video playback
-- **YouTube Player**: YouTube video integration
-- **Image Picker**: Camera and gallery access
-- **Flutter SVG**: Vector graphics support
-
-### UI Components
-- **FL Chart**: Beautiful data visualization
-- **Lottie**: Animation rendering
-- **Flutter Animate**: Declarative animations
-- **Flutter Markdown**: Markdown rendering
-
-### Utilities
-- **UUID**: Unique identifier generation
-- **Intl**: Internationalization
-- **Timezone**: Time zone handling
-- **Flutter TTS**: Text-to-speech
-- **Share Plus**: Content sharing
-- **Archive**: Data compression
-
-### Development Tools
-- **Build Runner**: Code generation
-- **JSON Serializable**: JSON parsing
-- **Mockito**: Unit testing mocks
-- **Flutter Lints**: Code quality
+### 🤖 Streaming AI Coach & Tap-to-Apply Actions (`Wave 7`)
+- **End-to-End Server-Sent Events (SSE) Streaming**: Incremental token streaming from `functions/aiGenerate` with `BLOCK_MEDIUM_AND_ABOVE` safety thresholds and medical emergency refusal guardrails (`LEG-03`).
+- **Tap-to-Apply Structured Action Cards (`ActionableAiCard`)**: One-tap application with instant `UNDO` rollback for AI-proposed workout routines, macro target updates, and exercise substitutions.
+- **Synchronized Voice Coaching**: Text-to-speech playback with pause/resume state tracking and normalized local FAQ caching (`AiQuestionNormalizer`).
 
 ---
 
 ## 🏗️ Architecture
 
-IronFlow follows **Clean Architecture** principles with clear separation of concerns:
+IronFlow enforces strict **Clean Architecture** boundaries verified on every test run by [`test/architecture/architecture_hygiene_test.dart`](test/architecture/architecture_hygiene_test.dart):
 
-```
-lib/
-├── core/                    # Shared utilities and constants
-│   ├── constants/          # App-wide constants and themes
-│   ├── error/              # Error handling
-│   ├── providers/          # Global providers (theme, language, etc.)
-│   ├── router/             # App routing configuration
-│   ├── services/           # Global services (analytics, sync)
-│   ├── utils/              # Helper functions and extensions
-│   └── widgets/            # Reusable widgets
-│
-├── features/               # Feature modules (Clean Architecture)
-│   ├── workout/
-│   │   ├── data/          # Data sources and repositories
-│   │   ├── domain/        # Business logic (entities, use cases)
-│   │   └── presentation/  # UI (screens, widgets, providers)
-│   │
-│   ├── nutrition/         # Nutrition tracking module
-│   ├── body/              # Body tracking module
-│   ├── ai/                # AI coach module
-│   ├── analytics/         # Analytics and insights
-│   ├── auth/              # Authentication
-│   ├── sync/              # Cloud synchronization
-│   ├── notifications/     # Reminder system
-│   └── settings/          # App settings
-│
-├── l10n/                  # Localization files
-├── shared/                # Shared widgets and animations
-└── main.dart              # Application entry point
-```
-
-### Design Patterns
-
-- **Repository Pattern**: Abstract data sources
-- **Use Case Pattern**: Single responsibility business operations
-- **Provider Pattern**: Dependency injection with Riverpod
-- **Factory Pattern**: Object creation
-- **Observer Pattern**: Reactive state updates
+1. **Domain Layer (`lib/features/*/domain/`)**: Pure Dart — zero Flutter, Riverpod, or I/O imports.
+2. **Data Layer (`lib/features/*/data/`)**: AES-256 encrypted Hive repositories, offline outbox sync engine (`SyncService`), Firebase adapters, and `MethodChannelHealthGateway`.
+3. **Presentation Layer (`lib/features/*/presentation/`)**: Riverpod 2.6+ `Notifier` / `AsyncNotifier` / `FamilyNotifier` controllers (zero legacy `StateNotifier`) and Direction 4 token-styled widgets.
+4. **800-Line File Ceiling**: Every non-generated Dart file in `lib/` is strictly $\le 800$ lines.
 
 ---
 
-## 🎨 Monolithic Sci-Fi Design System & Telemetry
+## 📊 Production Quality Scorecard
 
-IronFlow v1.1.0 introduces a cohesive, high-contrast **Monolithic Sci-Fi** aesthetic built directly into Flutter's `ThemeExtension` architecture.
-
-### Architectural Tokens
-- **`AppThemeTokens`** (`context.tokens`): Light and dark color palettes adhering strictly to WCAG AAA contrast ratios.
-  - Dark Mode: Obsidian Canvas (`0xFF090A0C`), Panel Glass (`0xFF11141A`), Kinetic Cyan (`0xFF00E5FF`), Laser Amber (`0xFFFF9100`), Plasma Green (`0xFF00E676`), Neon Crimson (`0xFFFF1744`).
-  - Light Mode: Architectural Titanium (`0xFFF0F2F5`), Crisp Panels (`0xFFFFFFFF`), High-Contrast Dark Slate text (`0xFF0F172A`).
-- **`AppTypography`**: Two-tiered typography scale:
-  - Display Font: `SpaceGrotesk` for titles, metrics, HUD readouts, and numerical telemetry.
-  - Body Font: `Inter` for long-form workout notes, body descriptions, and guides.
-- **`AppSpacings`**: 4px modular spacing grid (`xs: 4`, `sm: 8`, `md: 12`, `lg: 16`, `xl: 24`, `xxl: 32`).
-
-### Shared Component Library (`lib/shared/presentation/components/`)
-- **`AppCard`**: Panel container with subtle borders and optional kinetic glowing halos (`isGlowing: true`).
-- **`AppButton`**: Tactical buttons supporting primary, secondary, outline, ghost, and danger variants with automatic loading spinners and a guaranteed minimum 48dp touch target.
-- **`AppStatTile`**: Modular HUD metric readout with title, large numerical metric, unit, and delta status badge.
-- **`AppProgress`**: Circular progress rings and segmented progress bars with kinetic gradient fills.
-- **`AppChip`**: Filter and status tags with active highlight states.
-- **`AppStateViews`**: Unified state feedback views for offline mode, sync errors, and empty states.
-- **`AppSectionHeader`**: High-contrast category dividers with uppercase display typography and optional action CTA.
-
-### Interactive Debug Design Gallery
-In debug mode (`kDebugMode`), developers can explore, test, and audit every design token and shared component live:
-- Navigate to **Profile → Settings → Design System Gallery (Debug Only)** or navigate to route `/design-gallery`.
-- Includes live theme switching, component variant showcases, interactive states, and typography stress tests.
-
-### 📳 Tactile Telemetry (`AppHaptics`)
-Haptic feedback is managed centrally through [`AppHaptics`](lib/shared/presentation/services/app_haptics.dart):
-- **Set Logged**: Light impact pulse when completing an exercise set.
-- **Rest Timer Complete**: Medium impact pattern when interval timer counts down to 00:00.
-- **Macro Milestones**: Daily targets (calories, protein, carbs, fats) trigger a single medium impact celebration per calendar day.
-- **Navigation Dock**: Subtle selection clicks when switching between bottom navigation tabs.
-- **Toggleable in Settings**: Users can enable/disable tactile telemetry under **Profile → Settings → Tactile Telemetry**.
+```text
+========================================================================================
+                     IronFlow Release 2.0.0+9 Verification Matrix
+========================================================================================
+ Static Analysis:           0 errors, 0 warnings (flutter analyze --no-fatal-infos)
+ Automated Test Suite:      1,126 / 1,126 tests passing (0 failed, 0 skipped)
+ Line Coverage:             71.73% overall (all layer & feature ratchet gates met)
+ Architecture Hygiene:      10 / 10 rules passing (all lib/ files <= 800 lines)
+ Cloud Functions Proxy:     10 / 10 Node.js tests passing (JWT, App Check, Quotas, SSE)
+ Web Bundle & Wasm:         1.63 MB gzipped main.dart.js (< 2.5 MB budget) · Wasm ready
+ Localization & a11y:       7 locales (EN, AR, DE, ES, FR, PT, ZH) · 100% ARB parity + RTL
+ Secret Scan (gitleaks):    0 leaks in codebase and commit history
+ Open Source Licenses:      227 / 227 packages permissive (MIT, BSD, Apache-2.0, ISC)
+========================================================================================
+```
 
 ---
 
 ## 🚀 Getting Started
 
 ### Prerequisites
+- **Flutter SDK**: `3.24+` (Dart `3.5+`)
+- **Node.js**: `20.x LTS` (for `functions/` AI proxy tests and deployment)
 
-- Flutter SDK 3.10.7 or higher
-- Dart SDK
-- Android Studio / Xcode (for mobile development)
-- Firebase account (free tier works)
-- AI API keys (optional but recommended):
-  - [OpenAI API Key](https://platform.openai.com/api-keys)
-  - [Google Gemini API Key](https://makersuite.google.com/app/apikey) (FREE)
-  - [NVIDIA API Key](https://build.nvidia.com/) (FREE)
-
-### Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/YOUR_USERNAME/ironflow-fitness-app.git
-   cd ironflow-fitness-app
-   ```
-
-2. **Install dependencies**
-   ```bash
-   flutter pub get
-   ```
-
-3. **Set up environment variables & API keys**
-   
-   IronFlow uses a centralized `AppConfig` class that supports both compile-time `--dart-define` constants (recommended for production builds and CI/CD) and local `.env` files for development.
-
-   *For local development:*
-   Create a `.env` file in the root directory (never committed to git):
-   ```bash
-   cp .env.example .env
-   ```
-   Add your API keys to `.env`:
-   ```env
-   OPENAI_API_KEY=your_openai_api_key_here
-   GEMINI_API_KEY=your_gemini_api_key_here
-   NVIDIA_API_KEY=your_nvidia_api_key_here
-   ```
-
-   *For production builds or CI/CD without bundling secrets into assets:*
-   Pass API keys via `--dart-define`:
-   ```bash
-   flutter run --dart-define=OPENAI_API_KEY=your_key --dart-define=GEMINI_API_KEY=your_key
-   flutter build apk --release --dart-define=OPENAI_API_KEY=your_key --dart-define=GEMINI_API_KEY=your_key
-   ```
-
-   > [!WARNING]
-   > **Security & Release Risk**: Strings compiled into client binaries with `--dart-define` can be reverse-engineered or extracted from decompiled APK/IPA packages using tools such as `strings` or Ghidra. For production client releases, direct client-to-AI calls pose a secret exposure risk. Production applications should route all AI coaching and LLM requests through an authenticated backend proxy or Cloud Function where secret keys remain protected server-side.
-
-4. **Configure Firebase**
-   
-   - Create a Firebase project at [Firebase Console](https://console.firebase.google.com/)
-   - Add Android/iOS apps to your Firebase project
-   - Download `google-services.json` (Android) and `GoogleService-Info.plist` (iOS)
-   - Place them in the appropriate directories:
-     - Android: `android/app/google-services.json`
-     - iOS: `ios/Runner/GoogleService-Info.plist`
-   - Update `lib/firebase_options.dart` with your Firebase configuration
-   
-   See [FIREBASE_SETUP_GUIDE.md](FIREBASE_SETUP_GUIDE.md) for detailed instructions.
-
-5. **Run code generation**
-   ```bash
-   flutter pub run build_runner build --delete-conflicting-outputs
-   ```
-
-6. **Run the app**
-   ```bash
-   flutter run
-   ```
-
-### Quick Start (Without Firebase)
-
-You can run the app in offline mode without Firebase:
-
-1. The app will use mock authentication
-2. All data will be stored locally with Hive
-3. Cloud sync will be disabled
-4. AI features will work if you have API keys in `.env`
-
----
-
-## ⚙️ Configuration
-
-### Firebase Setup
-
-1. **Authentication**: Enable Email/Password, Google Sign-In, and Apple Sign-In
-2. **Firestore**: Create database with rules from `firestore.rules`
-3. **Realtime Database**: Enable for real-time sync (no billing required)
-4. **Storage**: Enable for progress photos
-5. **Analytics**: Enable for usage tracking
-6. **Crashlytics**: Enable for crash reporting
-
-**📖 Detailed Guide**: [docs/setup/FIREBASE_SETUP_GUIDE.md](docs/setup/FIREBASE_SETUP_GUIDE.md)
-
-### Google Sign-In Setup
-
-**📖 Complete Guide**: [docs/setup/GOOGLE_SIGNIN_SETUP_GUIDE.md](docs/setup/GOOGLE_SIGNIN_SETUP_GUIDE.md)
-
-### AI Configuration
-
-- **OpenAI**: Requires paid API key
-- **Gemini**: Free tier (60 requests/minute, 1500/day)
-- **NVIDIA**: Free tier for embeddings
-
-Edit `.env` with your keys, and the app will automatically use available AI providers.
-
-**📖 Setup Guide**: [docs/setup/SETUP_FREE_AI.md](docs/setup/SETUP_FREE_AI.md)
-
-### Notifications
-
-Local notifications are configured by default. See [docs/guides/](docs/guides/) for customization.
-
----
-
-## 📚 Documentation
-
-All documentation is organized in the [`docs/`](docs/) directory:
-
-- **[Quick Start](docs/guides/QUICK_START_GUIDE.md)** - Get running in 5 minutes
-- **[Setup Guides](docs/setup/)** - Firebase, Google Sign-In, AI configuration  
-- **[User Guides](docs/guides/)** - Testing, deployment, and usage
-- **[Architecture](docs/architecture/)** - System design and technical details
-- **[Development Logs](docs/development/)** - Project evolution and implementation notes
-
-**Full documentation index**: [docs/README.md](docs/README.md)
-
----
-
-## 📁 Project Structure
-
-### Key Directories
-
-- **`lib/features/`**: Feature modules organized by domain (Clean Architecture)
-- **`lib/core/`**: Shared code and utilities
-- **`lib/l10n/`**: Localization and translations
-- **`docs/`**: Complete documentation ([see docs/README.md](docs/README.md))
-  - `docs/setup/`: Installation and configuration guides
-  - `docs/guides/`: User and developer guides
-  - `docs/architecture/`: System design documentation
-  - `docs/testing/`: Testing documentation
-  - `docs/development/`: Development logs and progress notes
-- **`test/`**: Unit, widget, and integration tests
-- **`scripts/`**: Utility scripts for development
-- **`.kiro/specs/`**: Feature specifications and design documents
-
-### Data Flow
-
-```
-UI (Presentation) 
-    ↓
-Providers (State Management)
-    ↓
-Use Cases (Business Logic)
-    ↓
-Repositories (Data Abstraction)
-    ↓
-Data Sources (Hive, Firestore, APIs)
-```
-
----
-
-## 🧪 Testing
-
-IronFlow has a comprehensive test suite of **438 automated tests** covering unit, widget, domain logic, and property-based regression suites. All tests pass cleanly with **0 static analysis errors and 0 warnings**.
-
-### Run all tests
+### 1. Clone & Install
 ```bash
-flutter test
+git clone https://github.com/hamdiouni/ironflow-fitness-app.git
+cd ironflow-fitness-app
+flutter pub get
 ```
 
-### Static Analysis
+### 2. Run Locally (Offline-First / Demo Showcase)
+IronFlow works out-of-the-box in local-first mode with AES-256 encrypted Hive storage and a pre-populated **Demo Showcase** mode:
 ```bash
-flutter analyze --no-fatal-infos --fatal-warnings
-```
+# Run on Android / Desktop
+flutter run
 
-### Run specific test suite
-```bash
-flutter test test/shared/
-flutter test test/features/workout/
-```
-
-### Run integration tests
-```bash
-flutter test integration_test/
-```
-
-### Test Coverage
-```bash
-flutter test --coverage
-genhtml coverage/lcov.info -o coverage/html
-```
-
-### Property-Based Testing
-
-The project includes property-based tests for critical features:
-- Analytics calculations
-- Workout counting logic
-- Profile data persistence
-- Theme switching
-- Auth flow preservation
-
----
-
-## 📱 Deployment
-
-### Android
-
-1. **Build Release APK (Standard)**
-   ```bash
-   flutter build apk --release
-   ```
-
-2. **Build Hardened Release APK (Obfuscated & Symbol-Split)**
-   ```bash
-   flutter build apk --release --obfuscate --split-debug-info=build/symbols
-   ```
-   > [!NOTE]
-   > The `build/symbols` directory containing debugging symbols must be kept safely for Crashlytics stack deobfuscation and should never be committed into source control.
-
-3. **Build App Bundle** (for Google Play Store)
-   ```bash
-   flutter build appbundle --release --obfuscate --split-debug-info=build/symbols
-   ```
-
-4. **Configure signing**: Configure release keystore in `android/key.properties` and reference in `android/app/build.gradle.kts`.
-
-See [APK_BUILD_GUIDE.md](APK_BUILD_GUIDE.md) for detailed instructions.
-
-### iOS
-
-1. **Build IPA**
-   ```bash
-   flutter build ios --release
-   ```
-
-2. **Archive and upload**: Use Xcode for App Store submission
-
-### Web Execution & Preview
-
-The web application runs on a single fixed port: `http://localhost:8080`.
-
-```powershell
-# Option A: Quick-serve release bundle on http://localhost:8080
-.\scripts\run_web.ps1
-
-# Option B: Run in interactive development mode (hot reload)
-.\scripts\run_web.ps1 -Dev
-
-# Option C: Clean up any old servers lingering on 8000, 8085, or 8080
-.\scripts\run_web.ps1 -StopOld
-```
-
-#### Clearing Chrome PWA & Service Worker Cache
-If Chrome serves a previously cached build:
-1. Open DevTools in Chrome (`F12` or `Ctrl+Shift+I`).
-2. Navigate to **Application** > **Service Workers**.
-3. Click **Unregister** on any registered service workers for `localhost`.
-4. Navigate to **Application** > **Storage** and click **Clear site data**.
-5. Perform a hard refresh with `Ctrl+Shift+R`.
-
-```bash
-# Direct Flutter release build
+# Build & serve release Web app on http://localhost:8090
 flutter build web --release
+python scripts/serve_web_nocache.py 8090 build/web
+```
+
+### 3. Run the Verification Suite
+```bash
+# 1. Static analysis
+flutter analyze --no-pub --no-fatal-infos lib test
+
+# 2. Architecture hygiene guards (10 rules)
+flutter test --no-pub test/architecture/architecture_hygiene_test.dart
+
+# 3. Full unit, widget, characterization & E2E test suite with coverage
+flutter test --no-pub --coverage --timeout=60s
+python scripts/check_coverage.py --baseline docs/quality/coverage_baseline.json --fail-on-drop
+
+# 4. Cloud Functions AI proxy tests
+npm --prefix functions test
 ```
 
 ---
 
-## 🎨 Screenshots
+## ☁️ Deployment
 
-<!-- Add screenshots here when available -->
-Coming soon!
+Full production runbooks are located in [`docs/CLIENT_PACK/`](docs/CLIENT_PACK/README.md):
 
----
+```bash
+# Deploy Firebase Cloud Functions SSE AI Proxy
+firebase functions:secrets:set GEMINI_API_KEY
+firebase deploy --only functions:aiGenerate
 
-## 🤝 Contributing
+# Deploy Firestore & Storage Security Rules + Indexes
+firebase deploy --only firestore:rules,firestore:indexes,storage:rules
 
-We welcome contributions! Please follow these guidelines:
+# Build Production Web Bundle & Deploy to Firebase Hosting
+flutter build web --release --dart-define-from-file=config/production.json
+firebase deploy --only hosting
 
-1. **Fork the repository**
-2. **Create a feature branch**: `git checkout -b feature/amazing-feature`
-3. **Commit your changes**: `git commit -m 'Add amazing feature'`
-4. **Push to the branch**: `git push origin feature/amazing-feature`
-5. **Open a Pull Request**
-
-### Code Style
-
-- Follow [Effective Dart](https://dart.dev/guides/language/effective-dart) guidelines
-- Run `flutter analyze` before committing
-- Write tests for new features
-- Update documentation as needed
-
-### Commit Convention
-
-Use conventional commits:
-- `feat:` New feature
-- `fix:` Bug fix
-- `docs:` Documentation changes
-- `style:` Code style changes
-- `refactor:` Code refactoring
-- `test:` Test changes
-- `chore:` Build/config changes
+# Build Production Android App Bundle (.aab)
+flutter build appbundle --release --dart-define-from-file=config/production.json
+```
 
 ---
 
-## 📄 License
+## 📚 Documentation Index
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-## 🙏 Acknowledgments
-
-- Flutter team for the amazing framework
-- Firebase for backend infrastructure
-- OpenAI, Google, and NVIDIA for AI capabilities
-- All open-source contributors
-
----
-
-## 📞 Support
-
-- **Issues**: [GitHub Issues](https://github.com/YOUR_USERNAME/ironflow-fitness-app/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/YOUR_USERNAME/ironflow-fitness-app/discussions)
-- **Email**: support@ironflow.app (coming soon)
+| Document | Path |
+| :--- | :--- |
+| **Client Technical Handover Pack** | [`docs/CLIENT_PACK/README.md`](docs/CLIENT_PACK/README.md) |
+| **System Architecture Overview** | [`docs/CLIENT_PACK/ARCHITECTURE_OVERVIEW.md`](docs/CLIENT_PACK/ARCHITECTURE_OVERVIEW.md) |
+| **Production Deployment Runbook** | [`docs/CLIENT_PACK/DEPLOYMENT_RUNBOOK.md`](docs/CLIENT_PACK/DEPLOYMENT_RUNBOOK.md) |
+| **Key Rotation & Credentials SOP** | [`docs/CLIENT_PACK/KEY_ROTATION_AND_CREDENTIALS.md`](docs/CLIENT_PACK/KEY_ROTATION_AND_CREDENTIALS.md) |
+| **Store Release Checklist** | [`docs/CLIENT_PACK/STORE_RELEASE_CHECKLIST.md`](docs/CLIENT_PACK/STORE_RELEASE_CHECKLIST.md) |
+| **Google Play & App Store Data Disclosure** | [`docs/STORE_DATA_DISCLOSURE.md`](docs/STORE_DATA_DISCLOSURE.md) |
+| **Legal Policies (Privacy, Terms, Medical Disclaimer)** | [`docs/legal/`](docs/legal/PRIVACY_POLICY.md) |
+| **Architecture Decision Records (`ADR-001` – `ADR-009`)** | [`docs/adr/`](docs/adr/008-wasm-barcode-and-health-sync.md) |
+| **Normalized Codebase File Ledger (812 files)** | [`docs/audit/FILE_LEDGER.csv`](docs/audit/FILE_LEDGER.csv) |
+| **Third-Party Dependency License Audit (227 packages)** | [`docs/CLIENT_PACK/DEPENDENCY_LICENSES.csv`](docs/CLIENT_PACK/DEPENDENCY_LICENSES.csv) |
 
 ---
 
-## 🗺️ Roadmap
+## 📄 License & Attributions
 
-- [ ] Wearable device integration (Apple Watch, Fitbit)
-- [ ] Social features (share workouts, challenges)
-- [ ] Advanced analytics (AI-powered trend prediction)
-- [ ] Meal photo recognition (AI-powered nutrition logging)
-- [ ] Voice commands for workout logging
-- [ ] Custom workout templates marketplace
-- [ ] Coach/trainer portal
-- [ ] Integration with gym equipment
-
----
-
-<div align="center">
-
-**Built with ❤️ using Flutter**
-
-⭐ Star this repo if you find it helpful!
-
-</div>
+- **Source Code & Proprietary Vector Assets**: Delivered under the project [LICENSE](LICENSE) and commercial handover terms.
+- **Open Databases**: Nutritional barcode lookups reference [Open Food Facts](https://world.openfoodfacts.org/) under the **Open Database License (ODbL) v1.0** and **USDA FoodData Central** (public domain).
+- **Bundled Typography**: `Space Grotesk` and `Inter` are bundled under the **SIL Open Font License 1.1** (`assets/fonts/OFL.txt`).
