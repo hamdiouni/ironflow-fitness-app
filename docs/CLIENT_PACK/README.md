@@ -60,7 +60,7 @@ This `docs/CLIENT_PACK/` package contains everything required for your technical
                       IronFlow Production Quality Metrics (Wave 9)
 ========================================================================================
  Static Analysis:           0 issues found (0 errors, 0 warnings, 0 fatal infos)
- Unit & Integration Tests:  1,118 tests passing (100% pass rate, 0 failed, 0 skipped)
+ Unit & Integration Tests:  1,126 tests passing (100% pass rate, 0 failed, 0 skipped)
  Code Coverage:             71.73% overall (coverage ratchet gate passed for all areas)
  Architecture Hygiene:      10/10 rules passed (all non-generated files <= 800 lines)
  Web Gzipped JS Bundle:     1.63 MB main.dart.js (5.77 MB raw; below 2.5 MB budget)

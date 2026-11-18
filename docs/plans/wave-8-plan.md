@@ -10,10 +10,10 @@ were scheduled and built.
 | Candidate | Status | Reason / ADR |
 | :--- | :--- | :--- |
 | **8.1 Lock-screen rest timer** | **APPROVED & DONE** | ADR-004: Android system chronometer lock-screen notification + Web browser notifications. (iOS Live Activity marked NOT VERIFIED). |
-| **8.2 Barcode scanner + Open Food Facts** | **DEFERRED** | Deferred by owner decision (requires camera permission + new packages). |
+| **8.2 Barcode scanner + Open Food Facts** | **APPROVED & DONE** | ADR-008: `OpenFoodFactsService` (GS1 GTIN check-digit validation, offline verified gym catalog, Open Food Facts API v2 JSON parser under ODbL v1.0) + `BarcodeScannerSheet` integrated into `FoodSearchScreen` with auto-caching to custom foods. |
 | **8.3 e1RM engine + superset & drop sets** | **APPROVED & DONE** | ADR-004: Unified `E1rmEngine`, `DropSetPlanner`, `SupersetEngine`, backward-compatible `supersetGroupId` on `Exercise` and `ExerciseModel`, auto-rotation, UI indicators, and rest-timer integration. |
-| **8.4 Health Connect / HealthKit** | **DEFERRED** | Deferred by owner decision (requires store declarations + health packages). |
-| **8.5 Remote config upgrade** | **DEFERRED** | Deferred by owner decision (existing Firestore-backed feature flags sufficient). |
+| **8.4 Health Connect / HealthKit** | **APPROVED & DONE** | ADR-008: `HealthSyncService` (MET active calorie estimation, 5-minute timestamp deduplication) + `MethodChannelHealthGateway` (`com.ironflow.app/health_sync` with cross-platform simulation bridge) + `HealthSyncSettingsSheet` in `SettingsScreen`. |
+| **8.5 Remote config upgrade** | **APPROVED & DONE** | ADR-005 (Wave 2.7): Firestore-backed feature flags & emergency kill switches (`kill_ai_coach`, `kill_cloud_sync`, `maintenance_mode`). |
 
 ## Batch 8.1: Lock-Screen Rest Timer & Browser Notifier (`ADR-004`)
 - Created `RestTimerLiveSurface` domain contract (`lib/features/workout/domain/services/rest_timer_live_surface.dart`).

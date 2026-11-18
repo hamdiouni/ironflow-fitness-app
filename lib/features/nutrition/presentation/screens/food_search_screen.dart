@@ -143,7 +143,12 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
                   AppHaptics.shared.buttonPress();
                   showBarcodeScannerSheet(
                     context,
-                    onFoodFound: _showFoodDetailSheet,
+                    onFoodFound: (food) {
+                      ref
+                          .read(customFoodsProvider.notifier)
+                          .addCustomFood(food);
+                      _showFoodDetailSheet(food);
+                    },
                   );
                 },
                 tooltip: 'Scan Barcode (Open Food Facts)',
