@@ -186,37 +186,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                       const SizedBox(height: 32),
 
-                      // Stripe Signature Mesh Hero Badge
+                      // IronFlow Option D Scoreboard HUD Hero Badge
                       Center(
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(tokens.radiusLg),
                           child: StripeMeshBackdrop(
                             height: 88,
-                            child: Center(
-                              child: Container(
-                                width: 54,
-                                height: 54,
-                                decoration: BoxDecoration(
-                                  color: tokens.panel,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: tokens.kineticAccent.withValues(alpha: 0.5),
-                                    width: 1.5,
-                                  ),
-                                  boxShadow: const [
-                                    BoxShadow(
-                                      color: Color(0x1F003770),
-                                      blurRadius: 16,
-                                      offset: Offset(0, 4),
-                                    ),
-                                  ],
-                                ),
-                                child: Icon(
-                                  Icons.shield_rounded,
-                                  size: 30,
-                                  color: tokens.kineticAccent,
-                                ),
-                              ),
+                            child: const Center(
+                              child: IronFlowLogoBadge(size: 64),
                             ),
                           ),
                         ),

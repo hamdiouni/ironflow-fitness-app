@@ -13,3 +13,4 @@ export 'app_section_header.dart';
 export 'stripe_gradient_mesh.dart';
 export 'motion_widgets.dart';
 export 'medical_disclaimer_banner.dart';
+export 'ironflow_logo_badge.dart';

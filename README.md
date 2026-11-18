@@ -2,6 +2,10 @@
 
 <div align="center">
 
+<img src="assets/images/app_logo.png" alt="IronFlow App Logo — Iron Scoreboard HUD Emblem" width="128" height="128" />
+
+<br />
+
 ![Flutter](https://img.shields.io/badge/Flutter-3.24%2B-02569B?style=for-the-badge&logo=flutter&logoColor=white)
 ![Dart](https://img.shields.io/badge/Dart-3.5%2B-0175C2?style=for-the-badge&logo=dart&logoColor=white)
 ![Firebase](https://img.shields.io/badge/Firebase-Auth_%7C_Firestore_%7C_Functions_v2-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)

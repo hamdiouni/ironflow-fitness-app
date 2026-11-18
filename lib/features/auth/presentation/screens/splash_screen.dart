@@ -5,6 +5,7 @@ import 'package:progression_tracker/core/constants/app_theme.dart';
 import 'package:progression_tracker/core/router/app_router.dart';
 import 'package:progression_tracker/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:progression_tracker/features/onboarding/data/user_profile_storage.dart';
+import 'package:progression_tracker/shared/presentation/components/ironflow_logo_badge.dart';
 
 /// Stripe Splash screen that verifies authentication and onboarding telemetry
 /// before routing the operator to the appropriate interface.
@@ -107,12 +108,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                           ),
                         ],
                       ),
-                      child: Center(
-                        child: Icon(
-                          Icons.fitness_center_rounded,
-                          size: 52,
-                          color: tokens.kineticAccent,
-                        ),
+                      child: const Center(
+                        child: IronFlowLogoBadge(size: 86),
                       ),
 
                     );
