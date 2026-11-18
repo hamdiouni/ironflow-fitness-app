@@ -30,7 +30,14 @@ import 'package:progression_tracker/features/nutrition/presentation/providers/nu
 import 'package:progression_tracker/features/nutrition/presentation/screens/nutrition_screen.dart';
 import 'package:progression_tracker/features/onboarding/domain/entities/user_profile.dart';
 import 'package:progression_tracker/features/onboarding/presentation/providers/onboarding_provider.dart';
+import 'package:progression_tracker/features/body/data/services/method_channel_health_gateway.dart';
+import 'package:progression_tracker/features/body/domain/services/health_sync_service.dart';
+import 'package:progression_tracker/features/nutrition/domain/services/open_food_facts_service.dart';
+import 'package:progression_tracker/features/nutrition/presentation/screens/food_search_screen.dart';
+import 'package:progression_tracker/features/nutrition/presentation/widgets/food_search/barcode_scanner_sheet.dart';
+import 'package:progression_tracker/features/settings/presentation/screens/privacy_settings_screen.dart';
 import 'package:progression_tracker/features/settings/presentation/screens/settings_screen.dart';
+import 'package:progression_tracker/features/settings/presentation/widgets/health_sync_settings_sheet.dart';
 import 'package:progression_tracker/features/workout/domain/entities/entities.dart';
 import 'package:progression_tracker/features/workout/domain/usecases/usecases.dart';
 import 'package:progression_tracker/features/workout/presentation/providers/active_program_providers.dart';
@@ -369,6 +376,7 @@ void main() {
         sets: [SetEntry(id: 's-bench-1', reps: 8, weight: 80, timestamp: now)],
         suggestedSets: 4,
         suggestedReps: 8,
+        supersetGroupId: 'ss-1',
       ),
       Exercise(
         id: 'ex-row',
@@ -377,6 +385,7 @@ void main() {
         sets: [SetEntry(id: 's-row-1', reps: 8, weight: 75, timestamp: now)],
         suggestedSets: 4,
         suggestedReps: 8,
+        supersetGroupId: 'ss-1',
       ),
     ],
     duration: const Duration(minutes: 24),
@@ -598,6 +607,59 @@ void main() {
       size: const Size(390, 844),
       isDark: true,
       outputPaths: const ['docs/screenshots/wave4-after/settings_390x844.png'],
+    );
+    await captureScreen(
+      tester: tester,
+      child: Scaffold(
+        backgroundColor: AppTheme.darkTheme.scaffoldBackgroundColor,
+        body: Align(
+          alignment: Alignment.bottomCenter,
+          child: BarcodeScannerSheet(
+            service: const OpenFoodFactsService(),
+            onFoodFound: (_) {},
+          ),
+        ),
+      ),
+      size: const Size(390, 844),
+      isDark: true,
+      outputPaths: const [
+        'docs/screenshots/wave4-after/barcode_scanner_sheet_390x844.png',
+      ],
+    );
+    await captureScreen(
+      tester: tester,
+      child: Scaffold(
+        backgroundColor: AppTheme.darkTheme.scaffoldBackgroundColor,
+        body: Align(
+          alignment: Alignment.bottomCenter,
+          child: HealthSyncSettingsSheet(
+            service: HealthSyncService(gateway: MethodChannelHealthGateway()),
+          ),
+        ),
+      ),
+      size: const Size(390, 844),
+      isDark: true,
+      outputPaths: const [
+        'docs/screenshots/wave4-after/health_sync_sheet_390x844.png',
+      ],
+    );
+    await captureScreen(
+      tester: tester,
+      child: FoodSearchScreen(onFoodLogged: (_, _) {}),
+      size: const Size(390, 844),
+      isDark: true,
+      outputPaths: const [
+        'docs/screenshots/wave4-after/food_search_barcode_390x844.png',
+      ],
+    );
+    await captureScreen(
+      tester: tester,
+      child: const PrivacySettingsScreen(),
+      size: const Size(390, 844),
+      isDark: true,
+      outputPaths: const [
+        'docs/screenshots/wave4-after/privacy_attributions_390x844.png',
+      ],
     );
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(seconds: 12));
