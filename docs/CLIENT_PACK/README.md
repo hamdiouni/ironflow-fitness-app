@@ -49,7 +49,7 @@ This `docs/CLIENT_PACK/` package contains everything required for your technical
 - **Cloud Backend**: Google Firebase (Authentication, Cloud Firestore, Cloud Storage, Cloud Functions 2nd Gen, Hosting, App Check)
 - **AI Intelligence**: Google Gemini 2.5 Flash via serverless authenticated proxy with local question cache, SSE streaming, and structured tap-to-apply action cards
 - **Vector Graphics**: Pure Flutter `CustomPainter` with normalized `ui.Path` coordinates
-- **Platforms**: Android (Min SDK 24, Target SDK 34), Web PWA (CanvasKit / JS build; not yet Wasm-compatible — `flutter_secure_storage_web` and `flutter_tts` fail the Wasm dry run), iOS (compile check defined in CI on `macos-latest`; not built or device-tested in this handover)
+- **Platforms**: Android (Min SDK 24, Target SDK 34), Web PWA (CanvasKit & Wasm dry-run verified via `dart:js_interop`), iOS (compile check defined in CI on `macos-latest`; not built or device-tested in this handover)
 
 ---
 

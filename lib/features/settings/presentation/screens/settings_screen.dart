@@ -15,6 +15,7 @@ import '../../../auth/presentation/providers/auth_notifier.dart';
 import '../../../onboarding/domain/entities/user_profile.dart';
 import '../../../onboarding/presentation/providers/onboarding_provider.dart';
 import '../../../workout/domain/services/exercise_catalog.dart';
+import '../widgets/health_sync_settings_sheet.dart';
 import '../widgets/settings_dialogs.dart';
 import '../widgets/settings_preferences_widgets.dart';
 import '../widgets/settings_section_tiles.dart';
@@ -475,6 +476,16 @@ class SettingsScreen extends ConsumerWidget {
                           ),
                         );
                       },
+                    ),
+                    Divider(color: tokens.borderSubtle, height: 1),
+                    SettingsTile(
+                      key: const Key('settings_health_sync_tile'),
+                      title: 'Health Connect & Apple Health',
+                      subtitle:
+                          'Two-way body weight sync & workout export to platform health',
+                      icon: Icons.monitor_heart_outlined,
+                      tokens: tokens,
+                      onTap: () => showHealthSyncSettingsSheet(context),
                     ),
                   ],
                 ),

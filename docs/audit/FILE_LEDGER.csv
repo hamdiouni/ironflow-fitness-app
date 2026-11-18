@@ -805,3 +805,9 @@ test/localization/localization_completeness_and_rtl_test.dart,test,140,no,N/A,KE
 test/performance/screen_frame_budget_test.dart,test,101,no,N/A,KEEP,Screen frame budget and render benchmarks,Low,Wave 5.1
 test/performance/yearly_data_benchmark_test.dart,test,124,no,N/A,KEEP,1-year heavy data volume and recovery benchmarks,Low,Wave 5.6
 test/shared/presentation/components/medical_disclaimer_banner_test.dart,test,68,no,100.0%,KEEP,Widget tests for medical disclaimer banner (Wave 6.2),LOW,W6
+lib/features/nutrition/domain/services/open_food_facts_service.dart,lib,318,no,100.0%,KEEP,Open Food Facts (ODbL v1.0) barcode lookup and offline verified gym catalog (Candidate 8.2 / ADR-008),LOW,W8.2
+lib/features/nutrition/presentation/widgets/food_search/barcode_scanner_sheet.dart,lib,295,no,100.0%,KEEP,Barcode scanner and Open Food Facts lookup bottom sheet UI (Candidate 8.2 / ADR-008),LOW,W8.2
+lib/features/body/domain/services/health_sync_service.dart,lib,205,no,100.0%,KEEP,Pure-Dart Health Connect and HealthKit two-way sync orchestration and MET kcal estimator (Candidate 8.4 / ADR-008),LOW,W8.4
+lib/features/body/data/services/method_channel_health_gateway.dart,lib,155,no,100.0%,KEEP,MethodChannel gateway and cross-platform simulation bridge for Health Connect and HealthKit (Candidate 8.4 / ADR-008),LOW,W8.4
+lib/features/settings/presentation/widgets/health_sync_settings_sheet.dart,lib,220,no,100.0%,KEEP,Settings modal sheet for configuring Health Connect and Apple HealthKit two-way sync (Candidate 8.4 / ADR-008),LOW,W8.4
+test/features/nutrition/wave8_barcode_and_health_sync_test.dart,test,335,no,100.0%,KEEP,Unit and widget test suite for Candidate 8.2 barcode scanner and Candidate 8.4 health sync bridge,LOW,W8.2-8.4

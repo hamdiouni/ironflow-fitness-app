@@ -9,6 +9,7 @@ import 'package:progression_tracker/features/onboarding/presentation/providers/o
 import 'package:progression_tracker/features/nutrition/domain/entities/food_item.dart';
 import 'package:progression_tracker/features/nutrition/domain/services/food_catalog.dart';
 import 'package:progression_tracker/features/nutrition/presentation/providers/food_providers.dart';
+import '../widgets/food_search/barcode_scanner_sheet.dart';
 import '../widgets/food_search/create_custom_food_dialog.dart';
 import '../widgets/food_search/food_detail_quantity_sheet.dart';
 import '../widgets/food_search/food_search_pills_and_tile.dart';
@@ -123,6 +124,34 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
           ],
         ),
         actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: Container(
+              decoration: BoxDecoration(
+                color: tokens.panel,
+                borderRadius: BorderRadius.circular(tokens.radiusPill),
+                border: Border.all(color: tokens.borderSubtle, width: 1),
+              ),
+              child: IconButton(
+                key: const Key('food_search_barcode_button'),
+                icon: Icon(
+                  Icons.qr_code_scanner_rounded,
+                  color: tokens.kineticAccent,
+                  size: 20,
+                ),
+                onPressed: () {
+                  AppHaptics.shared.buttonPress();
+                  showBarcodeScannerSheet(
+                    context,
+                    onFoodFound: _showFoodDetailSheet,
+                  );
+                },
+                tooltip: 'Scan Barcode (Open Food Facts)',
+                constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                padding: EdgeInsets.zero,
+              ),
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.only(right: 12),
             child: Container(
