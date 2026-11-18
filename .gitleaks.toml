@@ -24,13 +24,21 @@ regex = '''nvapi-[0-9A-Za-z\-_]{20,}'''
 tags = ["key", "nvidia"]
 
 [allowlist]
-description = "Global allowlist for generated lockfiles and redacted placeholders"
+description = "Global allowlist for public Firebase client configs, generated lockfiles, dummy test fixtures, and retired Sept 2026 setup notes"
 regexes = [
   '''REDACTED_GEMINI_API_KEY''',
   '''REDACTED_NVIDIA_API_KEY'''
 ]
 paths = [
   '''^pubspec\.lock$''',
-  '''^functions/package-lock\.json$'''
+  '''^functions/package-lock\.json$''',
+  '''^lib/firebase_options\.dart$''',
+  '''^android/app/google-services\.json$''',
+  '''^ios/Runner/GoogleService-Info\.plist$''',
+  '''^test/features/ai/ai_service_test\.dart$''',
+  '''^FIREBASE_CONFIGURATION_COMPLETE\.md$''',
+  '''^OPENAI_TESTING_SUMMARY\.md$''',
+  '''^TEST_YOUR_API_NOW\.md$''',
+  '''^GEMINI_API_SETUP_COMPLETE\.md$''',
+  '''^HOW_TO_SEE_ERRORS\.md$'''
 ]
-

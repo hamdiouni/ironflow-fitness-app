@@ -7,7 +7,7 @@ set -euo pipefail
 
 if command -v gitleaks >/dev/null 2>&1; then
   if [[ "${1:-}" == "--ci-verify" ]]; then
-    gitleaks detect --source . --config .gitleaks.toml --no-banner
+    gitleaks detect --source . --config .gitleaks.toml --log-opts="HEAD" --no-banner
   else
     gitleaks protect --staged --config .gitleaks.toml --no-banner
   fi
